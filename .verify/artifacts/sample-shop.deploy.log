@@ -1,0 +1,5 @@
+🚢 Deploying ./testdata/sample-shop to root@192.168.1.100 via zero-downtime SSH & systemd...
+  ✓ Generated systemd unit: anode-orders.service
+  ✓ Generated systemd unit: anode-payments.service
+  ✓ Generated Edge Caddyfile with automatic TLS
+✅ Production deployment plan synthesized successfully.

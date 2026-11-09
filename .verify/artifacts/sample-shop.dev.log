@@ -1,0 +1,8 @@
+🚀 Starting anode dev environment for ./testdata/sample-shop...
+
+📋 Planned Service Topology & Injected Ports:
+  • payments: PORT=49976
+      -> PAYMENTS_DB_URL=postgres://postgres:postgres@127.0.0.1:5432/db-payments-db?sslmode=disable
+  • orders: PORT=49975
+
+✅ Anode dev topology verified and ready.

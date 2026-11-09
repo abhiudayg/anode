@@ -1,0 +1,11 @@
+[verify]
+commands = [
+  "go test -v ./...",
+  "go vet ./...",
+  "go build -o anode ./cmd/anode",
+  ".verify/run.sh",
+]
+
+[verify.default]
+command = ["bash", ".verify/run.sh"]
+timeout_secs = 300
