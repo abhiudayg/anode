@@ -10,6 +10,8 @@
 .verify/output/
 .verify/artifacts/
 testdata/**/.verify/
+examples/**/.verify/
+**/.verify/
 *.log
 
 # Web artifacts

@@ -1,22 +1,28 @@
 <div align="center">
 
+<a href="https://anode.abhiudayg.dev">
+  <img src=".github/assets/anode-social-preview.png" alt="Anode — Proof-of-Topology Bare-Metal Orchestrator" width="100%">
+</a>
+
 # Anode
 
 ### Deploy unmodified Go backends to any Linux VPS without Dockerfiles, Kubernetes, or proprietary SDKs.
 
+[![Website: anode.abhiudayg.dev](https://img.shields.io/badge/website-anode.abhiudayg.dev-00ADD8.svg?style=flat&logo=safari)](https://anode.abhiudayg.dev)
 [![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Verification: agstack](https://img.shields.io/badge/verified-agstack%20passed-success.svg)](#verification--quality-guarantees)
-[![Architecture: Proof--of--Topology](https://img.shields.io/badge/architecture-4--Pillar%20Topology-purple.svg)](docs/architecture.md)
+[![Architecture: Proof--of--Topology](https://img.shields.io/badge/architecture-4--Pillar%20Topology-purple.svg)](https://anode.abhiudayg.dev/docs#overview)
 
 <p align="center">
+  <a href="https://anode.abhiudayg.dev">Live Website</a> •
   <a href="#the-problem">The Problem</a> •
   <a href="#how-it-works">How It Works</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#the-anodelockjson-contract">The Lockfile</a> •
   <a href="#cli-reference">CLI Reference</a> •
-  <a href="docs/architecture.md">Architecture Deep-Dive</a> •
-  <a href="docs/tradeoffs.md">Tradeoffs & Limits</a> •
+  <a href="https://anode.abhiudayg.dev/docs">Documentation</a> •
+  <a href="https://anode.abhiudayg.dev/docs#tradeoffs">Tradeoffs & Limits</a> •
   <a href="testdata/README.md">Benchmark Suite</a>
 </p>
 

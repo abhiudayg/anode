@@ -88,11 +88,104 @@ drivers:
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
       ADDR: "{{.Host}}:{{.Port}}"
-    readiness_probe:
-      command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-pmysql"]
-      tcp_port: 3306
-      initial_delay_sec: 5
-      timeout_sec: 2
+
+  mariadb:
+    kind: mariadb
+    category: database
+    default_version: "11.4"
+    supported_versions:
+      "10.11":
+        image: "mariadb:10.11"
+      "11.4":
+        image: "mariadb:11.4"
+    runtime:
+      image_template: "mariadb:{{.Version}}"
+      data_mount: "/var/lib/mysql"
+      default_env:
+        MARIADB_ROOT_PASSWORD: "mysql"
+        MARIADB_DATABASE: "${DB_NAME}"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -900
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 3306
+      bind_interface: "127.0.0.1"
+      protocol: "mysql"
+    connection_templates:
+      DSN: "root:mysql@tcp({{.Host}}:{{.Port}})/{{.Database}}?parseTime=true"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  cockroachdb:
+    kind: cockroachdb
+    category: database
+    default_version: "v24.1"
+    supported_versions:
+      "v23.2":
+        image: "cockroachdb/cockroach:v23.2.7"
+      "v24.1":
+        image: "cockroachdb/cockroach:v24.1.2"
+    runtime:
+      image_template: "cockroachdb/cockroach:{{.Version}}"
+      command: ["start-single-node", "--insecure", "--store=/cockroach/cockroach-data"]
+      data_mount: "/cockroach/cockroach-data"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -900
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 26257
+      bind_interface: "127.0.0.1"
+      protocol: "postgres"
+    connection_templates:
+      URL: "postgres://root@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  timescaledb:
+    kind: timescaledb
+    category: database
+    default_version: "latest-pg16"
+    supported_versions:
+      "pg15":
+        image: "timescale/timescaledb:latest-pg15"
+      "pg16":
+        image: "timescale/timescaledb:latest-pg16"
+    runtime:
+      image_template: "timescale/timescaledb:{{.Version}}"
+      data_mount: "/var/lib/postgresql/data"
+      default_env:
+        POSTGRES_USER: "postgres"
+        POSTGRES_PASSWORD: "postgres"
+        POSTGRES_DB: "${DB_NAME}"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -900
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 5432
+      bind_interface: "127.0.0.1"
+      protocol: "postgres"
+    connection_templates:
+      URL: "postgres://postgres:postgres@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
 
   redis:
     kind: redis
@@ -167,6 +260,80 @@ drivers:
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
 
+  keydb:
+    kind: keydb
+    category: cache
+    default_version: "latest"
+    runtime:
+      image_template: "eqalpha/keydb:{{.Version}}"
+      command: ["keydb-server", "/etc/keydb/keydb.conf", "--appendonly", "yes"]
+      data_mount: "/data"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "150%"
+    networking:
+      primary_port: 6379
+      bind_interface: "127.0.0.1"
+      protocol: "redis"
+    connection_templates:
+      URL: "redis://{{.Host}}:{{.Port}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+
+  dragonfly:
+    kind: dragonfly
+    category: cache
+    default_version: "latest"
+    runtime:
+      image_template: "docker.dragonflydb.io/dragonflydb/dragonfly:{{.Version}}"
+      data_mount: "/data"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 6379
+      bind_interface: "127.0.0.1"
+      protocol: "redis"
+    connection_templates:
+      URL: "redis://{{.Host}}:{{.Port}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+
+  memcached:
+    kind: memcached
+    category: cache
+    default_version: "1.6-alpine"
+    runtime:
+      image_template: "memcached:{{.Version}}"
+      data_mount: "/tmp"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -400
+      cgroups:
+        memory_max: "512M"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 11211
+      bind_interface: "127.0.0.1"
+      protocol: "memcached"
+    connection_templates:
+      ADDR: "{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
   kafka:
     kind: kafka
     category: message_broker
@@ -214,6 +381,64 @@ drivers:
       tcp_port: 9092
       initial_delay_sec: 3
       timeout_sec: 2
+
+  rabbitmq:
+    kind: rabbitmq
+    category: message_broker
+    default_version: "3.13"
+    supported_versions:
+      "3.12":
+        image: "rabbitmq:3.12-alpine"
+      "3.13":
+        image: "rabbitmq:3.13-alpine"
+    runtime:
+      image_template: "rabbitmq:{{.Version}}-alpine"
+      data_mount: "/var/lib/rabbitmq"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 5672
+      bind_interface: "127.0.0.1"
+      protocol: "amqp"
+    connection_templates:
+      AMQP_URL: "amqp://guest:guest@{{.Host}}:{{.Port}}/"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  nats:
+    kind: nats
+    category: message_broker
+    default_version: "2.10"
+    supported_versions:
+      "2.10":
+        image: "nats:2.10-alpine"
+    runtime:
+      image_template: "nats:{{.Version}}-alpine"
+      data_mount: "/data"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "512M"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 4222
+      bind_interface: "127.0.0.1"
+      protocol: "nats"
+    connection_templates:
+      URL: "nats://{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
 
   clickhouse:
     kind: clickhouse
@@ -281,6 +506,165 @@ drivers:
       PORT: "{{.Port}}"
       ADDR: "{{.Host}}:{{.Port}}"
 
+  scylladb:
+    kind: scylladb
+    category: database
+    default_version: "5.4"
+    supported_versions:
+      "5.4":
+        image: "scylladb/scylla:5.4"
+      "6.0":
+        image: "scylladb/scylla:6.0"
+    runtime:
+      image_template: "scylladb/scylla:{{.Version}}"
+      data_mount: "/var/lib/scylla"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -800
+      cgroups:
+        memory_max: "4G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 9042
+      bind_interface: "127.0.0.1"
+      protocol: "cql"
+    connection_templates:
+      HOSTS: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  cassandra:
+    kind: cassandra
+    category: database
+    default_version: "4.1"
+    supported_versions:
+      "4.1":
+        image: "cassandra:4.1"
+      "5.0":
+        image: "cassandra:5.0"
+    runtime:
+      image_template: "cassandra:{{.Version}}"
+      data_mount: "/var/lib/cassandra"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -800
+      cgroups:
+        memory_max: "4G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 9042
+      bind_interface: "127.0.0.1"
+      protocol: "cql"
+    connection_templates:
+      HOSTS: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  elasticsearch:
+    kind: elasticsearch
+    category: search
+    default_version: "8.13"
+    supported_versions:
+      "8.12":
+        image: "docker.elastic.co/elasticsearch/elasticsearch:8.12.2"
+      "8.13":
+        image: "docker.elastic.co/elasticsearch/elasticsearch:8.13.4"
+    runtime:
+      image_template: "docker.elastic.co/elasticsearch/elasticsearch:{{.Version}}"
+      data_mount: "/usr/share/elasticsearch/data"
+      default_env:
+        discovery.type: "single-node"
+        xpack.security.enabled: "false"
+        ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -600
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "150%"
+    networking:
+      primary_port: 9200
+      bind_interface: "127.0.0.1"
+      protocol: "http"
+    connection_templates:
+      URL: "http://{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  opensearch:
+    kind: opensearch
+    category: search
+    default_version: "2.13"
+    supported_versions:
+      "2.12":
+        image: "opensearchproject/opensearch:2.12.0"
+      "2.13":
+        image: "opensearchproject/opensearch:2.13.0"
+    runtime:
+      image_template: "opensearchproject/opensearch:{{.Version}}"
+      data_mount: "/usr/share/opensearch/data"
+      default_env:
+        discovery.type: "single-node"
+        DISABLE_SECURITY_PLUGIN: "true"
+        OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -600
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "150%"
+    networking:
+      primary_port: 9200
+      bind_interface: "127.0.0.1"
+      protocol: "http"
+    connection_templates:
+      URL: "http://{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  meilisearch:
+    kind: meilisearch
+    category: search
+    default_version: "v1.8"
+    supported_versions:
+      "v1.7":
+        image: "getmeili/meilisearch:v1.7"
+      "v1.8":
+        image: "getmeili/meilisearch:v1.8"
+    runtime:
+      image_template: "getmeili/meilisearch:{{.Version}}"
+      data_mount: "/meili_data"
+      default_env:
+        MEILI_NO_ANALYTICS: "true"
+        MEILI_ENV: "production"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 7700
+      bind_interface: "127.0.0.1"
+      protocol: "http"
+    connection_templates:
+      URL: "http://{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
   qdrant:
     kind: qdrant
     category: vector_database
@@ -311,46 +695,15 @@ drivers:
       GRPC_ADDR: "{{.Host}}:6334"
       ADDR: "{{.Host}}:{{.Port}}"
 
-  rabbitmq:
-    kind: rabbitmq
-    category: message_broker
-    default_version: "3.13"
-    supported_versions:
-      "3.12":
-        image: "rabbitmq:3.12-alpine"
-      "3.13":
-        image: "rabbitmq:3.13-alpine"
+  chroma:
+    kind: chroma
+    category: vector_database
+    default_version: "0.4.24"
     runtime:
-      image_template: "rabbitmq:{{.Version}}-alpine"
-      data_mount: "/var/lib/rabbitmq"
-    security:
-      uid: 999
-      gid: 999
-      file_mode: "0700"
-      no_new_privileges: true
-      oom_score_adjust: -500
-      cgroups:
-        memory_max: "1G"
-        cpu_quota: "100%"
-    networking:
-      primary_port: 5672
-      bind_interface: "127.0.0.1"
-      protocol: "amqp"
-    connection_templates:
-      AMQP_URL: "amqp://guest:guest@{{.Host}}:{{.Port}}/"
-      HOST: "{{.Host}}"
-      PORT: "{{.Port}}"
-
-  nats:
-    kind: nats
-    category: message_broker
-    default_version: "2.10"
-    supported_versions:
-      "2.10":
-        image: "nats:2.10-alpine"
-    runtime:
-      image_template: "nats:{{.Version}}-alpine"
-      data_mount: "/data"
+      image_template: "chromadb/chroma:{{.Version}}"
+      data_mount: "/chroma/chroma"
+      default_env:
+        IS_PERSISTENT: "TRUE"
     security:
       uid: 1000
       gid: 1000
@@ -358,14 +711,70 @@ drivers:
       no_new_privileges: true
       oom_score_adjust: -500
       cgroups:
-        memory_max: "512M"
+        memory_max: "1G"
         cpu_quota: "100%"
     networking:
-      primary_port: 4222
+      primary_port: 8000
       bind_interface: "127.0.0.1"
-      protocol: "nats"
+      protocol: "http"
     connection_templates:
-      URL: "nats://{{.Host}}:{{.Port}}"
+      URL: "http://{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  milvus:
+    kind: milvus
+    category: vector_database
+    default_version: "v2.4.0"
+    runtime:
+      image_template: "milvusdb/milvus:{{.Version}}"
+      command: ["milvus", "run", "standalone"]
+      data_mount: "/var/lib/milvus/data"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -600
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "150%"
+    networking:
+      primary_port: 19530
+      bind_interface: "127.0.0.1"
+      protocol: "grpc"
+    connection_templates:
+      ADDR: "{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  weaviate:
+    kind: weaviate
+    category: vector_database
+    default_version: "1.24.8"
+    runtime:
+      image_template: "semitechnologies/weaviate:{{.Version}}"
+      data_mount: "/var/lib/weaviate"
+      default_env:
+        QUERY_DEFAULTS_LIMIT: "25"
+        AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
+        PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
+        DEFAULT_VECTORIZER_MODULE: "none"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 8080
+      bind_interface: "127.0.0.1"
+      protocol: "http"
+    connection_templates:
+      URL: "http://{{.Host}}:{{.Port}}"
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
 
@@ -398,3 +807,31 @@ drivers:
       CONSOLE_URL: "http://{{.Host}}:9001"
       ACCESS_KEY: "minioadmin"
       SECRET_KEY: "minioadmin"
+
+  temporal:
+    kind: temporal
+    category: workflow_engine
+    default_version: "1.23.1"
+    runtime:
+      image_template: "temporalio/auto-setup:{{.Version}}"
+      data_mount: "/etc/temporal/schema"
+      default_env:
+        DB: "sqlite"
+        SQLITE_DB: "/etc/temporal/schema/temporal.db"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 7233
+      bind_interface: "127.0.0.1"
+      protocol: "grpc"
+    connection_templates:
+      HOST_PORT: "{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
