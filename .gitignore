@@ -9,7 +9,7 @@
 # Verification & Test outputs
 .verify/output/
 .verify/artifacts/
-**/.verify/
+testdata/**/.verify/
 *.log
 
 # Web artifacts

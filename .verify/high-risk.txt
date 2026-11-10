@@ -1,0 +1,5 @@
+# Critical schemas and low-level system boundaries
+internal/iag/schema.go
+internal/analyzer/*
+internal/deployer/ssh.go
+internal/cluster/nftables.go

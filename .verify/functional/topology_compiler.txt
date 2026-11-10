@@ -1,0 +1,2 @@
+CMD anode inspect ./testdata/sample-shop
+CMD anode inspect ./testdata/hyper_mesh_12

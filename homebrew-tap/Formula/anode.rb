@@ -4,7 +4,7 @@ class Anode < Formula
   url "https://github.com/abhiudayg/anode/archive/refs/tags/v1.0.0.tar.gz"
   version "1.0.0"
   license "MIT"
-  head "https://github.com/abhiudayg/anode.git", branch: "main"
+  head "https://github.com/abhiudayg/anode.git", branch: "master"
 
   depends_on "go" => :build
 

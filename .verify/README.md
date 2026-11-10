@@ -1,20 +1,58 @@
 # Project Verification (`.verify/`)
 
-Layout follows the agstack verification skill.
+This directory implements the full **`agstack` verification and feature-map standard** (`packages/agstack/skills/verification/` & `packages/agstack/skills/feature-map/`).
 
 ```text
 .verify/
-├── verify.toml        allowlist of trusted commands
-├── run.sh             runner: doctor, unit, static, functional
-├── doctor.sh          optional read-only environment checks (create it to enable)
-├── static.sh          optional static checks (create it to enable)
-├── functional/        optional functional suites; functional/run.sh runs when present
-└── artifacts/         one folder per run, kept after the run
+├── verify.toml        allowlist of trusted verification commands
+├── run.sh             phased runner: doctor, unit, static, functional
+├── doctor.sh          read-only environment and toolchain checks
+├── gates.conf         ordered quality gates for this repository
+├── high-risk.txt      path patterns requiring independent review
+├── features/
+│   ├── README.md      feature index and proof standards
+│   ├── topology-compiler.md
+│   ├── dev-orchestrator.md
+│   ├── production-deployer.md
+│   └── cluster-scheduler.md
+├── functional/
+│   ├── topology_compiler.txt
+│   ├── dev_orchestrator.txt
+│   ├── production_deployer.txt
+│   └── cluster_scheduler.txt
+├── checks/
+│   ├── feature_coverage.sh  step-level request entry coverage auditor
+│   └── gate_report.sh       ordered quality gate runner & evidence generator
+├── env/
+│   └── test.env       verification environment defaults
+└── artifacts/         gitignored; logs, reports, and evidence records
 ```
 
-## Usage
-- Run the whole suite: `agent-brain verify -- .verify/run.sh`
-- Run one feature: `agent-brain verify -- .verify/run.sh <feature>`
-- Each run writes `summary.txt` and one log per phase under `.verify/artifacts/<RUN_ID>/`.
-- Allowlisted runs are recorded into the local brain database, and `agent-brain verify receipt` shows the result for the current commit.
-- Edit `verify.toml` to change the allowlist. Commands outside it are not evidence.
+## Phased Runner Lifecycle
+
+1. **Doctor Phase (`doctor.sh`)**:
+   Read-only audit verifying the Go compiler (1.22+), Git, workspace root integrity, and OpenSSH client.
+2. **Unit & Regression Phase (`internal/...`)**:
+   Deep regression suite validating lockfile serialization, SSA taint analysis, gRPC linking, Bin-packing, and zero-trust firewall generation.
+3. **Static & Feature Coverage Phase (`checks/feature_coverage.sh`)**:
+   Runs `go vet ./...` and verifies that every functional test entry in the repository is mapped to exactly one step in `.verify/features/*.md`.
+4. **Functional & Quality Gate Phase (`checks/gate_report.sh`)**:
+   Executes ordered quality gates specified in `gates.conf` from cheapest to most expensive, logging results to `.verify/artifacts/<RUN_ID>/evidence.md`.
+
+## Execution
+
+- **Default Complete Run**:
+  ```bash
+  .verify/run.sh
+  ```
+- **Targeted Phase Execution**:
+  ```bash
+  .verify/run.sh doctor
+  .verify/run.sh unit
+  .verify/run.sh static
+  .verify/run.sh functional
+  ```
+- **agstack Verified Execution**:
+  ```bash
+  agent-brain verify -- .verify/run.sh
+  ```

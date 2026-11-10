@@ -1,0 +1,1 @@
+CMD anode deploy root@192.168.1.100 ./testdata/hyper_mesh_12 --dry-run

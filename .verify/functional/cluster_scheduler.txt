@@ -1,0 +1,1 @@
+CMD anode cluster ./testdata/hyper_mesh_12
