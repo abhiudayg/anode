@@ -2,9 +2,9 @@ name: CI - Test & Build
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
-    branches: [main]
+    branches: [main, master]
 
 jobs:
   test-backend:
@@ -43,6 +43,12 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js (Latest LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          check-latest: true
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
