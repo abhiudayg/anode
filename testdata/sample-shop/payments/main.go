@@ -2,11 +2,20 @@ package main
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 )
+
+type dummyDriver struct{}
+
+func (d *dummyDriver) Open(name string) (driver.Conn, error) { return nil, nil }
+
+func init() {
+	sql.Register("postgres", &dummyDriver{})
+}
 
 type Config struct {
 	Port        string
