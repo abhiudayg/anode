@@ -1,0 +1,26 @@
+# Binaries
+/anode
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Verification & Test outputs
+.verify/output/
+.verify/artifacts/
+**/.verify/
+*.log
+
+# Web artifacts
+web/node_modules/
+web/.next/
+web/out/
+web/build/
+
+# IDE & OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*~

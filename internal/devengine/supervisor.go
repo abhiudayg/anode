@@ -48,7 +48,8 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 	s.mu.Unlock()
 
 	entryDir := filepath.Join(s.rootDir, svc.Entrypoint)
-	binDir := filepath.Join(s.rootDir, ".verify", "output")
+	absRoot, _ := filepath.Abs(s.rootDir)
+	binDir := filepath.Join(absRoot, ".verify", "output")
 	_ = os.MkdirAll(binDir, 0755)
 	binPath := filepath.Join(binDir, svc.Name)
 

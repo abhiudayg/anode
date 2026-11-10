@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Terminal, Copy, Check, ArrowRight, Github, BookOpen } from "lucide-react";
+import { Terminal, Copy, Check, ArrowRight, BookOpen } from "lucide-react";
+import { GithubIcon } from "./Icons";
 import confetti from "canvas-confetti";
 
 export function QuickstartSection() {
@@ -98,7 +99,7 @@ export function QuickstartSection() {
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.1] text-xs font-mono-code text-white transition-all"
           >
-            <Github className="w-4 h-4 text-neutral-400" />
+            <GithubIcon className="w-4 h-4 text-neutral-400" />
             <span>View Source on GitHub</span>
           </a>
 

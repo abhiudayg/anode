@@ -5,13 +5,13 @@
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": false,
-      "provenance": "main.go:40"
+      "provenance": "orders/main.go:40"
     },
     "db-payments-db": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": false,
-      "provenance": "main.go:31"
+      "provenance": "payments/main.go:31"
     }
   },
   "services": {
@@ -32,13 +32,13 @@
           "resource_ref": "db-orders",
           "protocol": "postgres",
           "inject_env": "",
-          "provenance": "main.go:40"
+          "provenance": "orders/main.go:40"
         }
       ],
       "secrets": [
         {
           "env_var": "STRIPE_SECRET_KEY",
-          "provenance": "main.go:27"
+          "provenance": "orders/main.go:27"
         }
       ]
     },
@@ -62,7 +62,7 @@
           "expanded_env": [
             "PAYMENTS_DB_URL"
           ],
-          "provenance": "main.go:31"
+          "provenance": "payments/main.go:31"
         }
       ],
       "secrets": []

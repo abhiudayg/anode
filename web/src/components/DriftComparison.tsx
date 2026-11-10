@@ -43,7 +43,7 @@ export function DriftComparison() {
               </p>
 
               {/* Code Snippet: Docker drift */}
-              <div className="rounded-xl bg-[#07080a] p-4 border border-white/[0.06] font-mono-code text-xs text-neutral-400 space-y-2">
+              <div className="rounded-xl bg-[#07080a] p-4 border border-white/[0.06] font-mono-code text-xs text-neutral-400 space-y-2 overflow-x-auto">
                 <div className="text-neutral-500 pb-2 border-b border-white/[0.04] flex items-center justify-between">
                   <span>docker-compose.yml (Manually Maintained)</span>
                   <span className="text-red-400">Prone to Drift</span>
@@ -94,7 +94,7 @@ export function DriftComparison() {
               </p>
 
               {/* Code Snippet: Anode inspect */}
-              <div className="rounded-xl bg-[#06070a] p-4 border border-cyan-500/20 font-mono-code text-xs text-neutral-300 space-y-2">
+              <div className="rounded-xl bg-[#06070a] p-4 border border-cyan-500/20 font-mono-code text-xs text-neutral-300 space-y-2 overflow-x-auto">
                 <div className="text-cyan-400/80 pb-2 border-b border-cyan-500/10 flex items-center justify-between">
                   <span>anode inspect (Auto-derived from Go AST)</span>
                   <span className="text-emerald-400 font-bold">Zero YAML</span>

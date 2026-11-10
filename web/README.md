@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Anode Web Application & Documentation Hub
 
-## Getting Started
+The official website, interactive documentation, and engineering journal for **Anode** — the bare-metal Go backend orchestrator that replaces Dockerfiles and Kubernetes with the 4-Pillar Proof of Topology.
 
-First, run the development server:
+Built with a high-end, tactile developer aesthetic inspired by Resend, Vercel, and Linear.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 🎨 Visual System & Technology Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Framework** | **Next.js 15 (App Router)** | React Server Components, client hydration, and edge-ready static prerendering |
+| **Language** | **TypeScript** | Strict compile-time typing for UI state and documentation trees |
+| **Styling** | **Tailwind CSS v4** | Rapid tokenized CSS layout with obsidian dark mode (`#08090b`) |
+| **Animations** | **Motion (`motion/react`)** | Spring physics, tab transitions, interactive pipeline step visualizers |
+| **Smooth Scrolling** | **Lenis** | Butter-smooth momentum wheel scrolling with auto-resize observers |
+| **Icons** | **Lucide React + Devicon SVG** | Pixel-crisp iconography and custom standard SVGs |
+| **Package Manager** | **Bun** | Sub-second package installs and local script execution |
+
+---
+
+## 📁 Project Architecture
+
+```
+web/
+├── public/                 # Static assets, favicons, branding
+├── src/
+│   ├── app/
+│   │   ├── layout.tsx      # Root HTML layout with SmoothScroll and metadata
+│   │   ├── globals.css     # Dark mode tokens, grid & dot meshes, glassmorphism
+│   │   ├── page.tsx        # Hero landing page & interactive terminal showcase
+│   │   ├── docs/
+│   │   │   └── page.tsx    # Interactive searchable documentation & CLI guides
+│   │   └── blog/
+│   │       └── page.tsx    # Technical engineering journal & architectural essays
+│   ├── components/
+│   │   ├── Navbar.tsx      # Floating glassmorphic header with mobile drawer
+│   │   ├── Hero.tsx        # Ambient radial glow, copyable install, hero badge
+│   │   ├── InteractiveTerminal.tsx # Simulated CLI (inspect, dev, lockfile tabs)
+│   │   ├── TopologyPipeline.tsx    # Interactive 4-Pillar pipeline node visualizer
+│   │   ├── DriftComparison.tsx     # Split-diff Docker Compose vs Anode engine
+│   │   ├── BentoPillars.tsx        # 4 Bento cards with cursor spotlight beam
+│   │   ├── BenchmarkSection.tsx    # 8ms cold starts vs 1420ms container metrics
+│   │   ├── QuickstartSection.tsx   # 60-second copyable command walkthrough
+│   │   ├── SmoothScroll.tsx        # Responsive Lenis wrapper with height tracking
+│   │   ├── Icons.tsx               # Standard SVG components (GitHub, Go)
+│   │   └── Footer.tsx              # Minimalist technical footer with verification
+│   └── lib/
+│       └── utils.ts        # Tailwind merge & clsx utilities
+├── package.json            # Scripts and dependencies
+└── tsconfig.json           # Path aliases (@/* -> src/*)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🚀 Local Development
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Ensure [Bun](https://bun.sh) is installed on your workstation:
 
-## Learn More
+```bash
+# Install dependencies
+bun install
 
-To learn more about Next.js, take a look at the following resources:
+# Start development server
+bun dev
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Build production bundle
+bun run build
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Preview production build locally
+bun start
+```
 
-## Deploy on Vercel
+Visit [http://localhost:3000](http://localhost:3000) in your browser.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📖 Key Sections
+
+### 1. Landing Page (`/`)
+* **Live Interactive Terminal**: Switch between `anode inspect`, `anode dev`, and `anode.lock.json` with animated syntax highlighting.
+* **Proof of Topology Flow**: Visual pipeline showing Go AST parsing, VTA call-graph dead-code pruning, and Linux systemd synthesis.
+* **Architecture Drift Comparison**: Side-by-side split comparison demonstrating why YAML-based Docker declarations drift from code.
+* **The 4 Pillars Bento Grid**: Cards with cursor-following radial spotlight lighting.
+
+### 2. Interactive Documentation (`/docs`)
+* Full, self-contained documentation with instant search filtering.
+* Complete CLI command reference, compiler theory breakdowns, dynamic ephemeral port mechanics, and bare-metal systemd unit templates.
+* Architectural comparison table contrasting Anode against Kubernetes, Docker Compose, Encore, and Terraform.
+
+### 3. Engineering Journal (`/blog`)
+* Long-form, publication-grade architectural essays:
+  - *Why We Killed Dockerfiles: The 4-Pillar Proof of Topology*
+  - *Solving Infrastructure-from-Code with SSA & Variable Type Analysis in Go*
+  - *Bare-Metal systemd vs Docker: Benchmarking Cold Starts & Memory Overhead*
+  - *Multi-Node Bin-Packing and Compiler-Generated Zero-Trust Firewalls (`nftables`)*
+
+---
+
+## 🚢 Deployment
+
+The website prerenders 100% statically and can be deployed with zero configuration on:
+
+* **Vercel**: Push to GitHub and import repository; build command is `bun run build`.
+* **Cloudflare Pages / Netlify / VPS**: Run `bun run build` and serve the generated output.

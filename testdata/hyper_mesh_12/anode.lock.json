@@ -1,0 +1,386 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-clickhouse-audit": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/auditlog/main.go:17"
+    },
+    "db-external-catalog-db": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/catalog/main.go:17"
+    },
+    "db-fulfillment": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/fulfillment/main.go:15",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/fulfillment",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-orders": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/orders/main.go:16",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/orders",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-userprofile": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/userprofile/main.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/userprofile",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "redis-auth": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/auth/main.go:20"
+    },
+    "redis-inventory": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/inventory/main.go:17"
+    }
+  },
+  "services": {
+    "analytics": {
+      "name": "analytics",
+      "entrypoint": "./services/analytics",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/analytics/summary"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": []
+    },
+    "apigateway": {
+      "name": "apigateway",
+      "entrypoint": "./services/apigateway",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /api/v1/auth/verify",
+            "POST /api/v1/orders"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "auth",
+          "protocol": "http",
+          "interface": "/v1/auth/token",
+          "inject_env": "AUTH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:20"
+        },
+        {
+          "service_ref": "orders",
+          "protocol": "http",
+          "interface": "/v1/orders",
+          "inject_env": "ORDERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:26"
+        }
+      ],
+      "secrets": []
+    },
+    "auditlog": {
+      "name": "auditlog",
+      "entrypoint": "./services/auditlog",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/audit/log"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-clickhouse-audit",
+          "protocol": "clickhouse",
+          "inject_env": "CLICKHOUSE_AUDIT_URL",
+          "expanded_env": [
+            "CLICKHOUSE_AUDIT_URL"
+          ],
+          "provenance": "services/auditlog/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "auth": {
+      "name": "auth",
+      "entrypoint": "./services/auth",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/auth/token"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-auth",
+          "protocol": "redis",
+          "inject_env": "AUTH_REDIS_ADDR",
+          "provenance": "services/auth/main.go:20"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "JWT_SIGNING_SECRET_KEY",
+          "provenance": "services/auth/main.go:18"
+        }
+      ]
+    },
+    "catalog": {
+      "name": "catalog",
+      "entrypoint": "./services/catalog",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/catalog/items"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-external-catalog-db",
+          "protocol": "postgres",
+          "inject_env": "EXTERNAL_CATALOG_DB_URL",
+          "expanded_env": [
+            "EXTERNAL_CATALOG_DB_URL"
+          ],
+          "provenance": "services/catalog/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "fulfillment": {
+      "name": "fulfillment",
+      "entrypoint": "./services/fulfillment",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/fulfillment/dispatch"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-fulfillment",
+          "protocol": "postgres",
+          "inject_env": "",
+          "expanded_env": [
+            "FULFILLMENT_DB_USER",
+            "FULFILLMENT_DB_PASSWORD",
+            "FULFILLMENT_DB_HOST",
+            "FULFILLMENT_DB_NAME",
+            "FULFILLMENT_SSLMODE"
+          ],
+          "provenance": "services/fulfillment/main.go:15"
+        },
+        {
+          "service_ref": "notifications",
+          "protocol": "http",
+          "interface": "/v1/notify/shipment",
+          "inject_env": "NOTIFICATIONS_SERVICE_URL",
+          "provenance": "services/fulfillment/main.go:22"
+        }
+      ],
+      "secrets": []
+    },
+    "inventory": {
+      "name": "inventory",
+      "entrypoint": "./services/inventory",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/inventory/reserve"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-inventory",
+          "protocol": "redis",
+          "inject_env": "INVENTORY_REDIS_ADDR",
+          "provenance": "services/inventory/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "ledger": {
+      "name": "ledger",
+      "entrypoint": "./services/ledger",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterLedgerServiceServer"
+        }
+      ],
+      "bindings": [],
+      "secrets": []
+    },
+    "notifications": {
+      "name": "notifications",
+      "entrypoint": "./services/notifications",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/notify/shipment"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": [
+        {
+          "env_var": "SENDGRID_API_KEY",
+          "provenance": "services/notifications/main.go:15"
+        }
+      ]
+    },
+    "orders": {
+      "name": "orders",
+      "entrypoint": "./services/orders",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/orders"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/charge",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:30"
+        },
+        {
+          "resource_ref": "db-orders",
+          "protocol": "postgres",
+          "inject_env": "",
+          "expanded_env": [
+            "ORDERS_DB_USER",
+            "ORDERS_DB_PASSWORD",
+            "ORDERS_DB_HOST",
+            "ORDERS_DB_NAME",
+            "ORDERS_SSLMODE"
+          ],
+          "provenance": "services/orders/main.go:16"
+        },
+        {
+          "service_ref": "ledger",
+          "protocol": "grpc",
+          "interface": "RegisterLedgerServiceServer",
+          "inject_env": "LEDGER_GRPC_ADDR",
+          "provenance": "services/orders/main.go:21"
+        }
+      ],
+      "secrets": []
+    },
+    "payments": {
+      "name": "payments",
+      "entrypoint": "./services/payments",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/payments/charge"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": [
+        {
+          "env_var": "STRIPE_SECRET_KEY",
+          "provenance": "services/payments/main.go:15"
+        }
+      ]
+    },
+    "userprofile": {
+      "name": "userprofile",
+      "entrypoint": "./services/userprofile",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/users/profile"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-userprofile",
+          "protocol": "postgres",
+          "inject_env": "",
+          "expanded_env": [
+            "USERPROFILE_DB_USER",
+            "USERPROFILE_DB_PASSWORD",
+            "USERPROFILE_DB_HOST",
+            "USERPROFILE_DB_NAME",
+            "USERPROFILE_SSLMODE"
+          ],
+          "provenance": "services/userprofile/main.go:14"
+        }
+      ],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "notifications",
+      "target_host": "https://api.sendgrid.com/v3/mail/send",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "payments",
+      "target_host": "https://api.stripe.com/v1/charges",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
+}

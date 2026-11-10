@@ -17,6 +17,7 @@ import (
 )
 
 const LockFileName = "anode.lock.json"
+var Version = "1.0.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -26,6 +27,9 @@ func main() {
 
 	cmd := os.Args[1]
 	switch cmd {
+	case "version", "-v", "--version":
+		fmt.Printf("anode version %s\n", Version)
+		return
 	case "inspect":
 		targetDir := "."
 		if len(os.Args) > 2 {
@@ -206,4 +210,5 @@ func printUsage() {
 	fmt.Println("  dev [dir]              Run local zero-config developer environment")
 	fmt.Println("  deploy <user@host>     Deploy production release via systemd & SSH")
 	fmt.Println("  cluster                Manage and view multi-node cluster placement")
+	fmt.Println("  version                Show Anode version")
 }

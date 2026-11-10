@@ -1,0 +1,101 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    name: Build Multi-Arch Binaries & Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set Release Version
+        id: vars
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            TAG="${{ github.event.inputs.version }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Build Multi-Platform Binaries
+        env:
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          mkdir -p dist
+          PLATFORMS=(
+            "darwin/amd64"
+            "darwin/arm64"
+            "linux/amd64"
+            "linux/arm64"
+          )
+
+          for PLATFORM in "${PLATFORMS[@]}"; do
+            OS="${PLATFORM%/*}"
+            ARCH="${PLATFORM#*/}"
+            BIN_NAME="anode_${OS}_${ARCH}"
+            OUTPUT_DIR="dist/${BIN_NAME}"
+            mkdir -p "${OUTPUT_DIR}"
+
+            echo "Building for ${OS}/${ARCH}..."
+            CGO_ENABLED=0 GOOS="${OS}" GOARCH="${ARCH}" go build \
+              -ldflags="-s -w -X main.Version=${VERSION}" \
+              -o "${OUTPUT_DIR}/anode" \
+              ./cmd/anode
+
+            # Package tarball
+            tar -czf "dist/${BIN_NAME}.tar.gz" -C "${OUTPUT_DIR}" anode
+          done
+
+      - name: Generate Checksums
+        working-directory: dist
+        run: |
+          sha256sum anode_*.tar.gz > checksums.txt
+          cat checksums.txt
+
+      - name: Extract Release Notes from Changelog
+        id: notes
+        run: |
+          TAG="${{ steps.vars.outputs.tag }}"
+          # Extract section from CHANGELOG.md matching this tag or fallback
+          if [ -f "CHANGELOG.md" ]; then
+            sed -n "/## \[${TAG#v}\]/,/## \[/p" CHANGELOG.md | sed '$d' > release_notes.md
+          fi
+          if [ ! -s release_notes.md ]; then
+            echo "Release ${TAG}" > release_notes.md
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.vars.outputs.tag }}
+          name: Anode ${{ steps.vars.outputs.tag }}
+          body_path: release_notes.md
+          files: |
+            dist/anode_*.tar.gz
+            dist/checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

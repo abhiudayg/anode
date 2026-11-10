@@ -36,6 +36,19 @@ func (s *SinkInspector) FormatPos(pos token.Pos) string {
 	return fmt.Sprintf("%s:%d", filepath.Base(position.Filename), position.Line)
 }
 
+func hasMigrationFiles(dir string) bool {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".sql") {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc *iag.Service, graph *iag.Graph) {
 	callee := call.StaticCallee()
 	if callee == nil {
@@ -57,15 +70,28 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 
 		driverStr := "postgres"
 		dsnArgIdx := 0
-		if pkgPath == "database/sql" {
+		if pkgPath == "database/sql" && len(call.Args) > 0 {
 			driverStr = ResolveConstantString(call.Args[0])
 			dsnArgIdx = 1
 		} else if len(call.Args) >= 2 {
 			dsnArgIdx = 1 // pgxpool.New(ctx, dsn)
 		}
 
-		envVar := TraceToEnvVar(call.Args[dsnArgIdx])
-		compositeEnvs := TraceCompositeEnvVars(call.Args[dsnArgIdx])
+		kind := iag.KindPostgres
+		if driverStr == "clickhouse" {
+			kind = "clickhouse"
+		} else if driverStr == "mysql" {
+			kind = "mysql"
+		} else if driverStr == "sqlite3" || driverStr == "sqlite" {
+			kind = "sqlite"
+		}
+
+		var envVar string
+		var compositeEnvs []string
+		if len(call.Args) > dsnArgIdx {
+			envVar = TraceToEnvVar(call.Args[dsnArgIdx])
+			compositeEnvs = TraceCompositeEnvVars(call.Args[dsnArgIdx])
+		}
 
 		// Determine resource identity based on service or env name
 		resourceID := "db-" + svc.Name
@@ -77,28 +103,31 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 
 		if _, exists := graph.Resources[resourceID]; !exists {
 			res := iag.Resource{
-				Kind:       iag.KindPostgres,
-				Lifecycle:  iag.LifecycleStatefulRetain,
-				Provenance: provenance,
+				Kind:          kind,
+				Lifecycle:     iag.LifecycleStatefulRetain,
+				AutoProvision: false,
+				Provenance:    provenance,
 			}
 
-			// Migration detection based on conventional workspace paths
+			// Migration detection based on conventional workspace paths with actual SQL files
 			migrationDir := filepath.Join(s.rootDir, "migrations", svc.Name)
-			if stat, err := os.Stat(migrationDir); err == nil && stat.IsDir() {
+			if hasMigrationFiles(migrationDir) {
 				res.Migrations = &iag.MigrationSpec{
 					Tool:      "goose",
 					Path:      filepath.Join("migrations", svc.Name),
 					Execution: "pre_traffic_job",
 				}
+				res.AutoProvision = true
 			} else {
-				// Check for root migrations folder
+				// Check for root migrations folder containing sql files
 				rootMig := filepath.Join(s.rootDir, "migrations")
-				if stat, err := os.Stat(rootMig); err == nil && stat.IsDir() {
+				if hasMigrationFiles(rootMig) {
 					res.Migrations = &iag.MigrationSpec{
 						Tool:      "goose",
 						Path:      "migrations",
 						Execution: "pre_traffic_job",
 					}
+					res.AutoProvision = true
 				}
 			}
 
@@ -107,26 +136,34 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 
 		svc.Bindings = append(svc.Bindings, iag.Binding{
 			ResourceRef: resourceID,
-			Protocol:    "postgres",
+			Protocol:    string(kind),
 			InjectEnv:   envVar,
 			ExpandedEnv: compositeEnvs,
 			Provenance:  provenance,
 		})
-		_ = driverStr
 	}
 
 	// 2. Cache / Redis Sinks:
 	// - github.com/redis/go-redis/v9.NewClient(opts)
 	// - github.com/go-redis/redis/v8.NewClient(opts)
 	if strings.Contains(pkgPath, "redis") && name == "NewClient" && len(call.Args) > 0 {
-		envVar := TraceToEnvVar(call.Args[0])
+		envVar := TraceStructFieldEnvVar(call.Args[0], "Addr")
 		resourceID := "redis-" + svc.Name
+		if envVar != "" {
+			cleaned := strings.ToLower(strings.TrimSuffix(strings.TrimSuffix(envVar, "_ADDR"), "_URL"))
+			cleaned = strings.ReplaceAll(cleaned, "_", "-")
+			if !strings.HasPrefix(cleaned, "redis-") {
+				cleaned = "redis-" + strings.TrimSuffix(cleaned, "-redis")
+			}
+			resourceID = cleaned
+		}
 
 		if _, exists := graph.Resources[resourceID]; !exists {
 			graph.Resources[resourceID] = iag.Resource{
-				Kind:       iag.KindRedis,
-				Lifecycle:  iag.LifecycleStatefulRetain,
-				Provenance: provenance,
+				Kind:          iag.KindRedis,
+				Lifecycle:     iag.LifecycleStatefulRetain,
+				AutoProvision: true,
+				Provenance:    provenance,
 			}
 		}
 
@@ -172,9 +209,6 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 	// 4. HTTP Routes: net/http.ServeMux or Chi / Gin
 	// - ServeMux.HandleFunc(pattern, handler)
 	// - chi.Router.Get/Post(pattern, handler)
-	// 4. HTTP Routes:
-	// - net/http.ServeMux: HandleFunc(pattern, handler)
-	// - chi / gin / gorilla: Get/Post/Put/Delete where package matches a router
 	isRouterMethod := false
 	if name == "HandleFunc" && (strings.Contains(pkgPath, "http") || pkgPath == "") {
 		isRouterMethod = true
@@ -228,32 +262,83 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 
 			// If it's a hardcoded external URL (e.g. https://api.stripe.com/...)
 			if rawURL != "" && IsExternalURL(rawURL) {
-				graph.EgressRules = append(graph.EgressRules, iag.EgressRule{
-					SourceService: svc.Name,
-					TargetHost:    rawURL,
-					Port:          443,
-					Protocol:      "https",
-					IsExternal:    true,
-				})
+				exists := false
+				for _, r := range graph.EgressRules {
+					if r.SourceService == svc.Name && r.TargetHost == rawURL {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					graph.EgressRules = append(graph.EgressRules, iag.EgressRule{
+						SourceService: svc.Name,
+						TargetHost:    rawURL,
+						Port:          443,
+						Protocol:      "https",
+						IsExternal:    true,
+					})
+				}
 			} else if envVar != "" {
-				svc.Bindings = append(svc.Bindings, iag.Binding{
-					ServiceRef: envVar,
-					Protocol:   "http",
-					Interface:  routeSuffix,
-					InjectEnv:  envVar,
-					Provenance: provenance,
-				})
+				exists := false
+				for _, b := range svc.Bindings {
+					if b.InjectEnv == envVar && b.Interface == routeSuffix {
+						exists = true
+						break
+					}
+				}
+				if !exists {
+					svc.Bindings = append(svc.Bindings, iag.Binding{
+						ServiceRef: envVar,
+						Protocol:   "http",
+						Interface:  routeSuffix,
+						InjectEnv:  envVar,
+						Provenance: provenance,
+					})
+				}
 			}
 		}
 	}
 
-	// 6. Typed gRPC stubs: Register<X>Server
+	// 6. Inbound Typed gRPC stubs: Register<X>Server
 	if strings.HasPrefix(name, "Register") && strings.HasSuffix(name, "Server") && len(call.Args) >= 2 {
-		svc.Ingress = append(svc.Ingress, iag.Ingress{
+		portEnv := "PORT"
+		var filteredIngress []iag.Ingress
+		for _, ing := range svc.Ingress {
+			if ing.Protocol == "http" && len(ing.Routes) == 0 {
+				portEnv = ing.PortEnv
+			} else {
+				filteredIngress = append(filteredIngress, ing)
+			}
+		}
+		svc.Ingress = append(filteredIngress, iag.Ingress{
 			Protocol: "grpc",
-			PortEnv:  "PORT",
+			PortEnv:  portEnv,
 			Service:  name,
 		})
+	}
+
+	// 7. Outbound Typed gRPC client stubs: New<X>Client
+	if strings.HasPrefix(name, "New") && strings.HasSuffix(name, "Client") && name != "NewClient" && !strings.Contains(pkgPath, "redis") {
+		serverName := "Register" + strings.TrimPrefix(strings.TrimSuffix(name, "Client"), "New") + "Server"
+		envVar := ""
+		if len(call.Args) > 0 {
+			envVar = TraceToEnvVar(call.Args[0])
+		}
+		exists := false
+		for _, b := range svc.Bindings {
+			if b.Protocol == "grpc" && b.Interface == serverName {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			svc.Bindings = append(svc.Bindings, iag.Binding{
+				Protocol:   "grpc",
+				Interface:  serverName,
+				InjectEnv:  envVar,
+				Provenance: provenance,
+			})
+		}
 	}
 }
 

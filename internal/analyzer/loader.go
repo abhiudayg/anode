@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"fmt"
+	"go/types"
 	"path/filepath"
 	"strings"
 
@@ -18,6 +19,10 @@ type Loader struct {
 }
 
 func NewLoader(rootDir string) *Loader {
+	abs, err := filepath.Abs(rootDir)
+	if err == nil {
+		rootDir = abs
+	}
 	return &Loader{rootDir: rootDir}
 }
 
@@ -117,7 +122,9 @@ func extractServiceName(mainFn *ssa.Function) string {
 func extractEntrypoint(rootDir string, mainFn *ssa.Function) string {
 	if mainFn.Pos().IsValid() {
 		dir := filepath.Dir(mainFn.Prog.Fset.File(mainFn.Pos()).Name())
-		rel, err := filepath.Rel(rootDir, dir)
+		absRoot, _ := filepath.Abs(rootDir)
+		absDir, _ := filepath.Abs(dir)
+		rel, err := filepath.Rel(absRoot, absDir)
 		if err == nil {
 			return "./" + rel
 		}
@@ -134,9 +141,41 @@ func getReachableFunctions(cg *callgraph.Graph, root *ssa.Function) map[*ssa.Fun
 		return reachable
 	}
 
+	validPkgs := make(map[*types.Package]bool)
+	if root.Pkg != nil && root.Pkg.Pkg != nil {
+		var visit func(p *types.Package)
+		visit = func(p *types.Package) {
+			if p == nil || validPkgs[p] {
+				return
+			}
+			validPkgs[p] = true
+			for _, imp := range p.Imports() {
+				visit(imp)
+			}
+		}
+		visit(root.Pkg.Pkg)
+	}
+
 	var queue []*callgraph.Node
-	queue = append(queue, node)
+	if node != nil {
+		queue = append(queue, node)
+	}
 	reachable[root] = true
+
+	// Also seed all anonymous closures defined within the function hierarchy (e.g. HTTP route handlers)
+	var seedAnon func(fn *ssa.Function)
+	seedAnon = func(fn *ssa.Function) {
+		for _, anon := range fn.AnonFuncs {
+			if !reachable[anon] {
+				reachable[anon] = true
+				if anonNode := cg.Nodes[anon]; anonNode != nil {
+					queue = append(queue, anonNode)
+				}
+				seedAnon(anon)
+			}
+		}
+	}
+	seedAnon(root)
 
 	for len(queue) > 0 {
 		curr := queue[0]
@@ -145,6 +184,11 @@ func getReachableFunctions(cg *callgraph.Graph, root *ssa.Function) map[*ssa.Fun
 		for _, edge := range curr.Out {
 			callee := edge.Callee.Func
 			if callee != nil && !reachable[callee] {
+				if len(validPkgs) > 0 && callee.Pkg != nil && callee.Pkg.Pkg != nil {
+					if !validPkgs[callee.Pkg.Pkg] {
+						continue
+					}
+				}
 				reachable[callee] = true
 				if edge.Callee != nil {
 					queue = append(queue, edge.Callee)
