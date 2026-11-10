@@ -231,6 +231,7 @@ Real-world architectures used to stress-test Anode are maintained in [`examples/
 * [**`examples/complex_ecommerce`**](examples/complex_ecommerce/README.md) — 3 services with composite DSN unpacking, pre-traffic migrations, and Stripe/SendGrid egress.
 * [**`examples/benchmark_app`**](examples/benchmark_app/README.md) — Rapid Type Analysis (RTA) dead-code reachability pruning and sub-150ms throughput.
 * [**`examples/hyper_mesh_12`**](examples/hyper_mesh_12/README.md) — **12-microservice flagship stress test** with mixed REST, gRPC stubs, Redis caching, and 3-hop struct pointer indirections.
+* [**`examples/omni_mesh_32`**](examples/omni_mesh_32/README.md) — **32-microservice hyper-scale enterprise benchmark** combining 14 infrastructure backing stores (`postgres`, `clickhouse`, `scylladb`, `mongodb`, `mariadb`, `timescaledb`, `cockroachdb`, `rabbitmq`, `kafka`, `minio`, `temporal`, `qdrant`, `valkey`, `memcached`), gRPC contracts, and zero-trust egress policies.
 
 ---
 

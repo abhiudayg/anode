@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dual environment variable injection: both unified DSN (`DATABASE_URL`) and decomposed credentials (`DB_HOST`, `DB_PORT`, `DB_USER`).
   - Automated migration execution prior to application process boot.
   - Sub-second hot-reloading supervisor.
+- **OmniMesh-32 Enterprise Architecture Benchmark (`examples/omni_mesh_32`)**:
+  - Hyper-scale stress-test benchmark modeling 32 distinct Go microservices.
+  - Multi-driver integration exercising 14 distinct infrastructure services from `defaults.yaml`: PostgreSQL, MariaDB, TimescaleDB, CockroachDB, ScyllaDB, ClickHouse, MongoDB, Redis, Valkey, Memcached, RabbitMQ, Kafka, MinIO, Temporal, and Qdrant.
+  - Automated detection of database migration specs across 7 stateful services, zero-trust external firewall egress rules (Stripe, SendGrid, EasyPost, Avalara, Salesforce), and typed cross-service gRPC contract linking.
 - **Pluggable Infrastructure Catalog & Security Matrix (`internal/catalog`)**:
   - Declarative service catalog (`defaults.yaml`) with 28 out-of-the-box drivers (PostgreSQL, MySQL, MariaDB, CockroachDB, TimescaleDB, Redis, Valkey, KeyDB, Dragonfly, Memcached, Kafka/Redpanda, RabbitMQ, NATS, ClickHouse, MongoDB, ScyllaDB, Cassandra, Elasticsearch, OpenSearch, Meilisearch, Qdrant, Chroma, Milvus, Weaviate, MinIO, Temporal).
   - Version matrix pinning (e.g. Postgres 14/15/16/17, MySQL 8.0/8.4, Redis 6/7) with intelligent fallback resolution.
