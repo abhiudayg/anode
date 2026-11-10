@@ -3,6 +3,7 @@ package deployer
 import (
 	"bytes"
 	"fmt"
+	"net"
 	"strings"
 	"text/template"
 
@@ -56,10 +57,26 @@ func GenerateSystemdUnit(cfg SystemdUnitConfig) (string, error) {
 	return buf.String(), nil
 }
 
+func cleanDomain(raw string) string {
+	if idx := strings.Index(raw, "@"); idx != -1 {
+		raw = raw[idx+1:]
+	}
+	if idx := strings.Index(raw, ":"); idx != -1 {
+		raw = raw[:idx]
+	}
+	return strings.TrimSpace(raw)
+}
+
 // GenerateCaddyfile creates reverse-proxy config with automatic Let's Encrypt TLS
 func GenerateCaddyfile(domain string, lockfile *iag.LockFile, servicePortMap map[string]int) string {
+	clean := cleanDomain(domain)
+	siteAddress := clean
+	if net.ParseIP(clean) != nil || clean == "localhost" || clean == "127.0.0.1" {
+		siteAddress = fmt.Sprintf("http://%s:80", clean)
+	}
+
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s {\n", domain))
+	sb.WriteString(fmt.Sprintf("%s {\n", siteAddress))
 	sb.WriteString("  encode gzip zstd\n")
 
 	for _, svc := range lockfile.Services {

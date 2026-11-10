@@ -18,11 +18,13 @@ func NewBootstrapper(sshClient *SSHClient) *Bootstrapper {
 // BootstrapServer idempotently sets up /var/lib/anode, Caddy, and stateful databases
 func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile) error {
 	fmt.Println("  ⚙ Verifying remote host directories...")
-	setupDirsCmd := `mkdir -p /var/lib/anode/bin \
+	setupDirsCmd := `id -u anode &>/dev/null || useradd -r -s /bin/false anode && \
+                     mkdir -p /var/lib/anode/bin \
                               /var/lib/anode/releases \
                               /var/lib/anode/data \
                               /var/lib/anode/caddy \
-                              /etc/systemd/system`
+                              /etc/systemd/system && \
+                     chown -R anode:anode /var/lib/anode`
 	if _, err := b.ssh.Run(setupDirsCmd); err != nil {
 		return fmt.Errorf("failed to create directory structure on host: %w", err)
 	}

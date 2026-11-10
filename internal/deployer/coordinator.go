@@ -68,21 +68,49 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	fmt.Println("⚡ Step 4: Activating systemd units & health verification...")
 	servicePortMap := make(map[string]int)
 	idx := 0
-	for name, svc := range d.lockfile.Services {
-		port := 21040 + idx
+	for name := range d.lockfile.Services {
+		servicePortMap[name] = 21040 + idx
 		idx++
-		servicePortMap[name] = port
+	}
 
+	for name, svc := range d.lockfile.Services {
+		port := servicePortMap[name]
 		remoteBin := fmt.Sprintf("%s/%s", remoteReleaseDir, name)
+
+		envVars := map[string]string{
+			"PORT": fmt.Sprintf("%d", port),
+		}
+
+		// Inject DB bindings
+		for _, b := range svc.Bindings {
+			envKey := b.InjectEnv
+			if envKey == "" {
+				envKey = strings.ToUpper(svc.Name) + "_DB_URL"
+			}
+			envVars[envKey] = "postgres://postgres:postgres@127.0.0.1:5432/" + b.ResourceRef + "?sslmode=disable"
+		}
+
+		// Inject inter-service discovery URLs
+		for otherName, otherPort := range servicePortMap {
+			if otherName != name {
+				envKey := strings.ToUpper(otherName) + "_SERVICE_URL"
+				envVars[envKey] = fmt.Sprintf("http://127.0.0.1:%d", otherPort)
+			}
+		}
+
+		// Inject secrets
+		for _, s := range svc.Secrets {
+			if _, exists := envVars[s.EnvVar]; !exists {
+				envVars[s.EnvVar] = "anode_secret_placeholder"
+			}
+		}
+
 		unitContent, err := GenerateSystemdUnit(SystemdUnitConfig{
 			ServiceName: svc.Name,
 			Description: fmt.Sprintf("Anode %s (release %s)", svc.Name, releaseID),
 			ExecStart:   remoteBin,
 			WorkingDir:  remoteReleaseDir,
-			EnvVars: map[string]string{
-				"PORT":         fmt.Sprintf("%d", port),
-				"DATABASE_URL": "postgres://postgres:postgres@127.0.0.1:5432/app?sslmode=disable",
-			},
+			EnvVars:     envVars,
 		})
 		if err != nil {
 			return err
