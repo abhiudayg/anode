@@ -1,54 +1,99 @@
-# anode
+<div align="center">
 
-[![Go Version](https://img.shields.io/badge/go-1.22+-blue.svg)](https://golang.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# Anode
 
-**Application-Centric Orchestrator & Topology Compiler (Infrastructure-from-Code without SDK lock-in).**
+### Deploy unmodified Go backends to any Linux VPS without Dockerfiles, Kubernetes, or proprietary SDKs.
 
-Deploy unmodified standard Go microservices to Linux VPS / bare-metal hosts with **zero Dockerfiles, zero Kubernetes YAML, and zero custom SDK imports**.
+[![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Verification: agstack](https://img.shields.io/badge/verified-agstack%20passed-success.svg)](#verification--quality-guarantees)
+[![Architecture: Proof--of--Topology](https://img.shields.io/badge/architecture-4--Pillar%20Topology-purple.svg)](docs/architecture.md)
+
+<p align="center">
+  <a href="#the-problem">The Problem</a> •
+  <a href="#how-it-works">How It Works</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#the-anodelockjson-contract">The Lockfile</a> •
+  <a href="#cli-reference">CLI Reference</a> •
+  <a href="docs/architecture.md">Architecture Deep-Dive</a> •
+  <a href="docs/tradeoffs.md">Tradeoffs & Limits</a>
+</p>
+
+</div>
 
 ---
 
-## The Core Thesis: "Graph-Driven Orchestration"
+## The Problem: You Write Your Architecture Twice
 
-Instead of forcing developers to write and maintain brittle infrastructure files:
-```text
-YAML / HCL -> API Server -> Etcd -> Container Runtime
+Every time you build a Go backend, you declare your architecture twice:
+
+1. **In Go:** You call `sql.Open("postgres", cfg.DBURL)`, listen on `cfg.Port`, and make calls to internal microservices.
+2. **In YAML / Docker:** You write a multi-stage `Dockerfile`, a 50-line `docker-compose.yml`, mount volumes, map host ports (and pray `5432` isn't taken by another project), and manually wire environment variables.
+
+When you add a service or refactor an env var, your code and your configuration immediately drift.
+
+Previous "Infrastructure-from-Code" tools attempted to solve this, but made one of two fatal mistakes:
+* **The SDK Lock-In Trap (Encore, Winglang, Nitric):** They forced you to import non-standard SDKs or rewrite code in a new DSL.
+* **The Regex Guessing Trap (Klotho):** They used syntax pattern-matching that broke on real-world config structs and dynamic wrappers.
+
+---
+
+## The Solution: Graph-Driven Orchestration
+
+**Anode** takes a different bet: **The 4-Pillar Proof-of-Topology Engine.**
+
+Instead of guessing or forcing an SDK, Anode analyzes your Go source code using compiler-backed **Static Single Assignment (SSA)** and **Variable Type Analysis (VTA)** call graphs rooted at `func main()`.
+
+It extracts an immutable, human-readable **`anode.lock.json`** directly from your code, stands up local dependencies with zero port collisions, and deploys directly to Linux VPS boxes using bare-metal primitives: **`systemd`**, **cgroups v2**, **loopback proxies**, and **automated Let's Encrypt TLS**.
+
+```
+┌─────────────────┐       ┌────────────────────────┐       ┌────────────────────┐
+│  Unmodified Go  │ ────> │  Anode SSA / VTA Core  │ ────> │  anode.lock.json   │
+│   Source Code   │       │ (Choke-Point Analyzer) │       │ (Reviewable Proof) │
+└─────────────────┘       └────────────────────────┘       └─────────┬──────────┘
+                                                                     │
+                                    ┌────────────────────────────────┴────────────────────────────────┐
+                                    ▼                                                                 ▼
+                    ┌───────────────────────────────┐                                 ┌───────────────────────────────┐
+                    │     Local Dev (`anode dev`)   │                                 │   Production (`anode deploy`) │
+                    │ • Dynamic Ephemeral Ports     │                                 │ • Cross-compiled Linux binary │
+                    │ • Decomposed Env Injection    │                                 │ • Hardened systemd + cgroups  │
+                    │ • Schema Migration Jobs       │                                 │ • Zero-downtime port swap     │
+                    │ • Sub-second reload loop      │                                 │ • Automated Caddy HTTPS       │
+                    └───────────────────────────────┘                                 └───────────────────────────────┘
 ```
 
-`anode` analyzes your actual application source code via static single-assignment (SSA) compiler IR and variable-type call graphs to extract an **Intermediate Application Graph (IAG)**:
-```text
-Source Code -> Compiler / SSA Analyzer -> Intermediate Application Graph (IAG) -> Runtime Reconciler
+---
+
+## The 4 Pillars of Determinism
+
+1. **Migration-Driven Database Provenance:** Anode provisions a stateful database *only* when verifiable schema migration assets (`migrations/*.sql`, Goose, etc.) exist alongside the service. If no migrations exist, Anode treats the database as an external unmanaged service—zero guessing.
+2. **Typed Interface Linking:** Microservice RPC connections are matched 1:1 using generated Protobuf service descriptors (`payment.v1.PaymentService`) and router route tables (`POST /v1/orders`), with zero naming heuristics.
+3. **The Commit-Backed `anode.lock.json`:** Every run of `anode inspect` emits a human-readable lockfile committed to Git. Platform engineers review the exact topology in pull requests, and `anode dev` / `anode deploy` treat it as an immutable contract.
+4. **Actionable Build-Time Diagnostics:** If an outbound target or dynamic DSN cannot be mathematically resolved, Anode reports a precise compiler warning with `file:line` provenance and a concrete fix—never failing silently at runtime.
+
+---
+
+## Quick Start
+
+### 1. Install Anode
+
+```bash
+# Clone and build single static binary
+git clone https://github.com/abhiudayg/anode.git
+cd anode
+go build -o /usr/local/bin/anode ./cmd/anode
 ```
 
----
+### 2. Inspect Any Go Repository
 
-## Key Principles
+Point Anode at any Go multi-service repo or monorepo:
 
-1. **Zero SDK Lock-In:** Write standard Go code using standard libraries (`net/http`, `database/sql`, `pgx`, `grpc-go`). If you stop using `anode`, your code requires zero refactoring.
-2. **Compiler-Grade Precision (No Regex / No AST Guesswork):** Built on `golang.org/x/tools/go/packages`, `go/ssa`, and **Variable Type Analysis (VTA)** call graphs rooted at `func main()`.
-   - **Dead Code Pruning:** Uncalled drivers and helpers are mathematically pruned before infrastructure is emitted.
-   - **Field-Sensitive Backward Taint Tracking:** Traces dynamic connection strings and environment variables across function boundaries and struct allocations.
-3. **PaaS Simplicity on $5–$40 Bare Metal / VPS:** Deploy to any Linux server over SSH (`systemd`, cgroups v2, dynamic loopback routing, automatic Let's Encrypt TLS) without Kubernetes overhead.
-
----
-
-## Architecture Pipeline
-
-```mermaid
-flowchart LR
-    A["Go Source Code\n(Standard Library / pgx / chi / gRPC)"] --> B["SSA Loader & VTA Call Graph\n(go/packages + go/ssa)"]
-    B --> C["Sink & Taint Inspector\n(Backward Data-Flow Analysis)"]
-    C --> D["Intermediate Application Graph\n(iag.json)"]
-    D --> E["Local Dev Engine\n(Docker / Podman API)"]
-    D --> F["Production Deployer\n(systemd + SSH + Caddy)"]
+```bash
+anode inspect ./testdata/sample-shop
 ```
 
----
-
-## Intermediate Application Graph (`iag.json`)
-
-Running `anode inspect` emits a deterministic topology graph detailing services, ingress routes, stateful database dependencies, and secrets with exact source code provenance:
+Anode inspects the call graph, prunes dead code, and writes the topology to `anode.lock.json`:
 
 ```json
 {
@@ -57,77 +102,73 @@ Running `anode inspect` emits a deterministic topology graph detailing services,
     "db-orders": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
-      "provenance": "orders/main.go:40"
-    },
-    "db-payments-db": {
-      "kind": "postgres",
-      "lifecycle": "stateful_retain",
-      "provenance": "payments/main.go:31"
+      "auto_provision": true,
+      "provenance": "services/orders/main.go:40",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/orders",
+        "execution": "pre_traffic_job"
+      }
     }
   },
-  "services": [
-    {
+  "services": {
+    "orders": {
       "name": "orders",
-      "entrypoint": "./orders",
-      "ingress": [
-        {
-          "protocol": "http",
-          "port_env": "PORT",
-          "routes": [
-            "POST /v1/orders"
-          ]
-        }
-      ],
-      "bindings": [
-        {
-          "resource_ref": "db-orders",
-          "protocol": "postgres",
-          "inject_env": "ORDERS_DB_URL",
-          "provenance": "orders/main.go:40"
-        }
-      ],
-      "secrets": [
-        {
-          "env_var": "STRIPE_SECRET_KEY",
-          "provenance": "orders/main.go:27"
-        }
-      ]
+      "entrypoint": "./services/orders",
+      "ingress": [{ "protocol": "http", "port_env": "PORT", "routes": ["POST /v1/orders"] }],
+      "bindings": [{ "resource_ref": "db-orders", "inject_env": "DATABASE_URL" }]
     }
-  ]
+  }
 }
 ```
 
----
-
-## Installation & CLI Usage
-
-### Build from Source
+### 3. Run Locally with Zero Port Collisions
 
 ```bash
-git clone https://github.com/abhiudayg/anode.git
-cd anode
-go build -o anode ./cmd/anode
+anode dev ./testdata/sample-shop
 ```
 
-### Commands
+Anode assigns ephemeral loopback ports, injects unified (`DATABASE_URL`) and decomposed (`DB_HOST`, `DB_PORT`) credentials, runs migrations, and links microservices automatically.
 
-* **`anode inspect [path]`**: Statically analyze a Go repository or monorepo and emit the formatted `iag.json`.
-  ```bash
-  anode inspect ./testdata/sample-shop
-  ```
-* **`anode dev`** *(Phase 2 - In Progress)*: Auto-provision local dependencies (Postgres/Redis), inject dynamic connection strings, run database migrations, and watch for hot-reloads.
-* **`anode deploy <user@host>`** *(Phase 3)*: Cross-compile static Linux binaries, provision remote systemd services, configure zero-downtime swaps, and issue automatic TLS certificates.
+### 4. Deploy to Bare-Metal Linux VPS
+
+```bash
+anode deploy root@my-hetzner-box ./testdata/sample-shop
+```
+
+In under 30 seconds:
+* Cross-compiles static Linux binaries (`CGO_ENABLED=0 GOOS=linux`).
+* Provisions persistent systemd units with cgroups v2 resource quotas.
+* Configures Caddy with automated Let's Encrypt TLS certificates.
+* Performs a health-checked zero-downtime port swap.
 
 ---
 
-## Project Roadmap
+## CLI Reference
 
-| Phase | Milestone | Status |
-| :--- | :--- | :---: |
-| **Phase 1** | **Compiler Core (`anode inspect`)**: SSA loader, VTA call-graph reachability, backward taint tracking for structs/env, and IAG schema v1. | **Complete** |
-| **Phase 2** | **Local Zero-Config Dev (`anode dev`)**: Docker-backed state provisioner, automated schema migration execution (`goose`/SQL), and sub-500ms watch loop. | In Progress |
-| **Phase 3** | **Single-Host Production (`anode deploy`)**: SSH bootstrap, systemd unit generation, zero-downtime port swaps, and automatic Let's Encrypt TLS. | Planned |
-| **Phase 4** | **Invisible Elasticity**: Multi-host pooling, automated WAL S3 backups, and compiler-generated eBPF/nftables zero-trust policies. | Planned |
+| Command | Description |
+| :--- | :--- |
+| `anode inspect [dir]` | Compiles workspace SSA, executes VTA reachability, and writes `anode.lock.json`. |
+| `anode dev [dir]` | Allocates free ports, injects database credentials, and runs local service instances. |
+| `anode deploy <user@host> [dir]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
+| `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
+
+---
+
+## Documentation
+
+* 📖 **[Architecture Deep-Dive](docs/architecture.md)** — Whole-program SSA, Variable Type Analysis (VTA), backward taint tracking, and stdlib choke points.
+* ⚖️ **[Tradeoffs & Known Limits](docs/tradeoffs.md)** — What Anode does, what it intentionally refuses to do, and comparison with Kubernetes/Encore.
+* 🔒 **[The Lockfile Specification](docs/architecture.md#the-anodelockjson-specification)** — Full schema reference for `anode.lock.json`.
+
+---
+
+## Verification & Quality Guarantees
+
+Anode is engineered under strict **`agstack`** verification policies:
+* **Harness:** Run `.verify/run.sh` or `agent-brain verify run`.
+* **Zero AI Comment Slop:** Self-documenting code with zero narration comments.
+* **Hermetic Isolation:** All runtime test artifacts, compiled test binaries, and extracted lockfiles are strictly isolated under `.verify/`.
 
 ---
 

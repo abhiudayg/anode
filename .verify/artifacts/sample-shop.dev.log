@@ -1,8 +1,8 @@
 🚀 Starting anode dev environment for ./testdata/sample-shop...
 
 📋 Planned Service Topology & Injected Ports:
-  • orders: PORT=54121
-  • payments: PORT=54122
+  • payments: PORT=55009
+  • orders: PORT=55008
 
 📦 Stateful Infrastructure Status:
   • db-orders (postgres): External Unmanaged (no local migrations)
