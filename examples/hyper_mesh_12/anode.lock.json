@@ -90,18 +90,18 @@
       ],
       "bindings": [
         {
-          "service_ref": "auth",
-          "protocol": "http",
-          "interface": "/v1/auth/token",
-          "inject_env": "AUTH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:20"
-        },
-        {
           "service_ref": "orders",
           "protocol": "http",
           "interface": "/v1/orders",
           "inject_env": "ORDERS_SERVICE_URL",
           "provenance": "services/apigateway/main.go:26"
+        },
+        {
+          "service_ref": "auth",
+          "protocol": "http",
+          "interface": "/v1/auth/token",
+          "inject_env": "AUTH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:20"
         }
       ],
       "secrets": []

@@ -33,6 +33,33 @@ func TestBinPacking(t *testing.T) {
 	}
 }
 
+func TestBinPackingEdgeVsWorker(t *testing.T) {
+	pool := cluster.NewClusterPool()
+	pool.RegisterNode("edge-1", "10.0.0.1", "edge", 2048)
+	pool.RegisterNode("worker-1", "10.0.0.2", "worker", 8192)
+
+	services := map[string]iag.Service{
+		"api-gateway": {
+			Name: "api-gateway",
+			Ingress: []iag.Ingress{
+				{Protocol: "http", Routes: []string{"GET /"}},
+			},
+		},
+		"backend-worker": {
+			Name: "backend-worker",
+		},
+	}
+
+	placement, err := pool.BinPack(services)
+	if err != nil {
+		t.Fatalf("BinPack failed: %v", err)
+	}
+
+	if len(placement) != 2 {
+		t.Errorf("expected 2 placed services")
+	}
+}
+
 func TestZeroTrustFirewall(t *testing.T) {
 	svc := iag.Service{Name: "orders"}
 	rules := cluster.GenerateZeroTrustNftables(svc, []string{"10.0.0.5/32"})
@@ -42,5 +69,8 @@ func TestZeroTrustFirewall(t *testing.T) {
 	}
 	if !strings.Contains(rules, "ip daddr 10.0.0.5/32 accept") {
 		t.Errorf("expected allowed subnet rule")
+	}
+	if !strings.Contains(rules, "drop") {
+		t.Errorf("expected default drop policy in zero-trust rules")
 	}
 }
