@@ -5,7 +5,7 @@ ok  	github.com/abhiudayg/anode/internal/iag	(cached)
 === RUN   TestPlanEnvVariables
 --- PASS: TestPlanEnvVariables (0.00s)
 PASS
-ok  	github.com/abhiudayg/anode/internal/devengine	0.555s
+ok  	github.com/abhiudayg/anode/internal/devengine	(cached)
 === RUN   TestGenerateSystemdUnit
 --- PASS: TestGenerateSystemdUnit (0.00s)
 === RUN   TestGenerateCaddyfile

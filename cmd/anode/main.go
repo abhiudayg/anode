@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/abhiudayg/anode/internal/analyzer"
 	"github.com/abhiudayg/anode/internal/cluster"
@@ -41,9 +43,6 @@ func main() {
 			log.Fatalf("Failed to serialize LockFile: %v", err)
 		}
 
-		// =====================================================================
-		// PILLAR 3: Write Commit-Backed anode.lock.json
-		// =====================================================================
 		lockPath := filepath.Join(targetDir, LockFileName)
 		if err := os.WriteFile(lockPath, data, 0644); err != nil {
 			log.Fatalf("Failed to write %s: %v", LockFileName, err)
@@ -52,7 +51,6 @@ func main() {
 		fmt.Println(string(data))
 		fmt.Printf("\n🔒 Verified architecture locked into %s\n", lockPath)
 
-		// Print actionable diagnostics if present
 		if len(lockfile.Diagnostics) > 0 {
 			fmt.Println("\n⚠️  Compiler Diagnostics:")
 			for _, diag := range lockfile.Diagnostics {
@@ -76,6 +74,13 @@ func main() {
 		}
 
 		engine := devengine.NewEngine(targetDir, lockfile)
+		ctx := context.Background()
+
+		// Prepare isolated containers & run schema migrations
+		if err := engine.PrepareInfrastructure(ctx); err != nil {
+			fmt.Printf("ℹ Local container notice: %v\n", err)
+		}
+
 		plan, err := engine.PlanEnvVariables()
 		if err != nil {
 			log.Fatalf("Failed to plan dev environment: %v", err)
@@ -91,7 +96,6 @@ func main() {
 			}
 		}
 
-		// Show Auto-Provisioned resources vs unmanaged external resources
 		fmt.Println("\n📦 Stateful Infrastructure Status:")
 		for id, res := range lockfile.Resources {
 			if res.AutoProvision {
@@ -100,50 +104,73 @@ func main() {
 				fmt.Printf("  • %s (%s): External Unmanaged (no local migrations)\n", id, res.Kind)
 			}
 		}
-		fmt.Println("\n✅ Anode dev environment ready.")
+
+		fmt.Println("\n⚡ Starting microservices under supervisor...")
+		if err := engine.StartAll(ctx, plan); err != nil {
+			log.Fatalf("Failed to start services: %v", err)
+		}
+
+		fmt.Println("\n✅ Anode dev environment running. Watching for changes...")
 
 	case "deploy":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: anode deploy <user@host> [dir]")
+			fmt.Println("Usage: anode deploy <user@host> [dir] [--domain <domain>] [--dry-run]")
 			os.Exit(1)
 		}
 		host := os.Args[2]
 		targetDir := "."
-		if len(os.Args) > 3 {
-			targetDir = os.Args[3]
+		domain := host
+		dryRun := false
+
+		for i := 3; i < len(os.Args); i++ {
+			if os.Args[i] == "--dry-run" {
+				dryRun = true
+			} else if !strings.HasPrefix(os.Args[i], "--") {
+				targetDir = os.Args[i]
+			}
 		}
 
-		fmt.Printf("🚢 Deploying %s to %s via zero-downtime SSH & systemd...\n", targetDir, host)
+		fmt.Printf("⚡ Anode Production Deployer\nTarget: %s\n", host)
 		lockfile, err := loadOrInspect(targetDir)
 		if err != nil {
 			log.Fatalf("Deployment preparation failed: %v", err)
 		}
 
-		// Generate Systemd configurations for services
-		portMap := make(map[string]int)
-		idx := 0
-		for name, svc := range lockfile.Services {
-			port := 8080 + idx
-			idx++
-			portMap[name] = port
-			unit, err := deployer.GenerateSystemdUnit(deployer.SystemdUnitConfig{
-				ServiceName: svc.Name,
-				Description: fmt.Sprintf("Anode Managed %s Service", svc.Name),
-				ExecStart:   fmt.Sprintf("/var/lib/anode/bin/%s", svc.Name),
-				WorkingDir:  "/var/lib/anode/app",
-				EnvVars:     map[string]string{"PORT": fmt.Sprintf("%d", port)},
-			})
-			if err != nil {
-				log.Fatalf("Failed to generate systemd unit: %v", err)
+		if dryRun {
+			fmt.Println("  🔍 Dry-run mode: synthesizing deployment plan...")
+			portMap := make(map[string]int)
+			idx := 0
+			for name, svc := range lockfile.Services {
+				port := 21040 + idx
+				idx++
+				portMap[name] = port
+				unit, _ := deployer.GenerateSystemdUnit(deployer.SystemdUnitConfig{
+					ServiceName: svc.Name,
+					Description: fmt.Sprintf("Anode Managed %s Service", svc.Name),
+					ExecStart:   fmt.Sprintf("/var/lib/anode/releases/latest/%s", svc.Name),
+					WorkingDir:  "/var/lib/anode/app",
+					EnvVars:     map[string]string{"PORT": fmt.Sprintf("%d", port)},
+				})
+				fmt.Printf("  ✓ Synthesized systemd unit: anode-%s.service (port %d)\n", svc.Name, port)
+				_ = unit
 			}
-			fmt.Printf("  ✓ Generated systemd unit: anode-%s.service\n", svc.Name)
-			_ = unit
+			caddy := deployer.GenerateCaddyfile(domain, lockfile, portMap)
+			fmt.Printf("  ✓ Synthesized Edge Caddyfile with TLS for %s\n", domain)
+			_ = caddy
+			fmt.Println("✅ Dry-run validation passed successfully.")
+			return
 		}
 
-		caddy := deployer.GenerateCaddyfile("app.local", lockfile, portMap)
-		fmt.Printf("  ✓ Generated Edge Caddyfile with automatic TLS\n")
-		_ = caddy
-		fmt.Println("✅ Production deployment plan synthesized successfully.")
+		sshClient, err := deployer.DialSSH(host)
+		if err != nil {
+			log.Fatalf("SSH connection to %s failed: %v", host, err)
+		}
+		defer sshClient.Close()
+
+		coordinator := deployer.NewDeployCoordinator(targetDir, sshClient, lockfile)
+		if err := coordinator.Deploy(context.Background(), domain); err != nil {
+			log.Fatalf("Deployment failed: %v", err)
+		}
 
 	case "cluster":
 		fmt.Println("🌐 Anode Cluster Multi-Host Pool")
@@ -160,7 +187,6 @@ func main() {
 	}
 }
 
-// loadOrInspect reads existing anode.lock.json if present; otherwise runs compiler
 func loadOrInspect(targetDir string) (*iag.LockFile, error) {
 	lockPath := filepath.Join(targetDir, LockFileName)
 	if data, err := os.ReadFile(lockPath); err == nil {

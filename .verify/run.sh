@@ -22,6 +22,6 @@ echo "=== 5. Testing CLI dev planning on sample-shop ==="
 .verify/output/anode dev ./testdata/sample-shop > .verify/artifacts/sample-shop.dev.log
 
 echo "=== 6. Testing CLI deploy synthesis on sample-shop ==="
-.verify/output/anode deploy root@192.168.1.100 ./testdata/sample-shop > .verify/artifacts/sample-shop.deploy.log
+.verify/output/anode deploy root@192.168.1.100 ./testdata/sample-shop --dry-run > .verify/artifacts/sample-shop.deploy.log
 
 echo "=== Verification Suite Passed Successfully ==="

@@ -1,12 +1,14 @@
 🚀 Starting anode dev environment for ./testdata/sample-shop...
 
 📋 Planned Service Topology & Injected Ports:
-  • orders: PORT=56718
-  • payments: PORT=56719
+  • orders: PORT=61138
+  • payments: PORT=61139
       -> PAYMENTS_DB_URL=postgres://postgres:postgres@127.0.0.1:5432/db-payments-db?sslmode=disable
 
 📦 Stateful Infrastructure Status:
   • db-orders (postgres): External Unmanaged (no local migrations)
   • db-payments-db (postgres): External Unmanaged (no local migrations)
 
-✅ Anode dev environment ready.
+⚡ Starting microservices under supervisor...
+
+✅ Anode dev environment running. Watching for changes...

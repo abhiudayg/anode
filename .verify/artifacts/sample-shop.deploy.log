@@ -1,5 +1,7 @@
-🚢 Deploying ./testdata/sample-shop to root@192.168.1.100 via zero-downtime SSH & systemd...
-  ✓ Generated systemd unit: anode-orders.service
-  ✓ Generated systemd unit: anode-payments.service
-  ✓ Generated Edge Caddyfile with automatic TLS
-✅ Production deployment plan synthesized successfully.
+⚡ Anode Production Deployer
+Target: root@192.168.1.100
+  🔍 Dry-run mode: synthesizing deployment plan...
+  ✓ Synthesized systemd unit: anode-orders.service (port 21040)
+  ✓ Synthesized systemd unit: anode-payments.service (port 21041)
+  ✓ Synthesized Edge Caddyfile with TLS for root@192.168.1.100
+✅ Dry-run validation passed successfully.
