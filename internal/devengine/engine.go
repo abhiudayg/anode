@@ -22,15 +22,15 @@ type ServiceInstance struct {
 
 type Engine struct {
 	rootDir   string
-	graph     *iag.Graph
+	lockfile  *iag.LockFile
 	mu        sync.Mutex
 	instances map[string]*ServiceInstance
 }
 
-func NewEngine(rootDir string, graph *iag.Graph) *Engine {
+func NewEngine(rootDir string, lockfile *iag.LockFile) *Engine {
 	return &Engine{
 		rootDir:   rootDir,
-		graph:     graph,
+		lockfile:  lockfile,
 		instances: make(map[string]*ServiceInstance),
 	}
 }
@@ -58,46 +58,48 @@ func (e *Engine) PlanEnvVariables() (map[string]map[string]string, error) {
 	servicePorts := make(map[string]int)
 
 	// Allocate a dynamic port for each service
-	for _, svc := range e.graph.Services {
+	for name := range e.lockfile.Services {
 		port, err := AllocateFreePort()
 		if err != nil {
-			return nil, fmt.Errorf("failed to allocate port for service %s: %w", svc.Name, err)
+			return nil, fmt.Errorf("failed to allocate port for service %s: %w", name, err)
 		}
-		servicePorts[svc.Name] = port
-		envPlan[svc.Name] = map[string]string{
+		servicePorts[name] = port
+		envPlan[name] = map[string]string{
 			"PORT": fmt.Sprintf("%d", port),
 		}
 	}
 
 	// Resolve Bindings & inject both composite and unified env vars
-	for _, svc := range e.graph.Services {
+	for name, svc := range e.lockfile.Services {
 		for _, b := range svc.Bindings {
 			if b.ResourceRef != "" {
-				res := e.graph.Resources[b.ResourceRef]
+				res := e.lockfile.Resources[b.ResourceRef]
 				if res.Kind == iag.KindPostgres {
 					dbName := b.ResourceRef
-					// Standard unified connection string
-					if b.InjectEnv != "" {
-						envPlan[svc.Name][b.InjectEnv] = fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:5432/%s?sslmode=disable", dbName)
-					}
-					// Also inject decomposed credentials (DB_HOST, DB_PORT, etc.) if requested by code
-					for _, exp := range b.ExpandedEnv {
-						switch exp {
-						case "DB_HOST", "DATABASE_HOST", "POSTGRES_HOST":
-							envPlan[svc.Name][exp] = "127.0.0.1"
-						case "DB_PORT", "DATABASE_PORT", "POSTGRES_PORT":
-							envPlan[svc.Name][exp] = "5432"
-						case "DB_USER", "DATABASE_USER", "POSTGRES_USER":
-							envPlan[svc.Name][exp] = "postgres"
-						case "DB_PASS", "DB_PASSWORD", "DATABASE_PASSWORD":
-							envPlan[svc.Name][exp] = "postgres"
-						case "DB_NAME", "DATABASE_NAME":
-							envPlan[svc.Name][exp] = dbName
+					// PILLAR 1: Check AutoProvision status
+					if res.AutoProvision {
+						if b.InjectEnv != "" {
+							envPlan[name][b.InjectEnv] = fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:5432/%s?sslmode=disable", dbName)
+						}
+						// Inject decomposed credentials (DB_HOST, DB_PORT, etc.) if requested by code
+						for _, exp := range b.ExpandedEnv {
+							switch exp {
+							case "DB_HOST", "DATABASE_HOST", "POSTGRES_HOST":
+								envPlan[name][exp] = "127.0.0.1"
+							case "DB_PORT", "DATABASE_PORT", "POSTGRES_PORT":
+								envPlan[name][exp] = "5432"
+							case "DB_USER", "DATABASE_USER", "POSTGRES_USER":
+								envPlan[name][exp] = "postgres"
+							case "DB_PASS", "DB_PASSWORD", "DATABASE_PASSWORD":
+								envPlan[name][exp] = "postgres"
+							case "DB_NAME", "DATABASE_NAME":
+								envPlan[name][exp] = dbName
+							}
 						}
 					}
 				} else if res.Kind == iag.KindRedis {
 					if b.InjectEnv != "" {
-						envPlan[svc.Name][b.InjectEnv] = "127.0.0.1:6379"
+						envPlan[name][b.InjectEnv] = "127.0.0.1:6379"
 					}
 				}
 			}
@@ -106,7 +108,7 @@ func (e *Engine) PlanEnvVariables() (map[string]map[string]string, error) {
 			if b.ServiceRef != "" && b.InjectEnv != "" {
 				targetPort := servicePorts[b.ServiceRef]
 				if targetPort > 0 {
-					envPlan[svc.Name][b.InjectEnv] = fmt.Sprintf("http://127.0.0.1:%d", targetPort)
+					envPlan[name][b.InjectEnv] = fmt.Sprintf("http://127.0.0.1:%d", targetPort)
 				}
 			}
 		}

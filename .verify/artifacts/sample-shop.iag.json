@@ -4,16 +4,18 @@
     "db-orders": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
+      "auto_provision": false,
       "provenance": "main.go:40"
     },
     "db-payments-db": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
+      "auto_provision": false,
       "provenance": "main.go:31"
     }
   },
-  "services": [
-    {
+  "services": {
+    "orders": {
       "name": "orders",
       "entrypoint": "./orders",
       "ingress": [
@@ -21,27 +23,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET User-Agent",
-            "GET Host",
-            "GET Content-Length",
-            "GET Content-Encoding",
-            "GET Connection",
-            "GET Authorization",
-            "GET Upgrade",
-            "GET Cookie",
-            "GET Location",
-            "GET Referer",
-            "GET :protocol",
-            "GET Connection",
-            "GET Upgrade",
-            "GET Cookie",
-            "POST /v1/orders",
-            "GET Range",
-            "GET Accept-Encoding",
-            "GET Content-Encoding",
-            "GET asn1",
-            "GET Content-Encoding",
-            "GET Content-Encoding"
+            "POST /v1/orders"
           ]
         }
       ],
@@ -60,7 +42,7 @@
         }
       ]
     },
-    {
+    "payments": {
       "name": "payments",
       "entrypoint": "./payments",
       "ingress": [
@@ -68,27 +50,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET Authorization",
-            "GET Content-Encoding",
-            "POST /v1/charges",
-            "GET Upgrade",
-            "GET asn1",
-            "GET User-Agent",
-            "GET Content-Encoding",
-            "GET Cookie",
-            "GET Cookie",
-            "GET Location",
-            "GET Referer",
-            "GET Range",
-            "GET Accept-Encoding",
-            "GET Connection",
-            "GET Upgrade",
-            "GET :protocol",
-            "GET Content-Length",
-            "GET Content-Encoding",
-            "GET Connection",
-            "GET Host",
-            "GET Content-Encoding"
+            "POST /v1/charges"
           ]
         }
       ],
@@ -105,5 +67,7 @@
       ],
       "secrets": []
     }
-  ]
+  }
 }
+
+🔒 Verified architecture locked into testdata/sample-shop/anode.lock.json

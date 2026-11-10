@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-orders": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "main.go:40"
+    },
+    "db-payments-db": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "main.go:31"
+    }
+  },
+  "services": {
+    "orders": {
+      "name": "orders",
+      "entrypoint": "./orders",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/orders"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-orders",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "main.go:40"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "STRIPE_SECRET_KEY",
+          "provenance": "main.go:27"
+        }
+      ]
+    },
+    "payments": {
+      "name": "payments",
+      "entrypoint": "./payments",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/charges"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-payments-db",
+          "protocol": "postgres",
+          "inject_env": "PAYMENTS_DB_URL",
+          "expanded_env": [
+            "PAYMENTS_DB_URL"
+          ],
+          "provenance": "main.go:31"
+        }
+      ],
+      "secrets": []
+    }
+  }
+}

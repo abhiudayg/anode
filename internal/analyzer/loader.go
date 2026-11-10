@@ -22,7 +22,7 @@ func NewLoader(rootDir string) *Loader {
 }
 
 // LoadAndAnalyze loads Go packages, builds SSA, runs reachability, and extracts the IAG
-func (l *Loader) LoadAndAnalyze(pattern string) (*iag.Graph, error) {
+func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
 			packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes |
@@ -41,10 +41,10 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.Graph, error) {
 	prog, ssaPkgs := ssautil.AllPackages(pkgs, ssa.SanityCheckFunctions|ssa.InstantiateGenerics)
 	prog.Build()
 
-	graph := &iag.Graph{
+	lockfile := &iag.LockFile{
 		SchemaVersion: iag.V1,
 		Resources:     make(map[string]iag.Resource),
-		Services:      []iag.Service{},
+		Services:      make(map[string]iag.Service),
 		EgressRules:   []iag.EgressRule{},
 		Diagnostics:   []iag.Diagnostic{},
 	}
@@ -86,7 +86,7 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.Graph, error) {
 				for _, instr := range b.Instrs {
 					if call, ok := instr.(ssa.CallInstruction); ok {
 						if common := call.Common(); common != nil {
-							inspector.InspectCall(fn, common, &svc, graph)
+							inspector.InspectCall(fn, common, &svc, lockfile)
 							inspector.InspectEnvCall(common, &svc)
 						}
 					}
@@ -94,13 +94,13 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.Graph, error) {
 			}
 		}
 
-		graph.Services = append(graph.Services, svc)
+		lockfile.Services[serviceName] = svc
 	}
 
-	// Link cross-service topologies and validate unresolved bindings
-	l.linkServices(graph)
+	// Link cross-service topologies and typed contracts (PILLAR 2)
+	l.linkServices(lockfile)
 
-	return graph, nil
+	return lockfile, nil
 }
 
 func extractServiceName(mainFn *ssa.Function) string {
@@ -155,23 +155,57 @@ func getReachableFunctions(cg *callgraph.Graph, root *ssa.Function) map[*ssa.Fun
 	return reachable
 }
 
-func (l *Loader) linkServices(graph *iag.Graph) {
-	for i, svc := range graph.Services {
+// =========================================================================
+// PILLAR 2: Cross-Service Contract Linker (Typed gRPC Stubs & Route Tables)
+// =========================================================================
+func (l *Loader) linkServices(graph *iag.LockFile) {
+	for svcName, svc := range graph.Services {
 		for j, binding := range svc.Bindings {
+			// 1. Typed gRPC Contract Matching
+			if binding.Protocol == "grpc" {
+				protoInterface := binding.Interface
+				matched := false
+				for candidateName, candidate := range graph.Services {
+					if candidateName == svcName {
+						continue
+					}
+					for _, ing := range candidate.Ingress {
+						if ing.Protocol == "grpc" && (ing.Service == protoInterface || strings.HasSuffix(protoInterface, ing.Service)) {
+							svc.Bindings[j].ServiceRef = candidateName
+							matched = true
+							break
+						}
+					}
+					if matched {
+						break
+					}
+				}
+
+				if !matched {
+					graph.Diagnostics = append(graph.Diagnostics, iag.Diagnostic{
+						Level:      "warn",
+						Message:    fmt.Sprintf("gRPC client for %q in service %q has no matching server registration in this workspace", protoInterface, svcName),
+						Provenance: binding.Provenance,
+						Suggestion: "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml",
+					})
+				}
+			}
+
+			// 2. HTTP Route Contract Matching
 			if binding.Protocol == "http" && binding.ResourceRef == "" {
 				targetEnv := binding.InjectEnv
 				routePattern := binding.Interface
 
 				matched := false
-				for _, candidate := range graph.Services {
-					if candidate.Name == svc.Name {
+				for candidateName, candidate := range graph.Services {
+					if candidateName == svcName {
 						continue
 					}
-					// 1. Route match: candidate service exposes the route
+					// Route matching
 					for _, ing := range candidate.Ingress {
 						for _, r := range ing.Routes {
 							if routePattern != "" && strings.Contains(r, routePattern) {
-								graph.Services[i].Bindings[j].ServiceRef = candidate.Name
+								svc.Bindings[j].ServiceRef = candidateName
 								matched = true
 								break
 							}
@@ -180,23 +214,24 @@ func (l *Loader) linkServices(graph *iag.Graph) {
 							break
 						}
 					}
-					// 2. Env naming convention match (e.g. PAYMENT_SERVICE_URL -> payments)
-					if !matched && strings.Contains(strings.ToUpper(targetEnv), strings.ToUpper(candidate.Name)) {
-						graph.Services[i].Bindings[j].ServiceRef = candidate.Name
+					// Fallback: Env naming convention match (e.g. PAYMENT_SERVICE_URL -> payments)
+					if !matched && targetEnv != "" && strings.Contains(strings.ToUpper(targetEnv), strings.ToUpper(candidateName)) {
+						svc.Bindings[j].ServiceRef = candidateName
 						matched = true
 					}
 				}
 
-				// If unresolved, emit an actionable diagnostic
+				// PILLAR 4 Diagnostic: Actionable warning when unmatched
 				if !matched {
 					graph.Diagnostics = append(graph.Diagnostics, iag.Diagnostic{
 						Level:      "warn",
-						Message:    fmt.Sprintf("Outbound HTTP call in service %q via env %q could not be matched to an internal service", svc.Name, targetEnv),
+						Message:    fmt.Sprintf("Outbound HTTP call in service %q via env %q could not be matched to an internal service", svcName, targetEnv),
 						Provenance: binding.Provenance,
-						Suggestion: "If this targets an external API, declare in anode.toml or verify target service route.",
+						Suggestion: "If this targets an external third-party API, declare in anode.toml or verify route matching.",
 					})
 				}
 			}
 		}
+		graph.Services[svcName] = svc
 	}
 }

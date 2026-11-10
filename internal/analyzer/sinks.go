@@ -172,7 +172,17 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 	// 4. HTTP Routes: net/http.ServeMux or Chi / Gin
 	// - ServeMux.HandleFunc(pattern, handler)
 	// - chi.Router.Get/Post(pattern, handler)
-	if (name == "HandleFunc" || name == "Get" || name == "Post" || name == "Put" || name == "Delete") && len(call.Args) >= 2 {
+	// 4. HTTP Routes:
+	// - net/http.ServeMux: HandleFunc(pattern, handler)
+	// - chi / gin / gorilla: Get/Post/Put/Delete where package matches a router
+	isRouterMethod := false
+	if name == "HandleFunc" && (strings.Contains(pkgPath, "http") || pkgPath == "") {
+		isRouterMethod = true
+	} else if (name == "Get" || name == "Post" || name == "Put" || name == "Delete") && (strings.Contains(pkgPath, "chi") || strings.Contains(pkgPath, "gin") || strings.Contains(pkgPath, "mux")) {
+		isRouterMethod = true
+	}
+
+	if isRouterMethod && len(call.Args) >= 2 {
 		routePattern := ResolveConstantString(call.Args[1])
 		if routePattern != "" {
 			if name != "HandleFunc" {
@@ -181,7 +191,16 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 			found := false
 			for i := range svc.Ingress {
 				if svc.Ingress[i].Protocol == "http" {
-					svc.Ingress[i].Routes = append(svc.Ingress[i].Routes, routePattern)
+					alreadyExists := false
+					for _, existing := range svc.Ingress[i].Routes {
+						if existing == routePattern {
+							alreadyExists = true
+							break
+						}
+					}
+					if !alreadyExists {
+						svc.Ingress[i].Routes = append(svc.Ingress[i].Routes, routePattern)
+					}
 					found = true
 					break
 				}

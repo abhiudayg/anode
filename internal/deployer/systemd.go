@@ -57,12 +57,12 @@ func GenerateSystemdUnit(cfg SystemdUnitConfig) (string, error) {
 }
 
 // GenerateCaddyfile creates reverse-proxy config with automatic Let's Encrypt TLS
-func GenerateCaddyfile(domain string, graph *iag.Graph, servicePortMap map[string]int) string {
+func GenerateCaddyfile(domain string, lockfile *iag.LockFile, servicePortMap map[string]int) string {
 	var sb strings.Builder
 	sb.WriteString(fmt.Sprintf("%s {\n", domain))
 	sb.WriteString("  encode gzip zstd\n")
 
-	for _, svc := range graph.Services {
+	for _, svc := range lockfile.Services {
 		port := servicePortMap[svc.Name]
 		if port == 0 {
 			port = 8080

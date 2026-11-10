@@ -13,10 +13,10 @@ func TestBinPacking(t *testing.T) {
 	pool.RegisterNode("node-1", "10.0.0.1", "worker", 4096)
 	pool.RegisterNode("node-2", "10.0.0.2", "worker", 4096)
 
-	services := []iag.Service{
-		{Name: "orders"},
-		{Name: "payments"},
-		{Name: "auth"},
+	services := map[string]iag.Service{
+		"orders":   {Name: "orders"},
+		"payments": {Name: "payments"},
+		"auth":     {Name: "auth"},
 	}
 
 	placement, err := pool.BinPack(services)
@@ -28,7 +28,6 @@ func TestBinPacking(t *testing.T) {
 		t.Errorf("expected 3 placements, got %d", len(placement))
 	}
 
-	// Verify distributed load
 	if pool.Nodes["node-1"].Allocated+pool.Nodes["node-2"].Allocated != 3 {
 		t.Errorf("unexpected total allocation")
 	}

@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/abhiudayg/anode/internal/analyzer"
 	"github.com/abhiudayg/anode/internal/cluster"
 	"github.com/abhiudayg/anode/internal/deployer"
 	"github.com/abhiudayg/anode/internal/devengine"
+	"github.com/abhiudayg/anode/internal/iag"
 )
+
+const LockFileName = "anode.lock.json"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -27,16 +31,37 @@ func main() {
 		}
 
 		loader := analyzer.NewLoader(targetDir)
-		graph, err := loader.LoadAndAnalyze("./...")
+		lockfile, err := loader.LoadAndAnalyze("./...")
 		if err != nil {
 			log.Fatalf("Analysis failed: %v", err)
 		}
 
-		data, err := json.MarshalIndent(graph, "", "  ")
+		data, err := json.MarshalIndent(lockfile, "", "  ")
 		if err != nil {
-			log.Fatalf("Failed to serialize IAG: %v", err)
+			log.Fatalf("Failed to serialize LockFile: %v", err)
 		}
+
+		// =====================================================================
+		// PILLAR 3: Write Commit-Backed anode.lock.json
+		// =====================================================================
+		lockPath := filepath.Join(targetDir, LockFileName)
+		if err := os.WriteFile(lockPath, data, 0644); err != nil {
+			log.Fatalf("Failed to write %s: %v", LockFileName, err)
+		}
+
 		fmt.Println(string(data))
+		fmt.Printf("\n🔒 Verified architecture locked into %s\n", lockPath)
+
+		// Print actionable diagnostics if present
+		if len(lockfile.Diagnostics) > 0 {
+			fmt.Println("\n⚠️  Compiler Diagnostics:")
+			for _, diag := range lockfile.Diagnostics {
+				fmt.Printf("  • [%s] %s\n    Location: %s\n", diag.Level, diag.Message, diag.Provenance)
+				if diag.Suggestion != "" {
+					fmt.Printf("    💡 Suggestion: %s\n", diag.Suggestion)
+				}
+			}
+		}
 
 	case "dev":
 		targetDir := "."
@@ -45,13 +70,12 @@ func main() {
 		}
 		fmt.Printf("🚀 Starting anode dev environment for %s...\n", targetDir)
 
-		loader := analyzer.NewLoader(targetDir)
-		graph, err := loader.LoadAndAnalyze("./...")
+		lockfile, err := loadOrInspect(targetDir)
 		if err != nil {
-			log.Fatalf("Analysis failed: %v", err)
+			log.Fatalf("Initialization failed: %v", err)
 		}
 
-		engine := devengine.NewEngine(targetDir, graph)
+		engine := devengine.NewEngine(targetDir, lockfile)
 		plan, err := engine.PlanEnvVariables()
 		if err != nil {
 			log.Fatalf("Failed to plan dev environment: %v", err)
@@ -66,7 +90,17 @@ func main() {
 				}
 			}
 		}
-		fmt.Println("\n✅ Anode dev topology verified and ready.")
+
+		// Show Auto-Provisioned resources vs unmanaged external resources
+		fmt.Println("\n📦 Stateful Infrastructure Status:")
+		for id, res := range lockfile.Resources {
+			if res.AutoProvision {
+				fmt.Printf("  • %s (%s): Auto-Provisioned (migrations proven)\n", id, res.Kind)
+			} else {
+				fmt.Printf("  • %s (%s): External Unmanaged (no local migrations)\n", id, res.Kind)
+			}
+		}
+		fmt.Println("\n✅ Anode dev environment ready.")
 
 	case "deploy":
 		if len(os.Args) < 3 {
@@ -80,17 +114,18 @@ func main() {
 		}
 
 		fmt.Printf("🚢 Deploying %s to %s via zero-downtime SSH & systemd...\n", targetDir, host)
-		loader := analyzer.NewLoader(targetDir)
-		graph, err := loader.LoadAndAnalyze("./...")
+		lockfile, err := loadOrInspect(targetDir)
 		if err != nil {
-			log.Fatalf("Analysis failed: %v", err)
+			log.Fatalf("Deployment preparation failed: %v", err)
 		}
 
 		// Generate Systemd configurations for services
 		portMap := make(map[string]int)
-		for i, svc := range graph.Services {
-			port := 8080 + i
-			portMap[svc.Name] = port
+		idx := 0
+		for name, svc := range lockfile.Services {
+			port := 8080 + idx
+			idx++
+			portMap[name] = port
 			unit, err := deployer.GenerateSystemdUnit(deployer.SystemdUnitConfig{
 				ServiceName: svc.Name,
 				Description: fmt.Sprintf("Anode Managed %s Service", svc.Name),
@@ -105,7 +140,7 @@ func main() {
 			_ = unit
 		}
 
-		caddy := deployer.GenerateCaddyfile("app.local", graph, portMap)
+		caddy := deployer.GenerateCaddyfile("app.local", lockfile, portMap)
 		fmt.Printf("  ✓ Generated Edge Caddyfile with automatic TLS\n")
 		_ = caddy
 		fmt.Println("✅ Production deployment plan synthesized successfully.")
@@ -125,10 +160,23 @@ func main() {
 	}
 }
 
+// loadOrInspect reads existing anode.lock.json if present; otherwise runs compiler
+func loadOrInspect(targetDir string) (*iag.LockFile, error) {
+	lockPath := filepath.Join(targetDir, LockFileName)
+	if data, err := os.ReadFile(lockPath); err == nil {
+		var lockfile iag.LockFile
+		if err := json.Unmarshal(data, &lockfile); err == nil {
+			return &lockfile, nil
+		}
+	}
+	loader := analyzer.NewLoader(targetDir)
+	return loader.LoadAndAnalyze("./...")
+}
+
 func printUsage() {
 	fmt.Println("Usage: anode <command> [args...]")
 	fmt.Println("\nAvailable commands:")
-	fmt.Println("  inspect [dir]          Analyze Go repository and emit IAG graph")
+	fmt.Println("  inspect [dir]          Analyze Go repository and write anode.lock.json")
 	fmt.Println("  dev [dir]              Run local zero-config developer environment")
 	fmt.Println("  deploy <user@host>     Deploy production release via systemd & SSH")
 	fmt.Println("  cluster                Manage and view multi-node cluster placement")

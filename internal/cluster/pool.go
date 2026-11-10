@@ -35,10 +35,10 @@ func (c *ClusterPool) RegisterNode(id, host, role string, memoryMB int) {
 }
 
 // BinPack assigns services to the least loaded available worker node
-func (c *ClusterPool) BinPack(services []iag.Service) (map[string]string, error) {
+func (c *ClusterPool) BinPack(services map[string]iag.Service) (map[string]string, error) {
 	placement := make(map[string]string)
 
-	for _, svc := range services {
+	for name := range services {
 		var bestNode *Node
 		for _, node := range c.Nodes {
 			if node.Role == "worker" || node.Role == "edge" {
@@ -49,10 +49,10 @@ func (c *ClusterPool) BinPack(services []iag.Service) (map[string]string, error)
 		}
 
 		if bestNode == nil {
-			return nil, fmt.Errorf("no suitable node found in cluster to place service %s", svc.Name)
+			return nil, fmt.Errorf("no suitable node found in cluster to place service %s", name)
 		}
 
-		placement[svc.Name] = bestNode.ID
+		placement[name] = bestNode.ID
 		bestNode.Allocated++
 	}
 
@@ -77,21 +77,4 @@ func GenerateZeroTrustNftables(svc iag.Service, allowedSubnets []string) string 
 	sb.WriteString("  }\n")
 	sb.WriteString("}\n")
 	return sb.String()
-}
-
-// BackupSpec generates automated S3 WAL backup configuration
-type BackupSpec struct {
-	ResourceID   string `json:"resource_id"`
-	S3Bucket     string `json:"s3_bucket"`
-	Endpoint     string `json:"endpoint"`
-	ScheduleCron string `json:"schedule_cron"`
-}
-
-func GenerateBackupSpec(resourceID, bucket, endpoint string) BackupSpec {
-	return BackupSpec{
-		ResourceID:   resourceID,
-		S3Bucket:     bucket,
-		Endpoint:     endpoint,
-		ScheduleCron: "0 */6 * * *", // every 6 hours WAL snapshot
-	}
 }

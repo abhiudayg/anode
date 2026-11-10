@@ -7,14 +7,15 @@ import (
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
-func TestHardenedIAGSerialization(t *testing.T) {
-	graph := iag.Graph{
+func TestLockFileSerialization(t *testing.T) {
+	lockfile := iag.LockFile{
 		SchemaVersion: iag.V1,
 		Resources: map[string]iag.Resource{
 			"db-orders": {
-				Kind:       iag.KindPostgres,
-				Lifecycle:  iag.LifecycleStatefulRetain,
-				Provenance: "main.go:40",
+				Kind:          iag.KindPostgres,
+				Lifecycle:     iag.LifecycleStatefulRetain,
+				AutoProvision: true,
+				Provenance:    "main.go:40",
 				Migrations: &iag.MigrationSpec{
 					Tool:      "goose",
 					Path:      "migrations/orders",
@@ -22,8 +23,8 @@ func TestHardenedIAGSerialization(t *testing.T) {
 				},
 			},
 		},
-		Services: []iag.Service{
-			{
+		Services: map[string]iag.Service{
+			"orders": {
 				Name:       "orders",
 				Entrypoint: "./orders",
 				Ingress: []iag.Ingress{
@@ -31,6 +32,11 @@ func TestHardenedIAGSerialization(t *testing.T) {
 						Protocol: "http",
 						PortEnv:  "PORT",
 						Routes:   []string{"POST /v1/orders"},
+					},
+					{
+						Protocol: "grpc",
+						PortEnv:  "PORT",
+						Service:  "orders.v1.OrderService",
 					},
 				},
 				Bindings: []iag.Binding{
@@ -62,23 +68,23 @@ func TestHardenedIAGSerialization(t *testing.T) {
 		},
 	}
 
-	data, err := json.Marshal(graph)
+	data, err := json.Marshal(lockfile)
 	if err != nil {
-		t.Fatalf("failed to marshal IAG: %v", err)
+		t.Fatalf("failed to marshal LockFile: %v", err)
 	}
 
-	var parsed iag.Graph
+	var parsed iag.LockFile
 	if err := json.Unmarshal(data, &parsed); err != nil {
-		t.Fatalf("failed to unmarshal IAG: %v", err)
+		t.Fatalf("failed to unmarshal LockFile: %v", err)
 	}
 
 	if parsed.SchemaVersion != iag.V1 {
 		t.Errorf("expected 1.0, got %s", parsed.SchemaVersion)
 	}
-	if len(parsed.EgressRules) != 1 || !parsed.EgressRules[0].IsExternal {
-		t.Errorf("expected external egress rule preserved")
+	if len(parsed.Services) != 1 || parsed.Services["orders"].Name != "orders" {
+		t.Errorf("unexpected services: %+v", parsed.Services)
 	}
-	if len(parsed.Diagnostics) != 1 {
-		t.Errorf("expected diagnostic message preserved")
+	if !parsed.Resources["db-orders"].AutoProvision {
+		t.Errorf("expected AutoProvision true")
 	}
 }

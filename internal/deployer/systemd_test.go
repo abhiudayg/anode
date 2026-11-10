@@ -32,9 +32,9 @@ func TestGenerateSystemdUnit(t *testing.T) {
 }
 
 func TestGenerateCaddyfile(t *testing.T) {
-	graph := &iag.Graph{
-		Services: []iag.Service{
-			{
+	lockfile := &iag.LockFile{
+		Services: map[string]iag.Service{
+			"orders": {
 				Name: "orders",
 				Ingress: []iag.Ingress{
 					{
@@ -46,7 +46,7 @@ func TestGenerateCaddyfile(t *testing.T) {
 		},
 	}
 
-	caddyfile := deployer.GenerateCaddyfile("api.example.com", graph, map[string]int{"orders": 8080})
+	caddyfile := deployer.GenerateCaddyfile("api.example.com", lockfile, map[string]int{"orders": 8080})
 	if !strings.Contains(caddyfile, "api.example.com {") {
 		t.Errorf("expected domain in Caddyfile")
 	}

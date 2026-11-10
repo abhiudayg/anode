@@ -8,13 +8,16 @@ import (
 )
 
 func TestPlanEnvVariables(t *testing.T) {
-	graph := &iag.Graph{
-		SchemaVersion: "1.0",
+	lockfile := &iag.LockFile{
+		SchemaVersion: iag.V1,
 		Resources: map[string]iag.Resource{
-			"db-orders": {Kind: "postgres"},
+			"db-orders": {
+				Kind:          iag.KindPostgres,
+				AutoProvision: true,
+			},
 		},
-		Services: []iag.Service{
-			{
+		Services: map[string]iag.Service{
+			"orders": {
 				Name:       "orders",
 				Entrypoint: "./orders",
 				Bindings: []iag.Binding{
@@ -22,14 +25,14 @@ func TestPlanEnvVariables(t *testing.T) {
 					{ServiceRef: "payments", InjectEnv: "PAYMENTS_ADDR"},
 				},
 			},
-			{
+			"payments": {
 				Name:       "payments",
 				Entrypoint: "./payments",
 			},
 		},
 	}
 
-	engine := devengine.NewEngine(".", graph)
+	engine := devengine.NewEngine(".", lockfile)
 	plan, err := engine.PlanEnvVariables()
 	if err != nil {
 		t.Fatalf("PlanEnvVariables failed: %v", err)
