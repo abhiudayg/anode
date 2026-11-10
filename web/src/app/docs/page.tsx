@@ -72,6 +72,9 @@ export default function DocsPage() {
       items: [
         { id: "dev-engine", title: "Dynamic Port Allocator", icon: Database },
         { id: "systemd-vps", title: "Bare-Metal Systemd & Cgroups", icon: Server },
+        { id: "catalog-drivers", title: "Pluggable Stateful Catalog", icon: Layers },
+        { id: "security-hardening", title: "Least-Privilege Security Boundary", icon: ShieldCheck },
+        { id: "infra-automation", title: "Ansible & Terraform VM Setup", icon: Terminal },
         { id: "benchmarks-analysis", title: "Empirical Numbers & Verification", icon: Gauge },
       ],
     },
@@ -607,6 +610,173 @@ WantedBy=multi-user.target`}</code>
                   <p>3. Reloads Caddy proxy configuration in ~1ms to route traffic to the new port.</p>
                   <p>4. Gracefully stops Version 1 via <code className="text-neutral-200">systemctl stop</code> after draining connections.</p>
                 </div>
+              </div>
+            )}
+
+            {/* PLUGGABLE STATEFUL CATALOG */}
+            {activeDoc === "catalog-drivers" && (
+              <div className="space-y-6 leading-relaxed">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40">
+                  Infrastructure Catalog
+                </span>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                  Pluggable Stateful Infrastructure Catalog
+                </h1>
+                <p className="text-sm text-neutral-300">
+                  Anode decouples database and broker provisioning from the core orchestrator using a declarative driver catalog. This scales cleanly to 100+ services without modifying compiler or deployer Go code.
+                </p>
+
+                <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Database className="w-4 h-4 text-cyan-400" />
+                    25+ Pre-Audited Built-in Drivers
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-neutral-300">
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <span className="font-bold text-white">Relational DBs:</span> PostgreSQL (14-17), MySQL (8.0, 8.4), MariaDB, CockroachDB, TimescaleDB.
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <span className="font-bold text-white">In-Memory & Caches:</span> Redis (6, 7), Valkey, KeyDB, Dragonfly, Memcached.
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <span className="font-bold text-white">Message Brokers:</span> Kafka (Redpanda engine), RabbitMQ, NATS.
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <span className="font-bold text-white">Search & Analytics:</span> ClickHouse, Elasticsearch, OpenSearch, Meilisearch.
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <span className="font-bold text-white">NoSQL & Document:</span> MongoDB, ScyllaDB, Cassandra.
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/[0.02] border border-white/[0.05]">
+                      <span className="font-bold text-white">Vector Stores & Object:</span> Qdrant, Chroma, Milvus, Weaviate, MinIO, Temporal.
+                    </div>
+                  </div>
+                </div>
+
+                <h3 className="text-base font-bold text-white pt-2">Zero-Code Extensibility: .anode/catalog.yaml</h3>
+                <p className="text-xs text-neutral-300">
+                  Drop a YAML definition into your repository at <code className="text-cyan-400">.anode/catalog/my-db.yaml</code> to register internal databases or specialized configurations with zero recompilation:
+                </p>
+                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
+                  <code>{`drivers:
+  my-store:
+    kind: my-store
+    category: database
+    default_version: "2.0"
+    runtime:
+      image_template: "internal-docker.corp/data/store:{{.Version}}"
+      data_mount: "/var/lib/store/data"
+    security:
+      uid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -800
+      cgroups:
+        memory_max: "4G"
+    networking:
+      primary_port: 8080
+      bind_interface: "127.0.0.1"
+    connection_templates:
+      STORE_ADDR: "{{.Host}}:{{.Port}}"
+      STORE_URL: "http://{{.Host}}:{{.Port}}"`}</code>
+                </pre>
+              </div>
+            )}
+
+            {/* LEAST-PRIVILEGE SECURITY BOUNDARY */}
+            {activeDoc === "security-hardening" && (
+              <div className="space-y-6 leading-relaxed">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
+                  Security Hardening
+                </span>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                  Least-Privilege Security Boundary
+                </h1>
+                <p className="text-sm text-neutral-300">
+                  Anode enforces defense-in-depth security on bare-metal and VPS instances. No microservice ever runs as root, and stateful databases are protected from runaway application leaks.
+                </p>
+
+                <div className="space-y-3">
+                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      1. Dedicated Unprivileged anode User
+                    </h4>
+                    <p className="text-xs text-neutral-400">
+                      Bootstrap creates the system user <code className="text-neutral-300">anode</code> with no interactive login (<code className="text-neutral-300">/bin/false</code>). All service binaries run under this isolated user.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      2. Deterministic POSIX 0700 File Permissions
+                    </h4>
+                    <p className="text-xs text-neutral-400">
+                      Data directories at <code className="text-neutral-300">/var/lib/anode/data/</code> are initialized with mode <code className="text-neutral-300">0700</code> mapped to database engine UIDs (e.g. 999 for Postgres), blocking host tampering.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      3. Kernel OOM Score Priority Tiering
+                    </h4>
+                    <p className="text-xs text-neutral-400">
+                      Stateful databases receive <code className="text-cyan-400">--oom-score-adj=-900</code>, ensuring the Linux kernel never terminates databases during application memory pressure. Stateless services run with <code className="text-amber-400">+500</code> and are sacrificed first.
+                    </p>
+                  </div>
+
+                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                      4. Strict Loopback Binding (127.0.0.1)
+                    </h4>
+                    <p className="text-xs text-neutral-400">
+                      All stateful database and broker ports bind strictly to loopback (<code className="text-neutral-300">127.0.0.1</code>). Zero database ports are exposed to the public internet interface.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* INFRASTRUCTURE AUTOMATION */}
+            {activeDoc === "infra-automation" && (
+              <div className="space-y-6 leading-relaxed">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                  Infrastructure as Code
+                </span>
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                  Ansible & Terraform VM Automation
+                </h1>
+                <p className="text-sm text-neutral-300">
+                  Provision and configure testing environments or production bare-metal VPS instances with a single command using Anode&apos;s included IaC modules.
+                </p>
+
+                <h3 className="text-base font-bold text-white pt-2">1. One-Click Local VM Setup (OrbStack)</h3>
+                <p className="text-xs text-neutral-300">
+                  Spins up an Ubuntu Linux VM, installs OpenSSH, synchronizes authorized keys, and tests live deployments:
+                </p>
+                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-cyan-300 overflow-x-auto">
+                  <code>{`./scripts/setup-test-vm.sh anode-vm`}</code>
+                </pre>
+
+                <h3 className="text-base font-bold text-white pt-2">2. Ansible Playbook (infra/ansible/)</h3>
+                <p className="text-xs text-neutral-300">
+                  Idempotent server orchestration configuring Caddy, Docker, Cgroups v2, and the unprivileged <code className="text-cyan-400">anode</code> user:
+                </p>
+                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
+                  <code>{`ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml`}</code>
+                </pre>
+
+                <h3 className="text-base font-bold text-white pt-2">3. Terraform Cloud-Init (infra/terraform/)</h3>
+                <p className="text-xs text-neutral-300">
+                  Prepares cloud instances (AWS EC2, Hetzner, DigitalOcean) with sysctl network tuning, OpenSSH, and Caddy:
+                </p>
+                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
+                  <code>{`terraform -chdir=infra/terraform init
+terraform -chdir=infra/terraform apply`}</code>
+                </pre>
               </div>
             )}
 

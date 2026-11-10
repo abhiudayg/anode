@@ -249,6 +249,10 @@
           "protocol": "grpc",
           "port_env": "PORT",
           "service": "RegisterLedgerServiceServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT"
         }
       ],
       "bindings": [],
