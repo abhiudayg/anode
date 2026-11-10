@@ -19,11 +19,11 @@
   <a href="#the-problem">The Problem</a> •
   <a href="#how-it-works">How It Works</a> •
   <a href="#quick-start">Quick Start</a> •
-  <a href="#the-anodelockjson-contract">The Lockfile</a> •
+  <a href="#pluggable-infrastructure-catalog">Stateful Catalog</a> •
+  <a href="#least-privilege-security-boundary">Security Model</a> •
   <a href="#cli-reference">CLI Reference</a> •
   <a href="https://anode.abhiudayg.dev/docs">Documentation</a> •
-  <a href="https://anode.abhiudayg.dev/docs#tradeoffs">Tradeoffs & Limits</a> •
-  <a href="testdata/README.md">Benchmark Suite</a>
+  <a href="examples/README.md">Benchmark Suites</a>
 </p>
 
 </div>
@@ -39,7 +39,7 @@ Every time you build a Go backend, you declare your architecture twice:
 
 When you add a service or refactor an env var, your code and your configuration immediately drift.
 
-Previous "Infrastructure-from-Code" tools attempted to solve this, but made one of two fatal mistakes:
+Previous "Infrastructure-from-Code" tools attempted to solve this, but made fatal mistakes:
 * **The SDK Lock-In Trap (Encore, Winglang, Nitric):** They forced you to import non-standard SDKs or rewrite code in a new DSL.
 * **The Regex Guessing Trap (Klotho):** They used syntax pattern-matching that broke on real-world config structs and dynamic wrappers.
 
@@ -65,19 +65,10 @@ It extracts an immutable, human-readable **`anode.lock.json`** directly from you
                     │     Local Dev (`anode dev`)   │                                 │   Production (`anode deploy`) │
                     │ • Dynamic Ephemeral Ports     │                                 │ • Cross-compiled Linux binary │
                     │ • Decomposed Env Injection    │                                 │ • Hardened systemd + cgroups  │
-                    │ • Native Goose Migrations     │                                 │ • Zero-downtime port swap     │
+                    │ • Native Goose Migrations     │                                 │ • Zero-downtime Blue/Green    │
                     │ • Sub-second 300ms reload     │                                 │ • Automated Caddy HTTPS       │
                     └───────────────────────────────┘                                 └───────────────────────────────┘
 ```
-
----
-
-## The 4 Pillars of Determinism
-
-1. **Migration-Driven Database Provenance:** Anode provisions a stateful database *only* when verifiable schema migration assets (`migrations/*.sql`, Goose, etc.) exist alongside the service. If no migrations exist, Anode treats the database as an external unmanaged service—zero guessing.
-2. **Typed Interface Linking:** Microservice RPC connections are matched 1:1 using generated Protobuf service descriptors (`payment.v1.PaymentService`) and router route tables (`POST /v1/orders`), with zero naming heuristics.
-3. **The Commit-Backed `anode.lock.json`:** Every run of `anode inspect` emits a human-readable lockfile committed to Git. Platform engineers review the exact topology in pull requests, and `anode dev` / `anode deploy` treat it as an immutable contract.
-4. **Actionable Build-Time Diagnostics:** If an outbound target or dynamic DSN cannot be mathematically resolved, Anode reports a precise compiler warning with `file:line` provenance and a concrete fix—never failing silently at runtime.
 
 ---
 
@@ -97,10 +88,10 @@ go build -o /usr/local/bin/anode ./cmd/anode
 Point Anode at any Go multi-service repo or monorepo:
 
 ```bash
-anode inspect ./testdata/complex_ecommerce
+anode inspect ./examples/complex_ecommerce
 ```
 
-Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and writes the topology to `anode.lock.json`:
+Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and writes the verified architecture to `anode.lock.json`:
 
 ```json
 {
@@ -108,6 +99,7 @@ Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and 
   "resources": {
     "db-orders": {
       "kind": "postgres",
+      "engine_version": "16",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
       "provenance": "services/orders/main.go:42",
@@ -147,23 +139,74 @@ Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and 
 ### 3. Run Locally with Zero Port Collisions
 
 ```bash
-anode dev ./testdata/complex_ecommerce
+anode dev ./examples/complex_ecommerce
 ```
 
 Anode assigns ephemeral loopback ports, auto-provisions isolated Postgres containers (moving to dynamic ports if `5432` is occupied), applies Goose migrations, and streams color-coded service logs with sub-second hot-reloading.
 
-### 4. Deploy to Bare-Metal Linux VPS
+### 4. Deploy Live to Any Linux VPS
 
 ```bash
-anode deploy root@my-box.com ./testdata/complex_ecommerce
+anode deploy root@my-box.com ./examples/complex_ecommerce
 ```
 
 In under 30 seconds:
-* Cross-compiles static Linux binaries (`CGO_ENABLED=0 GOOS=linux`).
-* Connects via native SSH (`golang.org/x/crypto/ssh` — zero Ansible/Docker daemon needed on server).
-* Provisions persistent systemd units with cgroups v2 resource quotas.
-* Configures Caddy with automated Let's Encrypt TLS certificates.
-* Performs a health-checked zero-downtime Blue/Green port swap.
+* **Architecture Detection**: Queries `uname -m` over SSH and cross-compiles matching Linux binaries (`arm64` or `amd64`).
+* **Unprivileged Bootstrapping**: Initializes the dedicated system user `anode` and secures persistent directories at `/var/lib/anode/`.
+* **Stateful Resolution**: Auto-provisions required stateful databases using the built-in driver catalog.
+* **Pre-Traffic Migrations**: Executes database schema migrations *before* traffic hits new service instances.
+* **Systemd Cgroups v2 Hardening**: Generates service units with `CPUQuota=200%`, `MemoryMax=1G`, and process isolation.
+* **Edge Routing**: Reloads Caddy with automated Let's Encrypt TLS and path-based reverse proxying.
+
+---
+
+## Pluggable Infrastructure Catalog
+
+Anode decouples stateful provisioning from core orchestrator code using a **Pluggable Declarative Driver Catalog** (`internal/catalog/`):
+
+* **25+ Built-in Pre-Audited Drivers**:
+  * **Relational Databases**: PostgreSQL (14, 15, 16, 17), MySQL (8.0, 8.4), MariaDB, CockroachDB, TimescaleDB.
+  * **In-Memory & Caches**: Redis (6, 7, 7.2), Valkey, KeyDB, Dragonfly, Memcached.
+  * **Event Streaming & Queues**: Kafka (Redpanda engine), RabbitMQ, NATS.
+  * **Document & Analytics**: ClickHouse, MongoDB, ScyllaDB, Cassandra.
+  * **Search Engines**: Elasticsearch, OpenSearch, Meilisearch.
+  * **Vector Databases**: Qdrant, Chroma, Milvus, Weaviate.
+  * **Object Storage & Workflow**: MinIO, Temporal.
+* **Extensible via YAML (`.anode/catalog/`)**: Add kind #101 or internal company stores with **zero Go code changes** by placing an `anode.catalog.yaml` in your repository.
+* **Granular Version Pinning**: Versioning is handled across 4 tiers (Lockfile `engine_version` contract $\rightarrow$ Driver image map $\rightarrow$ Dynamic semver templating $\rightarrow$ Audited LTS fallback).
+
+---
+
+## Least-Privilege Security Boundary
+
+Anode enforces strict defense-in-depth isolation across all targets:
+
+| Hardening Layer | Implementation | Security Benefit |
+| :--- | :--- | :--- |
+| **POSIX Boundary** | `install -d -m 0700 -o <uid> -g <gid>` | Stateful database directories (`/var/lib/anode/data/`) are isolated to container engine UIDs. |
+| **Non-Root Execution** | `User=anode` (`useradd -r -s /bin/false`) | Microservices never run as root on the target host. |
+| **Privilege Escalation** | `NoNewPrivileges=true`, `--security-opt no-new-privileges` | Blocks `setuid` binaries from gaining elevated root credentials. |
+| **Systemd Sandboxing** | `ProtectSystem=strict`, `ProtectHome=true`, `PrivateTmp=true` | Restricts microservices from reading/writing system files or user directories. |
+| **Kernel OOM Score** | `--oom-score-adj=-900` (DBs), `+500` (Apps) | Protects databases from being killed during application memory spikes. |
+| **Network Isolation** | Bind exclusively to `127.0.0.1` | Stateful ports (`5432`, `6379`, `9092`) are never exposed to public internet interfaces. |
+
+---
+
+## Automated VM Setup & Infrastructure as Code
+
+Anode provides automated provisioning scripts for spinning up and configuring test/production environments:
+
+* **One-Click Local VM Setup:**
+  ```bash
+  ./scripts/setup-test-vm.sh [vm-name]
+  ```
+  Automatically initializes an Ubuntu VM in OrbStack, installs OpenSSH, configures public keys, and tests live deployments.
+* **Ansible Automation (`infra/ansible/`):**
+  ```bash
+  ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml
+  ```
+* **Terraform Cloud-Init (`infra/terraform/`):**
+  Prepares cloud VPS instances (AWS, Hetzner, DigitalOcean) with Caddy, Docker, cgroups v2, and the `anode` user.
 
 ---
 
@@ -171,19 +214,31 @@ In under 30 seconds:
 
 | Command | Description |
 | :--- | :--- |
-| `anode inspect [dir]` | Compiles workspace SSA, executes VTA reachability, and writes `anode.lock.json`. |
+| `anode inspect [dir]` | Compiles workspace SSA, executes reachability pruning, and writes `anode.lock.json`. |
 | `anode dev [dir]` | Allocates free ports, provisions local DBs, runs Goose migrations, and supervises processes. |
 | `anode deploy <user@host> [dir]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
 | `anode deploy <user@host> --dry-run` | Synthesizes and validates deployment units and Caddyfile without requiring live SSH. |
 | `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
+| `anode version` | Displays the current Anode release version. |
 
 ---
 
-## Documentation & Benchmarks
+## Enterprise Test Benchmarks
 
-* 📖 **[Architecture Deep-Dive](docs/architecture.md)** — Whole-program SSA, Variable Type Analysis (VTA), backward taint tracking, and stdlib choke points.
-* ⚖️ **[Tradeoffs & Known Limits](docs/tradeoffs.md)** — What Anode does, what it intentionally refuses to do, and comparison with Kubernetes/Encore.
-* 🧪 **[Enterprise Test Benchmark Suite](testdata/README.md)** — The 12-microservice "Hyper-Mesh" specification testing deep variable layers, composite DSNs, and dead code pruning.
+Real-world architectures used to stress-test Anode are maintained in [`examples/`](examples/):
+
+* [**`examples/sample-shop`**](examples/sample-shop/README.md) — 2-tier baseline microservice architecture with Go 1.22+ routing and Postgres.
+* [**`examples/complex_ecommerce`**](examples/complex_ecommerce/README.md) — 3 services with composite DSN unpacking, pre-traffic migrations, and Stripe/SendGrid egress.
+* [**`examples/benchmark_app`**](examples/benchmark_app/README.md) — Rapid Type Analysis (RTA) dead-code reachability pruning and sub-150ms throughput.
+* [**`examples/hyper_mesh_12`**](examples/hyper_mesh_12/README.md) — **12-microservice flagship stress test** with mixed REST, gRPC stubs, Redis caching, and 3-hop struct pointer indirections.
+
+---
+
+## Documentation
+
+* 📖 **[Architecture Deep-Dive](docs/architecture.md)** — Whole-program SSA, Variable Type Analysis (VTA), and backward taint tracking.
+* ⚖️ **[Tradeoffs & Known Limits](docs/tradeoffs.md)** — Architectural principles, intentional non-goals, and comparison with Kubernetes/Encore.
+* 🛡️ **[Security Architecture](docs/security.md)** — Cgroups v2 isolation, systemd sandboxing, and POSIX permissions.
 
 ---
 

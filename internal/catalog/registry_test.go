@@ -57,18 +57,18 @@ func TestCatalogRegistryDefaults(t *testing.T) {
 func TestCatalogDynamicFallback(t *testing.T) {
 	reg := NewRegistry()
 
-	// Resolve uncataloged kind (e.g. ScyllaDB or arbitrary store #101)
-	driver := reg.Resolve("scylladb")
-	if driver.Kind != "scylladb" {
-		t.Fatalf("expected fallback driver for scylladb, got %s", driver.Kind)
+	// Resolve uncataloged kind (arbitrary enterprise store #101)
+	driver := reg.Resolve("customunregistereddb")
+	if driver.Kind != "customunregistereddb" {
+		t.Fatalf("expected fallback driver for customunregistereddb, got %s", driver.Kind)
 	}
 
-	img := driver.ResolveImage("5.2")
-	if img != "scylladb:5.2" {
-		t.Errorf("expected scylladb:5.2, got %s", img)
+	img := driver.ResolveImage("1.0")
+	if img != "customunregistereddb:1.0" {
+		t.Errorf("expected customunregistereddb:1.0, got %s", img)
 	}
 
-	cmd := driver.BuildProvisionCommand("scylla-main", "5.2", "/var/lib/anode/data/scylla")
+	cmd := driver.BuildProvisionCommand("custom-main", "1.0", "/var/lib/anode/data/custom")
 	if !strings.Contains(cmd, "127.0.0.1") {
 		t.Errorf("expected loopback bind for unknown kind, got: %s", cmd)
 	}

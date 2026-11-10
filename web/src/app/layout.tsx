@@ -49,13 +49,15 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/icon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/icon.svg?v=3", type: "image/svg+xml" },
+      { url: "/icon-32.png?v=3", sizes: "32x32", type: "image/png" },
+      { url: "/icon-192.png?v=3", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico?v=3", sizes: "any" },
     ],
     apple: [
-      { url: "/apple-icon.png", sizes: "32x32", type: "image/png" },
+      { url: "/apple-icon.png?v=3", sizes: "180x180", type: "image/png" },
     ],
-    shortcut: "/icon.svg",
+    shortcut: "/icon.svg?v=3",
   },
   openGraph: {
     type: "website",
@@ -126,6 +128,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark antialiased">
       <head>
+        <link rel="icon" href="/icon.svg?v=3" type="image/svg+xml" />
+        <link rel="icon" href="/icon-32.png?v=3" type="image/png" sizes="32x32" />
+        <link rel="icon" href="/icon-192.png?v=3" type="image/png" sizes="192x192" />
+        <link rel="apple-touch-icon" href="/apple-icon.png?v=3" sizes="180x180" />
+        <link rel="shortcut icon" href="/favicon.ico?v=3" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

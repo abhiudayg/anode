@@ -33,9 +33,20 @@ RestartSec={{.RestartSec}}
 {{range $k, $v := .EnvVars}}
 Environment="{{$k}}={{$v}}"
 {{end}}
-# Cgroups v2 limits
+# Cgroups v2 Resource Limits
 CPUQuota=200%
 MemoryMax=1G
+
+# Least-Privilege Security Hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths={{.WorkingDir}}
 
 [Install]
 WantedBy=multi-user.target
