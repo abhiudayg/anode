@@ -1,3 +1,5 @@
 CMD anode inspect ./testdata/sample-shop
 CMD anode inspect ./testdata/hyper_mesh_12
+CMD anode inspect ./testdata/fintech_core_20
+CMD anode inspect ./testdata/health_mesh_25
 CMD anode inspect ./testdata/omni_mesh_32

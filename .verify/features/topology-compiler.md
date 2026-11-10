@@ -45,7 +45,19 @@ The Topology Compiler analyzes plain Go AST/SSA structures across monorepos with
    - Expected: Output locks 12 services, 7 stateful resources, gRPC link to `ledger`, and 2 external egress rules with exit code `0`.
    - Impact: Establishes enterprise-grade compiler correctness against complex microservice architectures.
 
-3. **omni-mesh-scale-inspection** (entries 3–3) — verifies 32-microservice hyper-scale mesh spanning 14 infrastructure catalog drivers.
+3. **fintech-modular-inspection** (entries 3–3) — verifies 20-microservice neo-banking and trading desk architecture with modular packages.
+   - Request: `CMD anode inspect ./testdata/fintech_core_20`
+   - Why: Proves cross-package taint tracking (`config` -> `repo` -> `handler`), TimescaleDB double-entry ledger, Kafka order book matching, and 5 external financial egresses.
+   - Expected: Output locks 20 services, 5 Goose migrations, and 5 zero-trust egress rules with exit code `0`.
+   - Impact: Confirms production-grade multi-package code extraction reliability.
+
+4. **healthcare-ehr-inspection** (entries 4–4) — verifies 25-microservice hospital EHR and telehealth system.
+   - Request: `CMD anode inspect ./testdata/health_mesh_25`
+   - Why: Proves FHIR document stores, WebRTC signaling, typed gRPC stubs, and healthcare claim egresses.
+   - Expected: Output locks 25 services, 6 Goose migrations, and 5 zero-trust egress rules with exit code `0`.
+   - Impact: Establishes enterprise healthcare architecture extraction correctness.
+
+5. **omni-mesh-scale-inspection** (entries 5–5) — verifies 32-microservice hyper-scale mesh spanning 14 infrastructure catalog drivers.
    - Request: `CMD anode inspect ./testdata/omni_mesh_32`
    - Why: Proves compiler scale, least-privilege driver detection, multi-database migration tracking, and full ecosystem linking across 32 microservices.
    - Expected: Output locks 32 services, 14 stateful database/cache/queue kinds, gRPC contracts, and 5 zero-trust egress rules with exit code `0`.
