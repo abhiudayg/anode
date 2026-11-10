@@ -24,3 +24,5 @@ web/build/
 .vscode/
 *.swp
 *~
+.vercel
+.env*
