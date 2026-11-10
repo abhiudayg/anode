@@ -25,11 +25,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Dual environment variable injection: both unified DSN (`DATABASE_URL`) and decomposed credentials (`DB_HOST`, `DB_PORT`, `DB_USER`).
   - Automated migration execution prior to application process boot.
   - Sub-second hot-reloading supervisor.
+- **Pluggable Infrastructure Catalog & Security Matrix (`internal/catalog`)**:
+  - Declarative service catalog (`defaults.yaml`) with 28 out-of-the-box drivers (PostgreSQL, MySQL, MariaDB, CockroachDB, TimescaleDB, Redis, Valkey, KeyDB, Dragonfly, Memcached, Kafka/Redpanda, RabbitMQ, NATS, ClickHouse, MongoDB, ScyllaDB, Cassandra, Elasticsearch, OpenSearch, Meilisearch, Qdrant, Chroma, Milvus, Weaviate, MinIO, Temporal).
+  - Version matrix pinning (e.g. Postgres 14/15/16/17, MySQL 8.0/8.4, Redis 6/7) with intelligent fallback resolution.
+  - Multi-tier catalog override hierarchy: embedded defaults < repo-level (`.anode/catalog/`) < user-level (`~/.anode/catalog/`).
+  - Strict least-privilege security container configurations: non-root UIDs, `0700` POSIX directory isolation, `no-new-privileges:true`, `--oom-score-adj=-900` database kernel protection, and loopback `127.0.0.1` binding.
 - **Bare-Metal VPS Deployer (`anode deploy`)**:
-  - Cross-compilation to self-contained Linux static binaries (`CGO_ENABLED=0 GOOS=linux`).
-  - Hardened systemd unit file generator with Linux `cgroups v2` resource quotas (`CPUQuota=200%`, `MemoryMax=1G`).
+  - Cross-compilation with automatic target architecture detection (`uname -m` -> `arm64`/`amd64`).
+  - Hardened systemd unit sandboxing (`NoNewPrivileges=true`, `ProtectSystem=strict`, `ProtectHome=true`, `PrivateTmp=true`, `PrivateDevices=true`, `ProtectKernelTunables=true`, `ProtectControlGroups=true`, `RestrictSUIDSGID=true`).
+  - Linux `cgroups v2` resource quotas (`CPUQuota=200%`, `MemoryMax=1G`).
   - Zero-downtime blue/green port swaps using ephemeral loopbacks.
   - Automated Caddy reverse proxy synthesis with Let's Encrypt TLS.
+- **Infrastructure as Code & Automated Provisioning (`infra/`)**:
+  - Production-ready Ansible automation (`infra/ansible/`) for zero-touch VPS bootstrapping.
+  - Terraform configurations (`infra/terraform/`) with cloud-init for bare-metal and cloud VMs.
+  - VM provisioning automation scripts (`scripts/setup-test-vm.sh`).
 - **Cluster & Security Engine (`internal/cluster`)**:
   - Multi-node greedy least-loaded bin-packer for distributing services across registered VPS instances.
   - Compiler-synthesized Linux kernel `nftables` zero-trust firewall policy: blocks all undeclared lateral container traffic, permitting only declared egress.

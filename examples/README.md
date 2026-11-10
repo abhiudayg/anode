@@ -1,6 +1,6 @@
-# Testdata: Enterprise Stress-Test Benchmarks
+# Examples & Architecture Benchmarks
 
-This directory contains real-world, hostile Go microservice architectures used to benchmark, verify, and stress-test the limits of **Anode's** compiler extraction, runtime reconciliation, and deployment engine.
+This directory contains real-world, production Go microservice architectures used to benchmark, verify, and stress-test the limits of **Anode's** compiler extraction, runtime reconciliation, and deployment engine.
 
 ---
 
@@ -84,11 +84,11 @@ To run verification against these test benchmarks:
 
 ```bash
 # 1. Run static extraction and verify lockfile generation
-anode inspect ./testdata/sample-shop
-anode inspect ./testdata/complex_ecommerce
+anode inspect ./examples/sample-shop
+anode inspect ./examples/complex_ecommerce
 
 # 2. Verify dry-run production deployment synthesis
-anode deploy root@127.0.0.1 ./testdata/complex_ecommerce --dry-run
+anode deploy root@127.0.0.1 ./examples/complex_ecommerce --dry-run
 
 # 3. Execute agstack automated verification suite
 agent-brain verify run
