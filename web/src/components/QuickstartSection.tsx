@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Terminal, Copy, Check, ArrowRight, BookOpen } from "lucide-react";
 import { GithubIcon } from "./Icons";
 import confetti from "canvas-confetti";
@@ -103,16 +104,14 @@ export function QuickstartSection() {
             <span>View Source on GitHub</span>
           </a>
 
-          <a
-            href="https://github.com/abhiudayg/anode/blob/main/docs/architecture.md"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            href="/docs#overview"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-mono-code text-cyan-300 transition-all"
           >
             <BookOpen className="w-4 h-4" />
             <span>Read Architecture Deep Dive</span>
             <ArrowRight className="w-3.5 h-3.5" />
-          </a>
+          </Link>
         </div>
       </div>
     </section>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
@@ -32,6 +32,17 @@ export default function DocsPage() {
   const [activeDoc, setActiveDoc] = useState<string>("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hash = window.location.hash.replace("#", "");
+      const params = new URLSearchParams(window.location.search);
+      const sec = params.get("section") || hash;
+      if (sec) {
+        setActiveDoc(sec);
+      }
+    }
+  }, []);
 
   const handleCopy = (code: string, id: string) => {
     navigator.clipboard.writeText(code);

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers, Heart, BookOpen, Newspaper } from "lucide-react";
+import { Layers, BookOpen, Newspaper } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Footer() {
@@ -37,34 +37,25 @@ export function Footer() {
               <span>Blog</span>
             </Link>
             <Link
-              href="/docs"
+              href="/docs#overview"
               className="hover:text-cyan-400 transition-colors"
             >
               Architecture Deep Dive
             </Link>
-            <a
-              href="https://github.com/abhiudayg/anode/blob/main/docs/tradeoffs.md"
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/docs#tradeoffs"
               className="hover:text-cyan-400 transition-colors"
             >
               Tradeoffs & Limits
-            </a>
+            </Link>
             <a
               href="https://github.com/abhiudayg/anode"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-cyan-400 transition-colors"
+              className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
             >
-              GitHub
-            </a>
-            <a
-              href="https://opensource.org/licenses/MIT"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hover:text-cyan-400 transition-colors"
-            >
-              MIT License
+              <GithubIcon className="w-3.5 h-3.5" />
+              <span>GitHub</span>
             </a>
           </div>
 

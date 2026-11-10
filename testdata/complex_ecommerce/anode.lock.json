@@ -1,0 +1,121 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-catalog-db": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/catalog/main.go:37",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/catalog",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-orders": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/orders/main.go:42",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/orders",
+        "execution": "pre_traffic_job"
+      }
+    }
+  },
+  "services": {
+    "catalog": {
+      "name": "catalog",
+      "entrypoint": "./services/catalog",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/products"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-catalog-db",
+          "protocol": "postgres",
+          "inject_env": "CATALOG_DB_URL",
+          "expanded_env": [
+            "CATALOG_DB_URL"
+          ],
+          "provenance": "services/catalog/main.go:37"
+        }
+      ],
+      "secrets": []
+    },
+    "notifications": {
+      "name": "notifications",
+      "entrypoint": "./services/notifications",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/notifications/email"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": [
+        {
+          "env_var": "SENDGRID_API_KEY",
+          "provenance": "services/notifications/main.go:23"
+        },
+        {
+          "env_var": "TWILIO_AUTH_TOKEN",
+          "provenance": "services/notifications/main.go:24"
+        }
+      ]
+    },
+    "orders": {
+      "name": "orders",
+      "entrypoint": "./services/orders",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/orders"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-orders",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "services/orders/main.go:42"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "STRIPE_SECRET_KEY",
+          "provenance": "services/orders/main.go:33"
+        }
+      ]
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "notifications",
+      "target_host": "https://api.sendgrid.com/v3/mail/send",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "orders",
+      "target_host": "https://api.stripe.com/v1/charges",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
+}

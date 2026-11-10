@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/abhiudayg/anode/internal/iag"
@@ -122,22 +123,45 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	return nil
 }
 
+func (d *DeployCoordinator) detectRemoteArch() string {
+	out, err := d.ssh.Run("uname -m")
+	if err == nil {
+		arch := strings.TrimSpace(out)
+		switch arch {
+		case "aarch64", "arm64":
+			return "arm64"
+		case "x86_64", "amd64":
+			return "amd64"
+		case "armv7l", "arm":
+			return "arm"
+		}
+	}
+	return "amd64"
+}
+
 func (d *DeployCoordinator) crossCompileService(ctx context.Context, svc iag.Service, releaseID string) (string, error) {
-	entryDir := filepath.Join(d.rootDir, svc.Entrypoint)
-	outDir := filepath.Join(d.rootDir, ".verify", "releases", releaseID)
+	entryDir, err := filepath.Abs(filepath.Join(d.rootDir, svc.Entrypoint))
+	if err != nil {
+		return "", err
+	}
+	outDir, err := filepath.Abs(filepath.Join(d.rootDir, ".verify", "releases", releaseID))
+	if err != nil {
+		return "", err
+	}
 	_ = os.MkdirAll(outDir, 0755)
 	binPath := filepath.Join(outDir, svc.Name)
 
+	arch := d.detectRemoteArch()
 	cmd := exec.CommandContext(ctx, "go", "build", "-o", binPath, ".")
 	cmd.Dir = entryDir
 	cmd.Env = append(os.Environ(),
 		"CGO_ENABLED=0",
 		"GOOS=linux",
-		"GOARCH=amd64",
+		"GOARCH="+arch,
 	)
 
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return "", fmt.Errorf("linux cross-compile failed: %s (%w)", string(out), err)
+		return "", fmt.Errorf("linux cross-compile failed (%s): %s (%w)", arch, string(out), err)
 	}
 
 	return binPath, nil
