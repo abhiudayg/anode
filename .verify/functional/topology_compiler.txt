@@ -1,2 +1,3 @@
 CMD anode inspect ./testdata/sample-shop
 CMD anode inspect ./testdata/hyper_mesh_12
+CMD anode inspect ./testdata/omni_mesh_32

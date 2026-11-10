@@ -45,6 +45,12 @@ The Topology Compiler analyzes plain Go AST/SSA structures across monorepos with
    - Expected: Output locks 12 services, 7 stateful resources, gRPC link to `ledger`, and 2 external egress rules with exit code `0`.
    - Impact: Establishes enterprise-grade compiler correctness against complex microservice architectures.
 
+3. **omni-mesh-scale-inspection** (entries 3–3) — verifies 32-microservice hyper-scale mesh spanning 14 infrastructure catalog drivers.
+   - Request: `CMD anode inspect ./testdata/omni_mesh_32`
+   - Why: Proves compiler scale, least-privilege driver detection, multi-database migration tracking, and full ecosystem linking across 32 microservices.
+   - Expected: Output locks 32 services, 14 stateful database/cache/queue kinds, gRPC contracts, and 5 zero-trust egress rules with exit code `0`.
+   - Impact: Establishes enterprise-scale production readiness for large-scale microservice deployments.
+
 ## Gotchas
 
 - Standard library package prefix isolation must be strictly maintained to prevent monorepo call-graph bleed.

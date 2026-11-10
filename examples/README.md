@@ -11,7 +11,8 @@ This directory contains real-world, production Go microservice architectures use
 | [**`sample-shop/`**](sample-shop/README.md) | 2 | Clean Go stdlib, HTTP routes, direct env vars. | Baseline regression suite & live VM deployment. | **100% Pass** |
 | [**`complex_ecommerce/`**](complex_ecommerce/README.md) | 3 | Composite DSN formatting, external API egress (Stripe, SendGrid), multi-database migrations. | Composite env unpacking (`DB_HOST`, `DB_PORT`) & external egress classification. | **100% Pass** |
 | [**`benchmark_app/`**](benchmark_app/README.md) | 2 | Dead-code pruning, differential Goose migration tracking. | Rapid Type Analysis (RTA) pruning & sub-150ms compiler throughput. | **100% Pass** |
-| [**`hyper_mesh_12/`**](hyper_mesh_12/README.md) | **12** | Deep 3-hop struct pointers, closure heap captures, mixed gRPC + REST, shared vs isolated DBs, dead code traps. | **The Ultimate Stress Test:** Simulates enterprise-grade distributed mesh with high variable indirection. | **100% Pass** |
+| [**`hyper_mesh_12/`**](hyper_mesh_12/README.md) | **12** | Deep 3-hop struct pointers, closure heap captures, mixed gRPC + REST, shared vs isolated DBs, dead code traps. | Distributed mesh with high variable indirection. | **100% Pass** |
+| [**`omni_mesh_32/`**](omni_mesh_32/README.md) | **32** | 14 distinct backing stores (`postgres`, `clickhouse`, `scylladb`, `mongodb`, `mariadb`, `timescaledb`, `cockroachdb`, `rabbitmq`, `kafka`, `minio`, `temporal`, `qdrant`, `valkey`, `memcached`), gRPC + REST, Goose migrations, external egresses. | **The Ultimate Hyper-Scale Stress Test:** Tests compiler scale, least-privilege driver extraction, and cross-service linking across 32 services. | **100% Pass** |
 
 ---
 

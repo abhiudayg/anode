@@ -82,8 +82,18 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 			kind = "clickhouse"
 		} else if driverStr == "mysql" {
 			kind = "mysql"
+		} else if driverStr == "mariadb" {
+			kind = "mariadb"
+		} else if driverStr == "cockroachdb" {
+			kind = "cockroachdb"
+		} else if driverStr == "timescaledb" {
+			kind = "timescaledb"
+		} else if driverStr == "scylladb" || driverStr == "scylla" {
+			kind = "scylladb"
 		} else if driverStr == "sqlite3" || driverStr == "sqlite" {
 			kind = "sqlite"
+		} else if driverStr != "" {
+			kind = iag.ResourceKind(driverStr)
 		}
 
 		var envVar string
@@ -159,8 +169,16 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 		}
 
 		if _, exists := graph.Resources[resourceID]; !exists {
+			kind := iag.KindRedis
+			if strings.Contains(strings.ToLower(envVar), "valkey") {
+				kind = "valkey"
+			} else if strings.Contains(strings.ToLower(envVar), "keydb") {
+				kind = "keydb"
+			} else if strings.Contains(strings.ToLower(envVar), "dragonfly") {
+				kind = "dragonfly"
+			}
 			graph.Resources[resourceID] = iag.Resource{
-				Kind:          iag.KindRedis,
+				Kind:          kind,
 				Lifecycle:     iag.LifecycleStatefulRetain,
 				AutoProvision: true,
 				Provenance:    provenance,

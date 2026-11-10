@@ -1,0 +1,1247 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-accounting-timescale": {
+      "kind": "timescaledb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/accounting/main.go:25",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/accounting",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-analytics-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/analytics/main.go:17"
+    },
+    "db-auditlog-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/auditlog/main.go:17",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/auditlog",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-catalog-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/catalog/main.go:17"
+    },
+    "db-cms-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/cms/main.go:19"
+    },
+    "db-cms-postgres": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/cms/main.go:22"
+    },
+    "db-coupons-memcached": {
+      "kind": "memcached",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/coupons/main.go:19"
+    },
+    "db-coupons-postgres": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/coupons/main.go:22"
+    },
+    "db-disputes-temporal": {
+      "kind": "temporal",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/disputes/main.go:19"
+    },
+    "db-docs-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/documents/main.go:19"
+    },
+    "db-docs-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/documents/main.go:22"
+    },
+    "db-email-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/email/main.go:19"
+    },
+    "db-fraud-scylla": {
+      "kind": "scylladb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/fraud/main.go:25"
+    },
+    "db-inventory-mariadb": {
+      "kind": "mariadb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/inventory/main.go:21",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/inventory",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-loyalty-postgres": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/loyalty/main.go:21",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/loyalty",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-media-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/media/main.go:17"
+    },
+    "db-metrics-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/metrics/main.go:17"
+    },
+    "db-notifications-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/notifications/main.go:19"
+    },
+    "db-orders": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/orders/main.go:16",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/orders",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-payments-scylla": {
+      "kind": "scylladb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/payments/main.go:19"
+    },
+    "db-recs-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/recommendations/main.go:21"
+    },
+    "db-reviews-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/reviews/main.go:17"
+    },
+    "db-search-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/search/main.go:17"
+    },
+    "db-shipping-kafka-brokers": {
+      "kind": "kafka",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/shipping/main.go:17"
+    },
+    "db-subs-cockroach": {
+      "kind": "cockroachdb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/subscriptions/main.go:17",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/subscriptions",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-users": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/users/main.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/users",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-warehouse-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/warehouse/main.go:17"
+    },
+    "db-webhooks-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/webhooks/main.go:19"
+    },
+    "db-workflows-temporal": {
+      "kind": "temporal",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/workflows/main.go:17"
+    },
+    "redis-auth": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/auth/main.go:21"
+    },
+    "redis-inventory-locks": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/inventory/main.go:24"
+    },
+    "redis-livechat": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/livechat/main.go:18"
+    },
+    "redis-loyalty": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/loyalty/main.go:24"
+    },
+    "redis-pricing-valkey": {
+      "kind": "valkey",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/pricing/main.go:18"
+    },
+    "redis-recs-cache": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/recommendations/main.go:24"
+    }
+  },
+  "services": {
+    "accounting": {
+      "name": "accounting",
+      "entrypoint": "./services/accounting",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterLedgerServiceServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/accounting/balance"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-accounting-timescale",
+          "protocol": "timescaledb",
+          "inject_env": "ACCOUNTING_TIMESCALE_URL",
+          "expanded_env": [
+            "ACCOUNTING_TIMESCALE_URL"
+          ],
+          "provenance": "services/accounting/main.go:25"
+        }
+      ],
+      "secrets": []
+    },
+    "analytics": {
+      "name": "analytics",
+      "entrypoint": "./services/analytics",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/analytics/stats"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-analytics-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "ANALYTICS_CLICKHOUSE_URL",
+          "expanded_env": [
+            "ANALYTICS_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/analytics/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "apigateway": {
+      "name": "apigateway",
+      "entrypoint": "./services/apigateway",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /api/v1/auth",
+            "GET /api/v1/users",
+            "POST /api/v1/orders",
+            "GET /api/v1/search",
+            "GET /api/v1/media"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:38"
+        },
+        {
+          "service_ref": "auth",
+          "protocol": "http",
+          "interface": "/v1/auth/token",
+          "inject_env": "AUTH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:23"
+        },
+        {
+          "service_ref": "users",
+          "protocol": "http",
+          "interface": "/v1/users",
+          "inject_env": "USERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:28"
+        },
+        {
+          "service_ref": "media",
+          "protocol": "http",
+          "interface": "/v1/media",
+          "inject_env": "MEDIA_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:43"
+        },
+        {
+          "service_ref": "orders",
+          "protocol": "http",
+          "interface": "/v1/orders",
+          "inject_env": "ORDERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:33"
+        }
+      ],
+      "secrets": []
+    },
+    "auditlog": {
+      "name": "auditlog",
+      "entrypoint": "./services/auditlog",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/audit/log"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-auditlog-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "AUDITLOG_CLICKHOUSE_URL",
+          "expanded_env": [
+            "AUDITLOG_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/auditlog/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "auth": {
+      "name": "auth",
+      "entrypoint": "./services/auth",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/auth/token"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-auth",
+          "protocol": "redis",
+          "inject_env": "AUTH_REDIS_ADDR",
+          "provenance": "services/auth/main.go:21"
+        },
+        {
+          "service_ref": "users",
+          "protocol": "http",
+          "interface": "/v1/users/lookup",
+          "inject_env": "USERS_SERVICE_URL",
+          "provenance": "services/auth/main.go:27"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "JWT_SIGNING_SECRET_KEY",
+          "provenance": "services/auth/main.go:18"
+        }
+      ]
+    },
+    "catalog": {
+      "name": "catalog",
+      "entrypoint": "./services/catalog",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/catalog/items"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-catalog-mongo",
+          "protocol": "mongodb",
+          "inject_env": "CATALOG_MONGO_URL",
+          "expanded_env": [
+            "CATALOG_MONGO_URL"
+          ],
+          "provenance": "services/catalog/main.go:17"
+        },
+        {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search/sync",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/catalog/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "cms": {
+      "name": "cms",
+      "entrypoint": "./services/cms",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/cms/pages"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-cms-minio",
+          "protocol": "minio",
+          "inject_env": "CMS_MINIO_URL",
+          "expanded_env": [
+            "CMS_MINIO_URL"
+          ],
+          "provenance": "services/cms/main.go:19"
+        },
+        {
+          "resource_ref": "db-cms-postgres",
+          "protocol": "postgres",
+          "inject_env": "CMS_POSTGRES_URL",
+          "expanded_env": [
+            "CMS_POSTGRES_URL"
+          ],
+          "provenance": "services/cms/main.go:22"
+        }
+      ],
+      "secrets": []
+    },
+    "coupons": {
+      "name": "coupons",
+      "entrypoint": "./services/coupons",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/coupons/apply"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-coupons-memcached",
+          "protocol": "memcached",
+          "inject_env": "COUPONS_MEMCACHED_URL",
+          "expanded_env": [
+            "COUPONS_MEMCACHED_URL"
+          ],
+          "provenance": "services/coupons/main.go:19"
+        },
+        {
+          "resource_ref": "db-coupons-postgres",
+          "protocol": "postgres",
+          "inject_env": "COUPONS_POSTGRES_URL",
+          "expanded_env": [
+            "COUPONS_POSTGRES_URL"
+          ],
+          "provenance": "services/coupons/main.go:22"
+        }
+      ],
+      "secrets": []
+    },
+    "crm": {
+      "name": "crm",
+      "entrypoint": "./services/crm",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/crm/sync"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": [
+        {
+          "env_var": "SALESFORCE_AUTH_TOKEN",
+          "provenance": "services/crm/main.go:15"
+        }
+      ]
+    },
+    "disputes": {
+      "name": "disputes",
+      "entrypoint": "./services/disputes",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/disputes/file"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-disputes-temporal",
+          "protocol": "temporal",
+          "inject_env": "DISPUTES_TEMPORAL_URL",
+          "expanded_env": [
+            "DISPUTES_TEMPORAL_URL"
+          ],
+          "provenance": "services/disputes/main.go:19"
+        },
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/refund",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/disputes/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "documents": {
+      "name": "documents",
+      "entrypoint": "./services/documents",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/documents/invoice"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-docs-minio",
+          "protocol": "minio",
+          "inject_env": "DOCS_MINIO_URL",
+          "expanded_env": [
+            "DOCS_MINIO_URL"
+          ],
+          "provenance": "services/documents/main.go:19"
+        },
+        {
+          "resource_ref": "db-docs-mongo",
+          "protocol": "mongodb",
+          "inject_env": "DOCS_MONGO_URL",
+          "expanded_env": [
+            "DOCS_MONGO_URL"
+          ],
+          "provenance": "services/documents/main.go:22"
+        }
+      ],
+      "secrets": []
+    },
+    "email": {
+      "name": "email",
+      "entrypoint": "./services/email",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/email/send"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "auditlog",
+          "protocol": "http",
+          "interface": "/v1/audit/log",
+          "inject_env": "AUDITLOG_SERVICE_URL",
+          "provenance": "services/email/main.go:24"
+        },
+        {
+          "resource_ref": "db-email-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "EMAIL_RABBITMQ_URL",
+          "expanded_env": [
+            "EMAIL_RABBITMQ_URL"
+          ],
+          "provenance": "services/email/main.go:19"
+        }
+      ],
+      "secrets": []
+    },
+    "fraud": {
+      "name": "fraud",
+      "entrypoint": "./services/fraud",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterFraudServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/fraud/check"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-fraud-scylla",
+          "protocol": "scylladb",
+          "inject_env": "FRAUD_SCYLLA_URL",
+          "expanded_env": [
+            "FRAUD_SCYLLA_URL"
+          ],
+          "provenance": "services/fraud/main.go:25"
+        }
+      ],
+      "secrets": []
+    },
+    "inventory": {
+      "name": "inventory",
+      "entrypoint": "./services/inventory",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/inventory/reserve"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-inventory-mariadb",
+          "protocol": "mariadb",
+          "inject_env": "INVENTORY_MARIADB_URL",
+          "expanded_env": [
+            "INVENTORY_MARIADB_URL"
+          ],
+          "provenance": "services/inventory/main.go:21"
+        },
+        {
+          "resource_ref": "redis-inventory-locks",
+          "protocol": "redis",
+          "inject_env": "INVENTORY_LOCKS_REDIS_ADDR",
+          "provenance": "services/inventory/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "livechat": {
+      "name": "livechat",
+      "entrypoint": "./services/livechat",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/chat/ws"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-livechat",
+          "protocol": "redis",
+          "inject_env": "LIVECHAT_REDIS_ADDR",
+          "provenance": "services/livechat/main.go:18"
+        }
+      ],
+      "secrets": []
+    },
+    "loyalty": {
+      "name": "loyalty",
+      "entrypoint": "./services/loyalty",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/loyalty/points"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-loyalty-postgres",
+          "protocol": "postgres",
+          "inject_env": "LOYALTY_POSTGRES_URL",
+          "expanded_env": [
+            "LOYALTY_POSTGRES_URL"
+          ],
+          "provenance": "services/loyalty/main.go:21"
+        },
+        {
+          "resource_ref": "redis-loyalty",
+          "protocol": "redis",
+          "inject_env": "LOYALTY_REDIS_ADDR",
+          "provenance": "services/loyalty/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "media": {
+      "name": "media",
+      "entrypoint": "./services/media",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/media"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-media-minio",
+          "protocol": "minio",
+          "inject_env": "MEDIA_MINIO_URL",
+          "expanded_env": [
+            "MEDIA_MINIO_URL"
+          ],
+          "provenance": "services/media/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "metrics": {
+      "name": "metrics",
+      "entrypoint": "./services/metrics",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/metrics/ingest"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-metrics-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "METRICS_CLICKHOUSE_URL",
+          "expanded_env": [
+            "METRICS_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/metrics/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "notifications": {
+      "name": "notifications",
+      "entrypoint": "./services/notifications",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/notifications/push"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-notifications-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "NOTIFICATIONS_RABBITMQ_URL",
+          "expanded_env": [
+            "NOTIFICATIONS_RABBITMQ_URL"
+          ],
+          "provenance": "services/notifications/main.go:19"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "SENDGRID_API_SECRET_TOKEN",
+          "provenance": "services/notifications/main.go:17"
+        }
+      ]
+    },
+    "orders": {
+      "name": "orders",
+      "entrypoint": "./services/orders",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/orders"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-orders",
+          "protocol": "postgres",
+          "inject_env": "",
+          "expanded_env": [
+            "ORDERS_DB_USER",
+            "ORDERS_DB_PASSWORD",
+            "ORDERS_DB_HOST",
+            "ORDERS_DB_NAME",
+            "ORDERS_SSLMODE"
+          ],
+          "provenance": "services/orders/main.go:16"
+        },
+        {
+          "service_ref": "accounting",
+          "protocol": "grpc",
+          "interface": "RegisterLedgerServiceServer",
+          "inject_env": "LEDGER_GRPC_ADDR",
+          "provenance": "services/orders/main.go:28"
+        },
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/charge",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:34"
+        },
+        {
+          "service_ref": "inventory",
+          "protocol": "http",
+          "interface": "/v1/inventory/reserve",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:37"
+        }
+      ],
+      "secrets": []
+    },
+    "payments": {
+      "name": "payments",
+      "entrypoint": "./services/payments",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/payments/charge",
+            "POST /v1/payments/refund"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-payments-scylla",
+          "protocol": "scylladb",
+          "inject_env": "PAYMENTS_SCYLLA_URL",
+          "expanded_env": [
+            "PAYMENTS_SCYLLA_URL"
+          ],
+          "provenance": "services/payments/main.go:19"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "STRIPE_API_SECRET_KEY",
+          "provenance": "services/payments/main.go:17"
+        }
+      ]
+    },
+    "pricing": {
+      "name": "pricing",
+      "entrypoint": "./services/pricing",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/pricing/quote"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-pricing-valkey",
+          "protocol": "redis",
+          "inject_env": "PRICING_VALKEY_ADDR",
+          "provenance": "services/pricing/main.go:18"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "PRICING_VALKEY_ADDR",
+          "provenance": "services/pricing/main.go:17"
+        }
+      ]
+    },
+    "recommendations": {
+      "name": "recommendations",
+      "entrypoint": "./services/recommendations",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/recommendations/user"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-recs-qdrant",
+          "protocol": "qdrant",
+          "inject_env": "RECS_QDRANT_URL",
+          "expanded_env": [
+            "RECS_QDRANT_URL"
+          ],
+          "provenance": "services/recommendations/main.go:21"
+        },
+        {
+          "resource_ref": "redis-recs-cache",
+          "protocol": "redis",
+          "inject_env": "RECS_CACHE_REDIS_ADDR",
+          "provenance": "services/recommendations/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "reviews": {
+      "name": "reviews",
+      "entrypoint": "./services/reviews",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/reviews/submit"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-reviews-mongo",
+          "protocol": "mongodb",
+          "inject_env": "REVIEWS_MONGO_URL",
+          "expanded_env": [
+            "REVIEWS_MONGO_URL"
+          ],
+          "provenance": "services/reviews/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "search": {
+      "name": "search",
+      "entrypoint": "./services/search",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/search",
+            "GET /v1/search/sync"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-search-qdrant",
+          "protocol": "qdrant",
+          "inject_env": "SEARCH_QDRANT_URL",
+          "expanded_env": [
+            "SEARCH_QDRANT_URL"
+          ],
+          "provenance": "services/search/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "shipping": {
+      "name": "shipping",
+      "entrypoint": "./services/shipping",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/shipments/create"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-shipping-kafka-brokers",
+          "protocol": "kafka",
+          "inject_env": "SHIPPING_KAFKA_BROKERS",
+          "expanded_env": [
+            "SHIPPING_KAFKA_BROKERS"
+          ],
+          "provenance": "services/shipping/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "subscriptions": {
+      "name": "subscriptions",
+      "entrypoint": "./services/subscriptions",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/subscriptions/create"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-subs-cockroach",
+          "protocol": "cockroachdb",
+          "inject_env": "SUBS_COCKROACH_URL",
+          "expanded_env": [
+            "SUBS_COCKROACH_URL"
+          ],
+          "provenance": "services/subscriptions/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "tax": {
+      "name": "tax",
+      "entrypoint": "./services/tax",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/tax/calculate"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": [
+        {
+          "env_var": "AVALARA_API_KEY",
+          "provenance": "services/tax/main.go:15"
+        }
+      ]
+    },
+    "users": {
+      "name": "users",
+      "entrypoint": "./services/users",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/users",
+            "GET /v1/users/lookup"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-users",
+          "protocol": "postgres",
+          "inject_env": "",
+          "expanded_env": [
+            "USERS_DB_USER",
+            "USERS_DB_PASSWORD",
+            "USERS_DB_HOST",
+            "USERS_DB_NAME",
+            "USERS_SSLMODE"
+          ],
+          "provenance": "services/users/main.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "warehouse": {
+      "name": "warehouse",
+      "entrypoint": "./services/warehouse",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/warehouse/pack"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-warehouse-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "WAREHOUSE_RABBITMQ_URL",
+          "expanded_env": [
+            "WAREHOUSE_RABBITMQ_URL"
+          ],
+          "provenance": "services/warehouse/main.go:17"
+        },
+        {
+          "service_ref": "shipping",
+          "protocol": "http",
+          "interface": "/v1/shipments/create",
+          "inject_env": "SHIPPING_SERVICE_URL",
+          "provenance": "services/warehouse/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "webhooks": {
+      "name": "webhooks",
+      "entrypoint": "./services/webhooks",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/webhooks/dispatch"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-webhooks-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "WEBHOOKS_RABBITMQ_URL",
+          "expanded_env": [
+            "WEBHOOKS_RABBITMQ_URL"
+          ],
+          "provenance": "services/webhooks/main.go:19"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "WEBHOOK_HMAC_SECRET",
+          "provenance": "services/webhooks/main.go:17"
+        }
+      ]
+    },
+    "workflows": {
+      "name": "workflows",
+      "entrypoint": "./services/workflows",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/workflows/start"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-workflows-temporal",
+          "protocol": "temporal",
+          "inject_env": "WORKFLOWS_TEMPORAL_URL",
+          "expanded_env": [
+            "WORKFLOWS_TEMPORAL_URL"
+          ],
+          "provenance": "services/workflows/main.go:17"
+        }
+      ],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "crm",
+      "target_host": "https://api.salesforce.com/services/data/v58.0",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "notifications",
+      "target_host": "https://api.sendgrid.com/v3/mail/send",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "payments",
+      "target_host": "https://api.stripe.com/v1/charges",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "shipping",
+      "target_host": "https://api.easypost.com/v2/shipments",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "tax",
+      "target_host": "https://rest.avatax.com/api/v2/tax/rates",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
+}
