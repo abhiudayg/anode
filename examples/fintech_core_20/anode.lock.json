@@ -1,0 +1,755 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-accounts_service": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/accounts_service/repository/account_repo.go:24",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/accounts_service",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-cards-mariadb": {
+      "kind": "mariadb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/cards_service/store/mariadb.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/cards_service",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-compliance-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/compliance_audit/store/clickhouse.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/compliance_audit",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-crypto-cockroach": {
+      "kind": "cockroachdb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/crypto_custody/vault/cockroach.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/crypto_custody",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-disputes-temporal": {
+      "kind": "temporal",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/dispute_arbitration/workflow/temporal.go:14"
+    },
+    "db-fraud-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/fraud_guard/vectors/qdrant.go:14"
+    },
+    "db-fx-memcached": {
+      "kind": "memcached",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/currency_fx/cache/memcache.go:14"
+    },
+    "db-kyc-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/kyc_verifier/vault/minio.go:14"
+    },
+    "db-ledger_engine": {
+      "kind": "timescaledb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/ledger_engine/store/timescale.go:13",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/ledger_engine",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-loans-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/loan_underwriting/store/mongo.go:14"
+    },
+    "db-notifications-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/notifications/queue/rabbit.go:14"
+    },
+    "db-payments-scylla": {
+      "kind": "scylladb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/payment_rails/store/scylla.go:14"
+    },
+    "db-recon-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/reconciliation_job/olap/clickhouse.go:14"
+    },
+    "db-recon-kafka-brokers": {
+      "kind": "kafka",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/reconciliation_job/engine/kafka.go:14"
+    },
+    "db-statements-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/statement_gen/pdf/minio.go:14"
+    },
+    "db-statements-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/statement_gen/queue/rabbit.go:14"
+    },
+    "db-tax-postgres": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/tax_reporting/store/postgres.go:14"
+    },
+    "db-trading-kafka-brokers": {
+      "kind": "kafka",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/trading_engine/events/producer.go:14"
+    },
+    "redis-auth_service": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/auth_service/auth/session.go:18"
+    },
+    "redis-market": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/market_data/stream/redis.go:15"
+    },
+    "redis-rewards": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/rewards_service/points/redis.go:15"
+    },
+    "redis-trading-valkey": {
+      "kind": "valkey",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/trading_engine/orderbook/cache.go:16"
+    }
+  },
+  "services": {
+    "accounts_service": {
+      "name": "accounts_service",
+      "entrypoint": "./services/accounts_service",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/accounts/me",
+            "GET /v1/accounts/verify/{id}"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-accounts_service",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "services/accounts_service/repository/account_repo.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "api_gateway": {
+      "name": "api_gateway",
+      "entrypoint": "./services/api_gateway",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /api/v1/health",
+            "POST /api/v1/auth/login",
+            "GET /api/v1/accounts/me",
+            "POST /api/v1/trading/orders",
+            "POST /api/v1/payments/transfer",
+            "GET /api/v1/cards"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": []
+    },
+    "auth_service": {
+      "name": "auth_service",
+      "entrypoint": "./services/auth_service",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/auth/token"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-auth_service",
+          "protocol": "redis",
+          "inject_env": "",
+          "provenance": "services/auth_service/auth/session.go:18"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "JWT_SIGNING_SECRET_KEY",
+          "provenance": "services/auth_service/auth/config.go:22"
+        }
+      ]
+    },
+    "cards_service": {
+      "name": "cards_service",
+      "entrypoint": "./services/cards_service",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/cards/list"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-cards-mariadb",
+          "protocol": "mariadb",
+          "inject_env": "CARDS_MARIADB_URL",
+          "expanded_env": [
+            "CARDS_MARIADB_URL"
+          ],
+          "provenance": "services/cards_service/store/mariadb.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "compliance_audit": {
+      "name": "compliance_audit",
+      "entrypoint": "./services/compliance_audit",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/compliance/log"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-compliance-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "COMPLIANCE_CLICKHOUSE_URL",
+          "expanded_env": [
+            "COMPLIANCE_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/compliance_audit/store/clickhouse.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "crypto_custody": {
+      "name": "crypto_custody",
+      "entrypoint": "./services/crypto_custody",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/crypto/balance"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-crypto-cockroach",
+          "protocol": "cockroachdb",
+          "inject_env": "CRYPTO_COCKROACH_URL",
+          "expanded_env": [
+            "CRYPTO_COCKROACH_URL"
+          ],
+          "provenance": "services/crypto_custody/vault/cockroach.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "currency_fx": {
+      "name": "currency_fx",
+      "entrypoint": "./services/currency_fx",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/fx/convert"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-fx-memcached",
+          "protocol": "memcached",
+          "inject_env": "FX_MEMCACHED_URL",
+          "expanded_env": [
+            "FX_MEMCACHED_URL"
+          ],
+          "provenance": "services/currency_fx/cache/memcache.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "dispute_arbitration": {
+      "name": "dispute_arbitration",
+      "entrypoint": "./services/dispute_arbitration",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/disputes/file"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "payment_rails",
+          "protocol": "http",
+          "interface": "/v1/payments/execute",
+          "inject_env": "PAYMENT_RAILS_SERVICE_URL",
+          "provenance": "services/dispute_arbitration/main.go:28"
+        },
+        {
+          "resource_ref": "db-disputes-temporal",
+          "protocol": "temporal",
+          "inject_env": "DISPUTES_TEMPORAL_URL",
+          "expanded_env": [
+            "DISPUTES_TEMPORAL_URL"
+          ],
+          "provenance": "services/dispute_arbitration/workflow/temporal.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "fraud_guard": {
+      "name": "fraud_guard",
+      "entrypoint": "./services/fraud_guard",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/fraud/evaluate"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "ledger_engine",
+          "protocol": "grpc",
+          "interface": "RegisterLedgerServiceServer",
+          "inject_env": "LEDGER_GRPC_ADDR",
+          "provenance": "services/fraud_guard/evaluator/client.go:16"
+        },
+        {
+          "resource_ref": "db-fraud-qdrant",
+          "protocol": "qdrant",
+          "inject_env": "FRAUD_QDRANT_URL",
+          "expanded_env": [
+            "FRAUD_QDRANT_URL"
+          ],
+          "provenance": "services/fraud_guard/vectors/qdrant.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "kyc_verifier": {
+      "name": "kyc_verifier",
+      "entrypoint": "./services/kyc_verifier",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/kyc/verify"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-kyc-minio",
+          "protocol": "minio",
+          "inject_env": "KYC_MINIO_URL",
+          "expanded_env": [
+            "KYC_MINIO_URL"
+          ],
+          "provenance": "services/kyc_verifier/vault/minio.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "ledger_engine": {
+      "name": "ledger_engine",
+      "entrypoint": "./services/ledger_engine",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/ledger/balance"
+          ]
+        },
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterLedgerServiceServer"
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-ledger_engine",
+          "protocol": "timescaledb",
+          "inject_env": "",
+          "provenance": "services/ledger_engine/store/timescale.go:13"
+        }
+      ],
+      "secrets": []
+    },
+    "loan_underwriting": {
+      "name": "loan_underwriting",
+      "entrypoint": "./services/loan_underwriting",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/loans/apply"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-loans-mongo",
+          "protocol": "mongodb",
+          "inject_env": "LOANS_MONGO_URL",
+          "expanded_env": [
+            "LOANS_MONGO_URL"
+          ],
+          "provenance": "services/loan_underwriting/store/mongo.go:14"
+        },
+        {
+          "service_ref": "api_gateway",
+          "protocol": "http",
+          "interface": "/v1/accounts/me",
+          "inject_env": "ACCOUNTS_SERVICE_URL",
+          "provenance": "services/loan_underwriting/main.go:28"
+        }
+      ],
+      "secrets": []
+    },
+    "market_data": {
+      "name": "market_data",
+      "entrypoint": "./services/market_data",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/market/prices"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-market",
+          "protocol": "redis",
+          "inject_env": "MARKET_REDIS_ADDR",
+          "provenance": "services/market_data/stream/redis.go:15"
+        }
+      ],
+      "secrets": []
+    },
+    "notifications": {
+      "name": "notifications",
+      "entrypoint": "./services/notifications",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/notifications/sms"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-notifications-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "NOTIFICATIONS_RABBITMQ_URL",
+          "expanded_env": [
+            "NOTIFICATIONS_RABBITMQ_URL"
+          ],
+          "provenance": "services/notifications/queue/rabbit.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "payment_rails": {
+      "name": "payment_rails",
+      "entrypoint": "./services/payment_rails",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/payments/execute"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-payments-scylla",
+          "protocol": "scylladb",
+          "inject_env": "PAYMENTS_SCYLLA_URL",
+          "expanded_env": [
+            "PAYMENTS_SCYLLA_URL"
+          ],
+          "provenance": "services/payment_rails/store/scylla.go:14"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "STRIPE_API_SECRET_KEY",
+          "provenance": "services/payment_rails/stripe/client.go:15"
+        }
+      ]
+    },
+    "reconciliation_job": {
+      "name": "reconciliation_job",
+      "entrypoint": "./services/reconciliation_job",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/recon/run"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-recon-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "RECON_CLICKHOUSE_URL",
+          "expanded_env": [
+            "RECON_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/reconciliation_job/olap/clickhouse.go:14"
+        },
+        {
+          "resource_ref": "db-recon-kafka-brokers",
+          "protocol": "kafka",
+          "inject_env": "RECON_KAFKA_BROKERS",
+          "expanded_env": [
+            "RECON_KAFKA_BROKERS"
+          ],
+          "provenance": "services/reconciliation_job/engine/kafka.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "rewards_service": {
+      "name": "rewards_service",
+      "entrypoint": "./services/rewards_service",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/rewards/redeem"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-rewards",
+          "protocol": "redis",
+          "inject_env": "REWARDS_REDIS_ADDR",
+          "provenance": "services/rewards_service/points/redis.go:15"
+        },
+        {
+          "service_ref": "accounts_service",
+          "protocol": "http",
+          "interface": "/v1/accounts/credit",
+          "inject_env": "ACCOUNTS_SERVICE_URL",
+          "provenance": "services/rewards_service/main.go:25"
+        }
+      ],
+      "secrets": []
+    },
+    "statement_gen": {
+      "name": "statement_gen",
+      "entrypoint": "./services/statement_gen",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/statements/generate"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-statements-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "STATEMENTS_RABBITMQ_URL",
+          "expanded_env": [
+            "STATEMENTS_RABBITMQ_URL"
+          ],
+          "provenance": "services/statement_gen/queue/rabbit.go:14"
+        },
+        {
+          "resource_ref": "db-statements-minio",
+          "protocol": "minio",
+          "inject_env": "STATEMENTS_MINIO_URL",
+          "expanded_env": [
+            "STATEMENTS_MINIO_URL"
+          ],
+          "provenance": "services/statement_gen/pdf/minio.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "tax_reporting": {
+      "name": "tax_reporting",
+      "entrypoint": "./services/tax_reporting",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/tax/1099b"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-tax-postgres",
+          "protocol": "postgres",
+          "inject_env": "TAX_POSTGRES_URL",
+          "expanded_env": [
+            "TAX_POSTGRES_URL"
+          ],
+          "provenance": "services/tax_reporting/store/postgres.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "trading_engine": {
+      "name": "trading_engine",
+      "entrypoint": "./services/trading_engine",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/trading/order",
+            "GET /v1/trading/depth"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-trading-kafka-brokers",
+          "protocol": "kafka",
+          "inject_env": "TRADING_KAFKA_BROKERS",
+          "expanded_env": [
+            "TRADING_KAFKA_BROKERS"
+          ],
+          "provenance": "services/trading_engine/events/producer.go:14"
+        },
+        {
+          "resource_ref": "redis-trading-valkey",
+          "protocol": "redis",
+          "inject_env": "TRADING_VALKEY_ADDR",
+          "provenance": "services/trading_engine/orderbook/cache.go:16"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "TRADING_VALKEY_ADDR",
+          "provenance": "services/trading_engine/orderbook/cache.go:14"
+        }
+      ]
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "currency_fx",
+      "target_host": "https://api.frankfurter.app/latest",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "kyc_verifier",
+      "target_host": "https://withpersona.com/api/v1/inquiries",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "market_data",
+      "target_host": "https://api.coingecko.com/api/v3/simple/price",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "notifications",
+      "target_host": "https://api.twilio.com/2010-04-01/Accounts",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "payment_rails",
+      "target_host": "https://api.stripe.com/v1/payment_intents",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
+}

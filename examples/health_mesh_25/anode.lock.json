@@ -1,0 +1,892 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-analytics-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/health_analytics/main.go:17"
+    },
+    "db-appointments-mariadb": {
+      "kind": "mariadb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/appointments/main.go:21",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/appointments",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-audit-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/audit_trail/main.go:17",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/audit_trail",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-billing-postgres": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/billing_claims/main.go:17",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/billing_claims",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-bloodbank-mariadb": {
+      "kind": "mariadb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/blood_bank/main.go:17"
+    },
+    "db-clinical-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/clinical_ai/main.go:17"
+    },
+    "db-credentials-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/doctor_credentialing/main.go:17"
+    },
+    "db-ehr-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/ehr_core/main.go:25"
+    },
+    "db-eligibility-memcached": {
+      "kind": "memcached",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/insurance_eligibility/main.go:17"
+    },
+    "db-genomics-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/genomics_service/main.go:17"
+    },
+    "db-icu-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/icu_alerts/main.go:17"
+    },
+    "db-lab-timescale": {
+      "kind": "timescaledb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/lab_results/main.go:17",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/lab_results",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-messaging-postgres": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/patient_portal_messaging/main.go:17"
+    },
+    "db-patient_registry": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/patient_registry/main.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/patient_registry",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-pharmacy-scylla": {
+      "kind": "scylladb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/pharmacy_inventory/main.go:17"
+    },
+    "db-prescriptions-cockroach": {
+      "kind": "cockroachdb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/prescriptions/main.go:19",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/prescriptions",
+        "execution": "pre_traffic_job"
+      }
+    },
+    "db-radiology-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/radiology_pacs/main.go:17"
+    },
+    "db-surgery-temporal": {
+      "kind": "temporal",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/surgery_orchestrator/main.go:17"
+    },
+    "db-transcription-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/medical_transcription/main.go:17"
+    },
+    "db-trials-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/clinical_trials/main.go:17"
+    },
+    "db-vitals-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/vitals_iot/main.go:21"
+    },
+    "db-vitals-kafka-brokers": {
+      "kind": "kafka",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/vitals_iot/main.go:17"
+    },
+    "redis-appointments-locks": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/appointments/main.go:24"
+    },
+    "redis-dispatch-valkey": {
+      "kind": "valkey",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/ambulance_dispatch/main.go:18"
+    },
+    "redis-staff": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/auth_sso/main.go:21"
+    },
+    "redis-telehealth": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/telehealth_webrtc/main.go:21"
+    }
+  },
+  "services": {
+    "ambulance_dispatch": {
+      "name": "ambulance_dispatch",
+      "entrypoint": "./services/ambulance_dispatch",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/dispatch/ambulance"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-dispatch-valkey",
+          "protocol": "redis",
+          "inject_env": "DISPATCH_VALKEY_ADDR",
+          "provenance": "services/ambulance_dispatch/main.go:18"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "DISPATCH_VALKEY_ADDR",
+          "provenance": "services/ambulance_dispatch/main.go:17"
+        }
+      ]
+    },
+    "appointments": {
+      "name": "appointments",
+      "entrypoint": "./services/appointments",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/appointments/book"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-appointments-mariadb",
+          "protocol": "mariadb",
+          "inject_env": "APPOINTMENTS_MARIADB_URL",
+          "expanded_env": [
+            "APPOINTMENTS_MARIADB_URL"
+          ],
+          "provenance": "services/appointments/main.go:21"
+        },
+        {
+          "resource_ref": "redis-appointments-locks",
+          "protocol": "redis",
+          "inject_env": "APPOINTMENTS_LOCKS_REDIS_ADDR",
+          "provenance": "services/appointments/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "audit_trail": {
+      "name": "audit_trail",
+      "entrypoint": "./services/audit_trail",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/hipaa/log"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-audit-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "AUDIT_CLICKHOUSE_URL",
+          "expanded_env": [
+            "AUDIT_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/audit_trail/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "auth_sso": {
+      "name": "auth_sso",
+      "entrypoint": "./services/auth_sso",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/auth/sso"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "patient_registry",
+          "protocol": "http",
+          "interface": "/v1/patients/query",
+          "inject_env": "PATIENTS_SERVICE_URL",
+          "provenance": "services/auth_sso/main.go:27"
+        },
+        {
+          "resource_ref": "redis-staff",
+          "protocol": "redis",
+          "inject_env": "STAFF_REDIS_ADDR",
+          "provenance": "services/auth_sso/main.go:21"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "HIPAA_ENCRYPTION_KEY",
+          "provenance": "services/auth_sso/main.go:18"
+        }
+      ]
+    },
+    "billing_claims": {
+      "name": "billing_claims",
+      "entrypoint": "./services/billing_claims",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/billing/submit-claim"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-billing-postgres",
+          "protocol": "postgres",
+          "inject_env": "BILLING_POSTGRES_URL",
+          "expanded_env": [
+            "BILLING_POSTGRES_URL"
+          ],
+          "provenance": "services/billing_claims/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "blood_bank": {
+      "name": "blood_bank",
+      "entrypoint": "./services/blood_bank",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/bloodbank/inventory"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-bloodbank-mariadb",
+          "protocol": "mariadb",
+          "inject_env": "BLOODBANK_MARIADB_URL",
+          "expanded_env": [
+            "BLOODBANK_MARIADB_URL"
+          ],
+          "provenance": "services/blood_bank/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "clinical_ai": {
+      "name": "clinical_ai",
+      "entrypoint": "./services/clinical_ai",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/ai/symptom-match"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-clinical-qdrant",
+          "protocol": "qdrant",
+          "inject_env": "CLINICAL_QDRANT_URL",
+          "expanded_env": [
+            "CLINICAL_QDRANT_URL"
+          ],
+          "provenance": "services/clinical_ai/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "clinical_trials": {
+      "name": "clinical_trials",
+      "entrypoint": "./services/clinical_trials",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/trials/match"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-trials-qdrant",
+          "protocol": "qdrant",
+          "inject_env": "TRIALS_QDRANT_URL",
+          "expanded_env": [
+            "TRIALS_QDRANT_URL"
+          ],
+          "provenance": "services/clinical_trials/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "doctor_credentialing": {
+      "name": "doctor_credentialing",
+      "entrypoint": "./services/doctor_credentialing",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/credentials/verify-npi"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-credentials-mongo",
+          "protocol": "mongodb",
+          "inject_env": "CREDENTIALS_MONGO_URL",
+          "expanded_env": [
+            "CREDENTIALS_MONGO_URL"
+          ],
+          "provenance": "services/doctor_credentialing/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "ehr_core": {
+      "name": "ehr_core",
+      "entrypoint": "./services/ehr_core",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterEHRServiceServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/ehr/patient/{id}"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-ehr-mongo",
+          "protocol": "mongodb",
+          "inject_env": "EHR_MONGO_URL",
+          "expanded_env": [
+            "EHR_MONGO_URL"
+          ],
+          "provenance": "services/ehr_core/main.go:25"
+        }
+      ],
+      "secrets": []
+    },
+    "genomics_service": {
+      "name": "genomics_service",
+      "entrypoint": "./services/genomics_service",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/genomics/fast-q/{id}"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-genomics-minio",
+          "protocol": "minio",
+          "inject_env": "GENOMICS_MINIO_URL",
+          "expanded_env": [
+            "GENOMICS_MINIO_URL"
+          ],
+          "provenance": "services/genomics_service/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "health_analytics": {
+      "name": "health_analytics",
+      "entrypoint": "./services/health_analytics",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/epidemiology/stats"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-analytics-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "ANALYTICS_CLICKHOUSE_URL",
+          "expanded_env": [
+            "ANALYTICS_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/health_analytics/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "icu_alerts": {
+      "name": "icu_alerts",
+      "entrypoint": "./services/icu_alerts",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/icu/alert"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-icu-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "ICU_RABBITMQ_URL",
+          "expanded_env": [
+            "ICU_RABBITMQ_URL"
+          ],
+          "provenance": "services/icu_alerts/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "ingress_gateway": {
+      "name": "ingress_gateway",
+      "entrypoint": "./services/ingress_gateway",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /api/v1/patients",
+            "POST /api/v1/appointments"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": []
+    },
+    "insurance_eligibility": {
+      "name": "insurance_eligibility",
+      "entrypoint": "./services/insurance_eligibility",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/eligibility/check"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-eligibility-memcached",
+          "protocol": "memcached",
+          "inject_env": "ELIGIBILITY_MEMCACHED_URL",
+          "expanded_env": [
+            "ELIGIBILITY_MEMCACHED_URL"
+          ],
+          "provenance": "services/insurance_eligibility/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "lab_results": {
+      "name": "lab_results",
+      "entrypoint": "./services/lab_results",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/labs/patient/{id}"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-lab-timescale",
+          "protocol": "timescaledb",
+          "inject_env": "LAB_TIMESCALE_URL",
+          "expanded_env": [
+            "LAB_TIMESCALE_URL"
+          ],
+          "provenance": "services/lab_results/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "medical_transcription": {
+      "name": "medical_transcription",
+      "entrypoint": "./services/medical_transcription",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/transcribe/dictation"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-transcription-minio",
+          "protocol": "minio",
+          "inject_env": "TRANSCRIPTION_MINIO_URL",
+          "expanded_env": [
+            "TRANSCRIPTION_MINIO_URL"
+          ],
+          "provenance": "services/medical_transcription/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "patient_portal_messaging": {
+      "name": "patient_portal_messaging",
+      "entrypoint": "./services/patient_portal_messaging",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/portal/message"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-messaging-postgres",
+          "protocol": "postgres",
+          "inject_env": "MESSAGING_POSTGRES_URL",
+          "expanded_env": [
+            "MESSAGING_POSTGRES_URL"
+          ],
+          "provenance": "services/patient_portal_messaging/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "patient_registry": {
+      "name": "patient_registry",
+      "entrypoint": "./services/patient_registry",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/patients/query"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-patient_registry",
+          "protocol": "postgres",
+          "inject_env": "",
+          "expanded_env": [
+            "PATIENTS_DB_USER",
+            "PATIENTS_DB_PASSWORD",
+            "PATIENTS_DB_HOST",
+            "PATIENTS_DB_NAME",
+            "PATIENTS_SSLMODE"
+          ],
+          "provenance": "services/patient_registry/main.go:14"
+        }
+      ],
+      "secrets": []
+    },
+    "pharmacy_inventory": {
+      "name": "pharmacy_inventory",
+      "entrypoint": "./services/pharmacy_inventory",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/pharmacy/check-stock"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-pharmacy-scylla",
+          "protocol": "scylladb",
+          "inject_env": "PHARMACY_SCYLLA_URL",
+          "expanded_env": [
+            "PHARMACY_SCYLLA_URL"
+          ],
+          "provenance": "services/pharmacy_inventory/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "prescriptions": {
+      "name": "prescriptions",
+      "entrypoint": "./services/prescriptions",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/prescriptions/issue"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-prescriptions-cockroach",
+          "protocol": "cockroachdb",
+          "inject_env": "PRESCRIPTIONS_COCKROACH_URL",
+          "expanded_env": [
+            "PRESCRIPTIONS_COCKROACH_URL"
+          ],
+          "provenance": "services/prescriptions/main.go:19"
+        },
+        {
+          "service_ref": "pharmacy_inventory",
+          "protocol": "http",
+          "interface": "/v1/pharmacy/check-stock",
+          "inject_env": "PHARMACY_INVENTORY_URL",
+          "provenance": "services/prescriptions/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "radiology_pacs": {
+      "name": "radiology_pacs",
+      "entrypoint": "./services/radiology_pacs",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /v1/radiology/dicom/{id}"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-radiology-minio",
+          "protocol": "minio",
+          "inject_env": "RADIOLOGY_MINIO_URL",
+          "expanded_env": [
+            "RADIOLOGY_MINIO_URL"
+          ],
+          "provenance": "services/radiology_pacs/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "surgery_orchestrator": {
+      "name": "surgery_orchestrator",
+      "entrypoint": "./services/surgery_orchestrator",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/surgery/schedule-or"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-surgery-temporal",
+          "protocol": "temporal",
+          "inject_env": "SURGERY_TEMPORAL_URL",
+          "expanded_env": [
+            "SURGERY_TEMPORAL_URL"
+          ],
+          "provenance": "services/surgery_orchestrator/main.go:17"
+        }
+      ],
+      "secrets": []
+    },
+    "telehealth_webrtc": {
+      "name": "telehealth_webrtc",
+      "entrypoint": "./services/telehealth_webrtc",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/telehealth/session"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-telehealth",
+          "protocol": "redis",
+          "inject_env": "TELEHEALTH_REDIS_ADDR",
+          "provenance": "services/telehealth_webrtc/main.go:21"
+        },
+        {
+          "service_ref": "ehr_core",
+          "protocol": "grpc",
+          "interface": "RegisterEHRServiceServer",
+          "inject_env": "EHR_GRPC_ADDR",
+          "provenance": "services/telehealth_webrtc/main.go:24"
+        }
+      ],
+      "secrets": []
+    },
+    "vitals_iot": {
+      "name": "vitals_iot",
+      "entrypoint": "./services/vitals_iot",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/vitals/stream"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-vitals-kafka-brokers",
+          "protocol": "kafka",
+          "inject_env": "VITALS_KAFKA_BROKERS",
+          "expanded_env": [
+            "VITALS_KAFKA_BROKERS"
+          ],
+          "provenance": "services/vitals_iot/main.go:17"
+        },
+        {
+          "resource_ref": "db-vitals-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "VITALS_CLICKHOUSE_URL",
+          "expanded_env": [
+            "VITALS_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/vitals_iot/main.go:21"
+        }
+      ],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "billing_claims",
+      "target_host": "https://api.changehealthcare.com/v1/claims",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "doctor_credentialing",
+      "target_host": "https://npiregistry.cms.hhs.gov/api/v2.1",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "icu_alerts",
+      "target_host": "https://api.twilio.com/2010-04-01/Accounts",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "insurance_eligibility",
+      "target_host": "https://api.availity.com/availity/v1/coverages",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "medical_transcription",
+      "target_host": "https://api.openai.com/v1/audio/transcriptions",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
+}
