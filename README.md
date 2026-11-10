@@ -16,7 +16,8 @@
   <a href="#the-anodelockjson-contract">The Lockfile</a> •
   <a href="#cli-reference">CLI Reference</a> •
   <a href="docs/architecture.md">Architecture Deep-Dive</a> •
-  <a href="docs/tradeoffs.md">Tradeoffs & Limits</a>
+  <a href="docs/tradeoffs.md">Tradeoffs & Limits</a> •
+  <a href="testdata/README.md">Benchmark Suite</a>
 </p>
 
 </div>
@@ -58,8 +59,8 @@ It extracts an immutable, human-readable **`anode.lock.json`** directly from you
                     │     Local Dev (`anode dev`)   │                                 │   Production (`anode deploy`) │
                     │ • Dynamic Ephemeral Ports     │                                 │ • Cross-compiled Linux binary │
                     │ • Decomposed Env Injection    │                                 │ • Hardened systemd + cgroups  │
-                    │ • Schema Migration Jobs       │                                 │ • Zero-downtime port swap     │
-                    │ • Sub-second reload loop      │                                 │ • Automated Caddy HTTPS       │
+                    │ • Native Goose Migrations     │                                 │ • Zero-downtime port swap     │
+                    │ • Sub-second 300ms reload     │                                 │ • Automated Caddy HTTPS       │
                     └───────────────────────────────┘                                 └───────────────────────────────┘
 ```
 
@@ -90,10 +91,10 @@ go build -o /usr/local/bin/anode ./cmd/anode
 Point Anode at any Go multi-service repo or monorepo:
 
 ```bash
-anode inspect ./testdata/sample-shop
+anode inspect ./testdata/complex_ecommerce
 ```
 
-Anode inspects the call graph, prunes dead code, and writes the topology to `anode.lock.json`:
+Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and writes the topology to `anode.lock.json`:
 
 ```json
 {
@@ -103,7 +104,7 @@ Anode inspects the call graph, prunes dead code, and writes the topology to `ano
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/orders/main.go:40",
+      "provenance": "services/orders/main.go:42",
       "migrations": {
         "tool": "goose",
         "path": "migrations/orders",
@@ -116,31 +117,47 @@ Anode inspects the call graph, prunes dead code, and writes the topology to `ano
       "name": "orders",
       "entrypoint": "./services/orders",
       "ingress": [{ "protocol": "http", "port_env": "PORT", "routes": ["POST /v1/orders"] }],
-      "bindings": [{ "resource_ref": "db-orders", "inject_env": "DATABASE_URL" }]
+      "bindings": [
+        {
+          "resource_ref": "db-orders",
+          "protocol": "postgres",
+          "expanded_env": ["ORDERS_DB_USER", "ORDERS_DB_HOST", "ORDERS_DB_PORT", "ORDERS_DB_NAME"]
+        }
+      ]
     }
-  }
+  },
+  "egress_rules": [
+    {
+      "source_service": "orders",
+      "target_host": "https://api.stripe.com/v1/charges",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
 }
 ```
 
 ### 3. Run Locally with Zero Port Collisions
 
 ```bash
-anode dev ./testdata/sample-shop
+anode dev ./testdata/complex_ecommerce
 ```
 
-Anode assigns ephemeral loopback ports, injects unified (`DATABASE_URL`) and decomposed (`DB_HOST`, `DB_PORT`) credentials, runs migrations, and links microservices automatically.
+Anode assigns ephemeral loopback ports, auto-provisions isolated Postgres containers (moving to dynamic ports if `5432` is occupied), applies Goose migrations, and streams color-coded service logs with sub-second hot-reloading.
 
 ### 4. Deploy to Bare-Metal Linux VPS
 
 ```bash
-anode deploy root@my-hetzner-box ./testdata/sample-shop
+anode deploy root@my-box.com ./testdata/complex_ecommerce
 ```
 
 In under 30 seconds:
 * Cross-compiles static Linux binaries (`CGO_ENABLED=0 GOOS=linux`).
+* Connects via native SSH (`golang.org/x/crypto/ssh` — zero Ansible/Docker daemon needed on server).
 * Provisions persistent systemd units with cgroups v2 resource quotas.
 * Configures Caddy with automated Let's Encrypt TLS certificates.
-* Performs a health-checked zero-downtime port swap.
+* Performs a health-checked zero-downtime Blue/Green port swap.
 
 ---
 
@@ -149,17 +166,18 @@ In under 30 seconds:
 | Command | Description |
 | :--- | :--- |
 | `anode inspect [dir]` | Compiles workspace SSA, executes VTA reachability, and writes `anode.lock.json`. |
-| `anode dev [dir]` | Allocates free ports, injects database credentials, and runs local service instances. |
+| `anode dev [dir]` | Allocates free ports, provisions local DBs, runs Goose migrations, and supervises processes. |
 | `anode deploy <user@host> [dir]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
+| `anode deploy <user@host> --dry-run` | Synthesizes and validates deployment units and Caddyfile without requiring live SSH. |
 | `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
 
 ---
 
-## Documentation
+## Documentation & Benchmarks
 
 * 📖 **[Architecture Deep-Dive](docs/architecture.md)** — Whole-program SSA, Variable Type Analysis (VTA), backward taint tracking, and stdlib choke points.
 * ⚖️ **[Tradeoffs & Known Limits](docs/tradeoffs.md)** — What Anode does, what it intentionally refuses to do, and comparison with Kubernetes/Encore.
-* 🔒 **[The Lockfile Specification](docs/architecture.md#the-anodelockjson-specification)** — Full schema reference for `anode.lock.json`.
+* 🧪 **[Enterprise Test Benchmark Suite](testdata/README.md)** — The 12-microservice "Hyper-Mesh" specification testing deep variable layers, composite DSNs, and dead code pruning.
 
 ---
 

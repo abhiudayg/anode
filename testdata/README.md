@@ -1,0 +1,94 @@
+# Testdata: Enterprise Stress-Test Benchmarks
+
+This directory contains real-world, hostile Go microservice architectures used to benchmark, verify, and stress-test the limits of **Anode's** compiler extraction, runtime reconciliation, and deployment engine.
+
+---
+
+## 1. Benchmark Suites
+
+| Suite | Services | Complexity Vectors | Primary Verification Goal |
+| :--- | :---: | :--- | :--- |
+| **`sample-shop/`** | 2 | Clean Go stdlib, HTTP routes, direct env vars. | Baseline regression suite for Phase 1. |
+| **`complex_ecommerce/`** | 3 | Composite DSN formatting, external API egress (Stripe, SendGrid), multi-database migrations. | Verifies composite env unpacking (`DB_HOST`, `DB_PORT`) & external egress classification. |
+| **`hyper_mesh_12/`** *(In Progress)* | **12** | Deep struct layers, reflection, mixed gRPC + REST, shared vs isolated DBs, dead code traps. | **The Ultimate Stress Test:** Simulates enterprise-grade distributed mesh with high variable indirection. |
+
+---
+
+## 2. Blueprint: The 12-Microservice "Hyper-Mesh" (`hyper_mesh_12/`)
+
+To rigorously test Anode's limits, the `hyper_mesh_12` suite models an end-to-end distributed banking and commerce platform containing 12 distinct Go microservices:
+
+```
+                                    ┌───────────────────────┐
+                                    │    1. api-gateway     │ (Public Entrypoint, Chi / Gorilla)
+                                    └───────────┬───────────┘
+                                                │
+                 ┌──────────────────────────────┼──────────────────────────────┐
+                 ▼                              ▼                              ▼
+      ┌────────────────────┐         ┌────────────────────┐         ┌────────────────────┐
+      │   2. auth-service  │         │   3. user-profile  │         │  4. catalog-query  │
+      │ (Redis + JWT Keys) │         │ (Postgres schema)  │         │  (Postgres Read)   │
+      └──────────┬─────────┘         └────────────────────┘         └──────────┬─────────┘
+                 │                                                             │
+                 ▼                                                             ▼
+      ┌────────────────────┐                                        ┌────────────────────┐
+      │  5. ledger-service │ <───────────────────────────────────── │  6. order-manager  │
+      │   (Strict gRPC)    │                                        │ (Shared DB schema) │
+      └──────────┬─────────┘                                        └──────────┬─────────┘
+                 │                                                             │
+                 ▼                                                             ▼
+      ┌────────────────────┐                                        ┌────────────────────┐
+      │ 7. payment-gateway │                                        │ 8. inventory-alloc │
+      │ (External Stripe)  │                                        │  (Redis lock-mgr)  │
+      └────────────────────┘                                        └──────────┬─────────┘
+                                                                               │
+                 ┌─────────────────────────────────────────────────────────────┘
+                 ▼
+      ┌────────────────────┐         ┌────────────────────┐         ┌────────────────────┐
+      │  9. fulfillment    │ ------> │  10. notification  │ ------> │   11. audit-log    │
+      │ (Postgres + Queue) │         │ (External SendGrid)│         │ (Append-only Click)│
+      └────────────────────┘         └────────────────────┘         └────────────────────┘
+                                                                               │
+                                                                               ▼
+                                                                    ┌────────────────────┐
+                                                                    │ 12. analytics-agg  │
+                                                                    │ (Dead code traps)  │
+                                                                    └────────────────────┘
+```
+
+---
+
+## 3. The 6 Hardening Traps Modeled in `hyper_mesh_12`
+
+Each microservice is intentionally constructed with anti-patterns and complex layers of variables to test Anode's limits:
+
+1. **Trap 1: Three-Layer Config Indirection (`internal/config/loader.go`)**
+   - Config is not loaded in `main()`. It is loaded via nested structs across 3 packages (`app -> server -> config`), verifying that Anode's backward taint analysis resolves field stores through multiple pointer hops.
+2. **Trap 2: Composite DSN & Dynamic String Construction**
+   - `order-manager` constructs its connection string using `fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, pass, host, port, db)`. Tests whether Anode extracts all 5 individual environment variables into `expanded_env`.
+3. **Trap 3: Shared vs. Isolated Database Cardinality**
+   - `order-manager` and `inventory-alloc` share a single database cluster (`db-shared-commerce`), but use distinct migration directories. Verifies whether Anode correctly unifies or isolates them according to contract rules.
+4. **Trap 4: Mixed Protocol Linking (Typed gRPC + REST Routes)**
+   - `order-manager` invokes `ledger-service` via typed Protobuf stubs (`ledger.v1.LedgerServiceClient`), while invoking `payment-gateway` via HTTP `POST /v1/charges`. Verifies cross-protocol topology resolution.
+5. **Trap 5: External Egress vs. Internal Routing**
+   - `payment-gateway` calls `https://api.stripe.com/v1/refunds` and `notification` calls `https://api.sendgrid.com/v3/mail/send`. Verifies that Anode generates `is_external: true` firewall rules and doesn't confuse external APIs with internal microservices.
+6. **Trap 6: Dead Code & Uncalled Driver Traps**
+   - `analytics-agg` includes an unused, deprecated SQLite helper and an uncalled Mongo driver import. Verifies that Anode's Variable Type Analysis (VTA) mathematically prunes them from `anode.lock.json`.
+
+---
+
+## 4. Verification Workflow
+
+To run verification against these test benchmarks:
+
+```bash
+# 1. Run static extraction and verify lockfile generation
+anode inspect ./testdata/sample-shop
+anode inspect ./testdata/complex_ecommerce
+
+# 2. Verify dry-run production deployment synthesis
+anode deploy root@127.0.0.1 ./testdata/complex_ecommerce --dry-run
+
+# 3. Execute agstack automated verification suite
+agent-brain verify run
+```
