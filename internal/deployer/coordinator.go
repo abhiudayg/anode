@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
@@ -66,6 +67,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 
 	// 4. Blue/Green Port Allocation & Systemd Unit Activation
 	fmt.Println("⚡ Step 4: Activating systemd units & health verification...")
+	reg := catalog.NewRegistry()
+	reg.LoadProjectOverrides(d.rootDir)
+
 	servicePortMap := make(map[string]int)
 	idx := 0
 	for name := range d.lockfile.Services {
@@ -81,13 +85,28 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			"PORT": fmt.Sprintf("%d", port),
 		}
 
-		// Inject DB bindings
+		// Inject DB bindings via catalog templates
 		for _, b := range svc.Bindings {
 			envKey := b.InjectEnv
 			if envKey == "" {
 				envKey = strings.ToUpper(svc.Name) + "_DB_URL"
 			}
-			envVars[envKey] = "postgres://postgres:postgres@127.0.0.1:5432/" + b.ResourceRef + "?sslmode=disable"
+
+			if res, exists := d.lockfile.Resources[b.ResourceRef]; exists {
+				driver := reg.Resolve(string(res.Kind))
+				connEnv := driver.BuildConnectionEnv(b.ResourceRef, "127.0.0.1", driver.Networking.PrimaryPort, b.ResourceRef)
+				if connURL, ok := connEnv["URL"]; ok {
+					envVars[envKey] = connURL
+				} else if connURL, ok := connEnv["DSN"]; ok {
+					envVars[envKey] = connURL
+				} else if connURL, ok := connEnv["BROKERS"]; ok {
+					envVars[envKey] = connURL
+				} else {
+					envVars[envKey] = fmt.Sprintf("%s://127.0.0.1:%d/%s", res.Kind, driver.Networking.PrimaryPort, b.ResourceRef)
+				}
+			} else {
+				envVars[envKey] = "postgres://postgres:postgres@127.0.0.1:5432/" + b.ResourceRef + "?sslmode=disable"
+			}
 		}
 
 		// Inject inter-service discovery URLs

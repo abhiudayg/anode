@@ -1,0 +1,400 @@
+# Anode Standard Infrastructure Driver Catalog
+# Defines least-privilege security boundaries, deterministic POSIX identities, and connection templates.
+
+drivers:
+  postgres:
+    kind: postgres
+    category: database
+    default_version: "16"
+    supported_versions:
+      "14":
+        image: "postgres:14-alpine"
+        notes: "PostgreSQL 14 LTS"
+      "15":
+        image: "postgres:15-alpine"
+        notes: "PostgreSQL 15 LTS"
+      "16":
+        image: "postgres:16-alpine"
+        notes: "PostgreSQL 16 LTS (Current default)"
+      "17":
+        image: "postgres:17-alpine"
+        notes: "PostgreSQL 17 Latest"
+    runtime:
+      image_template: "postgres:{{.Version}}-alpine"
+      data_mount: "/var/lib/postgresql/data"
+      default_env:
+        POSTGRES_USER: "postgres"
+        POSTGRES_PASSWORD: "postgres"
+        POSTGRES_DB: "${DB_NAME}"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      drop_capabilities: ["ALL"]
+      add_capabilities: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
+      oom_score_adjust: -900
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 5432
+      bind_interface: "127.0.0.1"
+      protocol: "postgres"
+    connection_templates:
+      URL: "postgres://postgres:postgres@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+      USER: "postgres"
+      PASSWORD: "postgres"
+      DATABASE: "{{.Database}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+    readiness_probe:
+      command: ["pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+      tcp_port: 5432
+      initial_delay_sec: 2
+      timeout_sec: 1
+
+  mysql:
+    kind: mysql
+    category: database
+    default_version: "8.4"
+    supported_versions:
+      "8.0":
+        image: "mysql:8.0"
+      "8.4":
+        image: "mysql:8.4"
+    runtime:
+      image_template: "mysql:{{.Version}}"
+      data_mount: "/var/lib/mysql"
+      default_env:
+        MYSQL_ROOT_PASSWORD: "mysql"
+        MYSQL_DATABASE: "${DB_NAME}"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -900
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 3306
+      bind_interface: "127.0.0.1"
+      protocol: "mysql"
+    connection_templates:
+      DSN: "root:mysql@tcp({{.Host}}:{{.Port}})/{{.Database}}?parseTime=true"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+    readiness_probe:
+      command: ["mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-pmysql"]
+      tcp_port: 3306
+      initial_delay_sec: 5
+      timeout_sec: 2
+
+  redis:
+    kind: redis
+    category: cache
+    default_version: "7"
+    supported_versions:
+      "6":
+        image: "redis:6-alpine"
+      "7":
+        image: "redis:7-alpine"
+      "7.2":
+        image: "redis:7.2-alpine"
+    runtime:
+      image_template: "redis:{{.Version}}-alpine"
+      command: ["redis-server", "--appendonly", "yes"]
+      data_mount: "/data"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      drop_capabilities: ["ALL"]
+      add_capabilities: ["SETGID", "SETUID"]
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 6379
+      bind_interface: "127.0.0.1"
+      protocol: "redis"
+    connection_templates:
+      URL: "redis://{{.Host}}:{{.Port}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+    readiness_probe:
+      command: ["redis-cli", "ping"]
+      tcp_port: 6379
+      initial_delay_sec: 1
+      timeout_sec: 1
+
+  valkey:
+    kind: valkey
+    category: cache
+    default_version: "7.2"
+    supported_versions:
+      "7.2":
+        image: "valkey/valkey:7.2-alpine"
+      "8.0":
+        image: "valkey/valkey:8.0-alpine"
+    runtime:
+      image_template: "valkey/valkey:{{.Version}}-alpine"
+      command: ["valkey-server", "--appendonly", "yes"]
+      data_mount: "/data"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 6379
+      bind_interface: "127.0.0.1"
+      protocol: "redis"
+    connection_templates:
+      URL: "redis://{{.Host}}:{{.Port}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  kafka:
+    kind: kafka
+    category: message_broker
+    default_version: "v24.1"
+    supported_versions:
+      "v23.3":
+        image: "docker.redpanda.com/redpandadata/redpanda:v23.3.11"
+      "v24.1":
+        image: "docker.redpanda.com/redpandadata/redpanda:v24.1.7"
+      "latest":
+        image: "docker.redpanda.com/redpandadata/redpanda:latest"
+    runtime:
+      image_template: "docker.redpanda.com/redpandadata/redpanda:{{.Version}}"
+      command:
+        - "redpanda"
+        - "start"
+        - "--overprovisioned"
+        - "--smp=1"
+        - "--memory=512M"
+        - "--reserve-memory=0M"
+        - "--node-id=0"
+        - "--check=false"
+        - "--kafka-addr=PLAINTEXT://0.0.0.0:9092"
+        - "--advertise-kafka-addr=PLAINTEXT://127.0.0.1:9092"
+      data_mount: "/var/lib/redpanda/data"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "150%"
+    networking:
+      primary_port: 9092
+      bind_interface: "127.0.0.1"
+      protocol: "kafka"
+    connection_templates:
+      BROKERS: "{{.Host}}:{{.Port}}"
+      BOOTSTRAP_SERVERS: "{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+    readiness_probe:
+      tcp_port: 9092
+      initial_delay_sec: 3
+      timeout_sec: 2
+
+  clickhouse:
+    kind: clickhouse
+    category: database
+    default_version: "24.3"
+    supported_versions:
+      "23.8":
+        image: "clickhouse/clickhouse-server:23.8-alpine"
+      "24.3":
+        image: "clickhouse/clickhouse-server:24.3-alpine"
+    runtime:
+      image_template: "clickhouse/clickhouse-server:{{.Version}}-alpine"
+      data_mount: "/var/lib/clickhouse"
+      default_env:
+        CLICKHOUSE_DB: "${DB_NAME}"
+        CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: "1"
+    security:
+      uid: 101
+      gid: 101
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -800
+      cgroups:
+        memory_max: "2G"
+        cpu_quota: "200%"
+    networking:
+      primary_port: 9000
+      bind_interface: "127.0.0.1"
+      protocol: "clickhouse"
+    connection_templates:
+      URL: "clickhouse://{{.Host}}:9000/{{.Database}}"
+      HTTP_URL: "http://{{.Host}}:8123"
+      NATIVE_ADDR: "{{.Host}}:9000"
+      HOST: "{{.Host}}"
+      PORT: "9000"
+
+  mongodb:
+    kind: mongodb
+    category: database
+    default_version: "7.0"
+    supported_versions:
+      "6.0":
+        image: "mongo:6.0"
+      "7.0":
+        image: "mongo:7.0"
+    runtime:
+      image_template: "mongo:{{.Version}}"
+      data_mount: "/data/db"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -700
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "150%"
+    networking:
+      primary_port: 27017
+      bind_interface: "127.0.0.1"
+      protocol: "mongodb"
+    connection_templates:
+      URI: "mongodb://{{.Host}}:{{.Port}}/{{.Database}}?directConnection=true"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+      ADDR: "{{.Host}}:{{.Port}}"
+
+  qdrant:
+    kind: qdrant
+    category: vector_database
+    default_version: "v1.9.0"
+    supported_versions:
+      "v1.8":
+        image: "qdrant/qdrant:v1.8.4"
+      "v1.9":
+        image: "qdrant/qdrant:v1.9.0"
+    runtime:
+      image_template: "qdrant/qdrant:{{.Version}}"
+      data_mount: "/qdrant/storage"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 6333
+      bind_interface: "127.0.0.1"
+      protocol: "http"
+    connection_templates:
+      HTTP_URL: "http://{{.Host}}:{{.Port}}"
+      GRPC_ADDR: "{{.Host}}:6334"
+      ADDR: "{{.Host}}:{{.Port}}"
+
+  rabbitmq:
+    kind: rabbitmq
+    category: message_broker
+    default_version: "3.13"
+    supported_versions:
+      "3.12":
+        image: "rabbitmq:3.12-alpine"
+      "3.13":
+        image: "rabbitmq:3.13-alpine"
+    runtime:
+      image_template: "rabbitmq:{{.Version}}-alpine"
+      data_mount: "/var/lib/rabbitmq"
+    security:
+      uid: 999
+      gid: 999
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 5672
+      bind_interface: "127.0.0.1"
+      protocol: "amqp"
+    connection_templates:
+      AMQP_URL: "amqp://guest:guest@{{.Host}}:{{.Port}}/"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  nats:
+    kind: nats
+    category: message_broker
+    default_version: "2.10"
+    supported_versions:
+      "2.10":
+        image: "nats:2.10-alpine"
+    runtime:
+      image_template: "nats:{{.Version}}-alpine"
+      data_mount: "/data"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "512M"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 4222
+      bind_interface: "127.0.0.1"
+      protocol: "nats"
+    connection_templates:
+      URL: "nats://{{.Host}}:{{.Port}}"
+      HOST: "{{.Host}}"
+      PORT: "{{.Port}}"
+
+  minio:
+    kind: minio
+    category: storage
+    default_version: "RELEASE.2024-05-10T01-41-38Z"
+    runtime:
+      image_template: "minio/minio:{{.Version}}"
+      command: ["server", "/data", "--console-address", ":9001"]
+      data_mount: "/data"
+      default_env:
+        MINIO_ROOT_USER: "minioadmin"
+        MINIO_ROOT_PASSWORD: "minioadmin"
+    security:
+      uid: 1000
+      gid: 1000
+      file_mode: "0700"
+      no_new_privileges: true
+      oom_score_adjust: -500
+      cgroups:
+        memory_max: "1G"
+        cpu_quota: "100%"
+    networking:
+      primary_port: 9000
+      bind_interface: "127.0.0.1"
+      protocol: "s3"
+    connection_templates:
+      ENDPOINT: "http://{{.Host}}:9000"
+      CONSOLE_URL: "http://{{.Host}}:9001"
+      ACCESS_KEY: "minioadmin"
+      SECRET_KEY: "minioadmin"

@@ -6,7 +6,14 @@ export const metadata: Metadata = {
   title: "Anode — Deploy unmodified Go backends to Linux VPS without Docker or Kubernetes",
   description: "The 4-Pillar Proof-of-Topology Engine. Compiles call graphs directly to bare-metal systemd, cgroups v2, and ephemeral loopbacks.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico", sizes: "32x32" },
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: "/icon.svg",
   },
 };
 

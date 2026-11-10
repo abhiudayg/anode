@@ -1,0 +1,87 @@
+---
+- name: Automate Anode Target Linux VM Setup
+  hosts: anode_nodes
+  become: yes
+  vars:
+    anode_user: "anode"
+    anode_base_dir: "/var/lib/anode"
+    caddy_repo_url: "https://dl.cloudsmith.io/public/caddy/stable"
+
+  tasks:
+    - name: 1. Update APT package index
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: 2. Install baseline system utilities & security tools
+      apt:
+        name:
+          - curl
+          - wget
+          - gnupg
+          - ca-certificates
+          - lsb-release
+          - iptables
+          - jq
+          - openssh-server
+          - tar
+        state: present
+
+    - name: 3. Ensure unprivileged anode system user exists (Least-Privilege)
+      user:
+        name: "{{ anode_user }}"
+        system: yes
+        shell: /bin/false
+        create_home: no
+        state: present
+
+    - name: 4. Ensure Anode deployment and data directories exist
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: "{{ anode_user }}"
+        group: "{{ anode_user }}"
+        mode: '0750'
+      loop:
+        - "{{ anode_base_dir }}"
+        - "{{ anode_base_dir }}/bin"
+        - "{{ anode_base_dir }}/releases"
+        - "{{ anode_base_dir }}/data"
+        - "{{ anode_base_dir }}/caddy"
+
+    - name: 5. Install Caddy GPG Key
+      apt_key:
+        url: "{{ caddy_repo_url }}/gpg.key"
+        state: present
+        keyring: /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+
+    - name: 6. Add Caddy Official APT Repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/caddy-stable-archive-keyring.gpg] {{ caddy_repo_url }}/deb.debian.txt any-version main"
+        state: present
+        filename: caddy-stable
+
+    - name: 7. Install and enable Caddy edge proxy
+      apt:
+        name: caddy
+        state: latest
+        update_cache: yes
+
+    - name: 8. Ensure Caddy service is running and enabled
+      systemd:
+        name: caddy
+        enabled: yes
+        state: started
+
+    - name: 9. Verify Linux cgroups v2 hierarchy is enabled
+      command: stat -fc %T /sys/fs/cgroup
+      register: cgroup_fs
+      changed_when: false
+      failed_when: cgroup_fs.stdout != "cgroup2fs"
+
+    - name: 10. Display Setup Completion Status
+      debug:
+        msg: >
+          Host {{ inventory_hostname }} ({{ ansible_host }}) is fully configured for Anode!
+          User '{{ anode_user }}' created, Cgroups v2 confirmed ({{ cgroup_fs.stdout }}),
+          Caddy active on ports 80/443, and data directories secured.

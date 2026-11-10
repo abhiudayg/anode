@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
@@ -41,27 +42,23 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile) error {
 		fmt.Printf("    ⚠ Warning: Automatic Caddy installation had notice: %v\n", err)
 	}
 
-	// 2. Provision Auto-Provisioned Stateful Databases (e.g. Postgres in isolated Docker/Podman)
+	// 2. Provision Auto-Provisioned Stateful Dependencies via Pluggable Least-Privilege Catalog
+	reg := catalog.NewRegistry()
 	for resID, res := range lockfile.Resources {
-		if res.AutoProvision && res.Kind == iag.KindPostgres {
-			fmt.Printf("  ⚙ Bootstrapping production stateful Postgres for %s...\n", resID)
-			containerName := fmt.Sprintf("anode-%s", resID)
-			dataPath := fmt.Sprintf("/var/lib/anode/data/%s", resID)
+		if !res.AutoProvision {
+			continue
+		}
 
-			dbCmd := fmt.Sprintf(`mkdir -p %s && (docker ps -q -f name=%s | grep -q . || docker run -d \
-				--name %s \
-				--restart always \
-				-p 127.0.0.1:5432:5432 \
-				-v %s:/var/lib/postgresql/data \
-				-e POSTGRES_USER=postgres \
-				-e POSTGRES_PASSWORD=postgres \
-				-e POSTGRES_DB=%s \
-				postgres:16-alpine)`, dataPath, containerName, containerName, dataPath, resID)
+		driver := reg.Resolve(string(res.Kind))
+		version := driver.ResolveEffectiveVersion(res.EngineVersion)
+		image := driver.ResolveImage(version)
+		dataPath := fmt.Sprintf("/var/lib/anode/data/%s", resID)
 
-			if _, err := b.ssh.Run(dbCmd); err != nil {
-				// Non-fatal if host already has postgres or uses external RDS
-				fmt.Printf("    ℹ Notice: Host DB container setup: %v\n", err)
-			}
+		fmt.Printf("  ⚙ Bootstrapping production stateful %s (%s, version: %s, image: %s)...\n", resID, res.Kind, version, image)
+		provisionCmd := driver.BuildProvisionCommand(resID, version, dataPath)
+
+		if _, err := b.ssh.Run(provisionCmd); err != nil {
+			fmt.Printf("    ℹ Notice: Host stateful setup for %s: %v\n", resID, err)
 		}
 	}
 

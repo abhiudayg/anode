@@ -1,0 +1,51 @@
+#cloud-config
+# Automated cloud-init configuration for Anode VM deployment target
+
+package_update: true
+package_upgrade: true
+
+packages:
+  - curl
+  - wget
+  - gnupg
+  - ca-certificates
+  - openssh-server
+  - iptables
+  - jq
+  - tar
+  - debian-keyring
+  - debian-archive-keyring
+  - apt-transport-https
+
+users:
+  - default
+  - name: anode
+    system: true
+    shell: /bin/false
+    homedir: /var/lib/anode
+
+write_files:
+  - path: /etc/sysctl.d/99-anode.conf
+    content: |
+      net.ipv4.ip_local_port_range = 20000 65000
+      net.core.somaxconn = 4096
+      net.ipv4.tcp_fastopen = 3
+
+runcmd:
+  # 1. Create Anode directory hierarchy with deterministic permissions
+  - mkdir -p /var/lib/anode/bin /var/lib/anode/releases /var/lib/anode/data /var/lib/anode/caddy
+  - chown -R anode:anode /var/lib/anode
+  - chmod 0750 /var/lib/anode
+
+  # 2. Add Caddy stable repository & install Caddy
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  - curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | tee /etc/apt/sources.list.d/caddy-stable.list
+  - apt-get update -qq
+  - apt-get install -y -qq caddy
+  - systemctl enable --now caddy
+
+  # 3. Apply sysctl networking optimizations
+  - sysctl --system
+
+  # 4. Verify cgroups v2
+  - stat -fc %T /sys/fs/cgroup > /var/log/anode-cgroup-status.log
