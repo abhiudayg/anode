@@ -1,20 +1,20 @@
-=== RUN   TestIAGSerialization
---- PASS: TestIAGSerialization (0.00s)
+=== RUN   TestHardenedIAGSerialization
+--- PASS: TestHardenedIAGSerialization (0.00s)
 PASS
-ok  	github.com/abhiudayg/anode/internal/iag	(cached)
+ok  	github.com/abhiudayg/anode/internal/iag	0.690s
 === RUN   TestPlanEnvVariables
 --- PASS: TestPlanEnvVariables (0.00s)
 PASS
-ok  	github.com/abhiudayg/anode/internal/devengine	0.437s
+ok  	github.com/abhiudayg/anode/internal/devengine	0.692s
 === RUN   TestGenerateSystemdUnit
 --- PASS: TestGenerateSystemdUnit (0.00s)
 === RUN   TestGenerateCaddyfile
 --- PASS: TestGenerateCaddyfile (0.00s)
 PASS
-ok  	github.com/abhiudayg/anode/internal/deployer	0.433s
+ok  	github.com/abhiudayg/anode/internal/deployer	0.698s
 === RUN   TestBinPacking
 --- PASS: TestBinPacking (0.00s)
 === RUN   TestZeroTrustFirewall
 --- PASS: TestZeroTrustFirewall (0.00s)
 PASS
-ok  	github.com/abhiudayg/anode/internal/cluster	0.406s
+ok  	github.com/abhiudayg/anode/internal/cluster	0.684s

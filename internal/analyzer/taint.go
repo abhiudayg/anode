@@ -3,6 +3,7 @@ package analyzer
 import (
 	"go/constant"
 	"go/token"
+	"strings"
 
 	"golang.org/x/tools/go/ssa"
 )
@@ -18,26 +19,66 @@ func TraceURL(val ssa.Value) (envVar string, routeSuffix string) {
 	return envVar, ""
 }
 
+// TraceCompositeEnvVars collects multiple env vars if a string was built using fmt.Sprintf or concatenation
+func TraceCompositeEnvVars(val ssa.Value) []string {
+	var results []string
+	seen := make(map[string]bool)
+
+	var walk func(v ssa.Value)
+	walk = func(v ssa.Value) {
+		if v == nil {
+			return
+		}
+		// Direct env var
+		if env := TraceToEnvVar(v); env != "" {
+			if !seen[env] {
+				seen[env] = true
+				results = append(results, env)
+			}
+			return
+		}
+
+		// Function calls like fmt.Sprintf
+		if call, ok := v.(*ssa.Call); ok {
+			for _, arg := range call.Common().Args {
+				walk(arg)
+			}
+		}
+
+		// Binary operations
+		if binOp, ok := v.(*ssa.BinOp); ok {
+			walk(binOp.X)
+			walk(binOp.Y)
+		}
+
+		// Slice allocation for varargs (e.g. fmt.Sprintf args)
+		if slice, ok := v.(*ssa.Slice); ok {
+			walk(slice.X)
+		}
+	}
+
+	walk(val)
+	return results
+}
+
 // TraceToEnvVar traces an SSA value backwards to an os.Getenv("VAR") call or struct field
 func TraceToEnvVar(val ssa.Value) string {
 	if val == nil {
 		return ""
 	}
 
-	// 1. Direct call to os.Getenv("VAR")
+	// 1. Direct call to os.Getenv("VAR") or os.LookupEnv("VAR")
 	if call, ok := val.(*ssa.Call); ok {
 		if callee := call.Common().StaticCallee(); callee != nil {
-			if callee.Pkg != nil && callee.Pkg.Pkg != nil && callee.Pkg.Pkg.Path() == "os" && callee.Name() == "Getenv" {
-				return ResolveConstantString(call.Common().Args[0])
+			if callee.Pkg != nil && callee.Pkg.Pkg != nil && callee.Pkg.Pkg.Path() == "os" {
+				if callee.Name() == "Getenv" || callee.Name() == "LookupEnv" {
+					return ResolveConstantString(call.Common().Args[0])
+				}
 			}
 		}
 	}
 
 	// 2. Struct field access: cfg.Field
-	// In Go SSA:
-	// t0 = loadConfig()
-	// t1 = &t0.Field [#index]
-	// t2 = *t1 (t2 is ssa.UnOp MUL)
 	if unOp, ok := val.(*ssa.UnOp); ok && unOp.Op == token.MUL {
 		if fieldAddr, ok := unOp.X.(*ssa.FieldAddr); ok {
 			return TraceFieldAddrSource(fieldAddr)
@@ -53,7 +94,15 @@ func TraceToEnvVar(val ssa.Value) string {
 		return TraceToEnvVar(binOp.Y)
 	}
 
-	// 4. Phi nodes across control-flow branches
+	// 4. Type conversions or interface wrappers (ssa.ChangeType, ssa.MakeInterface)
+	if change, ok := val.(*ssa.ChangeType); ok {
+		return TraceToEnvVar(change.X)
+	}
+	if makeIface, ok := val.(*ssa.MakeInterface); ok {
+		return TraceToEnvVar(makeIface.X)
+	}
+
+	// 5. Phi nodes across control-flow branches
 	if phi, ok := val.(*ssa.Phi); ok {
 		for _, edge := range phi.Edges {
 			if env := TraceToEnvVar(edge); env != "" {
@@ -120,4 +169,14 @@ func ResolveConstantString(val ssa.Value) string {
 		return constant.StringVal(c.Value)
 	}
 	return ""
+}
+
+// IsExternalURL returns true if the URL points to a public external domain (e.g. stripe.com, twilio.com)
+func IsExternalURL(rawURL string) bool {
+	lower := strings.ToLower(rawURL)
+	return strings.HasPrefix(lower, "https://") ||
+		strings.Contains(lower, "stripe.com") ||
+		strings.Contains(lower, "twilio.com") ||
+		strings.Contains(lower, "sendgrid.com") ||
+		strings.Contains(lower, "amazonaws.com")
 }

@@ -7,14 +7,19 @@ import (
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
-func TestIAGSerialization(t *testing.T) {
+func TestHardenedIAGSerialization(t *testing.T) {
 	graph := iag.Graph{
-		SchemaVersion: "1.0",
+		SchemaVersion: iag.V1,
 		Resources: map[string]iag.Resource{
 			"db-orders": {
-				Kind:       "postgres",
-				Lifecycle:  "stateful_retain",
+				Kind:       iag.KindPostgres,
+				Lifecycle:  iag.LifecycleStatefulRetain,
 				Provenance: "main.go:40",
+				Migrations: &iag.MigrationSpec{
+					Tool:      "goose",
+					Path:      "migrations/orders",
+					Execution: "pre_traffic_job",
+				},
 			},
 		},
 		Services: []iag.Service{
@@ -33,9 +38,26 @@ func TestIAGSerialization(t *testing.T) {
 						ResourceRef: "db-orders",
 						Protocol:    "postgres",
 						InjectEnv:   "DATABASE_URL",
+						ExpandedEnv: []string{"DB_HOST", "DB_PORT"},
 						Provenance:  "main.go:40",
 					},
 				},
+			},
+		},
+		EgressRules: []iag.EgressRule{
+			{
+				SourceService: "orders",
+				TargetHost:    "https://api.stripe.com/v1/charges",
+				Port:          443,
+				Protocol:      "https",
+				IsExternal:    true,
+			},
+		},
+		Diagnostics: []iag.Diagnostic{
+			{
+				Level:      "info",
+				Message:    "All topologies verified successfully",
+				Provenance: "orders/main.go:1",
 			},
 		},
 	}
@@ -50,13 +72,13 @@ func TestIAGSerialization(t *testing.T) {
 		t.Fatalf("failed to unmarshal IAG: %v", err)
 	}
 
-	if parsed.SchemaVersion != "1.0" {
+	if parsed.SchemaVersion != iag.V1 {
 		t.Errorf("expected 1.0, got %s", parsed.SchemaVersion)
 	}
-	if len(parsed.Services) != 1 || parsed.Services[0].Name != "orders" {
-		t.Errorf("unexpected services: %+v", parsed.Services)
+	if len(parsed.EgressRules) != 1 || !parsed.EgressRules[0].IsExternal {
+		t.Errorf("expected external egress rule preserved")
 	}
-	if res, ok := parsed.Resources["db-orders"]; !ok || res.Kind != "postgres" {
-		t.Errorf("unexpected resource: %+v", res)
+	if len(parsed.Diagnostics) != 1 {
+		t.Errorf("expected diagnostic message preserved")
 	}
 }

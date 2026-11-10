@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
-	"time"
 
 	"github.com/abhiudayg/anode/internal/iag"
 )
@@ -50,7 +49,7 @@ func AllocateFreePort() (int, error) {
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
-// PlanEnvVariables assigns ports and generates connection strings
+// PlanEnvVariables assigns ports and generates comprehensive connection strings
 func (e *Engine) PlanEnvVariables() (map[string]map[string]string, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -70,13 +69,40 @@ func (e *Engine) PlanEnvVariables() (map[string]map[string]string, error) {
 		}
 	}
 
-	// Resolve Bindings
+	// Resolve Bindings & inject both composite and unified env vars
 	for _, svc := range e.graph.Services {
 		for _, b := range svc.Bindings {
-			if b.ResourceRef != "" && b.InjectEnv != "" {
-				// Map local postgres port or standard connection string
-				envPlan[svc.Name][b.InjectEnv] = fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:5432/%s?sslmode=disable", b.ResourceRef)
+			if b.ResourceRef != "" {
+				res := e.graph.Resources[b.ResourceRef]
+				if res.Kind == iag.KindPostgres {
+					dbName := b.ResourceRef
+					// Standard unified connection string
+					if b.InjectEnv != "" {
+						envPlan[svc.Name][b.InjectEnv] = fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:5432/%s?sslmode=disable", dbName)
+					}
+					// Also inject decomposed credentials (DB_HOST, DB_PORT, etc.) if requested by code
+					for _, exp := range b.ExpandedEnv {
+						switch exp {
+						case "DB_HOST", "DATABASE_HOST", "POSTGRES_HOST":
+							envPlan[svc.Name][exp] = "127.0.0.1"
+						case "DB_PORT", "DATABASE_PORT", "POSTGRES_PORT":
+							envPlan[svc.Name][exp] = "5432"
+						case "DB_USER", "DATABASE_USER", "POSTGRES_USER":
+							envPlan[svc.Name][exp] = "postgres"
+						case "DB_PASS", "DB_PASSWORD", "DATABASE_PASSWORD":
+							envPlan[svc.Name][exp] = "postgres"
+						case "DB_NAME", "DATABASE_NAME":
+							envPlan[svc.Name][exp] = dbName
+						}
+					}
+				} else if res.Kind == iag.KindRedis {
+					if b.InjectEnv != "" {
+						envPlan[svc.Name][b.InjectEnv] = "127.0.0.1:6379"
+					}
+				}
 			}
+
+			// Service-to-service internal resolution
 			if b.ServiceRef != "" && b.InjectEnv != "" {
 				targetPort := servicePorts[b.ServiceRef]
 				if targetPort > 0 {
@@ -135,23 +161,4 @@ func (e *Engine) StopAll() {
 			inst.CancelFunc()
 		}
 	}
-}
-
-// WaitForHealth polls an HTTP endpoint until ready or timeout
-func WaitForHealth(ctx context.Context, url string, timeout time.Duration) bool {
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		select {
-		case <-ctx.Done():
-			return false
-		default:
-			conn, err := net.DialTimeout("tcp", url, 200*time.Millisecond)
-			if err == nil {
-				_ = conn.Close()
-				return true
-			}
-			time.Sleep(100 * time.Millisecond)
-		}
-	}
-	return false
 }

@@ -3,6 +3,7 @@ package analyzer
 import (
 	"fmt"
 	"go/token"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -10,7 +11,7 @@ import (
 	"golang.org/x/tools/go/ssa"
 )
 
-// SinkInspector inspects call instructions and extracts resources, ingress, bindings, and secrets
+// SinkInspector inspects SSA call instructions for standard library and ecosystem choke points
 type SinkInspector struct {
 	rootDir string
 	fset    *token.FileSet
@@ -48,45 +49,110 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 	name := callee.Name()
 	provenance := s.FormatPos(call.Pos())
 
-	// 1. Sink: database/sql.Open
-	if pkgPath == "database/sql" && name == "Open" && len(call.Args) >= 2 {
-		driverStr := ResolveConstantString(call.Args[0])
-		envVar := TraceToEnvVar(call.Args[1])
+	// 1. Relational Database Sinks:
+	// - database/sql.Open(driver, dsn)
+	// - github.com/jackc/pgx/v5/pgxpool.New(ctx, dsn) or pgxpool.Connect
+	if (pkgPath == "database/sql" && name == "Open") ||
+		(strings.Contains(pkgPath, "pgxpool") && (name == "New" || name == "Connect" || name == "NewWithConfig")) {
 
-		if driverStr == "postgres" || driverStr == "pgx" {
-			resourceID := "db-" + svc.Name
-			if envVar != "" {
-				cleaned := strings.ToLower(strings.TrimSuffix(strings.TrimSuffix(envVar, "_URL"), "_DSN"))
-				cleaned = strings.ReplaceAll(cleaned, "_", "-")
-				resourceID = "db-" + cleaned
+		driverStr := "postgres"
+		dsnArgIdx := 0
+		if pkgPath == "database/sql" {
+			driverStr = ResolveConstantString(call.Args[0])
+			dsnArgIdx = 1
+		} else if len(call.Args) >= 2 {
+			dsnArgIdx = 1 // pgxpool.New(ctx, dsn)
+		}
+
+		envVar := TraceToEnvVar(call.Args[dsnArgIdx])
+		compositeEnvs := TraceCompositeEnvVars(call.Args[dsnArgIdx])
+
+		// Determine resource identity based on service or env name
+		resourceID := "db-" + svc.Name
+		if envVar != "" {
+			cleaned := strings.ToLower(strings.TrimSuffix(strings.TrimSuffix(envVar, "_URL"), "_DSN"))
+			cleaned = strings.ReplaceAll(cleaned, "_", "-")
+			resourceID = "db-" + cleaned
+		}
+
+		if _, exists := graph.Resources[resourceID]; !exists {
+			res := iag.Resource{
+				Kind:       iag.KindPostgres,
+				Lifecycle:  iag.LifecycleStatefulRetain,
+				Provenance: provenance,
 			}
 
-			if _, exists := graph.Resources[resourceID]; !exists {
-				graph.Resources[resourceID] = iag.Resource{
-					Kind:       "postgres",
-					Lifecycle:  "stateful_retain",
-					Provenance: provenance,
+			// Migration detection based on conventional workspace paths
+			migrationDir := filepath.Join(s.rootDir, "migrations", svc.Name)
+			if stat, err := os.Stat(migrationDir); err == nil && stat.IsDir() {
+				res.Migrations = &iag.MigrationSpec{
+					Tool:      "goose",
+					Path:      filepath.Join("migrations", svc.Name),
+					Execution: "pre_traffic_job",
+				}
+			} else {
+				// Check for root migrations folder
+				rootMig := filepath.Join(s.rootDir, "migrations")
+				if stat, err := os.Stat(rootMig); err == nil && stat.IsDir() {
+					res.Migrations = &iag.MigrationSpec{
+						Tool:      "goose",
+						Path:      "migrations",
+						Execution: "pre_traffic_job",
+					}
 				}
 			}
 
-			svc.Bindings = append(svc.Bindings, iag.Binding{
-				ResourceRef: resourceID,
-				Protocol:    "postgres",
-				InjectEnv:   envVar,
-				Provenance:  provenance,
-			})
+			graph.Resources[resourceID] = res
 		}
+
+		svc.Bindings = append(svc.Bindings, iag.Binding{
+			ResourceRef: resourceID,
+			Protocol:    "postgres",
+			InjectEnv:   envVar,
+			ExpandedEnv: compositeEnvs,
+			Provenance:  provenance,
+		})
+		_ = driverStr
 	}
 
-	// 2. Sink: http.ListenAndServe
-	if pkgPath == "net/http" && name == "ListenAndServe" && len(call.Args) >= 1 {
+	// 2. Cache / Redis Sinks:
+	// - github.com/redis/go-redis/v9.NewClient(opts)
+	// - github.com/go-redis/redis/v8.NewClient(opts)
+	if strings.Contains(pkgPath, "redis") && name == "NewClient" && len(call.Args) > 0 {
 		envVar := TraceToEnvVar(call.Args[0])
+		resourceID := "redis-" + svc.Name
+
+		if _, exists := graph.Resources[resourceID]; !exists {
+			graph.Resources[resourceID] = iag.Resource{
+				Kind:       iag.KindRedis,
+				Lifecycle:  iag.LifecycleStatefulRetain,
+				Provenance: provenance,
+			}
+		}
+
+		svc.Bindings = append(svc.Bindings, iag.Binding{
+			ResourceRef: resourceID,
+			Protocol:    "redis",
+			InjectEnv:   envVar,
+			Provenance:  provenance,
+		})
+	}
+
+	// 3. Network Ingress Sinks:
+	// - net/http.ListenAndServe
+	// - net.Listen("tcp", addr)
+	if (pkgPath == "net/http" && name == "ListenAndServe") || (pkgPath == "net" && name == "Listen") {
+		addrVal := call.Args[0]
+		if pkgPath == "net" && len(call.Args) >= 2 {
+			addrVal = call.Args[1]
+		}
+
+		envVar := TraceToEnvVar(addrVal)
 		portEnv := "PORT"
 		if envVar != "" {
 			portEnv = envVar
 		}
 
-		// Ensure we don't duplicate existing http ingress
 		found := false
 		for i := range svc.Ingress {
 			if svc.Ingress[i].Protocol == "http" {
@@ -103,11 +169,15 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 		}
 	}
 
-	// 3. Sink: http.ServeMux.HandleFunc (extracting route definitions)
-	if name == "HandleFunc" && len(call.Args) >= 2 {
+	// 4. HTTP Routes: net/http.ServeMux or Chi / Gin
+	// - ServeMux.HandleFunc(pattern, handler)
+	// - chi.Router.Get/Post(pattern, handler)
+	if (name == "HandleFunc" || name == "Get" || name == "Post" || name == "Put" || name == "Delete") && len(call.Args) >= 2 {
 		routePattern := ResolveConstantString(call.Args[1])
 		if routePattern != "" {
-			// Find or create http ingress
+			if name != "HandleFunc" {
+				routePattern = strings.ToUpper(name) + " " + routePattern
+			}
 			found := false
 			for i := range svc.Ingress {
 				if svc.Ingress[i].Protocol == "http" {
@@ -126,28 +196,49 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 		}
 	}
 
-	// 4. Sink: Outbound HTTP call via http.NewRequest / http.NewRequestWithContext
+	// 5. Outbound Network Egress:
+	// - http.NewRequest / http.NewRequestWithContext
 	if pkgPath == "net/http" && (name == "NewRequest" || name == "NewRequestWithContext") {
 		urlArgIdx := 1
 		if name == "NewRequestWithContext" {
 			urlArgIdx = 2
 		}
 		if len(call.Args) > urlArgIdx {
+			rawURL := ResolveConstantString(call.Args[urlArgIdx])
 			envVar, routeSuffix := TraceURL(call.Args[urlArgIdx])
-			if envVar != "" {
+
+			// If it's a hardcoded external URL (e.g. https://api.stripe.com/...)
+			if rawURL != "" && IsExternalURL(rawURL) {
+				graph.EgressRules = append(graph.EgressRules, iag.EgressRule{
+					SourceService: svc.Name,
+					TargetHost:    rawURL,
+					Port:          443,
+					Protocol:      "https",
+					IsExternal:    true,
+				})
+			} else if envVar != "" {
 				svc.Bindings = append(svc.Bindings, iag.Binding{
-					ServiceRef: envVar, // Temporarily holds envVar until linker resolves target
+					ServiceRef: envVar,
 					Protocol:   "http",
+					Interface:  routeSuffix,
 					InjectEnv:  envVar,
 					Provenance: provenance,
 				})
-				_ = routeSuffix
 			}
 		}
 	}
+
+	// 6. Typed gRPC stubs: Register<X>Server
+	if strings.HasPrefix(name, "Register") && strings.HasSuffix(name, "Server") && len(call.Args) >= 2 {
+		svc.Ingress = append(svc.Ingress, iag.Ingress{
+			Protocol: "grpc",
+			PortEnv:  "PORT",
+			Service:  name,
+		})
+	}
 }
 
-// InspectEnvCall detects secret reads
+// InspectEnvCall tracks secret usage
 func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
 	callee := call.StaticCallee()
 	if callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&

@@ -42,16 +42,16 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.Graph, error) {
 	prog.Build()
 
 	graph := &iag.Graph{
-		SchemaVersion: "1.0",
+		SchemaVersion: iag.V1,
 		Resources:     make(map[string]iag.Resource),
 		Services:      []iag.Service{},
+		EgressRules:   []iag.EgressRule{},
 		Diagnostics:   []iag.Diagnostic{},
 	}
 
 	allFuncs := ssautil.AllFunctions(prog)
 	cg := vta.CallGraph(allFuncs, nil)
 
-	// Collect main() entrypoints
 	var mainFns []*ssa.Function
 	for _, spkg := range ssaPkgs {
 		if spkg != nil && spkg.Pkg.Name() == "main" {
@@ -97,7 +97,7 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.Graph, error) {
 		graph.Services = append(graph.Services, svc)
 	}
 
-	// Link cross-service topologies
+	// Link cross-service topologies and validate unresolved bindings
 	l.linkServices(graph)
 
 	return graph, nil
@@ -160,14 +160,41 @@ func (l *Loader) linkServices(graph *iag.Graph) {
 		for j, binding := range svc.Bindings {
 			if binding.Protocol == "http" && binding.ResourceRef == "" {
 				targetEnv := binding.InjectEnv
+				routePattern := binding.Interface
+
+				matched := false
 				for _, candidate := range graph.Services {
 					if candidate.Name == svc.Name {
 						continue
 					}
-					if strings.Contains(strings.ToUpper(targetEnv), strings.ToUpper(candidate.Name)) {
-						graph.Services[i].Bindings[j].ServiceRef = candidate.Name
-						break
+					// 1. Route match: candidate service exposes the route
+					for _, ing := range candidate.Ingress {
+						for _, r := range ing.Routes {
+							if routePattern != "" && strings.Contains(r, routePattern) {
+								graph.Services[i].Bindings[j].ServiceRef = candidate.Name
+								matched = true
+								break
+							}
+						}
+						if matched {
+							break
+						}
 					}
+					// 2. Env naming convention match (e.g. PAYMENT_SERVICE_URL -> payments)
+					if !matched && strings.Contains(strings.ToUpper(targetEnv), strings.ToUpper(candidate.Name)) {
+						graph.Services[i].Bindings[j].ServiceRef = candidate.Name
+						matched = true
+					}
+				}
+
+				// If unresolved, emit an actionable diagnostic
+				if !matched {
+					graph.Diagnostics = append(graph.Diagnostics, iag.Diagnostic{
+						Level:      "warn",
+						Message:    fmt.Sprintf("Outbound HTTP call in service %q via env %q could not be matched to an internal service", svc.Name, targetEnv),
+						Provenance: binding.Provenance,
+						Suggestion: "If this targets an external API, declare in anode.toml or verify target service route.",
+					})
 				}
 			}
 		}
