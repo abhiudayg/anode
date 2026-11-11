@@ -28,27 +28,46 @@ import {
   HardDrive
 } from "lucide-react";
 
+const SECTION_ALIASES: Record<string, string> = {
+  benchmarks: "benchmarks-analysis",
+  benchmark: "benchmarks-analysis",
+  verification: "benchmarks-analysis",
+  numbers: "benchmarks-analysis",
+  empirical: "benchmarks-analysis",
+  methodology: "benchmarks-analysis",
+  security: "security-hardening",
+  hardening: "security-hardening",
+  catalog: "catalog-drivers",
+  drivers: "catalog-drivers",
+  stateful: "catalog-drivers",
+  systemd: "systemd-vps",
+  vps: "systemd-vps",
+  cgroups: "systemd-vps",
+  ports: "dev-engine",
+  port: "dev-engine",
+  dev: "dev-engine",
+  lockfile: "lockfile-spec",
+  spec: "lockfile-spec",
+  lock: "lockfile-spec",
+  ssa: "ssa-vta",
+  vta: "ssa-vta",
+  compiler: "ssa-vta",
+  chokepoints: "choke-points",
+  chokepoint: "choke-points",
+  infra: "infra-automation",
+  terraform: "infra-automation",
+  ansible: "infra-automation",
+  vm: "infra-automation",
+  tradeoff: "tradeoffs",
+  limits: "tradeoffs",
+  start: "quickstart",
+  guide: "quickstart",
+};
+
 export default function DocsPage() {
   const [activeDoc, setActiveDoc] = useState<string>("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "");
-      const params = new URLSearchParams(window.location.search);
-      const sec = params.get("section") || hash;
-      if (sec) {
-        setActiveDoc(sec);
-      }
-    }
-  }, []);
-
-  const handleCopy = (code: string, id: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(id);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
 
   const docSections = [
     {
@@ -86,6 +105,34 @@ export default function DocsPage() {
     },
   ];
 
+  const allValidIds = new Set(docSections.flatMap((s) => s.items.map((i) => i.id)));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const resolveSection = () => {
+      const hash = window.location.hash.replace("#", "").toLowerCase().trim();
+      const params = new URLSearchParams(window.location.search);
+      const querySec = (params.get("section") || "").toLowerCase().trim();
+      const raw = querySec || hash;
+
+      if (!raw) return;
+
+      const resolved = SECTION_ALIASES[raw] || raw;
+      if (allValidIds.has(resolved)) {
+        setActiveDoc(resolved);
+      } else {
+        setActiveDoc("overview");
+      }
+    };
+
+    resolveSection();
+    window.addEventListener("hashchange", resolveSection);
+    return () => window.removeEventListener("hashchange", resolveSection);
+  }, []);
+
+  const effectiveDoc = allValidIds.has(activeDoc) ? activeDoc : "overview";
+
   return (
     <div className="min-h-screen bg-[#08090b] text-[#f3f4f6] relative bg-grid-pattern">
       <Navbar />
@@ -121,11 +168,16 @@ export default function DocsPage() {
                         )
                         .map((item) => {
                           const Icon = item.icon;
-                          const isActive = activeDoc === item.id;
+                          const isActive = effectiveDoc === item.id;
                           return (
                             <button
                               key={item.id}
-                              onClick={() => setActiveDoc(item.id)}
+                              onClick={() => {
+                                setActiveDoc(item.id);
+                                if (typeof window !== "undefined") {
+                                  window.history.replaceState(null, "", `#${item.id}`);
+                                }
+                              }}
                               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-left transition-all ${
                                 isActive
                                   ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold shadow-[0_0_15px_rgba(0,173,216,0.15)]"
@@ -147,7 +199,7 @@ export default function DocsPage() {
           {/* Docs Content Area */}
           <article className="lg:col-span-9 bg-[#0c0e14]/90 rounded-2xl border border-white/[0.08] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
             {/* 1. OVERVIEW */}
-            {activeDoc === "overview" && (
+            {effectiveDoc === "overview" && (
               <div className="space-y-6 leading-relaxed">
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
@@ -212,7 +264,7 @@ export default function DocsPage() {
             )}
 
             {/* 2. QUICKSTART */}
-            {activeDoc === "quickstart" && (
+            {effectiveDoc === "quickstart" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Getting Started
@@ -274,7 +326,7 @@ cd anode && go build -o /usr/local/bin/anode ./cmd/anode`}</code>
             )}
 
             {/* 3. CLI REFERENCE */}
-            {activeDoc === "cli" && (
+            {effectiveDoc === "cli" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Command Line Interface
@@ -353,7 +405,7 @@ cd anode && go build -o /usr/local/bin/anode ./cmd/anode`}</code>
             )}
 
             {/* 4. SSA & VTA */}
-            {activeDoc === "ssa-vta" && (
+            {effectiveDoc === "ssa-vta" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Compiler Pipeline
@@ -391,7 +443,7 @@ cd anode && go build -o /usr/local/bin/anode ./cmd/anode`}</code>
             )}
 
             {/* 5. STDLIB CHOKE POINTS */}
-            {activeDoc === "choke-points" && (
+            {effectiveDoc === "choke-points" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Static Analysis Sinks
@@ -447,7 +499,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
             )}
 
             {/* 6. LOCKFILE SPEC */}
-            {activeDoc === "lockfile-spec" && (
+            {effectiveDoc === "lockfile-spec" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Contract Specification
@@ -517,7 +569,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
             )}
 
             {/* 7. DEV ENGINE */}
-            {activeDoc === "dev-engine" && (
+            {effectiveDoc === "dev-engine" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
                   Local Orchestration
@@ -559,7 +611,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
             )}
 
             {/* 8. SYSTEMD VPS */}
-            {activeDoc === "systemd-vps" && (
+            {effectiveDoc === "systemd-vps" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Production VPS Deployer
@@ -614,7 +666,7 @@ WantedBy=multi-user.target`}</code>
             )}
 
             {/* PLUGGABLE STATEFUL CATALOG */}
-            {activeDoc === "catalog-drivers" && (
+            {effectiveDoc === "catalog-drivers" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40">
                   Infrastructure Catalog
@@ -684,7 +736,7 @@ WantedBy=multi-user.target`}</code>
             )}
 
             {/* LEAST-PRIVILEGE SECURITY BOUNDARY */}
-            {activeDoc === "security-hardening" && (
+            {effectiveDoc === "security-hardening" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
                   Security Hardening
@@ -741,7 +793,7 @@ WantedBy=multi-user.target`}</code>
             )}
 
             {/* INFRASTRUCTURE AUTOMATION */}
-            {activeDoc === "infra-automation" && (
+            {effectiveDoc === "infra-automation" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Infrastructure as Code
@@ -781,7 +833,7 @@ terraform -chdir=infra/terraform apply`}</code>
             )}
 
             {/* 9. BENCHMARKS ANALYSIS */}
-            {activeDoc === "benchmarks-analysis" && (
+            {effectiveDoc === "benchmarks-analysis" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
                   Empirical Verification
@@ -983,7 +1035,7 @@ terraform -chdir=infra/terraform apply`}</code>
             )}
 
             {/* 10. TRADEOFFS & LIMITS */}
-            {activeDoc === "tradeoffs" && (
+            {effectiveDoc === "tradeoffs" && (
               <div className="space-y-6 leading-relaxed">
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
                   Architectural Honesty

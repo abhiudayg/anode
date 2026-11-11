@@ -344,6 +344,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "payment_rails",
+          "protocol": "http",
+          "interface": "/v1/payments/execute",
+          "inject_env": "PAYMENT_RAILS_SERVICE_URL",
+          "provenance": "services/dispute_arbitration/main.go:28"
+        },
+        {
           "resource_ref": "db-disputes-temporal",
           "protocol": "temporal",
           "inject_env": "DISPUTES_TEMPORAL_URL",
@@ -351,13 +358,6 @@
             "DISPUTES_TEMPORAL_URL"
           ],
           "provenance": "services/dispute_arbitration/workflow/temporal.go:14"
-        },
-        {
-          "service_ref": "payment_rails",
-          "protocol": "http",
-          "interface": "/v1/payments/execute",
-          "inject_env": "PAYMENT_RAILS_SERVICE_URL",
-          "provenance": "services/dispute_arbitration/main.go:28"
         }
       ],
       "secrets": []
@@ -460,6 +460,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "api_gateway",
+          "protocol": "http",
+          "interface": "/v1/accounts/me",
+          "inject_env": "ACCOUNTS_SERVICE_URL",
+          "provenance": "services/loan_underwriting/main.go:28"
+        },
+        {
           "resource_ref": "db-loans-mongo",
           "protocol": "mongodb",
           "inject_env": "LOANS_MONGO_URL",
@@ -467,13 +474,6 @@
             "LOANS_MONGO_URL"
           ],
           "provenance": "services/loan_underwriting/store/mongo.go:14"
-        },
-        {
-          "service_ref": "accounts_service",
-          "protocol": "http",
-          "interface": "/v1/accounts/me",
-          "inject_env": "ACCOUNTS_SERVICE_URL",
-          "provenance": "services/loan_underwriting/main.go:28"
         }
       ],
       "secrets": []
@@ -603,17 +603,17 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-rewards",
-          "protocol": "redis",
-          "inject_env": "REWARDS_REDIS_ADDR",
-          "provenance": "services/rewards_service/points/redis.go:15"
-        },
-        {
           "service_ref": "accounts_service",
           "protocol": "http",
           "interface": "/v1/accounts/credit",
           "inject_env": "ACCOUNTS_SERVICE_URL",
           "provenance": "services/rewards_service/main.go:25"
+        },
+        {
+          "resource_ref": "redis-rewards",
+          "protocol": "redis",
+          "inject_env": "REWARDS_REDIS_ADDR",
+          "provenance": "services/rewards_service/points/redis.go:15"
         }
       ],
       "secrets": []
