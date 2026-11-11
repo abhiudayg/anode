@@ -8,7 +8,11 @@ import { InteractiveTerminal } from "./InteractiveTerminal";
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
-  const installCmd = "curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/main/install.sh | bash";
+  const [installMethod, setInstallMethod] = useState<"brew" | "curl">("brew");
+
+  const installCmd = installMethod === "brew"
+    ? "brew install abhiudayg/tap/anode"
+    : "curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(installCmd);
@@ -80,18 +84,45 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4"
           >
-            {/* Install Box */}
+            {/* Install Box with Method Selector */}
             <div
               onClick={handleCopy}
-              className="flex items-center gap-3 px-4 py-3 rounded-xl border border-white/[0.12] bg-[#0c0e14]/90 hover:border-cyan-500/50 hover:bg-[#10131a] cursor-pointer transition-all shadow-xl group max-w-md w-full sm:w-auto"
+              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl border border-white/[0.12] bg-[#0c0e14]/90 hover:border-cyan-500/50 hover:bg-[#10131a] cursor-pointer transition-all shadow-xl group max-w-lg w-full sm:w-auto"
             >
-              <Terminal className="w-4 h-4 text-cyan-400 shrink-0" />
+              <div
+                className="flex items-center gap-1 bg-white/[0.06] p-0.5 rounded-lg border border-white/[0.06] shrink-0"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setInstallMethod("brew")}
+                  className={`px-2 py-0.5 text-[11px] font-mono-code rounded transition-all ${
+                    installMethod === "brew"
+                      ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  brew
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInstallMethod("curl")}
+                  className={`px-2 py-0.5 text-[11px] font-mono-code rounded transition-all ${
+                    installMethod === "curl"
+                      ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  curl
+                </button>
+              </div>
               <code className="text-xs sm:text-sm font-mono-code text-neutral-300 group-hover:text-white transition-colors truncate">
-                brew install anode <span className="text-neutral-600">or</span> curl -fsSL ...
+                {installCmd}
               </code>
               <button
                 type="button"
-                className="ml-auto flex items-center gap-1.5 text-xs text-neutral-400 group-hover:text-cyan-400 transition-colors shrink-0"
+                className="ml-auto flex items-center gap-1.5 text-xs text-neutral-400 group-hover:text-cyan-400 transition-colors shrink-0 pl-2"
+                aria-label="Copy install command"
               >
                 {copied ? (
                   <Check className="w-4 h-4 text-emerald-400" />

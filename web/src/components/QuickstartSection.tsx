@@ -13,8 +13,8 @@ export function QuickstartSection() {
     {
       num: "01",
       title: "Install Anode CLI",
-      desc: "Download single static binary or install with Go.",
-      cmd: "curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/main/install.sh | bash",
+      desc: "Install via official Homebrew tap or curl binary installer.",
+      cmd: "brew install abhiudayg/tap/anode",
     },
     {
       num: "02",

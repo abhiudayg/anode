@@ -281,12 +281,14 @@ export default function DocsPage() {
                   <div>
                     <h3 className="text-base font-bold text-white mb-2">Step 1: Install Anode CLI</h3>
                     <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-cyan-300 overflow-x-auto">
-                      <code>{`# One-line binary installer
-curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/main/install.sh | bash
+                      <code>{`# Official Homebrew Tap (macOS & Linux)
+brew install abhiudayg/tap/anode
 
-# Or build from source
-git clone https://github.com/abhiudayg/anode.git
-cd anode && go build -o /usr/local/bin/anode ./cmd/anode`}</code>
+# Or one-line automated installer
+curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash
+
+# Or build from source via Go toolchain
+go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                     </pre>
                   </div>
 
