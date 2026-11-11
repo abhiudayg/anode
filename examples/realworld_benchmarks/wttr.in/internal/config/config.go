@@ -1,0 +1,68 @@
+package config
+
+import (
+	"fmt"
+	"os"
+
+	"gopkg.in/yaml.v2"
+
+	"github.com/chubin/wttr.in/internal/cache"
+	"github.com/chubin/wttr.in/internal/ip"
+	"github.com/chubin/wttr.in/internal/location"
+	"github.com/chubin/wttr.in/internal/logging"
+	"github.com/chubin/wttr.in/internal/renderer"
+	"github.com/chubin/wttr.in/internal/server"
+	"github.com/chubin/wttr.in/internal/uplink"
+	"github.com/chubin/wttr.in/internal/weather"
+)
+
+// Config is the root configuration structure for the entire service.
+type Config struct {
+	// Geo contains location-related settings (IP geolocation, default city, etc.)
+	Geo *location.Config `yaml:"geo"`
+
+	// IP contains settings for IP address parsing and geolocation lookup
+	IP *ip.Config `yaml:"ip"`
+
+	// Weather contains weather data source configuration (WWO, etc.)
+	Weather *weather.Config `yaml:"weather"`
+
+	// Cache defines caching behavior for weather data, location results, etc.
+	Cache *cache.Config `yaml:"cache"`
+
+	// Logging controls log level, format, output destinations, and tracing
+	Logging *logging.Config `yaml:"logging"`
+
+	// Uplink contains configuration for upstream modules
+	Uplink *uplink.Config `yaml:"uplink"`
+
+	// Server defines HTTP server settings (port, timeouts, TLS, etc.)
+	Server *server.Config `yaml:"server"`
+
+	// Renderer configures how responses are rendered (subprocess renderers, templates, etc.)
+	Renderer *renderer.Config `yaml:"renderer"`
+}
+
+// LoadFromYAML loads configuration from a YAML file and returns a pointer to Config
+func LoadFromYAML(filePath string) (*Config, error) {
+	// Read the YAML file
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading YAML file: %v", err)
+	}
+
+	// Create a new Config instance
+	config := &Config{}
+
+	// Unmarshal YAML data into the Config struct with strict checking for unknown fields
+	err = yaml.UnmarshalStrict(data, config)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshaling YAML: %v", err)
+	}
+
+	return config, nil
+}
+
+func (c *Config) MarshalYAML() ([]byte, error) {
+	return yaml.Marshal(c)
+}

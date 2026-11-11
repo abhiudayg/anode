@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-navidrome": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "db/db.go:61"
+    }
+  },
+  "services": {
+    "navidrome": {
+      "name": "navidrome",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /system/info/public",
+            "GET /system/ping",
+            "POST /system/ping",
+            "GET /quickconnect/enabled",
+            "GET /users/public",
+            "GET /openapi.json",
+            "GET /openapi.yaml",
+            "GET /",
+            "GET /link/callback"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "server/backgrounds/handler.go:39"
+        },
+        {
+          "resource_ref": "db-navidrome",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "db/db.go:61"
+        },
+        {
+          "resource_ref": "db-navidrome",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "plugins/host_kvstore.go:64"
+        },
+        {
+          "resource_ref": "db-navidrome",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "db/backup.go:38"
+        },
+        {
+          "resource_ref": "db-navidrome",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "plugins/host_taskqueue.go:93"
+        }
+      ],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "navidrome",
+      "target_host": "https://auth.deezer.com/login/anonymous?jo=p\u0026rto=c",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://labs.api.listenbrainz.org/similar-recordings/json",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://www.navidrome.org/images/index.yml",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://api.deezer.com/search/artist",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://labs.api.listenbrainz.org/similar-artists/json",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://ws.audioscrobbler.com/2.0/",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://api.listenbrainz.org/1/",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://pipe.deezer.com/api",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "navidrome",
+      "target_host": "https://insights.navidrome.org/collect",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"navidrome\" has no matching server registration in this workspace",
+      "provenance": "server/backgrounds/handler.go:39",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

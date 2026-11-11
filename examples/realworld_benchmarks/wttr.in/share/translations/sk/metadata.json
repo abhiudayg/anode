@@ -1,0 +1,15 @@
+{
+  "code": "sk",
+  "name": "Slovak",
+  "locale": "sk_SK",
+  "translators": [
+    {
+      "name": "Juraj Kakody"
+    },
+    {
+      "name": "Štefan Uram",
+      "github": "the_waiter"
+    }
+  ],
+  "full_translation": false
+}

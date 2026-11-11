@@ -1,0 +1,197 @@
+package message
+
+import (
+	"database/sql"
+	"fmt"
+	"path/filepath"
+	"strings"
+	"sync"
+	"time"
+
+	_ "github.com/mattn/go-sqlite3" // SQLite driver
+	"heckel.io/ntfy/v2/db"
+	"heckel.io/ntfy/v2/db/schema"
+	"heckel.io/ntfy/v2/model"
+	"heckel.io/ntfy/v2/util"
+)
+
+// SQLite runtime query constants
+const (
+	// sqliteInsertMessagesQuery is the head of the multi-row INSERT; one sqliteInsertMessagesRow per
+	// message follows, with the values in the order of insertMessageArgs. sqliteInsertMessagesMaxRows
+	// caps the rows per statement, keeping the parameter count well below SQLite's 32766.
+	sqliteInsertMessagesQuery   = `INSERT INTO messages (mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, attachment_deleted, sender, user, content_type, encoding, published) VALUES `
+	sqliteInsertMessagesRow     = `(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	sqliteInsertMessagesMaxRows = 1000
+
+	sqliteSelectScheduledMessageIDsBySeqIDQuery = `SELECT mid FROM messages WHERE topic = ? AND sequence_id = ? AND published = 0`
+	sqliteDeleteScheduledBySequenceIDQuery      = `DELETE FROM messages WHERE topic = ? AND sequence_id = ? AND published = 0`
+	sqliteUpdateMessagesForTopicExpiryQuery     = `UPDATE messages SET expires = ? WHERE topic = ?`
+	sqliteSelectMessagesByIDQuery               = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM messages
+		WHERE mid = ?
+	`
+	sqliteSelectMessagesSinceTimeQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM messages
+		WHERE topic = ? AND time >= ? AND published = 1
+		ORDER BY time DESC, id DESC
+	`
+	sqliteSelectMessagesSinceTimeIncludeScheduledQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM messages
+		WHERE topic = ? AND time >= ?
+		ORDER BY time DESC, id DESC
+	`
+	sqliteSelectMessageRowIDQuery = `SELECT id, time FROM messages WHERE mid = ? LIMIT 1`
+	sqliteSelectRecentRowIDsQuery = `SELECT id FROM messages ORDER BY id DESC LIMIT ?`
+	// sqliteSelectMessagesAfterRowIDQuery: see postgresSelectMessagesAfterRowIDQuery
+	sqliteSelectMessagesAfterRowIDQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding, id, published
+		FROM (
+			SELECT * FROM messages WHERE id > ?1
+			UNION ALL
+			SELECT * FROM messages WHERE id IN (SELECT value FROM json_each(?2)) AND id <= ?1
+		)
+		ORDER BY id
+		LIMIT ?3
+	`
+	// sqliteSelectMessagesSinceIDQuery: see postgresSelectMessagesSinceIDQuery
+	sqliteSelectMessagesSinceIDQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM (
+			SELECT * FROM messages WHERE topic = ?1 AND published = 1 AND time >= ?3 AND id <> ?2
+			UNION ALL
+			SELECT * FROM messages WHERE topic = ?1 AND published = 1 AND id > ?2 AND time + 0 < ?3
+		)
+		ORDER BY time DESC, id DESC
+	`
+	sqliteSelectMessagesSinceIDIncludeScheduledQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM (
+			SELECT * FROM messages WHERE topic = ?1 AND published = 1 AND time >= ?3 AND id <> ?2
+			UNION ALL
+			SELECT * FROM messages WHERE topic = ?1 AND published = 1 AND id > ?2 AND time + 0 < ?3
+			UNION ALL
+			SELECT * FROM messages WHERE topic = ?1 AND published = 0
+		)
+		ORDER BY time DESC, id DESC
+	`
+	sqliteSelectMessagesLatestQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM messages
+		WHERE topic = ? AND published = 1
+		ORDER BY time DESC, id DESC
+		LIMIT 1
+	`
+	sqliteSelectMessagesDueQuery = `
+		SELECT mid, sequence_id, time, event, expires, topic, message, title, priority, tags, click, icon, actions, attachment_name, attachment_type, attachment_size, attachment_expires, attachment_url, sender, user, content_type, encoding
+		FROM messages
+		WHERE time <= ? AND published = 0
+		ORDER BY time, id
+	`
+	sqliteUpdateMessagePublishedQuery = `UPDATE messages SET published = 1 WHERE mid = ?`
+	sqliteSelectMessagesCountQuery    = `SELECT COUNT(*) FROM messages`
+	sqliteSelectTopicsQuery           = `SELECT topic FROM messages GROUP BY topic`
+
+	sqliteDeleteExpiredMessagesQuery         = `DELETE FROM messages WHERE mid IN (SELECT mid FROM messages WHERE expires <= ? AND published = 1 LIMIT ?)`
+	sqliteMarkExpiredAttachmentsDeletedQuery = `UPDATE messages SET attachment_deleted = 1 WHERE mid IN (SELECT mid FROM messages WHERE attachment_expires > 0 AND attachment_expires <= ? AND attachment_deleted = 0 LIMIT ?)`
+	sqliteSelectAttachmentsSizeBySenderQuery = `SELECT IFNULL(SUM(attachment_size), 0) FROM messages WHERE user = '' AND sender = ? AND attachment_expires >= ?`
+	sqliteSelectAttachmentsSizeByUserIDQuery = `SELECT IFNULL(SUM(attachment_size), 0) FROM messages WHERE user = ? AND attachment_expires >= ?`
+	sqliteSelectAttachmentsWithSizesQuery    = `SELECT mid, attachment_size FROM messages WHERE attachment_expires > ? AND attachment_deleted = 0`
+
+	sqliteSelectStatsQuery       = `SELECT value FROM stats WHERE key = 'messages'`
+	sqliteUpdateStatsQuery       = `UPDATE stats SET value = value + ? WHERE key = 'messages'`
+	sqliteUpdateMessageTimeQuery = `UPDATE messages SET time = ? WHERE mid = ?`
+)
+
+var sqliteQueries = queries{
+	insertMessages:                   sqliteInsertMessages,
+	selectScheduledMessageIDsBySeqID: sqliteSelectScheduledMessageIDsBySeqIDQuery,
+	deleteScheduledBySequenceID:      sqliteDeleteScheduledBySequenceIDQuery,
+	updateMessagesForTopicExpiry:     sqliteUpdateMessagesForTopicExpiryQuery,
+	selectMessagesByID:               sqliteSelectMessagesByIDQuery,
+	selectMessagesSinceTime:          sqliteSelectMessagesSinceTimeQuery,
+	selectMessagesSinceTimeScheduled: sqliteSelectMessagesSinceTimeIncludeScheduledQuery,
+	selectMessageRowID:               sqliteSelectMessageRowIDQuery,
+	selectMessagesSinceID:            sqliteSelectMessagesSinceIDQuery,
+	selectMessagesSinceIDScheduled:   sqliteSelectMessagesSinceIDIncludeScheduledQuery,
+	selectRecentRowIDs:               sqliteSelectRecentRowIDsQuery,
+	selectMessagesAfterRowID:         sqliteSelectMessagesAfterRowIDQuery,
+	selectMessagesLatest:             sqliteSelectMessagesLatestQuery,
+	selectMessagesDue:                sqliteSelectMessagesDueQuery,
+	deleteExpiredMessages:            sqliteDeleteExpiredMessagesQuery,
+	updateMessagePublished:           sqliteUpdateMessagePublishedQuery,
+	selectMessagesCount:              sqliteSelectMessagesCountQuery,
+	selectTopics:                     sqliteSelectTopicsQuery,
+	markExpiredAttachmentsDeleted:    sqliteMarkExpiredAttachmentsDeletedQuery,
+	selectAttachmentsSizeBySender:    sqliteSelectAttachmentsSizeBySenderQuery,
+	selectAttachmentsSizeByUserID:    sqliteSelectAttachmentsSizeByUserIDQuery,
+	selectAttachmentsWithSizes:       sqliteSelectAttachmentsWithSizesQuery,
+	selectStats:                      sqliteSelectStatsQuery,
+	updateStats:                      sqliteUpdateStatsQuery,
+	updateMessageTime:                sqliteUpdateMessageTimeQuery,
+}
+
+// NewSQLiteStore creates a SQLite file-backed cache
+func NewSQLiteStore(filename, startupQueries string, cacheDuration time.Duration, batchSize int, batchTimeout time.Duration, nop bool) (*Cache, error) {
+	parentDir := filepath.Dir(filename)
+	if !util.FileExists(parentDir) {
+		return nil, fmt.Errorf("cache database directory %s does not exist or is not accessible", parentDir)
+	}
+	d, err := sql.Open("sqlite3", filename)
+	if err != nil {
+		return nil, err
+	}
+	if err := runSQLiteStartupQueries(d, startupQueries); err != nil {
+		return nil, err
+	}
+	if err := schema.Migrate(d, schema.SQLite, schemaStore, sqliteCreateTables, sqliteMigrations(cacheDuration)); err != nil {
+		return nil, err
+	}
+	return newCache(db.New(&db.Host{DB: d}, nil), sqliteQueries, &sync.Mutex{}, batchSize, batchTimeout, nop), nil
+}
+
+// NewMemStore creates an in-memory cache
+func NewMemStore() (*Cache, error) {
+	return NewSQLiteStore(createMemoryFilename(), "", 0, 0, 0, false)
+}
+
+// NewNopStore creates an in-memory cache that discards all messages;
+// it is always empty and can be used if caching is entirely disabled
+func NewNopStore() (*Cache, error) {
+	return NewSQLiteStore(createMemoryFilename(), "", 0, 0, 0, true)
+}
+
+// createMemoryFilename creates a unique memory filename to use for the SQLite backend.
+// From mattn/go-sqlite3: "Each connection to ":memory:" opens a brand new in-memory
+// sql database, so if the stdlib's sql engine happens to open another connection and
+// you've only specified ":memory:", that connection will see a brand new database.
+// A workaround is to use "file::memory:?cache=shared" (or "file:foobar?mode=memory&cache=shared").
+// Every connection to this string will point to the same in-memory database."
+func createMemoryFilename() string {
+	return fmt.Sprintf("file:%s?mode=memory&cache=shared", util.RandomString(10))
+}
+
+// sqliteInsertMessages writes the batch as multi-row INSERTs of at most sqliteInsertMessagesMaxRows
+// messages each
+func sqliteInsertMessages(tx *sql.Tx, ms []*model.Message) error {
+	for len(ms) > 0 {
+		chunk := ms[:min(len(ms), sqliteInsertMessagesMaxRows)]
+		ms = ms[len(chunk):]
+		args := make([]any, 0, len(chunk)*insertMessageColumns)
+		for _, m := range chunk {
+			rowArgs, err := insertMessageArgs(m)
+			if err != nil {
+				return err
+			}
+			args = append(args, rowArgs...)
+		}
+		query := sqliteInsertMessagesQuery + strings.Repeat(sqliteInsertMessagesRow+", ", len(chunk)-1) + sqliteInsertMessagesRow
+		if _, err := tx.Exec(query, args...); err != nil {
+			return err
+		}
+	}
+	return nil
+}

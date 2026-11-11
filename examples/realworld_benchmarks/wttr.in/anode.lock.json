@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-wttr.in": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/samonzeweb/godb@v1.0.15/godb.go:41"
+    }
+  },
+  "services": {
+    "wttr.in": {
+      "name": "wttr.in",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/",
+            "/favicon.ico",
+            "/files/"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-wttr.in",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/samonzeweb/godb@v1.0.15/godb.go:41"
+        },
+        {
+          "resource_ref": "db-wttr.in",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "internal/location/cache.go:111"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterWeatherServer",
+          "inject_env": "",
+          "provenance": "main.go:159"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterCachedWeatherServer",
+          "inject_env": "",
+          "provenance": "main.go:161"
+        }
+      ],
+      "secrets": []
+    }
+  },
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterWeatherServer\" in service \"wttr.in\" has no matching server registration in this workspace",
+      "provenance": "main.go:159",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterCachedWeatherServer\" in service \"wttr.in\" has no matching server registration in this workspace",
+      "provenance": "main.go:161",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

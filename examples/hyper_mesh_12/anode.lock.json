@@ -197,6 +197,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "notifications",
+          "protocol": "http",
+          "interface": "/v1/notify/shipment",
+          "inject_env": "NOTIFICATIONS_SERVICE_URL",
+          "provenance": "services/fulfillment/main.go:22"
+        },
+        {
           "resource_ref": "db-fulfillment",
           "protocol": "postgres",
           "inject_env": "",
@@ -208,13 +215,6 @@
             "FULFILLMENT_SSLMODE"
           ],
           "provenance": "services/fulfillment/main.go:15"
-        },
-        {
-          "service_ref": "notifications",
-          "protocol": "http",
-          "interface": "/v1/notify/shipment",
-          "inject_env": "NOTIFICATIONS_SERVICE_URL",
-          "provenance": "services/fulfillment/main.go:22"
         }
       ],
       "secrets": []
@@ -249,6 +249,10 @@
           "protocol": "grpc",
           "port_env": "PORT",
           "service": "RegisterLedgerServiceServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT"
         }
       ],
       "bindings": [],

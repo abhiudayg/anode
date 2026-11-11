@@ -1,0 +1,1132 @@
+package server
+
+import (
+	"fmt"
+	"github.com/stretchr/testify/require"
+	dbtest "heckel.io/ntfy/v2/db/test"
+	"heckel.io/ntfy/v2/log"
+	"heckel.io/ntfy/v2/model"
+	"heckel.io/ntfy/v2/user"
+	"heckel.io/ntfy/v2/util"
+	"io"
+	"net"
+	"net/http"
+	"net/http/httptest"
+	"net/netip"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+	"time"
+)
+
+func TestAccount_Signup_Success(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "POST", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		token, _ := util.UnmarshalJSON[apiAccountTokenResponse](io.NopCloser(rr.Body))
+		require.NotEmpty(t, token.Token)
+		require.True(t, time.Now().Add(71*time.Hour).Unix() < token.Expires)
+		require.True(t, strings.HasPrefix(token.Token, "tk_"))
+		require.Equal(t, "9.9.9.9", token.LastOrigin)
+		require.True(t, token.LastAccess > time.Now().Unix()-2)
+		require.True(t, token.LastAccess < time.Now().Unix()+2)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BearerAuth(token.Token),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, "phil", account.Username)
+		require.Equal(t, "user", account.Role)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("", token.Token), // We allow a fake basic auth to make curl-ing easier (curl -u :<token>)
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ = util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, "phil", account.Username)
+	})
+}
+
+func TestAccount_Login_Success(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "mypass", user.RoleUser, false))
+		u, err := s.userManager.User("phil")
+		require.Nil(t, err)
+		require.Nil(t, s.userManager.AddEmail(u.ID, "phil@example.com"))
+		require.Nil(t, s.userManager.SetPrimaryEmail(u.ID, "phil@example.com"))
+
+		// Login by username returns a token and the canonical username
+		rr := request(t, s, "POST", "/v1/account/login", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		resp, _ := util.UnmarshalJSON[apiAccountLoginResponse](io.NopCloser(rr.Body))
+		require.True(t, strings.HasPrefix(resp.Token, "tk_"))
+		require.Equal(t, "phil", resp.Username)
+
+		// The returned token actually authenticates
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BearerAuth(resp.Token),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Login by primary email returns the canonical username, not the email that was typed
+		rr = request(t, s, "POST", "/v1/account/login", "", map[string]string{
+			"Authorization": util.BasicAuth("phil@example.com", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		resp, _ = util.UnmarshalJSON[apiAccountLoginResponse](io.NopCloser(rr.Body))
+		require.True(t, strings.HasPrefix(resp.Token, "tk_"))
+		require.Equal(t, "phil", resp.Username)
+	})
+}
+
+func TestAccount_Login_InvalidCredentials(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+		require.Nil(t, s.userManager.AddUser("phil", "mypass", user.RoleUser, false))
+
+		rr := request(t, s, "POST", "/v1/account/login", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "wrongpass"),
+		})
+		require.Equal(t, 401, rr.Code)
+	})
+}
+
+func TestAccount_Signup_UserExists(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 409, rr.Code)
+		require.Equal(t, 40901, toHTTPError(t, rr.Body.String()).Code)
+	})
+}
+
+func TestAccount_Signup_LimitReached(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		// Burst is DefaultVisitorAccountCreationLimitBurst (shared with password-reset requests)
+		for i := 0; i < 6; i++ {
+			rr := request(t, s, "POST", "/v1/account", fmt.Sprintf(`{"username":"phil%d", "password":"mypass"}`, i), nil)
+			require.Equal(t, 200, rr.Code)
+		}
+		rr := request(t, s, "POST", "/v1/account", `{"username":"thiswontwork", "password":"mypass"}`, nil)
+		require.Equal(t, 429, rr.Code)
+		require.Equal(t, 42906, toHTTPError(t, rr.Body.String()).Code)
+		retryAfter := retryAfterSeconds(t, rr) // One token refills per DefaultVisitorAccountCreationLimitReplenish
+		require.Greater(t, retryAfter, int(DefaultVisitorAccountCreationLimitReplenish.Seconds())-60)
+		require.LessOrEqual(t, retryAfter, int(DefaultVisitorAccountCreationLimitReplenish.Seconds()))
+	})
+}
+
+func TestAccount_Signup_AsUser(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		log.Info("1")
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleAdmin, false))
+		log.Info("2")
+		require.Nil(t, s.userManager.AddUser("ben", "ben", user.RoleUser, false))
+		log.Info("3")
+		rr := request(t, s, "POST", "/v1/account", `{"username":"emma", "password":"emma"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		log.Info("4")
+		rr = request(t, s, "POST", "/v1/account", `{"username":"marian", "password":"marian"}`, map[string]string{
+			"Authorization": util.BasicAuth("ben", "ben"),
+		})
+		require.Equal(t, 401, rr.Code)
+	})
+}
+
+func TestAccount_Signup_Disabled(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = false
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 400, rr.Code)
+		require.Equal(t, 40022, toHTTPError(t, rr.Body.String()).Code)
+	})
+}
+
+func TestAccount_Signup_Rate_Limit(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+
+		// Burst is DefaultVisitorAccountCreationLimitBurst (shared with password-reset requests)
+		for i := 0; i < 6; i++ {
+			rr := request(t, s, "POST", "/v1/account", fmt.Sprintf(`{"username":"phil%d", "password":"mypass"}`, i), nil)
+			require.Equal(t, 200, rr.Code, "failed on iteration %d", i)
+		}
+		rr := request(t, s, "POST", "/v1/account", `{"username":"notallowed", "password":"mypass"}`, nil)
+		require.Equal(t, 429, rr.Code)
+		require.Equal(t, 42906, toHTTPError(t, rr.Body.String()).Code)
+	})
+}
+
+func TestAccount_Get_Anonymous(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.VisitorRequestLimitReplenish = 86 * time.Second
+		conf.VisitorEmailLimitReplenish = time.Hour
+		conf.VisitorAttachmentTotalSizeLimit = 5123
+		conf.AttachmentFileSizeLimit = 512
+		s := newTestServer(t, conf)
+		s.mailer = &testMailer{}
+		defer s.closeDatabases()
+
+		rr := request(t, s, "GET", "/v1/account", "", nil)
+		require.Equal(t, 200, rr.Code)
+		account, _ := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, "*", account.Username)
+		require.Equal(t, string(user.RoleAnonymous), account.Role)
+		require.Equal(t, "ip", account.Limits.Basis)
+		require.Equal(t, int64(1004), account.Limits.Messages) // I hate this
+		require.Equal(t, int64(24), account.Limits.Emails)     // I hate this
+		require.Equal(t, int64(5123), account.Limits.AttachmentTotalSize)
+		require.Equal(t, int64(512), account.Limits.AttachmentFileSize)
+		require.Equal(t, int64(0), account.Stats.Messages)
+		require.Equal(t, int64(1004), account.Stats.MessagesRemaining)
+		require.Equal(t, int64(0), account.Stats.Emails)
+		require.Equal(t, int64(24), account.Stats.EmailsRemaining)
+		require.Equal(t, int64(0), account.Stats.Calls)
+		require.Equal(t, int64(0), account.Stats.CallsRemaining)
+
+		rr = request(t, s, "POST", "/mytopic", "", nil)
+		require.Equal(t, 200, rr.Code)
+		rr = request(t, s, "POST", "/mytopic", "", map[string]string{
+			"Email": "phil@ntfy.sh",
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", nil)
+		require.Equal(t, 200, rr.Code)
+		account, _ = util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, int64(2), account.Stats.Messages)
+		require.Equal(t, int64(1002), account.Stats.MessagesRemaining)
+		require.Equal(t, int64(1), account.Stats.Emails)
+		require.Equal(t, int64(23), account.Stats.EmailsRemaining)
+	})
+}
+
+func TestAccount_ChangeSettings(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		s := newTestServer(t, newTestConfigWithAuthFile(t, databaseURL))
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+		u, _ := s.userManager.User("phil")
+		token, _ := s.userManager.CreateToken(u.ID, "", time.Unix(0, 0), netip.IPv4Unspecified(), false)
+
+		rr := request(t, s, "PATCH", "/v1/account/settings", `{"notification": {"sound": "juntos"},"ignored": true}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "PATCH", "/v1/account/settings", `{"notification": {"delete_after": 86400}, "language": "de"}`, map[string]string{
+			"Authorization": util.BearerAuth(token.Value),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "PATCH", "/v1/account/settings", `{"date_format": "iso8601", "time_format": "24h"}`, map[string]string{
+			"Authorization": util.BearerAuth(token.Value),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", `{"username":"marian", "password":"marian"}`, map[string]string{
+			"Authorization": util.BearerAuth(token.Value),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, "de", account.Language)
+		require.Equal(t, "iso8601", account.DateFormat) // Merged, not overwritten by previous PATCH
+		require.Equal(t, "24h", account.TimeFormat)
+		require.Equal(t, util.Int(86400), account.Notification.DeleteAfter)
+		require.Equal(t, util.String("juntos"), account.Notification.Sound)
+		require.Nil(t, account.Notification.MinPriority) // Not set
+	})
+}
+
+func TestAccount_Subscription_AddUpdateDelete(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		s := newTestServer(t, newTestConfigWithAuthFile(t, databaseURL))
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+
+		rr := request(t, s, "POST", "/v1/account/subscription", `{"base_url": "http://abc.com", "topic": "def"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, 1, len(account.Subscriptions))
+		require.Equal(t, "http://abc.com", account.Subscriptions[0].BaseURL)
+		require.Equal(t, "def", account.Subscriptions[0].Topic)
+		require.Nil(t, account.Subscriptions[0].DisplayName)
+
+		rr = request(t, s, "PATCH", "/v1/account/subscription", `{"base_url": "http://abc.com", "topic": "def", "display_name": "ding dong"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ = util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, 1, len(account.Subscriptions))
+		require.Equal(t, "http://abc.com", account.Subscriptions[0].BaseURL)
+		require.Equal(t, "def", account.Subscriptions[0].Topic)
+		require.Equal(t, util.String("ding dong"), account.Subscriptions[0].DisplayName)
+
+		rr = request(t, s, "DELETE", "/v1/account/subscription", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+			"X-BaseURL":     "http://abc.com",
+			"X-Topic":       "def",
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ = util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, 0, len(account.Subscriptions))
+	})
+}
+
+func TestAccount_ChangePassword(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.AuthUsers = []*user.User{
+			{Name: "philuser", Hash: "$2a$10$U4WSIYY6evyGmZaraavM2e2JeVG6EMGUKN1uUwufUeeRd4Jpg6cGC", Role: user.RoleUser}, // philuser:philpass
+		}
+		s := newTestServer(t, conf)
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+
+		rr := request(t, s, "POST", "/v1/account/password", `{"password": "WRONG", "new_password": ""}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 400, rr.Code)
+
+		rr = request(t, s, "POST", "/v1/account/password", `{"password": "WRONG", "new_password": "new password"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 400, rr.Code)
+		require.Equal(t, 40026, toHTTPError(t, rr.Body.String()).Code)
+
+		rr = request(t, s, "POST", "/v1/account/password", `{"password": "phil", "new_password": "new password"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 401, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "new password"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Cannot change password of provisioned user
+		rr = request(t, s, "POST", "/v1/account/password", `{"password": "philpass", "new_password": "new password"}`, map[string]string{
+			"Authorization": util.BasicAuth("philuser", "philpass"),
+		})
+		require.Equal(t, 409, rr.Code)
+	})
+}
+
+func TestAccount_ChangePassword_NoAccount(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		s := newTestServer(t, newTestConfigWithAuthFile(t, databaseURL))
+		defer s.closeDatabases()
+
+		rr := request(t, s, "POST", "/v1/account/password", `{"password": "new password"}`, nil)
+		require.Equal(t, 401, rr.Code)
+	})
+}
+
+func TestAccount_ExtendToken(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		t.Parallel()
+		s := newTestServer(t, newTestConfigWithAuthFile(t, databaseURL))
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+
+		rr := request(t, s, "POST", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		token, err := util.UnmarshalJSON[apiAccountTokenResponse](io.NopCloser(rr.Body))
+		require.Nil(t, err)
+
+		time.Sleep(time.Second)
+
+		rr = request(t, s, "PATCH", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BearerAuth(token.Token),
+		})
+		require.Equal(t, 200, rr.Code)
+		extendedToken, err := util.UnmarshalJSON[apiAccountTokenResponse](io.NopCloser(rr.Body))
+		require.Nil(t, err)
+		require.Equal(t, token.Token, extendedToken.Token)
+		require.True(t, token.Expires < extendedToken.Expires)
+
+		expires := time.Now().Add(999 * time.Hour)
+		body := fmt.Sprintf(`{"token":"%s", "label":"some label", "expires": %d}`, token.Token, expires.Unix())
+		rr = request(t, s, "PATCH", "/v1/account/token", body, map[string]string{
+			"Authorization": util.BearerAuth(token.Token),
+		})
+		require.Equal(t, 200, rr.Code)
+		token, err = util.UnmarshalJSON[apiAccountTokenResponse](io.NopCloser(rr.Body))
+		require.Nil(t, err)
+		require.Equal(t, "some label", token.Label)
+		require.Equal(t, expires.Unix(), token.Expires)
+
+		body = fmt.Sprintf(`{"token":"%s", "expires": 0}`, token.Token)
+		rr = request(t, s, "PATCH", "/v1/account/token", body, map[string]string{
+			"Authorization": util.BearerAuth(token.Token),
+		})
+		require.Equal(t, 200, rr.Code)
+		token, err = util.UnmarshalJSON[apiAccountTokenResponse](io.NopCloser(rr.Body))
+		require.Nil(t, err)
+		require.Equal(t, int64(0), token.Expires)
+	})
+}
+
+func TestAccount_ExtendToken_NoTokenProvided(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		s := newTestServer(t, newTestConfigWithAuthFile(t, databaseURL))
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+
+		rr := request(t, s, "PATCH", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"), // Not Bearer!
+		})
+		require.Equal(t, 400, rr.Code)
+		require.Equal(t, 40023, toHTTPError(t, rr.Body.String()).Code)
+	})
+}
+
+func TestAccount_DeleteToken(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		s := newTestServer(t, newTestConfigWithAuthFile(t, databaseURL))
+		defer s.closeDatabases()
+
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+
+		rr := request(t, s, "POST", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		token, err := util.UnmarshalJSON[apiAccountTokenResponse](io.NopCloser(rr.Body))
+		require.Nil(t, err)
+		require.True(t, token.Expires > time.Now().Add(71*time.Hour).Unix())
+
+		// Delete token failure (using basic auth)
+		rr = request(t, s, "DELETE", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "phil"), // Not Bearer!
+		})
+		require.Equal(t, 400, rr.Code)
+		require.Equal(t, 40023, toHTTPError(t, rr.Body.String()).Code)
+
+		// Delete token with wrong token
+		rr = request(t, s, "DELETE", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BearerAuth("invalidtoken"),
+		})
+		require.Equal(t, 401, rr.Code)
+
+		// Delete token with correct token
+		rr = request(t, s, "DELETE", "/v1/account/token", "", map[string]string{
+			"Authorization": util.BearerAuth(token.Token),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Cannot get account anymore
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BearerAuth(token.Token),
+		})
+		require.Equal(t, 401, rr.Code)
+	})
+}
+
+func TestAccount_Delete_Success(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "DELETE", "/v1/account", `{"password":"mypass"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Account was marked deleted
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 401, rr.Code)
+
+		// Cannot re-create account, since still exists
+		rr = request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 409, rr.Code)
+	})
+}
+
+func TestAccount_Delete_EndsStreamsEverywhere(t *testing.T) {
+	// Deleting your own account ends your streams here and tells the other cluster nodes, like an
+	// admin's delete: an admin without access entries leaves nothing for an access reload to find
+	conf := newTestConfigWithAuthFile(t, "")
+	s := newTestServer(t, conf)
+	cl := &fakeCluster{}
+	s.cluster = cl
+	require.Nil(t, s.userManager.AddUser("phil", "mypass", user.RoleAdmin, false))
+	phil, err := s.userManager.User("phil")
+	require.Nil(t, err)
+	headers := map[string]string{
+		"Authorization": util.BasicAuth("phil", "mypass"),
+	}
+	stream := subscribeStream(t, s, "mytopic", headers)
+
+	rr := request(t, s, "DELETE", "/v1/account", `{"password":"mypass"}`, headers)
+	require.Equal(t, 200, rr.Code)
+	select {
+	case <-stream.ended:
+	case <-time.After(3 * time.Second):
+		t.Fatal("the deleted user's stream stayed open")
+	}
+	require.Equal(t, []string{phil.ID}, cl.DeletedUsers())
+}
+
+func TestAccount_Delete_Not_Allowed(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "DELETE", "/v1/account", "", nil)
+		require.Equal(t, 401, rr.Code)
+
+		rr = request(t, s, "DELETE", "/v1/account", `{"password":"mypass"}`, nil)
+		require.Equal(t, 401, rr.Code)
+
+		rr = request(t, s, "DELETE", "/v1/account", `{"password":"INCORRECT"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 400, rr.Code)
+		require.Equal(t, 40026, toHTTPError(t, rr.Body.String()).Code)
+	})
+}
+
+func TestAccount_Reservation_AddWithoutTierFails(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic":"mytopic", "everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 401, rr.Code)
+	})
+}
+
+func TestAccount_Reservation_AddAdminSuccess(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+
+		// A user, an admin, and a reservation walk into a bar
+		require.Nil(t, s.userManager.AddTier(&user.Tier{
+			Code:             "pro",
+			ReservationLimit: 2,
+		}))
+		require.Nil(t, s.userManager.AddUser("noadmin1", "pass", user.RoleUser, false))
+		require.Nil(t, s.userManager.ChangeTier("noadmin1", "pro"))
+		require.Nil(t, s.userManager.AddReservation("noadmin1", "mytopic", user.PermissionDenyAll, 0))
+
+		require.Nil(t, s.userManager.AddUser("noadmin2", "pass", user.RoleUser, false))
+		require.Nil(t, s.userManager.ChangeTier("noadmin2", "pro"))
+
+		require.Nil(t, s.userManager.AddUser("phil", "adminpass", user.RoleAdmin, false))
+
+		// Admin can reserve topic
+		rr := request(t, s, "POST", "/v1/account/reservation", `{"topic":"sometopic","everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "adminpass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// User cannot reserve already reserved topic
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic":"mytopic","everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("noadmin2", "pass"),
+		})
+		require.Equal(t, 409, rr.Code)
+
+		// Admin cannot reserve already reserved topic
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic":"mytopic","everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "adminpass"),
+		})
+		require.Equal(t, 409, rr.Code)
+
+		reservations, err := s.userManager.Reservations("phil")
+		require.Nil(t, err)
+		require.Equal(t, 1, len(reservations))
+		require.Equal(t, "sometopic", reservations[0].Topic)
+
+		reservations, err = s.userManager.Reservations("noadmin1")
+		require.Nil(t, err)
+		require.Equal(t, 1, len(reservations))
+		require.Equal(t, "mytopic", reservations[0].Topic)
+
+		reservations, err = s.userManager.Reservations("noadmin2")
+		require.Nil(t, err)
+		require.Equal(t, 0, len(reservations))
+	})
+}
+
+func TestAccount_Reservation_AddRemoveUserWithTierSuccess(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableSignup = true
+		conf.EnableReservations = true
+		conf.TwilioAccount = "dummy"
+		s := newTestServer(t, conf)
+
+		// Create user
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		// Create a tier
+		require.Nil(t, s.userManager.AddTier(&user.Tier{
+			Code:                     "pro",
+			MessageLimit:             123,
+			MessageExpiryDuration:    86400 * time.Second,
+			EmailLimit:               32,
+			CallLimit:                10,
+			ReservationLimit:         2,
+			AttachmentFileSizeLimit:  1231231,
+			AttachmentTotalSizeLimit: 123123,
+			AttachmentExpiryDuration: 10800 * time.Second,
+			AttachmentBandwidthLimit: 21474836480,
+		}))
+		require.Nil(t, s.userManager.ChangeTier("phil", "pro"))
+
+		// Reserve two topics
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic": "mytopic", "everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic": "another", "everyone":"read-only"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Trying to reserve a third should fail
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic": "yet-another", "everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 429, rr.Code)
+
+		// Modify existing should still work
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic": "another", "everyone":"write-only"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Check account result
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, "pro", account.Tier.Code)
+		require.Equal(t, int64(123), account.Limits.Messages)
+		require.Equal(t, int64(86400), account.Limits.MessagesExpiryDuration)
+		require.Equal(t, int64(32), account.Limits.Emails)
+		require.Equal(t, int64(10), account.Limits.Calls)
+		require.Equal(t, int64(2), account.Limits.Reservations)
+		require.Equal(t, int64(1231231), account.Limits.AttachmentFileSize)
+		require.Equal(t, int64(123123), account.Limits.AttachmentTotalSize)
+		require.Equal(t, int64(10800), account.Limits.AttachmentExpiryDuration)
+		require.Equal(t, int64(21474836480), account.Limits.AttachmentBandwidth)
+		require.Equal(t, 2, len(account.Reservations))
+		require.Equal(t, "another", account.Reservations[0].Topic)
+		require.Equal(t, "write-only", account.Reservations[0].Everyone)
+		require.Equal(t, "mytopic", account.Reservations[1].Topic)
+		require.Equal(t, "deny-all", account.Reservations[1].Everyone)
+
+		// Delete and re-check
+		rr = request(t, s, "DELETE", "/v1/account/reservation/another", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		account, _ = util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+		require.Equal(t, 1, len(account.Reservations))
+		require.Equal(t, "mytopic", account.Reservations[0].Topic)
+	})
+}
+
+func TestAccount_Reservation_PublishByAnonymousFails(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.AuthDefault = user.PermissionReadWrite
+		conf.EnableSignup = true
+		s := newTestServer(t, conf)
+
+		// Create user with tier
+		rr := request(t, s, "POST", "/v1/account", `{"username":"phil", "password":"mypass"}`, nil)
+		require.Equal(t, 200, rr.Code)
+
+		require.Nil(t, s.userManager.AddTier(&user.Tier{
+			Code:             "pro",
+			MessageLimit:     20,
+			ReservationLimit: 2,
+		}))
+		require.Nil(t, s.userManager.ChangeTier("phil", "pro"))
+
+		// Reserve a topic
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic": "mytopic", "everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Publish a message
+		rr = request(t, s, "POST", "/mytopic", `Howdy`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Publish a message (as anonymous)
+		rr = request(t, s, "POST", "/mytopic", `Howdy`, nil)
+		require.Equal(t, 403, rr.Code)
+	})
+}
+
+func TestAccount_Reservation_Delete_Messages_And_Attachments(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		t.Parallel()
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.AuthDefault = user.PermissionReadWrite
+		s := newTestServer(t, conf)
+
+		// Create user with tier
+		require.Nil(t, s.userManager.AddUser("phil", "mypass", user.RoleUser, false))
+		require.Nil(t, s.userManager.AddTier(&user.Tier{
+			Code:                     "pro",
+			MessageLimit:             20,
+			MessageExpiryDuration:    time.Hour,
+			ReservationLimit:         2,
+			AttachmentTotalSizeLimit: 10000,
+			AttachmentFileSizeLimit:  10000,
+			AttachmentExpiryDuration: time.Hour,
+			AttachmentBandwidthLimit: 10000,
+		}))
+		require.Nil(t, s.userManager.ChangeTier("phil", "pro"))
+
+		// Reserve two topics "mytopic1" and "mytopic2"
+		rr := request(t, s, "POST", "/v1/account/reservation", `{"topic": "mytopic1", "everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "POST", "/v1/account/reservation", `{"topic": "mytopic2", "everyone":"deny-all"}`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Publish a message with attachment to each topic
+		rr = request(t, s, "POST", "/mytopic1?f=attach.txt", `Howdy`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		m1 := toMessage(t, rr.Body.String())
+		require.FileExists(t, filepath.Join(s.config.AttachmentCacheDir, m1.ID))
+
+		rr = request(t, s, "POST", "/mytopic2?f=attach.txt", `Howdy`, map[string]string{
+			"Authorization": util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+		m2 := toMessage(t, rr.Body.String())
+		require.FileExists(t, filepath.Join(s.config.AttachmentCacheDir, m2.ID))
+
+		// Pre-verify message count and file
+		ms, err := s.messageCache.Messages("mytopic1", model.SinceAllMessages, false)
+		require.Nil(t, err)
+		require.Equal(t, 1, len(ms))
+		require.FileExists(t, filepath.Join(s.config.AttachmentCacheDir, m1.ID))
+
+		ms, err = s.messageCache.Messages("mytopic2", model.SinceAllMessages, false)
+		require.Nil(t, err)
+		require.Equal(t, 1, len(ms))
+		require.FileExists(t, filepath.Join(s.config.AttachmentCacheDir, m2.ID))
+
+		// Delete reservation
+		rr = request(t, s, "DELETE", "/v1/account/reservation/mytopic1", ``, map[string]string{
+			"X-Delete-Messages": "true",
+			"Authorization":     util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		rr = request(t, s, "DELETE", "/v1/account/reservation/mytopic2", ``, map[string]string{
+			"X-Delete-Messages": "false",
+			"Authorization":     util.BasicAuth("phil", "mypass"),
+		})
+		require.Equal(t, 200, rr.Code)
+
+		// Verify that messages and attachments were deleted
+		// This does not explicitly call the manager! We backdate the files so sync's
+		// grace period doesn't protect them.
+		past := time.Now().Add(-2 * time.Hour)
+		os.Chtimes(filepath.Join(s.config.AttachmentCacheDir, m1.ID), past, past)
+		os.Chtimes(filepath.Join(s.config.AttachmentCacheDir, m2.ID), past, past)
+		waitFor(t, func() bool {
+			s.attachment.Sync() // File cleanup is done by sync, not by the manager
+			ms, err := s.messageCache.Messages("mytopic1", model.SinceAllMessages, false)
+			require.Nil(t, err)
+			return len(ms) == 0 && !util.FileExists(filepath.Join(s.config.AttachmentCacheDir, m1.ID))
+		})
+
+		ms, err = s.messageCache.Messages("mytopic1", model.SinceAllMessages, false)
+		require.Nil(t, err)
+		require.Equal(t, 0, len(ms))
+		require.NoFileExists(t, filepath.Join(s.config.AttachmentCacheDir, m1.ID))
+
+		ms, err = s.messageCache.Messages("mytopic2", model.SinceAllMessages, false)
+		require.Nil(t, err)
+		require.Equal(t, 1, len(ms))
+		require.Equal(t, m2.ID, ms[0].ID)
+		require.FileExists(t, filepath.Join(s.config.AttachmentCacheDir, m2.ID))
+	})
+}
+
+/*func TestAccount_Persist_UserStats_After_Tier_Change(t *testing.T) {
+	conf := newTestConfigWithAuthFile(t, databaseURL)
+	conf.AuthDefault = user.PermissionReadWrite
+	conf.AuthStatsQueueWriterInterval = 300 * time.Millisecond
+	s := newTestServer(t, conf)
+	defer s.closeDatabases()
+
+	// Create user with tier
+	require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser))
+	require.Nil(t, s.userManager.AddTier(&user.Tier{
+		Code:         "starter",
+		MessageSizeLimit: 10,
+	}))
+	require.Nil(t, s.userManager.AddTier(&user.Tier{
+		Code:         "pro",
+		MessageSizeLimit: 20,
+	}))
+	require.Nil(t, s.userManager.ChangeTier("phil", "starter"))
+
+	// Publish a message
+	rr := request(t, s, "POST", "/mytopic", "hi", map[string]string{
+		"Authorization": util.BasicAuth("phil", "phil"),
+	})
+	require.Equal(t, 200, rr.Code)
+
+	// Wait for stats queue writer, verify that message stats were persisted
+	waitFor(t, func() bool {
+		u, err := s.userManager.User("phil")
+		require.Nil(t, err)
+		return int64(1) == u.Stats.Messages
+	})
+
+	// Change tier, make a request (to reset limiters)
+	require.Nil(t, s.userManager.ChangeTier("phil", "pro"))
+	rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+		"Authorization": util.BasicAuth("phil", "phil"),
+	})
+	require.Equal(t, 200, rr.Code)
+	account, _ := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+	require.Equal(t, int64(1), account.Stats.Messages) // Is not reset!
+
+	// Publish another message
+	rr = request(t, s, "POST", "/mytopic", "hi", map[string]string{
+		"Authorization": util.BasicAuth("phil", "phil"),
+	})
+	require.Equal(t, 200, rr.Code)
+
+	// Verify that message stats were persisted
+	waitFor(t, func() bool {
+		u, err := s.userManager.User("phil")
+		require.Nil(t, err)
+		return int64(2) == u.Stats.Messages // v.EnqueueUserStats had run!
+	})
+
+	// Stats keep counting
+	rr = request(t, s, "GET", "/v1/account", "", map[string]string{
+		"Authorization": util.BasicAuth("phil", "phil"),
+	})
+	require.Equal(t, 200, rr.Code)
+	account, _ = util.UnmarshalJSON[apiAccountResponse](io.NopCloser(rr.Body))
+	require.Equal(t, int64(2), account.Stats.Messages) // Is not reset!
+}*/
+
+func TestAccount_TokenUpdate_NilUser_NoPanic(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		// Regression for a recurring production panic in handleAccountTokenUpdate: the handler
+		// re-reads v.User() after ensureUser checked it, and must return 401 for a nil user, not
+		// dereference it. Visitors were shared between requests then (#1051).
+		conf := newTestConfigWithAuthFile(t, databaseURL)
+		conf.EnableLogin = true
+		s := newTestServer(t, conf)
+		ip := netip.MustParseAddr("9.9.9.9")
+		require.Nil(t, s.userManager.AddUser("phil", "phil12345", user.RoleUser, false))
+		u, err := s.userManager.User("phil")
+		require.Nil(t, err)
+		authed := s.visitor(ip, u)
+		anon := s.visitor(ip, nil) // A concurrent anonymous request from the same IP
+		require.NotNil(t, authed.User())
+
+		r, _ := http.NewRequest("PATCH", "/v1/account/token", strings.NewReader("{}"))
+		rr := httptest.NewRecorder()
+		err = s.handleAccountTokenUpdate(rr, r, anon)
+		require.Error(t, err)
+		httpErr, ok := err.(*errHTTP)
+		require.True(t, ok)
+		require.Equal(t, 401, httpErr.HTTPCode)
+	})
+}
+
+func TestAccount_Reservation_TakeoverCancelsPeerSubscribers(t *testing.T) {
+	// Reserving a public topic on node A must end an anonymous stream on node B, and B must deny
+	// the reconnect right away: its access cache would otherwise still say "public" until the
+	// next periodic reload
+	sA, sB := newReservationTestNodes(t, true, time.Hour)
+	stream := subscribeStream(t, sB, "mytopic", nil)
+
+	reserveDenyAll(t, sA, "mytopic")
+	select {
+	case <-stream.ended:
+	case <-time.After(5 * time.Second):
+		t.Fatal("anonymous stream on node B was not canceled after the reservation on node A")
+	}
+	require.Equal(t, 403, request(t, sB, "GET", "/mytopic/json?poll=1", "", nil).Code)
+
+	// The owner's messages, published on either node, stay private
+	phil := map[string]string{"Authorization": util.BasicAuth("phil", "phil")}
+	require.Equal(t, 200, request(t, sA, "PUT", "/mytopic", "secret from A", phil).Code)
+	require.Equal(t, 200, request(t, sB, "PUT", "/mytopic", "secret from B", phil).Code)
+	require.NotContains(t, stream.body(), "secret")
+}
+
+func TestAccount_Reservation_LostCancelCaughtByAccessReload(t *testing.T) {
+	// The relay is best effort: if node B never hears about the reservation (here: the nodes are
+	// not even clustered), B's next access cache reload finds the changed entries and ends the
+	// streams that may no longer read the topic
+	sA, sB := newReservationTestNodes(t, false, 500*time.Millisecond)
+	stream := subscribeStream(t, sB, "mytopic", nil)
+
+	reserveDenyAll(t, sA, "mytopic")
+	select {
+	case <-stream.ended:
+	case <-time.After(5 * time.Second):
+		t.Fatal("anonymous stream on node B was not canceled by its access cache reload")
+	}
+	require.Equal(t, 403, request(t, sB, "GET", "/mytopic/json?poll=1", "", nil).Code)
+}
+
+// newReservationTestNodes starts nodes A and B on one Postgres schema, with reservations and the
+// access cache on as on ntfy.sh, and user phil (tier with reservations) to reserve topics.
+// With clustered, A tells B about its access changes; without, B never hears about them.
+func newReservationTestNodes(t *testing.T, clustered bool, accessReloadInterval time.Duration) (sA, sB *Server) {
+	schemaDSN := dbtest.CreateTestPostgresSchema(t)
+	newConf := func() *Config {
+		conf := newTestConfig(t, schemaDSN)
+		conf.AuthDefault = user.PermissionReadWrite
+		conf.AuthAccessCacheEnabled = true
+		conf.AuthAccessCacheReloadInterval = accessReloadInterval
+		conf.EnableReservations = true
+		return conf
+	}
+	confB := newConf()
+	if clustered {
+		listenerB, err := net.Listen("tcp", "127.0.0.1:0")
+		require.Nil(t, err)
+		confB.ClusterNodeID = "node-b"
+		confB.ClusterListen = listenerB.Addr().String()
+		confB.ClusterSecret = "s3cret"
+		confB.ClusterAdvertiseURL = "http://" + listenerB.Addr().String()
+		sB = newTestServer(t, confB)
+		srvB := &http.Server{Handler: sB.cluster}
+		go srvB.Serve(listenerB)
+		t.Cleanup(func() {
+			srvB.Close()
+		})
+	} else {
+		sB = newTestServer(t, confB)
+	}
+	confA := newConf()
+	if clustered {
+		confA.ClusterNodeID = "node-a"
+		confA.ClusterListen = "127.0.0.1:1" // Enables clustering; A only sends in these tests
+		confA.ClusterSecret = "s3cret"
+		confA.ClusterAdvertiseURL = "http://127.0.0.1:1"
+	}
+	sA = newTestServer(t, confA)
+	require.Nil(t, sA.userManager.AddTier(&user.Tier{
+		Code:             "pro",
+		MessageLimit:     100,
+		ReservationLimit: 2,
+	}))
+	require.Nil(t, sA.userManager.AddUser("phil", "phil", user.RoleUser, false))
+	require.Nil(t, sA.userManager.ChangeTier("phil", "pro"))
+	if clustered {
+		waitFor(t, func() bool {
+			return len(sA.cluster.Members()) == 2
+		})
+	}
+	return sA, sB
+}
+
+func reserveDenyAll(t *testing.T, s *Server, topic string) {
+	response := request(t, s, "POST", "/v1/account/reservation", `{"topic":"`+topic+`","everyone":"deny-all"}`, map[string]string{
+		"Authorization": util.BasicAuth("phil", "phil"),
+	})
+	require.Equal(t, 200, response.Code)
+}
+
+// TestAccount_PhoneNumberAdd_WrongCode ensures that a wrong verification code is rejected, and
+// that the phone number is not added. Twilio answers a wrong code with 200 OK and status "pending".
+func TestAccount_PhoneNumberAdd_WrongCode(t *testing.T) {
+	forEachBackend(t, func(t *testing.T, databaseURL string) {
+		twilioVerifyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			require.Nil(t, err)
+			switch r.URL.Path {
+			case "/v2/Services/VA1234567890/Verifications":
+				w.WriteHeader(http.StatusCreated)
+				w.Write([]byte(`{"status":"pending","valid":false}`))
+			case "/v2/Services/VA1234567890/VerificationCheck":
+				if string(body) == "Code=123456&To=%2B12223334444" {
+					w.Write([]byte(`{"status":"approved","valid":true}`))
+				} else {
+					w.Write([]byte(`{"status":"pending","valid":false}`))
+				}
+			default:
+				t.Fatal("Unexpected path:", r.URL.Path)
+			}
+		}))
+		defer twilioVerifyServer.Close()
+
+		c := newTestConfigWithAuthFile(t, databaseURL)
+		c.TwilioVerifyBaseURL = twilioVerifyServer.URL
+		c.TwilioCallsBaseURL = "http://127.0.0.1:1" // Never called
+		c.TwilioAccount = "AC1234567890"
+		c.TwilioAuthToken = "AAEAA1234567890"
+		c.TwilioPhoneNumber = "+1234567890"
+		c.TwilioVerifyService = "VA1234567890"
+		s := newTestServer(t, c)
+		require.Nil(t, s.userManager.AddTier(&user.Tier{Code: "pro", MessageLimit: 10, CallLimit: 10}))
+		require.Nil(t, s.userManager.AddUser("phil", "phil", user.RoleUser, false))
+		require.Nil(t, s.userManager.ChangeTier("phil", "pro"))
+		u, err := s.userManager.User("phil")
+		require.Nil(t, err)
+
+		// Send verification code, then submit a wrong code
+		rr := request(t, s, "PUT", "/v1/account/phone/verify", `{"number":"+12223334444","channel":"sms"}`, map[string]string{
+			"authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		rr = request(t, s, "PUT", "/v1/account/phone", `{"number":"+12223334444","code":"000000"}`, map[string]string{
+			"authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 400, rr.Code)
+		require.Equal(t, 40060, toHTTPError(t, rr.Body.String()).Code)
+		phoneNumbers, err := s.userManager.PhoneNumbers(u.ID)
+		require.Nil(t, err)
+		require.Empty(t, phoneNumbers)
+
+		// The correct code still works
+		rr = request(t, s, "PUT", "/v1/account/phone", `{"number":"+12223334444","code":"123456"}`, map[string]string{
+			"authorization": util.BasicAuth("phil", "phil"),
+		})
+		require.Equal(t, 200, rr.Code)
+		phoneNumbers, err = s.userManager.PhoneNumbers(u.ID)
+		require.Nil(t, err)
+		require.Equal(t, []string{"+12223334444"}, phoneNumbers)
+	})
+}
+
+func TestServer_AccountStatsResetAt(t *testing.T) {
+	// The account reports when the visitor's daily counts start over: the end of its key's own
+	// 24h period, not midnight UTC
+	s := newTestServer(t, newTestConfigWithAuthFile(t, ""))
+	response := request(t, s, "GET", "/v1/account", "", nil)
+	require.Equal(t, 200, response.Code)
+	account, err := util.UnmarshalJSON[apiAccountResponse](io.NopCloser(response.Body))
+	require.Nil(t, err)
+	resetAt := s.limiter.ResetAt(s.visitor(netip.MustParseAddr("9.9.9.9"), nil).key)
+	require.Equal(t, resetAt.Unix(), account.Stats.ResetAt)
+	require.Greater(t, account.Stats.ResetAt, time.Now().Unix())
+	require.LessOrEqual(t, account.Stats.ResetAt, time.Now().Add(24*time.Hour).Unix()+1)
+}

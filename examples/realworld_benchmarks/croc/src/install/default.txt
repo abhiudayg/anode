@@ -1,0 +1,224 @@
+#!/bin/bash
+# Install croc and croc-update: curl https://getcroc.com | bash
+# Custom prefix: curl https://getcroc.com | bash -s -- -p "$HOME/.local/bin"
+set -euo pipefail
+
+if [[ -n "${ANDROID_ROOT:-}" && -n "${PREFIX:-}" ]]; then
+  INSTALL_PREFIX="${PREFIX}/bin"
+else
+  INSTALL_PREFIX="/usr/local/bin"
+fi
+
+print_help() {
+  echo "Usage: curl https://getcroc.com | bash -s -- [-p DIRECTORY]"
+  echo "Install croc and croc-update together (default: ${INSTALL_PREFIX})."
+}
+
+determine_latest_version() {
+  local api_url
+  local response
+  local tag
+
+  api_url="https://api.github.com/repos/schollz/croc/releases/latest"
+
+  if command -v curl >/dev/null 2>&1; then
+    response="$(curl -fsSL \
+      -H "Accept: application/vnd.github+json" \
+      -H "User-Agent: croc-installer" \
+      "${api_url}")" || return 1
+  elif command -v wget >/dev/null 2>&1; then
+    response="$(wget --quiet \
+      --header="Accept: application/vnd.github+json" \
+      --header="User-Agent: croc-installer" \
+      -O - "${api_url}")" || return 1
+  else
+    return 20
+  fi
+
+  if [[ "${response}" != *'"tag_name"'* ]]; then
+    return 2
+  fi
+  tag="${response#*\"tag_name\"}"
+  if [[ "${tag}" != *:* || "${tag#*:}" != *\"* ]]; then
+    return 2
+  fi
+  tag="${tag#*:}"
+  tag="${tag#*\"}"
+  tag="${tag%%\"*}"
+  if [[ ! "${tag}" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+    return 2
+  fi
+
+  printf '%s\n' "${tag#v}"
+  return 0
+}
+
+
+# Only elevate installation operations; downloads and validation run as the user.
+INSTALL_RUN=()
+INSTALL_TMPDIR=""
+trap '[[ -z "${INSTALL_TMPDIR}" ]] || rm -rf -- "${INSTALL_TMPDIR}"' EXIT
+choose_elevation() {
+  if [[ "${EUID}" == 0 ]]; then
+    echo "Cannot write ${INSTALL_PREFIX}; check filesystem permissions or immutable flags." >&2
+    return 1
+  fi
+  if command -v sudo >/dev/null 2>&1; then
+    INSTALL_RUN=("$(command -v sudo)" --)
+  elif command -v doas >/dev/null 2>&1; then
+    INSTALL_RUN=("$(command -v doas)" --)
+  else
+    echo "Installing into ${INSTALL_PREFIX} requires sudo or doas. Use -p to choose a writable directory." >&2
+    return 1
+  fi
+  echo "Installing into ${INSTALL_PREFIX} requires elevated permissions."
+}
+
+# Bash 3.2 treats expansion of an empty array as an unset variable under -u.
+install_run() {
+  if [[ ${#INSTALL_RUN[@]} -gt 0 ]]; then
+    "${INSTALL_RUN[@]}" "$@"
+  else
+    "$@"
+  fi
+}
+
+download_file() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsSL "$1" -o "$2"
+  elif command -v wget >/dev/null 2>&1; then
+    wget --quiet "$1" -O "$2"
+  else
+    echo "curl or wget is required." >&2
+    return 1
+  fi
+}
+
+verify_checksum() {
+  local archive="$1" checksums="$2" asset="$3" expected actual
+  expected="$(awk -v name="${asset}" '$2 == name || $2 == "*" name {count++; hash=$1} END {if (count != 1) exit 1; print hash}' "${checksums}")" || {
+    echo "Release checksums must contain exactly one entry for ${asset}." >&2; return 1;
+  }
+  [[ "${expected}" =~ ^[[:xdigit:]]{64}$ ]] || { echo "Invalid release checksum." >&2; return 1; }
+  if command -v sha256sum >/dev/null 2>&1; then
+    actual="$(sha256sum "${archive}")"; actual="${actual%% *}"
+  elif command -v shasum >/dev/null 2>&1; then
+    actual="$(shasum -a 256 "${archive}")"; actual="${actual%% *}"
+  elif command -v sha256 >/dev/null 2>&1; then
+    actual="$(sha256 -q "${archive}")"
+  else
+    echo "sha256sum, shasum, or sha256 is required." >&2; return 1
+  fi
+  [[ "${actual}" == "${expected}" ]] || { echo "Release checksum verification failed." >&2; return 1; }
+}
+
+# Read only the two exact named archive members. Do not extract arbitrary paths.
+extract_binary() {
+  local archive="$1" name="$2" destination="$3" extension="$4" entries
+  if [[ "${extension}" == zip ]]; then
+    entries="$(unzip -Z1 "${archive}")"
+  else
+    entries="$(tar -tf "${archive}")"
+  fi
+  [[ "$(printf '%s\n' "${entries}" | awk -v name="${name}" '$0 == name {n++} END {print n+0}')" == 1 ]] || {
+    echo "Archive must contain exactly one ${name}." >&2; return 1;
+  }
+  if [[ "${extension}" == zip ]]; then
+    unzip -p "${archive}" "${name}" > "${destination}"
+  else
+    tar -xOf "${archive}" "${name}" > "${destination}"
+  fi
+  chmod 755 "${destination}"
+}
+
+main() {
+  local prefix="$1" tmpdir croc_os croc_arch croc_version croc_dl_ext=tar.gz suffix=""
+  local croc_bin_name=croc croc_file croc_checksum_file croc_url croc_checksum_url name reported
+  local croc_base_url="https://github.com/schollz/croc/releases/download"
+  echo "== Installing croc and croc-update into ${prefix}"
+  croc_version="$(determine_latest_version)" || { echo "Could not determine the latest stable croc release from GitHub." >&2; exit 1; }
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/croc-install.XXXXXX")"
+  INSTALL_TMPDIR="${tmpdir}"
+  croc_os="$(uname -s)"; croc_arch="$(uname -m)"
+  case "${croc_os}" in
+    Darwin) croc_os=macOS;;
+    Linux|FreeBSD|NetBSD|OpenBSD) ;;
+    DragonFly) croc_os=DragonFlyBSD;;
+    MINGW*|MSYS*) croc_os=Windows; croc_dl_ext=zip; suffix=.exe;;
+    *) echo "Unsupported OS: ${croc_os}" >&2; exit 1;;
+  esac
+  case "${croc_arch}" in
+    x86_64|amd64) croc_arch=64bit;;
+    aarch64|arm64) croc_arch=ARM64;;
+    armv5l) croc_arch=ARMv5;;
+    armv6l|armv7l|armv8l|armv9l) croc_arch=ARM;;
+    i386|i486|i586|i686) croc_arch=32bit;;
+    riscv64) croc_arch=RISCV64;;
+    *) echo "Unsupported architecture: ${croc_arch}" >&2; exit 1;;
+  esac
+  croc_file="${croc_bin_name}_v${croc_version}_${croc_os}-${croc_arch}.${croc_dl_ext}"
+  croc_checksum_file="${croc_bin_name}_v${croc_version}_checksums.txt"
+  croc_url="${croc_base_url}/v${croc_version}/${croc_file}"
+  croc_checksum_url="${croc_base_url}/v${croc_version}/${croc_checksum_file}"
+  download_file "${croc_url}" "${tmpdir}/${croc_file}"
+  download_file "${croc_checksum_url}" "${tmpdir}/${croc_checksum_file}"
+  verify_checksum "${tmpdir}/${croc_file}" "${tmpdir}/${croc_checksum_file}" "${croc_file}"
+  for name in croc-update croc; do
+    extract_binary "${tmpdir}/${croc_file}" "${name}${suffix}" "${tmpdir}/${name}${suffix}" "${croc_dl_ext}"
+    reported="$("${tmpdir}/${name}${suffix}" --version)" || { echo "Could not verify ${name}." >&2; exit 1; }
+    [[ "${reported}" == "${name} version ${croc_version}" ]] || { echo "Unexpected ${name} version: ${reported}" >&2; exit 1; }
+  done
+  if ! mkdir -p "${prefix}" 2>/dev/null; then
+    choose_elevation
+    install_run mkdir -p "${prefix}"
+  fi
+  prefix="$(cd "${prefix}" && pwd -P)"
+  INSTALL_PREFIX="${prefix}"
+  case "${prefix}" in
+    /usr/bin|/bin|/nix/store/*|*/Cellar/croc/*|*/linuxbrew/*|*/scoop/apps/croc/*|*/chocolatey/*|*/conda/*|*/miniconda*|*/anaconda*|/opt/local/bin|*/com.termux/files/usr/bin)
+      echo "Use the package manager that owns ${prefix}/croc." >&2; exit 1;;
+  esac
+  case "${croc_os}" in
+    FreeBSD|DragonFlyBSD)
+      if command -v pkg >/dev/null 2>&1 && pkg which -q "${prefix}/croc" >/dev/null 2>&1; then
+        echo "Upgrade with pkg: pkg upgrade croc" >&2; exit 1
+      fi;;
+    OpenBSD)
+      if command -v pkg_info >/dev/null 2>&1 && [[ -n "$(pkg_info -E "${prefix}/croc" 2>/dev/null || true)" ]]; then
+        echo "Upgrade with OpenBSD pkg_add: doas pkg_add -u croc" >&2; exit 1
+      fi;;
+    NetBSD)
+      if command -v pkg_info >/dev/null 2>&1 && pkg_info -F "${prefix}/croc" >/dev/null 2>&1; then
+        echo "Upgrade croc through its pkgsrc or pkgin installation." >&2; exit 1
+      fi;;
+  esac
+  for name in croc-update croc; do
+    if [[ -L "${prefix}/${name}${suffix}" || ( -e "${prefix}/${name}${suffix}" && ! -f "${prefix}/${name}${suffix}" ) ]]; then
+      echo "Refusing non-regular or symlinked destination ${prefix}/${name}${suffix}." >&2; exit 1
+    fi
+  done
+  if [[ ! -w "${prefix}" && ${#INSTALL_RUN[@]} == 0 ]]; then choose_elevation; fi
+  # Stage on the destination filesystem, then rename. Install the helper first
+  # so a failed croc replacement can be retried with the installed updater.
+  local stage
+  stage="$(install_run mktemp -d "${prefix}/.croc-install.XXXXXX")"
+  for name in croc-update croc; do
+    if ! install_run install -m 755 "${tmpdir}/${name}${suffix}" "${stage}/${name}${suffix}" ||
+       ! install_run mv -f "${stage}/${name}${suffix}" "${prefix}/${name}${suffix}"; then
+      install_run rm -rf -- "${stage}"
+      echo "Failed to install ${name}; installation did not complete." >&2; exit 1
+    fi
+    echo "== Installed ${name} into ${prefix}"
+  done
+  install_run rmdir "${stage}"
+  echo "== Installation complete. Future upgrades: croc update, then croc-update."
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -p|--prefix) [[ $# -ge 2 && -n "$2" ]] || { echo "Missing install prefix." >&2; exit 1; }; INSTALL_PREFIX="$2"; shift 2;;
+    -h|--help) print_help; exit 0;;
+    *) echo "Unknown option: $1" >&2; exit 1;;
+  esac
+done
+main "${INSTALL_PREFIX}"

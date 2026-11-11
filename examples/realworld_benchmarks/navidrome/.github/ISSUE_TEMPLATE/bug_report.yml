@@ -1,0 +1,79 @@
+name: Bug report
+description: Report something that is not working as expected. You do not need to know the cause or how to fix it.
+title: "[Bug]: "
+labels: ["triage"]
+#assignees:
+#  - deluan
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. For a possible security vulnerability, use [private reporting](https://github.com/navidrome/navidrome/security/advisories/new).
+  - type: checkboxes
+    id: requirements
+    attributes:
+      label: "I confirm that:"
+      options:
+        - label: I have searched the existing [open and closed issues](https://github.com/navidrome/navidrome/issues?q=is%3Aissue) and found no matching open report.
+          required: true
+        - label: I'm using the latest Navidrome release and can reproduce the issue on it.
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe what you observed and how it affected you. Include any error message you saw. You do not need to diagnose the cause or suggest code changes. If a closed issue matches, link it here.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Navidrome version
+      description: Which Navidrome version or build are you using? If you cannot find it, enter 'not sure'. If you tried another version, mention whether the behavior changed.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior and why
+      description: What did you expect, and why? If available, link documentation, an applicable API contract, or a previously working version. A personal expectation is useful context too; it does not by itself establish that the product should change. If you are unsure, say so.
+    validations:
+      required: false
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the steps, relevant settings, and how often the problem occurs. If it happens only sometimes, describe what was happening when you noticed it and what you have already tried.
+    validations:
+      required: false
+  - type: textarea
+    id: env
+    attributes:
+      label: Relevant environment
+      description: >-
+        Include only details relevant to this problem: server operating system, installation method, and the browser or client app with its version, if involved. Leave out details you do not know. Examples of installation methods: Docker, downloaded binary, package, or source build.
+    validations:
+      required: false
+  - type: textarea
+    id: config-logs
+    attributes:
+      label: Relevant configuration and logs
+      description: >-
+        Paste only the configuration settings or log excerpt related to this problem. Remove passwords, tokens, API keys, session cookies, private URLs, and identifying information before submitting. Debug logs are optional. If you cannot safely share an excerpt, explain what it shows instead. [Log guidance](https://www.navidrome.org/docs/faq/#-where-are-the-logs).
+    validations:
+      required: false
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Screenshots or additional context
+      description: Add screenshots, recordings, links, or other observations that help explain the problem. Remove private information from attachments as well.
+    validations:
+      required: false
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      description: By submitting this issue, you agree to follow our [Code of Conduct](https://github.com/navidrome/navidrome/blob/master/CODE_OF_CONDUCT.md).
+      options:
+        - label: I agree to follow Navidrome's Code of Conduct
+          required: true

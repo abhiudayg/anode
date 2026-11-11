@@ -8,6 +8,9 @@ TARGET="${1:-all}"
 RUN_ID=$(date +%Y%m%d_%H%M%S)
 RUN_DIR=".verify/artifacts/$RUN_ID"
 mkdir -p "$RUN_DIR" .verify/output
+if [ -f ".verify/review.txt" ]; then
+  cp ".verify/review.txt" "$RUN_DIR/review.txt"
+fi
 
 echo "=========================================================="
 echo " agstack Verification Harness"

@@ -234,6 +234,7 @@ Real-world architectures used to stress-test Anode are maintained in [`examples/
 * [**`examples/fintech_core_20`**](examples/fintech_core_20/README.md) — **20-microservice neo-banking & trading engine** with modular package separation (`config` -> `repo` -> `handler`), Kafka order book matching, TimescaleDB double-entry ledger, and ScyllaDB payments.
 * [**`examples/health_mesh_25`**](examples/health_mesh_25/README.md) — **25-microservice HIPAA hospital & telehealth ecosystem** with FHIR document stores, WebRTC signaling, gRPC, and medical billing claims.
 * [**`examples/omni_mesh_32`**](examples/omni_mesh_32/README.md) — **32-microservice hyper-scale enterprise benchmark** combining 14 infrastructure backing stores (`postgres`, `clickhouse`, `scylladb`, `mongodb`, `mariadb`, `timescaledb`, `cockroachdb`, `rabbitmq`, `kafka`, `minio`, `temporal`, `qdrant`, `valkey`, `memcached`), gRPC contracts, and zero-trust egress policies.
+* [**`examples/realworld_benchmarks`**](examples/realworld_benchmarks/README.md) — **10 Famous Open-Source Go Backend Applications (20K–41K Stars)**: Real-world evaluation across `croc` (~40.9k⭐), `glance` (~38.1k⭐), `1Panel` (~37.4k⭐), `restic` (~37.1k⭐), `filebrowser` (~35.9k⭐), `ntfy` (~35.5k⭐), `netbird` (~30.8k⭐), `wttr.in` (~30.7k⭐), `cloudreve` (~28.9k⭐), and `navidrome` (~24.6k⭐). Demonstrates zero-code-change architecture discovery, multi-dialect DB mapping, and automated deployment synthesis.
 
 ---
 

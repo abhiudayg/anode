@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "redis-filebrowser": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "http/upload_cache_redis.go:28"
+    }
+  },
+  "services": {
+    "filebrowser": {
+      "name": "filebrowser",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "redis-filebrowser",
+          "protocol": "redis",
+          "inject_env": "",
+          "provenance": "http/upload_cache_redis.go:28"
+        }
+      ],
+      "secrets": []
+    }
+  }
+}

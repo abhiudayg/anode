@@ -1,0 +1,272 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const engineMocks = vi.hoisted(() => ({
+  decrypt: vi.fn(),
+  decompress: vi.fn(),
+  compress: vi.fn(async (input: Uint8Array) => input),
+}));
+
+vi.mock("./compression", () => ({
+  checkProtocolCapabilities: () => undefined,
+}));
+
+// Keep receiver tests off the (jsdom-less) Worker path.
+vi.mock("./engine", () => ({
+  protocolEngine: () => engineMocks,
+}));
+
+import {
+  DataReceiver,
+  prepareFiles,
+  prepareText,
+  requirePakeVersion,
+} from "./client";
+import type { CrocSocket } from "./transport";
+import type { OfferedFile, ReceiveSink } from "./types";
+
+function failingSocket(error: Error): CrocSocket {
+  return {
+    receive: () => Promise.reject(error),
+  } as unknown as CrocSocket;
+}
+
+function neverSocket(): CrocSocket {
+  return {
+    receive: () => new Promise<Uint8Array>(() => {}),
+  } as unknown as CrocSocket;
+}
+
+const key = new Uint8Array(32);
+
+const file: OfferedFile = {
+  name: "a.txt",
+  folder: ".",
+  path: "a.txt",
+  size: 4,
+  hash: new Uint8Array(),
+};
+
+const sink = {
+  writeAt: () => Promise.resolve(),
+  finalize: () => Promise.resolve(),
+  hash: () => Promise.resolve(new Uint8Array()),
+  commit: () => Promise.resolve(),
+  abort: () => Promise.resolve(),
+} satisfies ReceiveSink;
+
+beforeEach(() => {
+  engineMocks.decrypt.mockReset().mockRejectedValue(new Error("unused"));
+  engineMocks.decompress.mockReset().mockRejectedValue(new Error("unused"));
+});
+
+describe("DataReceiver failure handling", () => {
+  function plainFrames(frames: Uint8Array[]) {
+    engineMocks.decrypt.mockImplementation(async (bytes: Uint8Array) => bytes);
+    const receive = vi.fn();
+    for (const frame of frames) receive.mockResolvedValueOnce(frame);
+    receive.mockImplementation(() => new Promise<Uint8Array>(() => {}));
+    return { receive } as unknown as CrocSocket;
+  }
+  function frame(position: number, length: number) {
+    const bytes = new Uint8Array(8 + length);
+    new DataView(bytes.buffer).setBigUint64(0, BigInt(position), true);
+    return bytes;
+  }
+
+  it("verifies exact unique bundle chunks in out-of-order arrival", async () => {
+    const socket = plainFrames([
+      frame(32768, 32768),
+      frame(65536, 1),
+      frame(0, 32768),
+    ]);
+    const receiver = new DataReceiver([socket], key, true),
+      write = vi.fn(async (_position: number, _bytes: Uint8Array) => {}),
+      progress = vi.fn();
+    await receiver.receive(
+      { ...file, size: 65537 },
+      { ...sink, writeAt: write },
+      progress,
+      undefined,
+      true,
+    );
+    expect(write.mock.calls.map((call) => call[0])).toEqual([32768, 65536, 0]);
+    expect(progress.mock.calls).toEqual([[32768], [32769], [65537]]);
+    receiver.assertHealthy();
+    receiver.stop();
+  });
+
+  it("rejects duplicate and short middle bundle chunks", async () => {
+    for (const frames of [
+      [frame(0, 32768), frame(0, 32768)],
+      [frame(32768, 1)],
+    ]) {
+      const receiver = new DataReceiver([plainFrames(frames)], key, true);
+      await expect(
+        receiver.receive(
+          { ...file, size: 65537 },
+          sink,
+          () => {},
+          undefined,
+          true,
+        ),
+      ).rejects.toThrow(/duplicate|outside/);
+      expect(() => receiver.assertHealthy()).toThrow();
+      receiver.stop();
+    }
+  });
+
+  it("does not complete a bundle with a missing chunk", async () => {
+    const receiver = new DataReceiver(
+      [plainFrames([frame(32768, 32768), frame(65536, 1)])],
+      key,
+      true,
+    );
+    const progress = vi.fn();
+    let completed = false;
+    const pending = receiver.receive(
+      { ...file, size: 65537 },
+      sink,
+      progress,
+      undefined,
+      true,
+    );
+    void pending.then(
+      () => {
+        completed = true;
+      },
+      () => undefined,
+    );
+    await vi.waitFor(() => expect(progress).toHaveBeenCalledTimes(2));
+    expect(completed).toBe(false);
+    receiver.stop();
+    await expect(pending).rejects.toThrow(/stopped/);
+  });
+
+  it("retains a late duplicate failure after the payload promise resolves", async () => {
+    const receiver = new DataReceiver(
+      [plainFrames([frame(0, 4), frame(0, 4)])],
+      key,
+      true,
+    );
+    await receiver.receive(file, sink, () => {}, undefined, true);
+    await vi.waitFor(() =>
+      expect(() => receiver.assertHealthy()).toThrow(
+        /before it was requested|duplicate/,
+      ),
+    );
+    receiver.stop();
+  });
+
+  it("rejects a receive requested after a socket already failed", async () => {
+    const receiver = new DataReceiver(
+      [failingSocket(new Error("relay closed"))],
+      key,
+      true,
+    );
+    // Let the read loop observe the socket failure before we request a file.
+    await Promise.resolve();
+    await expect(receiver.receive(file, sink, () => {})).rejects.toThrow(
+      "relay closed",
+    );
+  });
+
+  it("rejects an in-flight receive when a socket fails", async () => {
+    let reject: (error: Error) => void = () => {};
+    const socket = {
+      receive: () => new Promise<Uint8Array>((_, r) => (reject = r)),
+    } as unknown as CrocSocket;
+    const receiver = new DataReceiver([socket], key, true);
+    const pending = receiver.receive(file, sink, () => {});
+    reject(new Error("relay closed mid-transfer"));
+    await expect(pending).rejects.toThrow("relay closed mid-transfer");
+  });
+
+  it("rejects new receives after stop()", async () => {
+    const receiver = new DataReceiver([neverSocket()], key, true);
+    receiver.stop();
+    await expect(receiver.receive(file, sink, () => {})).rejects.toThrow(
+      "Data receiver stopped",
+    );
+  });
+
+  it("bounds decompressed chunks to the payload and position header", async () => {
+    const encrypted = new Uint8Array([1]);
+    const compressed = new Uint8Array([2]);
+    const chunk = new Uint8Array(12);
+    chunk.set([1, 2, 3, 4], 8);
+    engineMocks.decrypt.mockResolvedValueOnce(compressed);
+    engineMocks.decompress.mockResolvedValueOnce(chunk);
+
+    const socket = {
+      receive: vi
+        .fn()
+        .mockResolvedValueOnce(encrypted)
+        .mockImplementation(() => new Promise<Uint8Array>(() => {})),
+    } as unknown as CrocSocket;
+    const receiver = new DataReceiver([socket], key, false);
+
+    await receiver.receive(file, sink, () => {});
+
+    expect(engineMocks.decompress).toHaveBeenCalledWith(
+      compressed,
+      32 * 1024 + 8,
+    );
+    receiver.stop();
+  });
+});
+
+describe("outgoing file preparation", () => {
+  it("reuses a hash that was started before Send", async () => {
+    const file = new File(["croc"], "croc.txt", {
+      lastModified: 1_723_420_800_000,
+    });
+    const digest = Uint8Array.of(1, 2, 3, 4);
+    const hashProvider = vi.fn(async () => digest);
+
+    const [prepared] = await prepareFiles([file], {}, undefined, hashProvider);
+
+    expect(hashProvider).toHaveBeenCalledWith(file);
+    expect(prepared).toMatchObject({
+      file,
+      name: "croc.txt",
+      size: 4,
+      hash: digest,
+    });
+  });
+
+  it("prepares exact UTF-8 text with the CLI-compatible temporary name", async () => {
+    const digest = Uint8Array.of(9, 8, 7, 6);
+    const hashProvider = vi.fn(async (payload: File) => {
+      expect(await payload.text()).toBe("hello\n🐊");
+      return digest;
+    });
+
+    const [prepared] = await prepareText(
+      "hello\n🐊",
+      {},
+      undefined,
+      hashProvider,
+    );
+
+    expect(prepared).toMatchObject({
+      name: "croc-stdin-web",
+      size: new Blob(["hello\n🐊"]).size,
+      hash: digest,
+    });
+  });
+
+  it("rejects empty and oversized text", async () => {
+    await expect(prepareText("")).rejects.toThrow(/enter some text/i);
+    await expect(prepareText("x".repeat(1024 * 1024 + 1))).rejects.toThrow(
+      /1 MiB/i,
+    );
+  });
+});
+
+describe("peer protocol version", () => {
+  it("rejects missing, incompatible and future versions before accepting metadata", () => {
+    for (const version of [undefined, 0, 1, 3, NaN])
+      expect(() => requirePakeVersion(version)).toThrow();
+    expect(() => requirePakeVersion(2)).not.toThrow();
+  });
+});

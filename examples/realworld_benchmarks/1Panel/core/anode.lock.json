@@ -1,0 +1,70 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-server": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "../../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/glebarez/sqlite@v1.11.0/sqlite.go:45"
+    }
+  },
+  "services": {
+    "server": {
+      "name": "server",
+      "entrypoint": "./cmd/server",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET clientType"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterLocalServer",
+          "inject_env": "",
+          "provenance": "app/service/setting.go:522"
+        },
+        {
+          "resource_ref": "db-server",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/glebarez/sqlite@v1.11.0/sqlite.go:45"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterReusableServer",
+          "inject_env": "",
+          "provenance": "utils/req_helper/proxy_local/req_to_local.go:24"
+        }
+      ],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "server",
+      "target_host": "https://1panel.cn/",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterLocalServer\" in service \"server\" has no matching server registration in this workspace",
+      "provenance": "app/service/setting.go:522",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterReusableServer\" in service \"server\" has no matching server registration in this workspace",
+      "provenance": "utils/req_helper/proxy_local/req_to_local.go:24",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}
