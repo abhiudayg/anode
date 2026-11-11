@@ -1,0 +1,48 @@
+version: 2
+updates:
+  # Maintain Go dependencies for the core Anode CLI
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "build(deps)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "go"
+
+  # Maintain npm dependencies for the Next.js web application
+  - package-ecosystem: "npm"
+    directory: "/web"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 10
+    commit-message:
+      prefix: "build(deps-web)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "web"
+
+  # Maintain GitHub Actions CI/CD workflows
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci(actions)"
+    labels:
+      - "ci"
+      - "actions"
