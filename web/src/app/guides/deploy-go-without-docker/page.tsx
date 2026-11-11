@@ -5,16 +5,7 @@ import { Footer } from "@/components/Footer";
 import { 
   Check, 
   ArrowRight, 
-  Terminal, 
-  Cpu, 
-  Server, 
-  ShieldCheck, 
-  Zap, 
-  Copy,
-  ChevronRight,
-  BookOpen,
-  FileCode2,
-  Lock
+  BookOpen
 } from "lucide-react";
 
 export const metadata: Metadata = {

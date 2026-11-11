@@ -7,10 +7,8 @@ import {
   Calendar,
   Clock,
   ChevronLeft,
-  Share2,
   Terminal,
-  AlertTriangle,
-  ArrowRight
+  AlertTriangle
 } from "lucide-react";
 import { BLOG_POSTS } from "@/data/blogPosts";
 

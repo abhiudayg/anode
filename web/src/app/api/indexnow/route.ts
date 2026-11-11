@@ -51,7 +51,7 @@ export async function GET() {
         body: JSON.stringify(payload)
       });
       results[endpoint] = res.status;
-    } catch (err: any) {
+    } catch {
       results[endpoint] = 500;
     }
   }

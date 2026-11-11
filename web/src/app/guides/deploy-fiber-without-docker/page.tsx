@@ -3,16 +3,8 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { 
-  Check, 
   ArrowRight, 
-  Terminal, 
-  Cpu, 
-  Server, 
-  ShieldCheck, 
-  Zap, 
-  ChevronRight, 
-  FileCode2,
-  Lock
+  Zap
 } from "lucide-react";
 
 export const metadata: Metadata = {

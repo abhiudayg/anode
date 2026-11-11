@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers, BookOpen, Newspaper, ExternalLink, Terminal, FileCode2, Sparkles, Server, GitCompare, Database } from "lucide-react";
+import { Layers, BookOpen, Newspaper, ExternalLink, Terminal, FileCode2, Sparkles } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Footer() {

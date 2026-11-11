@@ -1,0 +1,37 @@
+# ==============================================================================
+# GitHub Linguist Configuration
+# Enforces Go as the primary language (95%+) for Anode.
+# Documentation website (Next.js) and third-party benchmark fixtures are excluded.
+# ==============================================================================
+
+# 1. Documentation & Website (Exclude Next.js & TS from language bar)
+web/** linguist-documentation
+web/** linguist-detectable=false
+web/src/** linguist-detectable=false
+*.ts linguist-detectable=false
+*.tsx linguist-detectable=false
+*.css linguist-detectable=false
+*.scss linguist-detectable=false
+
+# 2. Third-Party Benchmarks & Test Fixtures (Exclude legacy/vendored source)
+examples/** linguist-vendored
+examples/** linguist-detectable=false
+examples/realworld_benchmarks/** linguist-vendored
+examples/realworld_benchmarks/** linguist-detectable=false
+testdata/** linguist-vendored
+testdata/** linguist-detectable=false
+
+# 3. Auto-Generated Contracts, Lockfiles, and Dependency Manifests
+*.lock linguist-generated=true
+*.lock.json linguist-generated=true
+anode.lock.json linguist-generated=true
+bun.lock linguist-generated=true
+package-lock.json linguist-generated=true
+pnpm-lock.yaml linguist-generated=true
+yarn.lock linguist-generated=true
+
+# 4. Primary Core Codebase (Explicitly prioritize Go)
+cmd/** linguist-detectable=true
+internal/** linguist-detectable=true
+pkg/** linguist-detectable=true
+*.go linguist-detectable=true

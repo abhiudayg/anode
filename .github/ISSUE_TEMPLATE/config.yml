@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GitHub Discussions
+    url: https://github.com/abhiudayg/anode/discussions
+    about: Ask questions, share architectures, and discuss bare-metal Go deployment.
+  - name: Documentation & Interactive Tools
+    url: https://anode.abhiudayg.dev/docs
+    about: Read the complete CLI reference, SSA specs, and benchmark methodologies.

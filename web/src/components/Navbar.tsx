@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap, Server, Database, Wrench, Search, Cpu } from "lucide-react";
+import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, Server, Database, Wrench, Search, Cpu, Zap } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Navbar() {

@@ -1,13 +1,13 @@
 "use client";
 
 import { useState, useRef, MouseEvent } from "react";
-import { Database, Network, FileCheck2, AlertCircle, ArrowUpRight, Terminal, ShieldAlert } from "lucide-react";
+import { Database, Network, FileCheck2, AlertCircle, ShieldAlert } from "lucide-react";
 
 interface BentoCardProps {
   pillar: string;
   title: string;
   description: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   tag: string;
   children?: React.ReactNode;
   className?: string;

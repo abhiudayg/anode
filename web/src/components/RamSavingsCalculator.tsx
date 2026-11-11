@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { Cpu, HardDrive, Zap, DollarSign, ArrowRight, ShieldCheck } from "lucide-react";
+import { Cpu, HardDrive, Zap, DollarSign, ShieldCheck } from "lucide-react";
 
 export function RamSavingsCalculator() {
   const [servicesCount, setServicesCount] = useState<number>(6);

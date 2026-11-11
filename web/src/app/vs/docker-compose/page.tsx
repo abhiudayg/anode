@@ -8,13 +8,8 @@ import {
   Zap, 
   ShieldCheck, 
   ArrowRight, 
-  Layers, 
-  Terminal, 
   Cpu, 
-  Server, 
   Sparkles,
-  HelpCircle,
-  FileCode2,
   ChevronRight,
   GitCompare,
   AlertTriangle

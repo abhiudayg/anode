@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   ChevronRight,
   AlertTriangle,
-  AlertCircle,
   XCircle
 } from "lucide-react";
 
@@ -348,7 +347,7 @@ interface AnalysisResult {
 
 function analyzeGoSnippet(code: string): AnalysisResult {
   let packageName = "main";
-  let hasMain = code.includes("func main()");
+  const hasMain = code.includes("func main()");
   const databases: { kind: string; varName: string; provenance: string }[] = [];
   const routes: { method: string; path: string }[] = [];
   const envVarsSet = new Set<string>();
@@ -446,7 +445,7 @@ function analyzeGoSnippet(code: string): AnalysisResult {
   const secrets = Array.from(secretsSet);
 
   // Synthesize Deterministic Lockfile Object
-  const resourcesObj: Record<string, any> = {};
+  const resourcesObj: Record<string, unknown> = {};
   databases.forEach((db, idx) => {
     resourcesObj[`db-${db.kind}-${idx + 1}`] = {
       kind: db.kind,
@@ -624,7 +623,7 @@ export default function SsaVisualizerPage() {
             Go SSA Call Graph &amp; Topology Visualizer
           </h1>
           <p className="mt-4 text-sm sm:text-base text-neutral-400 leading-relaxed">
-            Paste any Go snippet (or pick a preset) to watch Anode's Static Single Assignment (SSA) and Variable Type Analysis (VTA) engine live-extract database choke points, HTTP ingress routes, and loopback ports—synthesizing an immutable contract and hardened Linux systemd unit.
+            Paste any Go snippet (or pick a preset) to watch Anode&apos;s Static Single Assignment (SSA) and Variable Type Analysis (VTA) engine live-extract database choke points, HTTP ingress routes, and loopback ports—synthesizing an immutable contract and hardened Linux systemd unit.
           </p>
         </div>
 
@@ -1052,7 +1051,7 @@ export default function SsaVisualizerPage() {
                           [2/4] Call graph choke-point inspection<br />
                           {analysis.databases.map((db, i) => (
                             <span key={i}>
-                              &nbsp;&nbsp;✓ Detected sql.Open("{db.kind}", cfg.DatabaseURL)<br />
+                              &nbsp;&nbsp;✓ Detected sql.Open(&quot;{db.kind}&quot;, cfg.DatabaseURL)<br />
                               &nbsp;&nbsp;• Verified migration assets: ./migrations/*.sql (schema-backed)<br />
                               &nbsp;&nbsp;• Provenance guarantee: Schema-backed {db.kind.toUpperCase()} engine<br />
                             </span>

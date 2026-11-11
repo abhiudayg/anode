@@ -17,7 +17,6 @@ import {
   X,
   Copy,
   Check,
-  ExternalLink,
   ShieldCheck,
   Database
 } from "lucide-react";
@@ -29,7 +28,7 @@ interface SearchItem {
   category: "Documentation" | "Tools" | "Guides" | "Blog" | "Commands" | "Comparisons";
   href?: string;
   action?: () => void;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   badge?: string;
 }
 
@@ -277,13 +276,19 @@ export function CommandPalette() {
     },
   ];
 
+  const closePalette = () => {
+    setIsOpen(false);
+    setQuery("");
+    setSelectedIndex(0);
+  };
+
   const copyText = (text: string, id: string) => {
     if (typeof window !== "undefined") {
       navigator.clipboard.writeText(text);
       setCopiedCmd(id);
       setTimeout(() => {
         setCopiedCmd(null);
-        setIsOpen(false);
+        closePalette();
       }, 1000);
     }
   };
@@ -305,7 +310,7 @@ export function CommandPalette() {
         e.preventDefault();
         setIsOpen((prev) => !prev);
       } else if (e.key === "Escape") {
-        setIsOpen(false);
+        closePalette();
       }
     };
 
@@ -320,17 +325,11 @@ export function CommandPalette() {
     return () => window.removeEventListener("open-command-palette", handleOpen);
   }, []);
 
-  // Reset selectedIndex when query changes
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query]);
-
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 50);
-    } else {
-      setQuery("");
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -378,7 +377,10 @@ export function CommandPalette() {
             ref={inputRef}
             type="text"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setSelectedIndex(0);
+            }}
             placeholder="Type a command, guide, tool, or doc topic..."
             className="w-full bg-transparent text-sm text-white placeholder-neutral-500 outline-none font-mono-code"
           />

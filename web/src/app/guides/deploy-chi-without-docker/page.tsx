@@ -3,16 +3,8 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { 
-  Check, 
   ArrowRight, 
-  Terminal, 
-  Cpu, 
-  Server, 
-  ShieldCheck, 
-  Zap, 
-  ChevronRight, 
-  FileCode2,
-  Lock
+  Zap
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -191,7 +183,7 @@ export default function DeployChiGuide() {
               </h2>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>. Anode traces Chi's route multiplexing directly into an immutable lockfile:
+              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>. Anode traces Chi&apos;s route multiplexing directly into an immutable lockfile:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect .<br />

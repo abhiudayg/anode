@@ -15,9 +15,7 @@ import {
   Zap, 
   FileCode2, 
   RefreshCw,
-  Download,
-  AlertCircle,
-  HelpCircle
+  Download
 } from "lucide-react";
 
 const PRESET_DOCKER_COMPOSE = `version: "3.8"
@@ -122,7 +120,7 @@ TasksMax=1024
 WantedBy=multi-user.target`;
 
     return { serviceName: currentService, unitContent: unit };
-  } catch (err) {
+  } catch {
     return {
       serviceName: "app",
       unitContent: "# Error parsing compose file. Please check syntax.",
