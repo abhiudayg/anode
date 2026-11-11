@@ -8,7 +8,7 @@
 set -e
 
 REPO="abhiudayg/anode"
-LATEST_VERSION="v1.0.0"
+LATEST_VERSION="${ANODE_VERSION:-v1.0.0}"
 
 echo ""
 echo "  █████╗ ███╗   ██╗ ██████╗ ██████╗ ███████╗"
@@ -18,8 +18,8 @@ echo " ██╔══██║██║╚██╗██║██║   ██�
 echo " ██║  ██║██║ ╚████║╚██████╔╝██████╔╝███████╗"
 echo " ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝"
 echo ""
-echo " Installing Anode — Bare-Metal Go Orchestration Engine"
-echo " -----------------------------------------------------"
+echo " Installing Anode — Proof-of-Topology Bare-Metal Orchestrator"
+echo " ------------------------------------------------------------"
 
 # 1. Detect OS
 OS="$(uname -s)"
@@ -64,6 +64,7 @@ TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
 BINARY_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/anode_${OS_NAME}_${ARCH_NAME}.tar.gz"
+CHECKSUM_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/checksums.txt"
 
 echo "⏳ Downloading Anode binary (${LATEST_VERSION})..."
 
@@ -71,14 +72,35 @@ DOWNLOADED=0
 if command -v curl >/dev/null 2>&1; then
     if curl -fsSL "${BINARY_URL}" -o "${TMP_DIR}/anode.tar.gz" 2>/dev/null; then
         DOWNLOADED=1
+        curl -fsSL "${CHECKSUM_URL}" -o "${TMP_DIR}/checksums.txt" 2>/dev/null || true
     fi
 elif command -v wget >/dev/null 2>&1; then
     if wget -q "${BINARY_URL}" -O "${TMP_DIR}/anode.tar.gz" 2>/dev/null; then
         DOWNLOADED=1
+        wget -q "${CHECKSUM_URL}" -O "${TMP_DIR}/checksums.txt" 2>/dev/null || true
     fi
 fi
 
 if [ "${DOWNLOADED}" -eq 1 ]; then
+    # Verify SHA-256 checksum if checksums.txt is present
+    if [ -f "${TMP_DIR}/checksums.txt" ]; then
+        EXPECTED_SHA=$(grep "anode_${OS_NAME}_${ARCH_NAME}.tar.gz" "${TMP_DIR}/checksums.txt" | awk '{print $1}')
+        if [ -n "${EXPECTED_SHA}" ]; then
+            if command -v sha256sum >/dev/null 2>&1; then
+                ACTUAL_SHA=$(sha256sum "${TMP_DIR}/anode.tar.gz" | awk '{print $1}')
+            elif command -v shasum >/dev/null 2>&1; then
+                ACTUAL_SHA=$(shasum -a 256 "${TMP_DIR}/anode.tar.gz" | awk '{print $1}')
+            fi
+            if [ -n "${ACTUAL_SHA}" ]; then
+                if [ "${ACTUAL_SHA}" = "${EXPECTED_SHA}" ]; then
+                    echo "✓ Verified SHA-256 checksum integrity"
+                else
+                    echo "⚠️ Checksum mismatch (expected: ${EXPECTED_SHA}, got: ${ACTUAL_SHA})"
+                fi
+            fi
+        fi
+    fi
+
     tar -xzf "${TMP_DIR}/anode.tar.gz" -C "${TMP_DIR}"
     if [ "${USE_SUDO}" -eq 1 ]; then
         echo "🔒 Installing to ${INSTALL_DIR} (requires sudo)..."
@@ -122,10 +144,14 @@ if [ -x "${TARGET_BIN}" ]; then
     echo "🎉 Anode installed successfully!"
     "${TARGET_BIN}" version || true
     echo ""
-    echo "Quickstart:"
-    echo "  anode inspect ./cmd/api    # Analyze Go code & emit anode.lock.json"
-    echo "  anode dev                  # Run local dynamic dev with zero port collisions"
-    echo "  anode deploy user@host     # Deploy production release via systemd & SSH"
+    echo "Usage: anode [OPTIONS] COMMAND [ARG...]"
+    echo ""
+    echo "Commands:"
+    echo "  anode inspect [PATH]       # Extract whole-program SSA topology & emit anode.lock.json"
+    echo "  anode dev [PATH]           # Run local dev environment with dynamic loopback ports"
+    echo "  anode deploy TARGET [PATH] # Deploy production release via systemd, cgroups & Caddy"
+    echo "  anode run TARGET [PATH]    # Alias for deploy (Docker CLI parity)"
+    echo "  anode catalog              # Inspect pluggable stateful infrastructure drivers"
     echo ""
 else
     echo "⚠️ Installation completed, but anode binary is not in PATH."
