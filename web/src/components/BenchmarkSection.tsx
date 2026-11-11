@@ -98,7 +98,6 @@ export function BenchmarkSection() {
   const realWorldBenchmarks = [
     {
       name: "glanceapp/glance",
-      stars: "~38.1k ⭐",
       category: "Feed & Dashboard Server",
       services: 1,
       ssaSweep: "40.4 ms",
@@ -107,7 +106,6 @@ export function BenchmarkSection() {
     },
     {
       name: "filebrowser/filebrowser",
-      stars: "~35.9k ⭐",
       category: "File Management Backend",
       services: 1,
       ssaSweep: "66.7 ms",
@@ -116,7 +114,6 @@ export function BenchmarkSection() {
     },
     {
       name: "chubin/wttr.in",
-      stars: "~30.7k ⭐",
       category: "Terminal Forecast Engine",
       services: 1,
       ssaSweep: "78.7 ms",
@@ -125,7 +122,6 @@ export function BenchmarkSection() {
     },
     {
       name: "navidrome/navidrome",
-      stars: "~24.6k ⭐",
       category: "Music Stream & Subsonic API",
       services: 1,
       ssaSweep: "125.1 ms",
@@ -134,7 +130,6 @@ export function BenchmarkSection() {
     },
     {
       name: "schollz/croc",
-      stars: "~40.9k ⭐",
       category: "P2P Rendezvous Relay",
       services: 4,
       ssaSweep: "140.6 ms",
@@ -143,7 +138,6 @@ export function BenchmarkSection() {
     },
     {
       name: "cloudreve/cloudreve",
-      stars: "~28.9k ⭐",
       category: "Cloud Drive & Orchestrator",
       services: 1,
       ssaSweep: "152.5 ms",
@@ -152,7 +146,6 @@ export function BenchmarkSection() {
     },
     {
       name: "restic/restic",
-      stars: "~37.1k ⭐",
       category: "Encrypted Backup Engine",
       services: 3,
       ssaSweep: "134.1 ms",
@@ -161,7 +154,6 @@ export function BenchmarkSection() {
     },
     {
       name: "binwiederhier/ntfy",
-      stars: "~35.5k ⭐",
       category: "HTTP Pub-Sub Push Server",
       services: 7,
       ssaSweep: "346.1 ms",
@@ -170,7 +162,6 @@ export function BenchmarkSection() {
     },
     {
       name: "netbirdio/netbird",
-      stars: "~30.8k ⭐",
       category: "Zero-Trust WireGuard Mesh",
       services: 14,
       ssaSweep: "649.4 ms",
@@ -241,7 +232,7 @@ export function BenchmarkSection() {
                 </h3>
               </div>
               <p className="text-xs text-neutral-400">
-                Freshly measured wall-clock and SSA reachability analysis timings across enterprise topologies and 20k–41k star codebases.
+                Freshly measured wall-clock and SSA reachability analysis timings across enterprise topologies and open-source codebases.
               </p>
             </div>
 
@@ -255,7 +246,7 @@ export function BenchmarkSection() {
                     : "text-neutral-400 hover:text-white"
                 }`}
               >
-                Enterprise Meshes (2–32 Svcs)
+                Enterprise Meshes
               </button>
               <button
                 onClick={() => setActiveTab("realworld")}
@@ -265,7 +256,7 @@ export function BenchmarkSection() {
                     : "text-neutral-400 hover:text-white"
                 }`}
               >
-                10 Real-World Apps (20k–41k⭐)
+                Open-Source Applications
               </button>
             </div>
           </div>
@@ -311,7 +302,7 @@ export function BenchmarkSection() {
               <table className="w-full text-left border-collapse text-xs font-mono-code">
                 <thead>
                   <tr className="border-b border-white/[0.06] text-neutral-500 uppercase tracking-wider text-[11px]">
-                    <th className="py-3 px-4">Repository & Stars</th>
+                    <th className="py-3 px-4">Repository</th>
                     <th className="py-3 px-4">Application Role</th>
                     <th className="py-3 px-4">Detected Infrastructure</th>
                     <th className="py-3 px-4 text-cyan-400">Anode SSA Sweep</th>
@@ -322,11 +313,10 @@ export function BenchmarkSection() {
                   {realWorldBenchmarks.map((row, i) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3.5 px-4 font-semibold text-white">
-                        <div>{row.name}</div>
-                        <div className="text-[10px] text-amber-400 font-sans">{row.stars}</div>
+                        {row.name}
                       </td>
                       <td className="py-3.5 px-4 text-neutral-300 text-[11px]">
-                        {row.category} ({row.services} svc)
+                        {row.category}
                       </td>
                       <td className="py-3.5 px-4 text-neutral-400 text-[11px]">
                         {row.backing}
