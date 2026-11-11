@@ -25,7 +25,8 @@ import {
   Lock,
   GitBranch,
   ShieldAlert,
-  HardDrive
+  HardDrive,
+  ExternalLink
 } from "lucide-react";
 
 const SECTION_ALIASES: Record<string, string> = {
@@ -954,11 +955,10 @@ terraform -chdir=infra/terraform apply`}</code>
                     <span className="text-xs font-mono-code text-cyan-400">Compiler Speed</span>
                   </div>
                   <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Measurement Method:</strong> Instrumented microsecond timers dividing analysis into toolchain ingestion (<code className="text-neutral-300">packages.Load</code> AST parsing and SSA IR compilation) versus Anode&apos;s whole-program reachability traversal and sink extraction (<code className="text-neutral-300">vta.CallGraph</code> + backward taint analysis).
+                    <strong>Measurement Method:</strong> Whole-program reachability traversal and sink extraction (<code className="text-neutral-300">vta.CallGraph</code> + backward taint analysis) evaluated with Go 1.22+ SSA.
                   </p>
                   <div className="text-xs text-neutral-300 space-y-1 pl-3 border-l-2 border-yellow-500/40">
                     <p>• <strong>Pure In-Memory SSA Sweep:</strong> Variable Type Analysis computes reachability in O(N) linear time. The pure sweep runs in <strong>18ms to 62ms</strong> on single-service backends, <strong>268ms</strong> on 12 microservices, and <strong>798ms</strong> on a 32-microservice enterprise monorepo.</p>
-                    <p>• <strong>End-to-End CLI Wall-Clock:</strong> Including Go compiler package loading from disk, total lockfile extraction finishes in <strong>1.07s to 2.45s</strong> across all microservice suites.</p>
                   </div>
 
                   {/* Comprehensive Benchmark Table in Docs */}
@@ -974,106 +974,213 @@ terraform -chdir=infra/terraform apply`}</code>
                             <th className="py-2 px-2.5">Topology Scale</th>
                             <th className="py-2 px-2.5">go list AST</th>
                             <th className="py-2 px-2.5">SSA Build</th>
-                            <th className="py-2 px-2.5 text-cyan-300">Anode Sweep</th>
-                            <th className="py-2 px-2.5 text-right">Total Wall-Clock</th>
+                            <th className="py-2 px-2.5 text-cyan-300 text-right">Anode SSA Sweep</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-white/[0.04] text-neutral-300">
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">sample-shop</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/abhiudayg/anode/tree/master/examples/sample-shop"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>sample-shop</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">2 services / 2 stores</td>
                             <td className="py-2 px-2.5">460 ms</td>
                             <td className="py-2 px-2.5">182 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">62.2 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">1.07s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">62.2 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">hyper_mesh_12</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/abhiudayg/anode/tree/master/examples/hyper_mesh_12"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>hyper_mesh_12</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">12 services / 7 stores</td>
                             <td className="py-2 px-2.5">615 ms</td>
                             <td className="py-2 px-2.5">200 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">268.8 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">1.91s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">268.8 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">fintech_core_20</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/abhiudayg/anode/tree/master/examples/fintech_core_20"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>fintech_core_20</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">20 services / 22 stores</td>
                             <td className="py-2 px-2.5">615 ms</td>
                             <td className="py-2 px-2.5">213 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">548.8 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">2.20s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">548.8 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">health_mesh_25</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/abhiudayg/anode/tree/master/examples/health_mesh_25"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>health_mesh_25</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">25 services / 26 stores</td>
                             <td className="py-2 px-2.5">680 ms</td>
                             <td className="py-2 px-2.5">249 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">642.6 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">2.38s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">642.6 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">omni_mesh_32</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/abhiudayg/anode/tree/master/examples/omni_mesh_32"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>omni_mesh_32</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">32 services / 35 stores</td>
                             <td className="py-2 px-2.5">653 ms</td>
                             <td className="py-2 px-2.5">205 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">799.0 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">2.45s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">799.0 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">glance</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/glanceapp/glance"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>glanceapp/glance</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">Dashboard Server</td>
                             <td className="py-2 px-2.5">1,041 ms</td>
                             <td className="py-2 px-2.5">410 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">40.4 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">2.51s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">40.4 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">filebrowser</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/filebrowser/filebrowser"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>filebrowser/filebrowser</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">File Storage Engine</td>
                             <td className="py-2 px-2.5">1,103 ms</td>
                             <td className="py-2 px-2.5">540 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">66.7 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">3.12s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">66.7 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">wttr.in</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/chubin/wttr.in"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>chubin/wttr.in</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">Terminal Forecast Service</td>
                             <td className="py-2 px-2.5">881 ms</td>
                             <td className="py-2 px-2.5">290 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">78.7 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">2.06s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">78.7 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">croc</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/schollz/croc"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>schollz/croc</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">P2P Relay & Rendezvous</td>
                             <td className="py-2 px-2.5">1,011 ms</td>
                             <td className="py-2 px-2.5">412 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">140.6 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">2.86s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">140.6 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">restic</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/restic/restic"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>restic/restic</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">Encrypted Backup Engine</td>
                             <td className="py-2 px-2.5">1,583 ms</td>
                             <td className="py-2 px-2.5">624 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">134.1 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">8.55s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">134.1 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">ntfy</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/binwiederhier/ntfy"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>binwiederhier/ntfy</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">HTTP Pub-Sub Server</td>
                             <td className="py-2 px-2.5">1,531 ms</td>
                             <td className="py-2 px-2.5">520 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">346.1 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">9.03s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">346.1 ms</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">netbird</td>
+                            <td className="py-2 px-2.5 font-bold text-white">
+                              <a
+                                href="https://github.com/netbirdio/netbird"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <span>netbirdio/netbird</span>
+                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
+                              </a>
+                            </td>
                             <td className="py-2 px-2.5 text-neutral-400">Zero-Trust VPN Mesh</td>
                             <td className="py-2 px-2.5">3,210 ms</td>
                             <td className="py-2 px-2.5">1,842 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold">649.4 ms</td>
-                            <td className="py-2 px-2.5 text-right font-semibold">19.54s</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">649.4 ms</td>
                           </tr>
                         </tbody>
                       </table>

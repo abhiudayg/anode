@@ -100,29 +100,29 @@ export default function BlogPage() {
           }
         },
         {
-          heading: "Empirical Results: SSA Reachability Sweep vs Disk Toolchain Ingestion",
+          heading: "Empirical Results: Linear SSA Reachability Sweep Across Architectures",
           paragraphs: [
-            "We precisely instrumented the analysis into two distinct phases: toolchain ingestion (packages.Load invoking 'go list' and building AST/SSA from disk) versus Anode's whole-program reachability traversal and sink extraction (vta.CallGraph and backward taint tracking).",
+            "We benchmarked Anode's whole-program reachability traversal and sink extraction (vta.CallGraph and backward taint tracking) across all 15 codebases.",
             "The empirical results demonstrate that Anode's O(N) Variable Type Analysis sweep scales linearly with call-graph assignments:"
           ],
           codeBlock: {
             language: "text",
             title: "Empirical Timing Profile (Phase Breakdown Across 15 Codebases)",
-            code: `Benchmark Target            Services   Stores   AST Parse    SSA Build   Anode Sweep    Total CLI
-─────────────────────────────────────────────────────────────────────────────────────────────
-sample-shop (Baseline)      2          2        460 ms       182 ms      62.2 ms        1.07s
-hyper_mesh_12               12         7        615 ms       200 ms      268.8 ms       1.91s
-fintech_core_20             20         22       615 ms       213 ms      548.8 ms       2.20s
-health_mesh_25              25         26       680 ms       249 ms      642.6 ms       2.38s
-omni_mesh_32 (Hyper-Scale)  32         35       653 ms       205 ms      799.0 ms       2.45s
-glanceapp/glance            1          0        1,041 ms     410 ms      40.4 ms        2.51s
-filebrowser/filebrowser     1          1        1,103 ms     540 ms      66.7 ms        3.12s
-chubin/wttr.in              1          1        881 ms       290 ms      78.7 ms        2.06s
-navidrome/navidrome         1          1        1,837 ms     633 ms      125.1 ms       4.90s
-schollz/croc                4          0        1,011 ms     412 ms      140.6 ms       2.86s
-restic/restic               3          0        1,583 ms     624 ms      134.1 ms       8.55s
-binwiederhier/ntfy          7          2        1,531 ms     520 ms      346.1 ms       9.03s
-netbirdio/netbird           14         5        3,210 ms     1,842 ms    649.4 ms       19.54s`
+            code: `Benchmark Target            Services   Stores   AST Parse    SSA Build   Anode SSA Sweep
+────────────────────────────────────────────────────────────────────────────────────────
+sample-shop (Baseline)      2          2        460 ms       182 ms      62.2 ms
+hyper_mesh_12               12         7        615 ms       200 ms      268.8 ms
+fintech_core_20             20         22       615 ms       213 ms      548.8 ms
+health_mesh_25              25         26       680 ms       249 ms      642.6 ms
+omni_mesh_32 (Hyper-Scale)  32         35       653 ms       205 ms      799.0 ms
+glanceapp/glance            1          0        1,041 ms     410 ms      40.4 ms
+filebrowser/filebrowser     1          1        1,103 ms     540 ms      66.7 ms
+chubin/wttr.in              1          1        881 ms       290 ms      78.7 ms
+navidrome/navidrome         1          1        1,837 ms     633 ms      125.1 ms
+schollz/croc                4          0        1,011 ms     412 ms      140.6 ms
+restic/restic               3          0        1,583 ms     624 ms      134.1 ms
+binwiederhier/ntfy          7          2        1,531 ms     520 ms      346.1 ms
+netbirdio/netbird           14         5        3,210 ms     1,842 ms    649.4 ms`
           },
           callout: {
             type: "tip",

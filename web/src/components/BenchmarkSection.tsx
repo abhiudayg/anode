@@ -45,52 +45,52 @@ export function BenchmarkSection() {
   const enterpriseBenchmarks = [
     {
       name: "sample-shop",
+      repoUrl: "https://github.com/abhiudayg/anode/tree/master/examples/sample-shop",
       category: "Baseline Architecture",
       services: 2,
       resources: 2,
       astLoad: "460 ms",
       ssaSweep: "62.2 ms",
-      totalWall: "1.07s",
       backing: "PostgreSQL, HTTP Ingress",
     },
     {
       name: "hyper_mesh_12",
+      repoUrl: "https://github.com/abhiudayg/anode/tree/master/examples/hyper_mesh_12",
       category: "Flagship Microservices",
       services: 12,
       resources: 7,
       astLoad: "615 ms",
       ssaSweep: "268.8 ms",
-      totalWall: "1.91s",
       backing: "Postgres, Redis, ClickHouse, gRPC",
     },
     {
       name: "fintech_core_20",
+      repoUrl: "https://github.com/abhiudayg/anode/tree/master/examples/fintech_core_20",
       category: "Neo-Banking & Trading",
       services: 20,
       resources: 22,
       astLoad: "615 ms",
       ssaSweep: "548.8 ms",
-      totalWall: "2.20s",
       backing: "Kafka, TimescaleDB, ScyllaDB, Valkey",
     },
     {
       name: "health_mesh_25",
+      repoUrl: "https://github.com/abhiudayg/anode/tree/master/examples/health_mesh_25",
       category: "HIPAA Hospital System",
       services: 25,
       resources: 26,
       astLoad: "680 ms",
       ssaSweep: "642.6 ms",
-      totalWall: "2.38s",
       backing: "MongoDB, RabbitMQ, PostgreSQL, FHIR",
     },
     {
       name: "omni_mesh_32",
+      repoUrl: "https://github.com/abhiudayg/anode/tree/master/examples/omni_mesh_32",
       category: "Hyper-Scale Enterprise",
       services: 32,
       resources: 35,
       astLoad: "653 ms",
       ssaSweep: "799.0 ms",
-      totalWall: "2.45s",
       backing: "14 Stores: Qdrant, Temporal, MinIO, Scylla",
     },
   ];
@@ -98,74 +98,74 @@ export function BenchmarkSection() {
   const realWorldBenchmarks = [
     {
       name: "glanceapp/glance",
+      repoUrl: "https://github.com/glanceapp/glance",
       category: "Feed & Dashboard Server",
       services: 1,
       ssaSweep: "40.4 ms",
-      totalWall: "2.51s",
       backing: "In-memory cache, Open-Meteo & Reddit APIs",
     },
     {
       name: "filebrowser/filebrowser",
+      repoUrl: "https://github.com/filebrowser/filebrowser",
       category: "File Management Backend",
       services: 1,
       ssaSweep: "66.7 ms",
-      totalWall: "3.12s",
       backing: "Embedded BoltDB / SQLite, JWT Auth",
     },
     {
       name: "chubin/wttr.in",
+      repoUrl: "https://github.com/chubin/wttr.in",
       category: "Terminal Forecast Engine",
       services: 1,
       ssaSweep: "78.7 ms",
-      totalWall: "2.06s",
       backing: "Local Cache, Upstream Radar Ingress",
     },
     {
       name: "navidrome/navidrome",
+      repoUrl: "https://github.com/navidrome/navidrome",
       category: "Music Stream & Subsonic API",
       services: 1,
       ssaSweep: "125.1 ms",
-      totalWall: "4.90s",
       backing: "SQLite (FTS5 indexed), Media Volumes",
     },
     {
       name: "schollz/croc",
+      repoUrl: "https://github.com/schollz/croc",
       category: "P2P Rendezvous Relay",
       services: 4,
       ssaSweep: "140.6 ms",
-      totalWall: "2.86s",
       backing: "PAKE Key Exchange, Ephemeral Sockets",
     },
     {
       name: "cloudreve/cloudreve",
+      repoUrl: "https://github.com/cloudreve/cloudreve",
       category: "Cloud Drive & Orchestrator",
       services: 1,
       ssaSweep: "152.5 ms",
-      totalWall: "7.60s",
       backing: "SQLite/MySQL/PostgreSQL, Redis Cache",
     },
     {
       name: "restic/restic",
+      repoUrl: "https://github.com/restic/restic",
       category: "Encrypted Backup Engine",
       services: 3,
       ssaSweep: "134.1 ms",
-      totalWall: "8.55s",
       backing: "MinIO / S3 Object Storage, SFTP",
     },
     {
       name: "binwiederhier/ntfy",
+      repoUrl: "https://github.com/binwiederhier/ntfy",
       category: "HTTP Pub-Sub Push Server",
       services: 7,
       ssaSweep: "346.1 ms",
-      totalWall: "9.03s",
       backing: "SQLite Message Queue, Twilio/FCM Egress",
     },
     {
       name: "netbirdio/netbird",
+      repoUrl: "https://github.com/netbirdio/netbird",
       category: "Zero-Trust WireGuard Mesh",
       services: 14,
       ssaSweep: "649.4 ms",
-      totalWall: "19.54s",
       backing: "PostgreSQL, Coturn STUN/TURN, gRPC",
     },
   ];
@@ -232,7 +232,7 @@ export function BenchmarkSection() {
                 </h3>
               </div>
               <p className="text-xs text-neutral-400">
-                Freshly measured wall-clock and SSA reachability analysis timings across enterprise topologies and open-source codebases.
+                Freshly measured SSA reachability analysis timings across enterprise topologies and open-source codebases.
               </p>
             </div>
 
@@ -270,15 +270,22 @@ export function BenchmarkSection() {
                     <th className="py-3 px-4">Benchmark Architecture</th>
                     <th className="py-3 px-4">Topology Scale</th>
                     <th className="py-3 px-4">Backing Infrastructure</th>
-                    <th className="py-3 px-4 text-cyan-400">Anode SSA Sweep</th>
-                    <th className="py-3 px-4 text-right">Total Wall-Clock</th>
+                    <th className="py-3 px-4 text-cyan-400 text-right">Anode SSA Sweep</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   {enterpriseBenchmarks.map((row, i) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3.5 px-4 font-semibold text-white">
-                        <div>{row.name}</div>
+                        <a
+                          href={row.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-cyan-400 inline-flex items-center gap-1.5 transition-colors group/link"
+                        >
+                          <span>{row.name}</span>
+                          <ExternalLink className="w-3 h-3 text-neutral-500 group-hover/link:text-cyan-400 flex-shrink-0" />
+                        </a>
                         <div className="text-[10px] text-neutral-400 font-sans">{row.category}</div>
                       </td>
                       <td className="py-3.5 px-4 text-neutral-300">
@@ -288,11 +295,8 @@ export function BenchmarkSection() {
                       <td className="py-3.5 px-4 text-neutral-400 text-[11px]">
                         {row.backing}
                       </td>
-                      <td className="py-3.5 px-4 text-emerald-400 font-bold">
+                      <td className="py-3.5 px-4 text-emerald-400 font-bold text-right">
                         {row.ssaSweep}
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-neutral-300 font-semibold">
-                        {row.totalWall}
                       </td>
                     </tr>
                   ))}
@@ -305,15 +309,22 @@ export function BenchmarkSection() {
                     <th className="py-3 px-4">Repository</th>
                     <th className="py-3 px-4">Application Role</th>
                     <th className="py-3 px-4">Detected Infrastructure</th>
-                    <th className="py-3 px-4 text-cyan-400">Anode SSA Sweep</th>
-                    <th className="py-3 px-4 text-right">Total Wall-Clock</th>
+                    <th className="py-3 px-4 text-cyan-400 text-right">Anode SSA Sweep</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-white/[0.04]">
                   {realWorldBenchmarks.map((row, i) => (
                     <tr key={i} className="hover:bg-white/[0.02] transition-colors">
                       <td className="py-3.5 px-4 font-semibold text-white">
-                        {row.name}
+                        <a
+                          href={row.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="hover:text-cyan-400 inline-flex items-center gap-1.5 transition-colors group/link"
+                        >
+                          <span>{row.name}</span>
+                          <ExternalLink className="w-3 h-3 text-neutral-500 group-hover/link:text-cyan-400 flex-shrink-0" />
+                        </a>
                       </td>
                       <td className="py-3.5 px-4 text-neutral-300 text-[11px]">
                         {row.category}
@@ -321,11 +332,8 @@ export function BenchmarkSection() {
                       <td className="py-3.5 px-4 text-neutral-400 text-[11px]">
                         {row.backing}
                       </td>
-                      <td className="py-3.5 px-4 text-emerald-400 font-bold">
+                      <td className="py-3.5 px-4 text-emerald-400 font-bold text-right">
                         {row.ssaSweep}
-                      </td>
-                      <td className="py-3.5 px-4 text-right text-neutral-300 font-semibold">
-                        {row.totalWall}
                       </td>
                     </tr>
                   ))}
@@ -338,7 +346,7 @@ export function BenchmarkSection() {
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>
-                <strong>Methodology:</strong> Measured with Go 1.22+ SSA and Variable Type Analysis (VTA). Anode SSA Sweep represents pure in-memory reachability and sink inspection; Total Wall-Clock includes compiler AST ingestion from disk.
+                <strong>Methodology:</strong> Measured with Go 1.22+ SSA and Variable Type Analysis (VTA). Anode SSA Sweep represents pure in-memory reachability and sink inspection across whole-program call graphs.
               </span>
             </div>
             <Link

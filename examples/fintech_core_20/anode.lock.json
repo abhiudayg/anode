@@ -460,7 +460,7 @@
       ],
       "bindings": [
         {
-          "service_ref": "api_gateway",
+          "service_ref": "accounts_service",
           "protocol": "http",
           "interface": "/v1/accounts/me",
           "inject_env": "ACCOUNTS_SERVICE_URL",
@@ -569,15 +569,6 @@
       ],
       "bindings": [
         {
-          "resource_ref": "db-recon-kafka-brokers",
-          "protocol": "kafka",
-          "inject_env": "RECON_KAFKA_BROKERS",
-          "expanded_env": [
-            "RECON_KAFKA_BROKERS"
-          ],
-          "provenance": "services/reconciliation_job/engine/kafka.go:14"
-        },
-        {
           "resource_ref": "db-recon-clickhouse",
           "protocol": "clickhouse",
           "inject_env": "RECON_CLICKHOUSE_URL",
@@ -585,6 +576,15 @@
             "RECON_CLICKHOUSE_URL"
           ],
           "provenance": "services/reconciliation_job/olap/clickhouse.go:14"
+        },
+        {
+          "resource_ref": "db-recon-kafka-brokers",
+          "protocol": "kafka",
+          "inject_env": "RECON_KAFKA_BROKERS",
+          "expanded_env": [
+            "RECON_KAFKA_BROKERS"
+          ],
+          "provenance": "services/reconciliation_job/engine/kafka.go:14"
         }
       ],
       "secrets": []
@@ -603,17 +603,17 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-rewards",
-          "protocol": "redis",
-          "inject_env": "REWARDS_REDIS_ADDR",
-          "provenance": "services/rewards_service/points/redis.go:15"
-        },
-        {
           "service_ref": "accounts_service",
           "protocol": "http",
           "interface": "/v1/accounts/credit",
           "inject_env": "ACCOUNTS_SERVICE_URL",
           "provenance": "services/rewards_service/main.go:25"
+        },
+        {
+          "resource_ref": "redis-rewards",
+          "protocol": "redis",
+          "inject_env": "REWARDS_REDIS_ADDR",
+          "provenance": "services/rewards_service/points/redis.go:15"
         }
       ],
       "secrets": []
@@ -632,15 +632,6 @@
       ],
       "bindings": [
         {
-          "resource_ref": "db-statements-minio",
-          "protocol": "minio",
-          "inject_env": "STATEMENTS_MINIO_URL",
-          "expanded_env": [
-            "STATEMENTS_MINIO_URL"
-          ],
-          "provenance": "services/statement_gen/pdf/minio.go:14"
-        },
-        {
           "resource_ref": "db-statements-rabbitmq",
           "protocol": "rabbitmq",
           "inject_env": "STATEMENTS_RABBITMQ_URL",
@@ -648,6 +639,15 @@
             "STATEMENTS_RABBITMQ_URL"
           ],
           "provenance": "services/statement_gen/queue/rabbit.go:14"
+        },
+        {
+          "resource_ref": "db-statements-minio",
+          "protocol": "minio",
+          "inject_env": "STATEMENTS_MINIO_URL",
+          "expanded_env": [
+            "STATEMENTS_MINIO_URL"
+          ],
+          "provenance": "services/statement_gen/pdf/minio.go:14"
         }
       ],
       "secrets": []
@@ -692,6 +692,12 @@
       ],
       "bindings": [
         {
+          "resource_ref": "redis-trading-valkey",
+          "protocol": "redis",
+          "inject_env": "TRADING_VALKEY_ADDR",
+          "provenance": "services/trading_engine/orderbook/cache.go:16"
+        },
+        {
           "resource_ref": "db-trading-kafka-brokers",
           "protocol": "kafka",
           "inject_env": "TRADING_KAFKA_BROKERS",
@@ -699,12 +705,6 @@
             "TRADING_KAFKA_BROKERS"
           ],
           "provenance": "services/trading_engine/events/producer.go:14"
-        },
-        {
-          "resource_ref": "redis-trading-valkey",
-          "protocol": "redis",
-          "inject_env": "TRADING_VALKEY_ADDR",
-          "provenance": "services/trading_engine/orderbook/cache.go:16"
         }
       ],
       "secrets": [
