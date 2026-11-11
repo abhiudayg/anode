@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1270 760" width="1270" height="760">
+  
+  <defs>
+    <!-- Background Gradients -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0a0d14"/>
+      <stop offset="40%" stop-color="#080a0f"/>
+      <stop offset="100%" stop-color="#040608"/>
+    </linearGradient>
+
+    <!-- Accent Gradients -->
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#00add8"/>
+    </linearGradient>
+
+    <linearGradient id="purpleGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+
+    <linearGradient id="emeraldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#34d399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#070c14" stop-opacity="0.95"/>
+    </linearGradient>
+
+    <linearGradient id="cardGradLight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e293b" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.6"/>
+    </linearGradient>
+
+    <!-- Background Pattern -->
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M 48 0 L 0 0 0 48" fill="none" stroke="#1e293b" stroke-width="0.8" stroke-opacity="0.35"/>
+      <circle cx="48" cy="48" r="1.5" fill="#38bdf8" fill-opacity="0.25"/>
+    </pattern>
+
+    <!-- Glow Filters -->
+    <filter id="glowCyan" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="90" result="blur"/>
+    </filter>
+    <filter id="glowPurple" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="100" result="blur"/>
+    </filter>
+    <filter id="glowBlue" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="110" result="blur"/>
+    </filter>
+  </defs>
+
+
+  <!-- Background Layer -->
+  <rect width="1270" height="760" fill="url(#bgGrad)"/>
+  <rect width="1270" height="760" fill="url(#grid)"/>
+
+  <!-- Ambient Light Orbs -->
+  <circle cx="220" cy="180" r="280" fill="#00add8" fill-opacity="0.12" filter="url(#glowCyan)"/>
+  <circle cx="1060" cy="520" r="320" fill="#6366f1" fill-opacity="0.10" filter="url(#glowPurple)"/>
+
+  <!-- Left Hero Column -->
+  <g transform="translate(80, 80)">
+    <!-- Brand / Version Pill -->
+    <g>
+      <rect width="330" height="38" rx="19" fill="#00add8" fill-opacity="0.12" stroke="#00add8" stroke-opacity="0.4" stroke-width="1.2"/>
+      <!-- Hexagon / Topology Icon -->
+      <g transform="translate(14, 9) scale(0.85)" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <polygon points="12 2 2 8.5 2 15.5 12 22 22 15.5 22 8.5 12 2" fill="#00add8" fill-opacity="0.25"/>
+        <line x1="12" y1="22" x2="12" y2="15.5"/>
+        <polyline points="22 8.5 12 15.5 2 8.5"/>
+      </g>
+      <text x="44" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="700" fill="#38bdf8" letter-spacing="1.2">
+        ANODE v1.0 • PROOF-OF-TOPOLOGY
+      </text>
+    </g>
+
+    <!-- Main Headline -->
+    <text x="0" y="112" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="54" font-weight="800" fill="#ffffff" letter-spacing="-1.8">
+      Deploy Unmodified Go
+    </text>
+    <text x="0" y="174" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="54" font-weight="800" fill="url(#cyanGrad)" letter-spacing="-1.8">
+      Directly to Bare Metal.
+    </text>
+
+    <!-- Tagline & Description -->
+    <text x="0" y="235" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="21" font-weight="600" fill="#e2e8f0">
+      Zero Docker. Zero Kubernetes. Zero YAML Drift.
+    </text>
+    <text x="0" y="272" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="15.5" font-weight="400" fill="#94a3b8">
+      Anode inspects whole-program Go SSA call graphs to auto-discover
+    </text>
+    <text x="0" y="296" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="15.5" font-weight="400" fill="#94a3b8">
+      routes &amp; database drivers in ~60ms, synthesising hardened Linux services.
+    </text>
+
+    <!-- 3 Key Metric Badges -->
+    <g transform="translate(0, 350)">
+      <!-- Metric 1: 8ms Cold Boot -->
+      <g>
+        <rect width="155" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
+        <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#22d3ee">
+          8 ms
+        </text>
+        <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
+          COLD BOOT TIME
+        </text>
+      </g>
+
+      <!-- Metric 2: 4.8MB RAM -->
+      <g transform="translate(175, 0)">
+        <rect width="155" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
+        <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#38bdf8">
+          4.8 MB
+        </text>
+        <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
+          RAM FOOTPRINT
+        </text>
+      </g>
+
+      <!-- Metric 3: 100% SSA -->
+      <g transform="translate(350, 0)">
+        <rect width="165" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
+        <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#4ade80">
+          100% SSA
+        </text>
+        <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
+          STATIC PROVENANCE
+        </text>
+      </g>
+    </g>
+
+    <!-- Bottom URL & License Footer -->
+    <g transform="translate(0, 480)">
+      <rect width="515" height="42" rx="8" fill="#0f172a" fill-opacity="0.6" stroke="#1e293b" stroke-width="1"/>
+      <circle cx="20" cy="21" r="4" fill="#22c55e"/>
+      <text x="32" y="26" font-family="'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="13" font-weight="600" fill="#e2e8f0">
+        anode.abhiudayg.dev
+      </text>
+      <text x="210" y="26" font-family="'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="13" font-weight="400" fill="#475569">
+        •
+      </text>
+      <text x="228" y="26" font-family="'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="13" font-weight="500" fill="#38bdf8">
+        github.com/abhiudayg/anode
+      </text>
+      <text x="445" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" fill="#a855f7">
+        APACHE 2.0
+      </text>
+    </g>
+  </g>
+
+  <!-- Right Hero Column: Interactive Terminal Cockpit -->
+  <g transform="translate(670, 75)">
+    <!-- Terminal Shadow Glow -->
+    <rect x="-10" y="-10" width="530" height="580" rx="20" fill="#00add8" fill-opacity="0.04" filter="url(#glowCyan)"/>
+
+    <!-- Terminal Outer Frame -->
+    <rect width="510" height="560" rx="16" fill="url(#cardGrad)" stroke="#00add8" stroke-opacity="0.35" stroke-width="1.6"/>
+
+    <!-- Terminal Header Bar -->
+    <path d="M 0 16 C 0 7.163 7.163 0 16 0 L 494 0 C 502.837 0 510 7.163 510 16 L 510 46 L 0 46 Z" fill="#090d16"/>
+    <line x1="0" y1="46" x2="510" y2="46" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Window Dots -->
+    <circle cx="24" cy="23" r="6" fill="#ef4444" opacity="0.9"/>
+    <circle cx="42" cy="23" r="6" fill="#f59e0b" opacity="0.9"/>
+    <circle cx="60" cy="23" r="6" fill="#10b981" opacity="0.9"/>
+
+    <!-- Terminal Title -->
+    <text x="86" y="28" font-family="'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="12" font-weight="500" fill="#94a3b8">
+      terminal — anode deploy production
+    </text>
+
+    <!-- Terminal Inner Content -->
+    <g transform="translate(26, 76)" font-family="'SF Mono', Menlo, Monaco, Consolas, monospace" font-size="13.5">
+      <text x="0" y="0" fill="#38bdf8" font-weight="700">$ anode deploy --target bare-metal-01</text>
+      
+      <text x="0" y="34" fill="#64748b">→ Inspecting Go SSA AST (orders, billing, notify)...</text>
+      
+      <text x="0" y="72" fill="#38bdf8" font-weight="700">✓</text>
+      <text x="20" y="72" fill="#e2e8f0" font-weight="600">Discovered Ingress:</text>
+      <text x="200" y="72" fill="#22d3ee">POST /v1/orders (:8080)</text>
+
+      <text x="0" y="106" fill="#38bdf8" font-weight="700">✓</text>
+      <text x="20" y="106" fill="#e2e8f0" font-weight="600">Inferred DB Drivers:</text>
+      <text x="200" y="106" fill="#a78bfa">Postgres 16 (pgx/v5)</text>
+
+      <text x="0" y="140" fill="#38bdf8" font-weight="700">✓</text>
+      <text x="20" y="140" fill="#e2e8f0" font-weight="600">Dynamic Loopback:</text>
+      <text x="200" y="140" fill="#34d399">127.0.0.1:5432 (0% conflict)</text>
+
+      <text x="0" y="174" fill="#38bdf8" font-weight="700">✓</text>
+      <text x="20" y="174" fill="#e2e8f0" font-weight="600">Synthesized Service:</text>
+      <text x="200" y="174" fill="#f59e0b">systemd [anode-api.slice]</text>
+
+      <line x1="0" y1="206" x2="458" y2="206" stroke="#1e293b" stroke-width="1.2"/>
+
+      <!-- Live Runtime Banner -->
+      <g transform="translate(0, 230)">
+        <rect width="458" height="92" rx="10" fill="#00add8" fill-opacity="0.08" stroke="#00add8" stroke-opacity="0.4" stroke-width="1.2"/>
+        <circle cx="20" cy="28" r="5" fill="#22c55e"/>
+        <text x="34" y="32" font-size="13" fill="#38bdf8" font-weight="700">PRODUCTION RUNTIME CONFIRMED</text>
+        <text x="20" y="58" font-size="12" fill="#e2e8f0">Cold Boot: <tspan fill="#22d3ee" font-weight="700">8.2ms</tspan> • RAM: <tspan fill="#38bdf8" font-weight="700">4.8MB</tspan> • PID: 8192</text>
+        <text x="20" y="78" font-size="11.5" fill="#94a3b8">Ingress Route: https://api.shop.com (cgroups v2 active)</text>
+      </g>
+
+      <!-- Second Terminal Command -->
+      <g transform="translate(0, 360)">
+        <text x="0" y="0" fill="#38bdf8" font-weight="700">$ anode inspect --topology</text>
+        <text x="0" y="28" fill="#4ade80">● 3 microservices linked via local loopback mesh</text>
+        <text x="0" y="52" fill="#64748b">  └─ orders:8080 ➔ postgres:5432 (verified SSA)</text>
+        <text x="0" y="76" fill="#64748b">  └─ zero docker daemon overhead detected</text>
+      </g>
+
+      <!-- Active Cursor -->
+      <g transform="translate(0, 470)">
+        <text x="0" y="0" fill="#4ade80" font-weight="700">$</text>
+        <text x="16" y="0" fill="#cbd5e1">_</text>
+      </g>
+    </g>
+  </g>
+</svg>
