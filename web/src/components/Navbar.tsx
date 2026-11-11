@@ -45,7 +45,7 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5 group">
+          <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400/20 via-cyan-500/10 to-transparent border border-cyan-500/30 flex items-center justify-center transition-all duration-300 group-hover:border-cyan-400 group-hover:shadow-[0_0_15px_rgba(0,173,216,0.4)]">
               <Layers className="w-4 h-4 text-cyan-400 transition-transform duration-300 group-hover:scale-110" />
             </div>
@@ -60,38 +60,38 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden lg:flex items-center gap-3.5 xl:gap-6">
             <Link
               href="/#topology"
-              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
-              Proof-of-Topology
+              <span className="hidden xl:inline">Proof-of-</span>Topology
             </Link>
             <Link
               href="/#pillars"
-              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
-              The 4 Pillars
+              <span className="hidden xl:inline">The 4 </span>Pillars
             </Link>
 
             {/* Guides Dropdown */}
             <div
               ref={guidesDropdownRef}
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => setGuidesOpen(true)}
               onMouseLeave={() => setGuidesOpen(false)}
             >
               <button
                 type="button"
                 onClick={() => setGuidesOpen(!guidesOpen)}
-                className={`text-sm font-medium transition-colors flex items-center gap-1 py-1 ${
+                className={`text-sm font-medium transition-colors flex items-center gap-1 py-1 whitespace-nowrap ${
                   guidesOpen ? "text-cyan-400" : "text-neutral-400 hover:text-white"
                 }`}
                 aria-expanded={guidesOpen}
               >
-                <Compass className="w-3.5 h-3.5 text-cyan-400" />
+                <Compass className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
                 <span>Guides</span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${guidesOpen ? "rotate-180 text-cyan-400" : "text-neutral-500"}`} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${guidesOpen ? "rotate-180 text-cyan-400" : "text-neutral-500"}`} />
               </button>
 
               {guidesOpen && (
@@ -244,24 +244,24 @@ export function Navbar() {
             {/* Free Tools Dropdown */}
             <div
               ref={toolsDropdownRef}
-              className="relative"
+              className="relative shrink-0"
               onMouseEnter={() => setToolsOpen(true)}
               onMouseLeave={() => setToolsOpen(false)}
             >
               <button
                 type="button"
                 onClick={() => setToolsOpen(!toolsOpen)}
-                className={`text-sm font-medium transition-colors flex items-center gap-1.5 py-1 ${
+                className={`text-sm font-medium transition-colors flex items-center gap-1.5 py-1 whitespace-nowrap ${
                   toolsOpen ? "text-amber-400" : "text-neutral-400 hover:text-white"
                 }`}
                 aria-expanded={toolsOpen}
               >
-                <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                <Wrench className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                 <span>Tools</span>
-                <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold">
+                <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold shrink-0">
                   Free
                 </span>
-                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? "rotate-180 text-amber-400" : "text-neutral-500"}`} />
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 shrink-0 ${toolsOpen ? "rotate-180 text-amber-400" : "text-neutral-500"}`} />
               </button>
 
               {toolsOpen && (
@@ -333,28 +333,28 @@ export function Navbar() {
 
             <Link
               href="/#benchmarks"
-              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
+              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               Benchmarks
             </Link>
             <Link
               href="/docs"
-              className="text-sm font-medium text-neutral-400 hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+              className="text-sm font-medium text-neutral-400 hover:text-cyan-400 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
-              <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+              <BookOpen className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
               <span>Docs</span>
             </Link>
             <Link
               href="/blog"
-              className="text-sm font-medium text-neutral-400 hover:text-purple-400 transition-colors flex items-center gap-1.5"
+              className="text-sm font-medium text-neutral-400 hover:text-purple-400 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
-              <Newspaper className="w-3.5 h-3.5 text-purple-400" />
+              <Newspaper className="w-3.5 h-3.5 text-purple-400 shrink-0" />
               <span>Blog</span>
             </Link>
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-2.5 xl:gap-3 shrink-0">
             {/* Quick Search Cmd + K Button */}
             <button
               onClick={() => {
@@ -362,11 +362,11 @@ export function Navbar() {
                   window.dispatchEvent(new CustomEvent("open-command-palette"));
                 }
               }}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-cyan-500/30 text-neutral-400 hover:text-white text-xs font-mono-code transition-all"
+              className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-cyan-500/30 text-neutral-400 hover:text-white text-xs font-mono-code transition-all whitespace-nowrap shrink-0"
               title="Search documentation, guides, and tools (Cmd + K)"
             >
-              <Search className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden md:inline">Search</span>
+              <Search className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span className="hidden sm:inline">Search</span>
               <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-white/[0.06] border border-white/[0.1] text-[10px] text-neutral-400">
                 ⌘K
               </kbd>
@@ -376,19 +376,19 @@ export function Navbar() {
               href="https://github.com/abhiudayg/anode"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-neutral-300 hover:text-white text-xs font-mono-code transition-all"
+              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-neutral-300 hover:text-white text-xs font-mono-code transition-all whitespace-nowrap shrink-0"
             >
-              <GithubIcon className="w-3.5 h-3.5" />
+              <GithubIcon className="w-3.5 h-3.5 shrink-0" />
               <span>GitHub</span>
             </a>
 
             <Link
               href="/#quickstart"
-              className="hidden sm:inline-flex relative items-center justify-center p-0.5 overflow-hidden text-xs font-medium rounded-lg group bg-gradient-to-br from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(0,173,216,0.3)] transition-all"
+              className="hidden sm:inline-flex relative items-center justify-center p-0.5 overflow-hidden text-xs font-medium rounded-lg group bg-gradient-to-br from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(0,173,216,0.3)] transition-all whitespace-nowrap shrink-0"
             >
-              <span className="relative px-3.5 py-1.5 transition-all ease-in duration-75 bg-[#08090b] rounded-[6px] group-hover:bg-opacity-0 flex items-center gap-1.5">
+              <span className="relative px-3.5 py-1.5 transition-all ease-in duration-75 bg-[#08090b] rounded-[6px] group-hover:bg-opacity-0 flex items-center gap-1.5 whitespace-nowrap">
                 <span>Quickstart</span>
-                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform shrink-0" />
               </span>
             </Link>
 
