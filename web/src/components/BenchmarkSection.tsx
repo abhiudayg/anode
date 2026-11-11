@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Zap, Gauge, HardDrive, Cpu, Layers, ExternalLink, CheckCircle } from "lucide-react";
 
 export function BenchmarkSection() {
@@ -343,19 +344,20 @@ export function BenchmarkSection() {
             )}
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-neutral-400 font-sans">
+          <div className="mt-6 pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[11px] text-neutral-400 font-sans">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>
                 <strong>Methodology:</strong> Measured with Go 1.22+ SSA and Variable Type Analysis (VTA). Anode SSA Sweep represents pure in-memory reachability and sink inspection; Total Wall-Clock includes compiler AST ingestion from disk.
               </span>
             </div>
-            <a
-              href="/docs#benchmarks"
-              className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono-code text-xs self-start sm:self-auto"
+            <Link
+              href="/docs#benchmarks-analysis"
+              className="text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1.5 font-mono-code text-xs whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg bg-cyan-950/40 border border-cyan-800/40 hover:border-cyan-500/50 hover:bg-cyan-900/30 transition-all self-start sm:self-auto"
             >
-              Read Full Methodology <ExternalLink className="w-3 h-3" />
-            </a>
+              <span>Read Full Methodology</span>
+              <ExternalLink className="w-3.5 h-3.5 flex-shrink-0" />
+            </Link>
           </div>
         </div>
       </div>
