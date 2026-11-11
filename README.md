@@ -6,7 +6,7 @@
 
 # Anode
 
-### Deploy unmodified Go backends to any Linux VPS without Dockerfiles, Kubernetes, or proprietary SDKs.
+### The Docker Compose & Kubernetes Alternative for Go Backends. Deploy unmodified Go to any Linux VPS without Dockerfiles, container daemons, or YAML drift.
 
 [![Website: anode.abhiudayg.dev](https://img.shields.io/badge/website-anode.abhiudayg.dev-00ADD8.svg?style=flat&logo=safari)](https://anode.abhiudayg.dev)
 [![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
@@ -16,14 +16,15 @@
 
 <p align="center">
   <a href="https://anode.abhiudayg.dev">Live Website</a> •
+  <a href="https://anode.abhiudayg.dev/vs/docker-compose">Docker Compose vs Anode</a> •
+  <a href="https://anode.abhiudayg.dev/guides/deploy-go-without-docker">Bare-Metal Guide</a> •
   <a href="#the-problem">The Problem</a> •
   <a href="#how-it-works">How It Works</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#pluggable-infrastructure-catalog">Stateful Catalog</a> •
   <a href="#least-privilege-security-boundary">Security Model</a> •
   <a href="#cli-reference">CLI Reference</a> •
-  <a href="https://anode.abhiudayg.dev/docs">Documentation</a> •
-  <a href="examples/README.md">Benchmark Suites</a>
+  <a href="https://anode.abhiudayg.dev/docs">Documentation</a>
 </p>
 
 </div>

@@ -53,6 +53,16 @@ export function Footer() {
                   Tradeoffs & Limits
                 </Link>
               </li>
+              <li>
+                <Link href="/vs/docker-compose" className="hover:text-cyan-400 transition-colors">
+                  Docker Compose Alternative
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides/deploy-go-without-docker" className="hover:text-cyan-400 transition-colors">
+                  Deploy Go Without Docker
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -135,24 +145,6 @@ export function Footer() {
                 </a>
               </li>
             </ul>
-
-            {/* LaunchRanked Badge */}
-            <div className="pt-2">
-              <a
-                href="https://launchranked.com/products/site/anode.abhiudayg.dev"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block transition-transform duration-200 hover:scale-[1.02]"
-              >
-                <img
-                  src="https://launchranked.com/badge/site/anode.abhiudayg.dev?theme=light"
-                  alt="Launched on LaunchRanked"
-                  width={236}
-                  height={54}
-                  className="h-9 w-auto rounded border border-white/[0.12] shadow-sm"
-                />
-              </a>
-            </div>
           </div>
         </div>
 
