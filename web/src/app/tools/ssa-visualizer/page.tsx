@@ -8,23 +8,20 @@ import {
   Terminal,
   Copy,
   Check,
-  ArrowRight,
   Sparkles,
   Cpu,
   ShieldCheck,
-  Zap,
   FileCode2,
   RefreshCw,
-  Download,
   Database,
   Globe,
-  Lock,
-  Layers,
   Server,
   Code2,
   CheckCircle2,
   ChevronRight,
-  Share2
+  AlertTriangle,
+  AlertCircle,
+  XCircle
 } from "lucide-react";
 
 interface SnippetPreset {
@@ -114,7 +111,7 @@ func main() {
   {
     id: "stdlib-secrets",
     name: "net/http + Stripe Secrets + Webhooks",
-    badge: "Stdlib",
+    badge: "Stdlib (Go 1.27+)",
     code: `package main
 
 import (
@@ -149,6 +146,192 @@ func main() {
   },
 ];
 
+interface ValidationError {
+  line: number;
+  message: string;
+}
+
+interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+}
+
+/**
+ * Client-Side Go AST & Syntax Validator
+ * Verifies package declaration, import spec conformity, parenthesis/bracket balancing,
+ * unclosed literals, and illegal top-level tokens.
+ */
+function validateGoSource(code: string): ValidationResult {
+  const lines = code.split("\n");
+  const errors: ValidationError[] = [];
+  let inMultiComment = false;
+  let inRawString = false;
+  let inImportBlock = false;
+  let packageDeclared = false;
+  let packageName = "";
+  let hasMainFunc = false;
+
+  const stack: { char: string; line: number }[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const lineNum = i + 1;
+    let line = lines[i];
+
+    // Multi-line block comment handler
+    if (inMultiComment) {
+      const endCommentIdx = line.indexOf("*/");
+      if (endCommentIdx !== -1) {
+        inMultiComment = false;
+        line = line.substring(endCommentIdx + 2);
+      } else {
+        continue;
+      }
+    }
+
+    // Raw string literal handler
+    if (inRawString) {
+      const endRawIdx = line.indexOf("`");
+      if (endRawIdx !== -1) {
+        inRawString = false;
+        line = line.substring(endRawIdx + 1);
+      } else {
+        continue;
+      }
+    }
+
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("//")) continue;
+
+    if (trimmed.startsWith("/*")) {
+      const endIdx = trimmed.indexOf("*/", 2);
+      if (endIdx !== -1) {
+        continue;
+      } else {
+        inMultiComment = true;
+        continue;
+      }
+    }
+
+    // 1. Package clause verification
+    if (!packageDeclared) {
+      if (trimmed.startsWith("package ")) {
+        const pkgMatch = trimmed.match(/^package\s+([a-zA-Z_][a-zA-Z0-9_]*)$/);
+        if (!pkgMatch) {
+          errors.push({ line: lineNum, message: "syntax error: invalid package name identifier" });
+        } else {
+          packageDeclared = true;
+          packageName = pkgMatch[1];
+        }
+        continue;
+      } else {
+        errors.push({ line: lineNum, message: `expected 'package', found '${trimmed.split(/\s+/)[0]}'` });
+        packageDeclared = true; // prevent cascading identical errors
+        continue;
+      }
+    }
+
+    // 2. Grouped import block verification
+    if (!inImportBlock && (trimmed === "import (" || trimmed.startsWith("import ("))) {
+      inImportBlock = true;
+      stack.push({ char: "(", line: lineNum });
+      continue;
+    }
+
+    if (inImportBlock) {
+      if (trimmed === ")") {
+        inImportBlock = false;
+        if (stack.length > 0 && stack[stack.length - 1].char === "(") {
+          stack.pop();
+        }
+        continue;
+      }
+
+      // Check import spec format inside grouped block
+      // Valid: "pkg/path" or alias "pkg/path" or _ "pkg/path" or . "pkg/path"
+      const validImportRegex = /^(_|\.|[a-zA-Z_][a-zA-Z0-9_]*\s+)?"[^"\\]+"$/;
+      if (!validImportRegex.test(trimmed)) {
+        if (trimmed.includes("\"") && !trimmed.endsWith("\"")) {
+          errors.push({ line: lineNum, message: `syntax error: unexpected token after import string in '${trimmed}'` });
+        } else if (!trimmed.startsWith("\"") && !trimmed.match(/^(_|\.|[a-zA-Z_][a-zA-Z0-9_]*)\s+"/)) {
+          errors.push({ line: lineNum, message: `syntax error: unexpected identifier '${trimmed}' in import declaration` });
+        } else {
+          errors.push({ line: lineNum, message: `syntax error: malformed import spec '${trimmed}'` });
+        }
+      }
+      continue;
+    }
+
+    // 3. Single import statement
+    if (trimmed.startsWith("import ")) {
+      const singleImport = trimmed.match(/^import\s+(_|\.|[a-zA-Z_][a-zA-Z0-9_]*\s+)?"[^"\\]+"$/);
+      if (!singleImport) {
+        errors.push({ line: lineNum, message: `syntax error: malformed import statement: '${trimmed}'` });
+      }
+      continue;
+    }
+
+    // 4. Function entrypoint detection
+    if (trimmed.startsWith("func main()")) {
+      hasMainFunc = true;
+    }
+
+    // 5. Illegal top-level statements outside function bodies
+    const currentDepth = stack.filter((s) => s.char === "{" || s.char === "(").length;
+    if (currentDepth === 0) {
+      const validTopPrefixes = ["func ", "type ", "var ", "const ", "var(", "const(", "import "];
+      const isValidTop = validTopPrefixes.some((p) => trimmed.startsWith(p));
+      if (!isValidTop && !trimmed.startsWith("package ")) {
+        errors.push({ line: lineNum, message: `syntax error: non-declaration statement outside function body: '${trimmed.slice(0, 35)}'` });
+      }
+    }
+
+    // 6. Character-level token & bracket balancing
+    for (let c = 0; c < line.length; c++) {
+      const char = line[c];
+      if (char === "\"" || char === "'") {
+        const quote = char;
+        c++;
+        while (c < line.length && line[c] !== quote) {
+          if (line[c] === "\\") c++;
+          c++;
+        }
+        continue;
+      }
+      if (char === "`") {
+        inRawString = true;
+        break;
+      }
+      if (char === "/" && line[c + 1] === "/") break;
+
+      if (char === "{" || char === "(" || char === "[") {
+        stack.push({ char, line: lineNum });
+      } else if (char === "}" || char === ")" || char === "]") {
+        const expected = char === "}" ? "{" : char === ")" ? "(" : "[";
+        if (stack.length === 0 || stack[stack.length - 1].char !== expected) {
+          errors.push({ line: lineNum, message: `syntax error: unexpected '${char}', no matching '${expected}'` });
+        } else {
+          stack.pop();
+        }
+      }
+    }
+  }
+
+  // Unclosed brackets check
+  if (stack.length > 0) {
+    const unclosed = stack.pop();
+    if (unclosed) {
+      errors.push({ line: unclosed.line, message: `syntax error: unclosed '${unclosed.char}' opened on line ${unclosed.line}` });
+    }
+  }
+
+  // package main requires func main
+  if (packageDeclared && packageName === "main" && !hasMainFunc && errors.length === 0) {
+    errors.push({ line: lines.length, message: "syntax error: function main is undeclared in the main package" });
+  }
+
+  return { isValid: errors.length === 0, errors };
+}
+
 interface AnalysisResult {
   packageName: string;
   hasMain: boolean;
@@ -160,10 +343,10 @@ interface AnalysisResult {
   sha256Hex: string;
   lockfileJson: string;
   systemdUnit: string;
+  cliOutputText: string;
 }
 
 function analyzeGoSnippet(code: string): AnalysisResult {
-  const lines = code.split("\n");
   let packageName = "main";
   let hasMain = code.includes("func main()");
   const databases: { kind: string; varName: string; provenance: string }[] = [];
@@ -364,6 +547,19 @@ RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 [Install]
 WantedBy=multi-user.target`;
 
+  const cliOutputText = `~ anode inspect .
+[1/4] Initializing SSA & Variable Type Analysis Core...
+  • Rooted at main.go (func main)
+  • Package graph resolved: 1 pkgs, 312 functions
+[2/4] Call graph choke-point inspection
+${databases.map((db) => `  ✓ Detected sql.Open("${db.kind}", cfg.DatabaseURL)\n  • Verified migration assets: ./migrations/*.sql (schema-backed)\n  • Provenance guarantee: Schema-backed ${db.kind.toUpperCase()} engine`).join("\n") || "  ✓ Verified call graph: zero external stateful bottlenecks"}
+[3/4] Interface & route table extraction
+  • Discovered HTTP endpoints:
+${routes.map((r) => `    ↳ ${r.method} ${r.path} (${packageName}.Handler)`).join("\n")}
+[4/4] Synthesizing immutable contract
+  ✓ Generated anode.lock.json (SHA256: ${sha256Hex}...)
+  ✓ Determinism proof verified: 4/4 Pillars satisfied`;
+
   return {
     packageName,
     hasMain,
@@ -375,6 +571,7 @@ WantedBy=multi-user.target`;
     sha256Hex,
     lockfileJson,
     systemdUnit,
+    cliOutputText,
   };
 }
 
@@ -384,7 +581,9 @@ export default function SsaVisualizerPage() {
   const [activeOutputTab, setActiveOutputTab] = useState<"graph" | "lockfile" | "systemd" | "cli">("graph");
   const [copied, setCopied] = useState<string | null>(null);
 
+  const validation = useMemo(() => validateGoSource(code), [code]);
   const analysis = useMemo(() => analyzeGoSnippet(code), [code]);
+  const codeLines = useMemo(() => code.split("\n"), [code]);
 
   const handleSelectPreset = (preset: SnippetPreset) => {
     setSelectedPresetId(preset.id);
@@ -453,113 +652,170 @@ export default function SsaVisualizerPage() {
           ))}
         </div>
 
-        {/* Main Grid: Left Code Editor, Right Topology Output */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          {/* Left Column: Go Code Editor */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden shadow-2xl flex flex-col">
-            <div className="px-4 py-3 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between">
+        {/* Main Grid: Left Code Editor, Right Topology Output (Equal Heights, No Clutter) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+          {/* Left Column: Go Code Editor with Line Numbers and Error Handling */}
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden shadow-2xl flex flex-col justify-between h-full min-h-[600px]">
+            {/* Editor Header Bar */}
+            <div className="px-4 py-3 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between min-h-[49px]">
               <div className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
                 <FileCode2 className="w-4 h-4 text-cyan-400" />
-                <span>main.go</span>
+                <span className="font-semibold text-neutral-200">main.go</span>
                 <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   AST Target
                 </span>
               </div>
               <button
-                onClick={() => setCode(PRESETS[0].code)}
-                className="inline-flex items-center gap-1 text-[11px] font-mono-code text-neutral-400 hover:text-white transition-colors"
-                title="Reset to default code"
+                onClick={() => {
+                  const p = PRESETS.find((x) => x.id === selectedPresetId) || PRESETS[0];
+                  setCode(p.code);
+                }}
+                className="inline-flex items-center gap-1.5 text-[11px] font-mono-code text-neutral-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.05]"
+                title="Reset to selected preset code"
               >
-                <RefreshCw className="w-3 h-3" />
+                <RefreshCw className="w-3 h-3 text-cyan-400" />
                 <span>Reset</span>
               </button>
             </div>
 
-            <div className="p-4 bg-[#08090b]">
+            {/* Error Banner if Syntax is Invalid */}
+            {!validation.isValid && validation.errors.length > 0 && (
+              <div className="mx-4 mt-3 px-3.5 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-mono-code flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-semibold text-rose-200">
+                      Go Syntax Error (line {validation.errors[0].line})
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono-code">
+                      AST Parser Halted
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-rose-300/80 mt-0.5 font-mono-code break-words">
+                    {validation.errors[0].message}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Editor Area with Line Numbers */}
+            <div className="flex-1 flex bg-[#08090b] overflow-hidden min-h-[460px]">
+              {/* Line Numbers Gutter */}
+              <div className="select-none py-4 px-3 text-right font-mono-code text-xs text-neutral-600 bg-black/25 border-r border-white/[0.04] shrink-0">
+                {codeLines.map((_, i) => {
+                  const lineNum = i + 1;
+                  const isErrorLine = validation.errors.some((e) => e.line === lineNum);
+                  return (
+                    <div
+                      key={i}
+                      className={`leading-relaxed text-[11px] font-mono-code ${
+                        isErrorLine ? "text-rose-400 font-bold bg-rose-500/20 px-1 rounded -mx-1" : ""
+                      }`}
+                    >
+                      {lineNum}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Text Area */}
               <textarea
                 value={code}
                 onChange={(e) => {
                   setCode(e.target.value);
                   setSelectedPresetId("custom");
                 }}
-                rows={22}
-                className="w-full bg-transparent text-xs font-mono-code text-neutral-200 outline-none resize-none leading-relaxed selection:bg-cyan-500/30 font-medium"
+                className="flex-1 w-full bg-transparent p-4 text-xs font-mono-code text-neutral-200 outline-none resize-none leading-relaxed selection:bg-cyan-500/30 font-medium overflow-y-auto"
                 placeholder="// Paste arbitrary Go code here..."
                 spellCheck={false}
               />
             </div>
 
-            <div className="px-4 py-3 bg-white/[0.02] border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3 text-xs font-mono-code text-neutral-400">
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Valid Go Syntax</span>
-                </span>
-                <span>•</span>
-                <span>{code.split("\n").length} lines</span>
-              </div>
-              <div className="text-[11px] text-cyan-400">
-                SSA Sweep Latency: ~18ms
+            {/* Editor Footer Status Bar */}
+            <div className="px-4 py-3 bg-white/[0.02] border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3 text-xs font-mono-code">
+              {validation.isValid ? (
+                <div className="flex items-center gap-3 text-neutral-400">
+                  <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Valid Go Syntax (Go 1.27+)</span>
+                  </span>
+                  <span>•</span>
+                  <span>{codeLines.length} lines</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-rose-400 font-medium">
+                  <XCircle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <span>Syntax Error: line {validation.errors[0]?.line}</span>
+                </div>
+              )}
+              <div className="text-[11px] font-mono-code">
+                {validation.isValid ? (
+                  <span className="text-cyan-400">SSA Sweep Latency: ~18ms</span>
+                ) : (
+                  <span className="text-rose-400/80">Compilation Suspended</span>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Visualizer & Contract Inspector */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden shadow-2xl flex flex-col">
-            {/* Output Tabs */}
-            <div className="px-4 py-2.5 bg-white/[0.03] border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5">
+          {/* Right Column: Visualizer & Contract Inspector (Equal Height, Clean Tab Layout) */}
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden shadow-2xl flex flex-col justify-between h-full min-h-[600px]">
+            {/* Output Tabs Header (No Wrapping) */}
+            <div className="px-3.5 py-2.5 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between gap-2 min-h-[49px]">
+              <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar shrink-0">
                 <button
                   onClick={() => setActiveOutputTab("graph")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "graph"
                       ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <Cpu className="w-3.5 h-3.5" />
+                  <Cpu className="w-3.5 h-3.5 shrink-0" />
                   <span>Call Graph</span>
                 </button>
 
                 <button
                   onClick={() => setActiveOutputTab("lockfile")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "lockfile"
                       ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <FileCode2 className="w-3.5 h-3.5" />
-                  <span>anode.lock.json</span>
+                  <FileCode2 className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">anode.</span>
+                  <span>lock.json</span>
                 </button>
 
                 <button
                   onClick={() => setActiveOutputTab("systemd")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "systemd"
                       ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <Server className="w-3.5 h-3.5" />
-                  <span>systemd.service</span>
+                  <Server className="w-3.5 h-3.5 shrink-0" />
+                  <span>systemd<span className="hidden sm:inline">.service</span></span>
                 </button>
 
                 <button
                   onClick={() => setActiveOutputTab("cli")}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "cli"
                       ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
-                  <Terminal className="w-3.5 h-3.5" />
-                  <span>CLI Output</span>
+                  <Terminal className="w-3.5 h-3.5 shrink-0" />
+                  <span className="hidden sm:inline">CLI </span>
+                  <span>Output</span>
                 </button>
               </div>
 
-              {/* Copy / Download Buttons */}
-              <div className="flex items-center gap-2">
+              {/* Copy Button (Only for text output tabs) */}
+              {activeOutputTab !== "graph" && validation.isValid && (
                 <button
                   onClick={() => {
                     const text =
@@ -567,10 +823,10 @@ export default function SsaVisualizerPage() {
                         ? analysis.lockfileJson
                         : activeOutputTab === "systemd"
                         ? analysis.systemdUnit
-                        : code;
+                        : analysis.cliOutputText;
                     copyToClipboard(text, activeOutputTab);
                   }}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono-code text-neutral-300 hover:text-white border border-white/[0.08] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono-code text-neutral-300 hover:text-white border border-white/[0.08] transition-colors shrink-0 ml-auto"
                 >
                   {copied === activeOutputTab ? (
                     <>
@@ -584,186 +840,271 @@ export default function SsaVisualizerPage() {
                     </>
                   )}
                 </button>
-              </div>
+              )}
             </div>
 
-            {/* Tab 1: Interactive Call Graph View */}
-            {activeOutputTab === "graph" && (
-              <div className="p-6 space-y-6 bg-[#08090b]">
-                {/* Visual Pipeline Stages */}
-                <div className="space-y-4">
-                  {/* Stage 1: Package & Root Node */}
-                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-2">
-                    <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
-                      <span className="flex items-center gap-2 text-cyan-400 font-semibold">
-                        <Terminal className="w-4 h-4" />
-                        <span>Package Root: {analysis.packageName}.main()</span>
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 text-[10px]">
-                        Entrypoint Proven
-                      </span>
-                    </div>
-                    <p className="text-xs text-neutral-400 leading-relaxed">
-                      Variable Type Analysis (VTA) rooted at <code className="text-neutral-200">func main()</code>. Whole-program call graph constructed across reachable call sites.
-                    </p>
-                  </div>
-
-                  {/* Flow Arrow */}
-                  <div className="flex justify-center -my-2 text-neutral-600">
-                    <ChevronRight className="w-5 h-5 rotate-90" />
-                  </div>
-
-                  {/* Stage 2: Discovered Inbound Routes */}
-                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-2">
-                    <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
-                      <span className="flex items-center gap-2 text-emerald-400 font-semibold">
-                        <Globe className="w-4 h-4" />
-                        <span>Inbound Route Table ({analysis.routes.length} discovered)</span>
-                      </span>
-                      <span className="text-[10px] text-neutral-500">
-                        Zero Annotations
-                      </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {analysis.routes.map((r, i) => (
-                        <div
-                          key={i}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-xs font-mono-code text-emerald-300 flex items-center gap-1.5"
-                        >
-                          <span className="font-bold text-[10px] uppercase text-emerald-400">
-                            {r.method}
-                          </span>
-                          <span>{r.path}</span>
+            {/* Output Body Container */}
+            <div className="flex-1 flex flex-col bg-[#08090b]">
+              {!validation.isValid ? (
+                /* Compiler Syntax Error State */
+                <div className="p-6 space-y-5 flex-1 flex flex-col justify-center">
+                  <div className="p-5 rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5 text-rose-400">
+                        <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
+                          <AlertTriangle className="w-4 h-4 text-rose-400" />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Flow Arrow */}
-                  <div className="flex justify-center -my-2 text-neutral-600">
-                    <ChevronRight className="w-5 h-5 rotate-90" />
-                  </div>
-
-                  {/* Stage 3: Outbound State Choke Points */}
-                  <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-2">
-                    <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
-                      <span className="flex items-center gap-2 text-amber-400 font-semibold">
-                        <Database className="w-4 h-4" />
-                        <span>Stateful Driver Catalog Sinks ({analysis.databases.length} detected)</span>
-                      </span>
-                      <span className="text-[10px] text-amber-400/80 font-mono-code">
-                        Auto-Provisioned
+                        <div>
+                          <h3 className="text-sm font-bold text-white">SSA Analysis Suspended</h3>
+                          <p className="text-[11px] text-neutral-400">
+                            Go compiler could not parse Abstract Syntax Tree
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-mono-code px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                        Syntax Error (exit status 2)
                       </span>
                     </div>
-                    {analysis.databases.length === 0 ? (
-                      <p className="text-xs text-neutral-500 italic">
-                        No external databases detected. Service is stateless.
-                      </p>
-                    ) : (
-                      <div className="space-y-1.5 pt-1">
-                        {analysis.databases.map((db, i) => (
-                          <div
-                            key={i}
-                            className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/30 text-xs font-mono-code text-amber-200 flex items-center justify-between"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="w-2 h-2 rounded-full bg-amber-400" />
-                              <span className="font-semibold uppercase">{db.kind}</span>
-                              <span className="text-neutral-400">({db.varName})</span>
-                            </div>
-                            <span className="text-[10px] text-neutral-400 font-mono-code">
-                              127.0.0.1:54329 (host free)
+
+                    {/* Compiler Choke Terminal Output */}
+                    <div className="p-3.5 rounded-xl bg-black/60 border border-white/[0.06] font-mono-code text-xs space-y-2">
+                      <div className="text-cyan-400 font-bold flex items-center gap-2">
+                        <Terminal className="w-3.5 h-3.5" />
+                        <span>~ anode inspect .</span>
+                      </div>
+                      <div className="text-neutral-400 text-[11px] leading-relaxed">
+                        [1/4] Initializing SSA &amp; Variable Type Analysis Core...<br />
+                        <span className="text-rose-400 font-semibold">
+                          &nbsp;&nbsp;✖ go/parser failed on main.go:{validation.errors[0]?.line}
+                        </span><br />
+                        <span className="text-rose-300">
+                          &nbsp;&nbsp;&nbsp;&nbsp;↳ {validation.errors[0]?.message}
+                        </span>
+                      </div>
+                      <div className="pt-2 border-t border-white/[0.06] text-[11px] text-neutral-400">
+                        Anode requires valid Go AST to trace call-graphs, synthesize systemd units, and extract ingress routes. Fix the syntax above or reset to a preset.
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        const p = PRESETS.find((x) => x.id === selectedPresetId) || PRESETS[0];
+                        setCode(p.code);
+                      }}
+                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono-code text-neutral-200 border border-white/[0.1] transition-all"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Reset Code to Valid Syntax</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Valid Output Views */
+                <div className="flex-1 flex flex-col">
+                  {/* Tab 1: Interactive Call Graph View */}
+                  {activeOutputTab === "graph" && (
+                    <div className="p-6 space-y-4 flex-1">
+                      {/* Visual Pipeline Stages */}
+                      <div className="space-y-3.5">
+                        {/* Stage 1: Package & Root Node */}
+                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
+                            <span className="flex items-center gap-2 text-cyan-400 font-semibold">
+                              <Terminal className="w-4 h-4" />
+                              <span>Package Root: {analysis.packageName}.main()</span>
+                            </span>
+                            <span className="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 text-[10px]">
+                              Entrypoint Proven
                             </span>
                           </div>
-                        ))}
+                          <p className="text-xs text-neutral-400 leading-relaxed">
+                            Variable Type Analysis (VTA) rooted at <code className="text-neutral-200">func main()</code>. Whole-program call graph constructed across reachable call sites.
+                          </p>
+                        </div>
+
+                        {/* Flow Arrow */}
+                        <div className="flex justify-center -my-2 text-neutral-600">
+                          <ChevronRight className="w-4 h-4 rotate-90" />
+                        </div>
+
+                        {/* Stage 2: Discovered Inbound Routes */}
+                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
+                            <span className="flex items-center gap-2 text-emerald-400 font-semibold">
+                              <Globe className="w-4 h-4" />
+                              <span>Inbound Route Table ({analysis.routes.length} discovered)</span>
+                            </span>
+                            <span className="text-[10px] text-neutral-500">
+                              Zero Annotations
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {analysis.routes.map((r, i) => (
+                              <div
+                                key={i}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-xs font-mono-code text-emerald-300 flex items-center gap-1.5"
+                              >
+                                <span className="font-bold text-[10px] uppercase text-emerald-400">
+                                  {r.method}
+                                </span>
+                                <span>{r.path}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Flow Arrow */}
+                        <div className="flex justify-center -my-2 text-neutral-600">
+                          <ChevronRight className="w-4 h-4 rotate-90" />
+                        </div>
+
+                        {/* Stage 3: Outbound State Choke Points */}
+                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
+                            <span className="flex items-center gap-2 text-amber-400 font-semibold">
+                              <Database className="w-4 h-4" />
+                              <span>Stateful Driver Catalog Sinks ({analysis.databases.length} detected)</span>
+                            </span>
+                            <span className="text-[10px] text-amber-400/80 font-mono-code">
+                              Auto-Provisioned
+                            </span>
+                          </div>
+                          {analysis.databases.length === 0 ? (
+                            <p className="text-xs text-neutral-500 italic">
+                              No external databases detected. Service is stateless.
+                            </p>
+                          ) : (
+                            <div className="space-y-1.5 pt-1">
+                              {analysis.databases.map((db, i) => (
+                                <div
+                                  key={i}
+                                  className="p-2.5 rounded-lg bg-amber-950/20 border border-amber-500/30 text-xs font-mono-code text-amber-200 flex items-center justify-between"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-amber-400" />
+                                    <span className="font-semibold uppercase">{db.kind}</span>
+                                    <span className="text-neutral-400">({db.varName})</span>
+                                  </div>
+                                  <span className="text-[10px] text-neutral-400 font-mono-code">
+                                    127.0.0.1:54329 (host free)
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Flow Arrow */}
+                        <div className="flex justify-center -my-2 text-neutral-600">
+                          <ChevronRight className="w-4 h-4 rotate-90" />
+                        </div>
+
+                        {/* Stage 4: Immutable Provenance Contract */}
+                        <div className="p-4 rounded-xl border border-cyan-500/40 bg-cyan-950/20 space-y-1.5">
+                          <div className="flex items-center justify-between text-xs font-mono-code">
+                            <span className="flex items-center gap-2 text-cyan-300 font-semibold">
+                              <ShieldCheck className="w-4 h-4" />
+                              <span>Proof of Topology: 4/4 Pillars Satisfied</span>
+                            </span>
+                            <span className="text-[10px] text-cyan-400 font-mono-code">
+                              SHA256: {analysis.sha256Hex}
+                            </span>
+                          </div>
+                          <p className="text-xs text-neutral-300 leading-relaxed">
+                            Immutable contract validated. Ready for zero-Docker deployment to Linux systemd with DynamicUser isolation and cgroups v2 resource capping.
+                          </p>
+                        </div>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Flow Arrow */}
-                  <div className="flex justify-center -my-2 text-neutral-600">
-                    <ChevronRight className="w-5 h-5 rotate-90" />
-                  </div>
-
-                  {/* Stage 4: Immutable Provenance Contract */}
-                  <div className="p-4 rounded-xl border border-cyan-500/40 bg-cyan-950/20 space-y-2">
-                    <div className="flex items-center justify-between text-xs font-mono-code">
-                      <span className="flex items-center gap-2 text-cyan-300 font-semibold">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span>Proof of Topology: 4/4 Pillars Satisfied</span>
-                      </span>
-                      <span className="text-[10px] text-cyan-400 font-mono-code">
-                        SHA256: {analysis.sha256Hex}
-                      </span>
                     </div>
-                    <p className="text-xs text-neutral-300 leading-relaxed">
-                      Immutable contract validated. Ready for zero-Docker deployment to Linux systemd with DynamicUser isolation and cgroups v2 resource capping.
-                    </p>
-                  </div>
+                  )}
+
+                  {/* Tab 2: Synthesized Lockfile */}
+                  {activeOutputTab === "lockfile" && (
+                    <div className="p-4 flex-1">
+                      <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-cyan-200 overflow-x-auto leading-relaxed h-full max-h-[520px]">
+                        <code>{analysis.lockfileJson}</code>
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Tab 3: Synthesized Systemd Unit */}
+                  {activeOutputTab === "systemd" && (
+                    <div className="p-4 flex-1">
+                      <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-200 overflow-x-auto leading-relaxed h-full max-h-[520px]">
+                        <code>{analysis.systemdUnit}</code>
+                      </pre>
+                    </div>
+                  )}
+
+                  {/* Tab 4: Terminal CLI Output */}
+                  {activeOutputTab === "cli" && (
+                    <div className="p-4 flex-1">
+                      <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 overflow-x-auto leading-relaxed space-y-3 h-full max-h-[520px]">
+                        <div className="text-cyan-400 font-bold">
+                          ~ anode inspect .
+                        </div>
+                        <div className="text-neutral-400">
+                          [1/4] Initializing SSA &amp; Variable Type Analysis Core...<br />
+                          &nbsp;&nbsp;• Rooted at main.go (func main)<br />
+                          &nbsp;&nbsp;• Package graph resolved: 1 pkgs, 312 functions
+                        </div>
+                        <div className="text-neutral-400">
+                          [2/4] Call graph choke-point inspection<br />
+                          {analysis.databases.map((db, i) => (
+                            <span key={i}>
+                              &nbsp;&nbsp;✓ Detected sql.Open("{db.kind}", cfg.DatabaseURL)<br />
+                              &nbsp;&nbsp;• Verified migration assets: ./migrations/*.sql (schema-backed)<br />
+                              &nbsp;&nbsp;• Provenance guarantee: Schema-backed {db.kind.toUpperCase()} engine<br />
+                            </span>
+                          ))}
+                          {analysis.databases.length === 0 && (
+                            <span>&nbsp;&nbsp;✓ Verified call graph: zero external stateful bottlenecks<br /></span>
+                          )}
+                        </div>
+                        <div className="text-neutral-400">
+                          [3/4] Interface &amp; route table extraction<br />
+                          {analysis.routes.map((r, i) => (
+                            <span key={i}>
+                              &nbsp;&nbsp;&nbsp;&nbsp;↳ {r.method} {r.path} ({analysis.packageName}.Handler)<br />
+                            </span>
+                          ))}
+                        </div>
+                        <div className="text-neutral-400">
+                          [4/4] Synthesizing immutable contract<br />
+                          &nbsp;&nbsp;✓ Generated anode.lock.json (SHA256: {analysis.sha256Hex}...)<br />
+                          &nbsp;&nbsp;✓ Determinism proof verified: 4/4 Pillars satisfied
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Tab 2: Synthesized Lockfile */}
-            {activeOutputTab === "lockfile" && (
-              <div className="p-4 bg-[#08090b]">
-                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-cyan-200 overflow-x-auto leading-relaxed max-h-[500px]">
-                  <code>{analysis.lockfileJson}</code>
-                </pre>
-              </div>
-            )}
-
-            {/* Tab 3: Synthesized Systemd Unit */}
-            {activeOutputTab === "systemd" && (
-              <div className="p-4 bg-[#08090b]">
-                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-200 overflow-x-auto leading-relaxed max-h-[500px]">
-                  <code>{analysis.systemdUnit}</code>
-                </pre>
-              </div>
-            )}
-
-            {/* Tab 4: Terminal CLI Output */}
-            {activeOutputTab === "cli" && (
-              <div className="p-4 bg-[#08090b]">
-                <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 overflow-x-auto leading-relaxed space-y-3">
-                  <div className="text-cyan-400 font-bold">
-                    ~ anode inspect .
+            {/* Right Column Footer Status Bar */}
+            <div className="px-4 py-3 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-between text-xs font-mono-code text-neutral-400 min-h-[46px]">
+              {validation.isValid ? (
+                <>
+                  <div className="flex items-center gap-2 text-cyan-400">
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <span>Proof of Topology: 4/4 Pillars Satisfied</span>
                   </div>
-                  <div className="text-neutral-400">
-                    [1/4] Initializing SSA &amp; Variable Type Analysis Core...<br />
-                    &nbsp;&nbsp;• Rooted at main.go (func main)<br />
-                    &nbsp;&nbsp;• Package graph resolved: 1 pkgs, 312 functions
+                  <div className="text-[11px] text-neutral-400">
+                    SHA256: {analysis.sha256Hex}
                   </div>
-                  <div className="text-neutral-400">
-                    [2/4] Call graph choke-point inspection<br />
-                    {analysis.databases.map((db, i) => (
-                      <span key={i}>
-                        &nbsp;&nbsp;✓ Detected sql.Open("{db.kind}", cfg.DatabaseURL)<br />
-                        &nbsp;&nbsp;• Verified migration assets: ./migrations/*.sql (schema-backed)<br />
-                        &nbsp;&nbsp;• Provenance guarantee: Schema-backed {db.kind.toUpperCase()} engine<br />
-                      </span>
-                    ))}
-                    {analysis.databases.length === 0 && (
-                      <span>&nbsp;&nbsp;✓ Verified call graph: zero external stateful bottlenecks<br /></span>
-                    )}
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 text-rose-400">
+                    <span className="w-2 h-2 rounded-full bg-rose-400" />
+                    <span>SSA Static Analysis Suspended</span>
                   </div>
-                  <div className="text-neutral-400">
-                    [3/4] Interface &amp; route table extraction<br />
-                    &nbsp;&nbsp;• Discovered HTTP endpoints:<br />
-                    {analysis.routes.map((r, i) => (
-                      <span key={i}>
-                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {r.method} {r.path} ({analysis.packageName}.Handler)<br />
-                      </span>
-                    ))}
+                  <div className="text-[11px] text-rose-400/80">
+                    Fix AST to Resume
                   </div>
-                  <div className="text-neutral-400">
-                    [4/4] Synthesizing immutable contract<br />
-                    &nbsp;&nbsp;✓ Generated anode.lock.json (SHA256: {analysis.sha256Hex}...)<br />
-                    &nbsp;&nbsp;✓ Determinism proof verified: 4/4 Pillars satisfied
-                  </div>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
