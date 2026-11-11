@@ -18,6 +18,10 @@ const URL_LIST = [
   `https://${HOST}/tools/compose-to-systemd`,
   `https://${HOST}/docs`,
   `https://${HOST}/blog`,
+  `https://${HOST}/blog/why-we-ditched-docker-for-go-backends`,
+  `https://${HOST}/blog/inside-the-ssa-compiler-core`,
+  `https://${HOST}/blog/ephemeral-loopback-proxies-zero-port-collisions`,
+  `https://${HOST}/blog/stress-testing-10-famous-go-backends`,
   `https://${HOST}/llms.txt`,
   `https://${HOST}/llms-full.txt`
 ];

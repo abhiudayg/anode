@@ -20,8 +20,11 @@
 - [Pluggable Catalog Drivers](https://anode.abhiudayg.dev/docs#catalog): Database drivers for Postgres, Redis, ClickHouse, MySQL, MongoDB, and RabbitMQ.
 - [Tradeoffs & Limitations](https://anode.abhiudayg.dev/docs#tradeoffs): When to use Anode vs Docker Compose vs Kubernetes.
 
-## Benchmarks & Case Studies
-- [Real-World Benchmarks Report](https://anode.abhiudayg.dev/blog): Stress-testing Anode on 10 real-world Go backends and a 32-microservice mesh.
+## Benchmarks & Engineering Essays
+- [Why We Ditched Docker for Go Backends](https://anode.abhiudayg.dev/blog/why-we-ditched-docker-for-go-backends): Anatomy of 8ms systemd cold starts and 97% lower daemon memory.
+- [Inside the SSA Compiler Core](https://anode.abhiudayg.dev/blog/inside-the-ssa-compiler-core): How Variable Type Analysis and backward taint tracking infer infrastructure topology.
+- [Ephemeral Loopback Proxies & Zero Port Collisions](https://anode.abhiudayg.dev/blog/ephemeral-loopback-proxies-zero-port-collisions): Utilizing the 127.0.0.0/8 loopback subnet and socket splicing.
+- [Stress-Testing 10 Real-World Go Backends](https://anode.abhiudayg.dev/blog/stress-testing-10-famous-go-backends): Benchmarks across croc, glance, filebrowser, restic, and a 32-service mesh.
 - [glance Benchmark](https://github.com/glanceapp/glance): Single-service dashboard analysis and loopback allocation.
 - [filebrowser Benchmark](https://github.com/filebrowser/filebrowser): Multi-store static topology extraction.
 - [restic Benchmark](https://github.com/restic/restic): Large Go codebase AST reachability performance.
