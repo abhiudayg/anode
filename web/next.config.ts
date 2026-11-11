@@ -12,6 +12,21 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async rewrites() {
+    return [
+      {
+        source: "/",
+        has: [
+          {
+            type: "header",
+            key: "accept",
+            value: "(.*text/markdown.*)",
+          },
+        ],
+        destination: "/index.md",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,0 +1,39 @@
+# Anode
+
+> The 4-Pillar Proof-of-Topology Bare-Metal Orchestrator for Unmodified Go Backends.
+
+Anode compiles Go Single Static Assignment (SSA) call graphs directly into bare-metal Linux systemd units, cgroups v2 resource limits, dynamic loopback proxies, and automated Caddy reverse proxy configurations with 8ms cold starts and 4.8MB RAM footprint. Zero Docker, zero Kubernetes.
+
+## Core Pillars
+- **Zero-Declaration Topology**: Infers services, ports, database drivers, and egress targets via whole-program SSA and Variable Type Analysis (VTA) in milliseconds without YAML.
+- **Ephemeral Dynamic Loopback**: Eliminates port collisions (5432, 6379, 8080) by dynamically proxying loopback addresses during local development without touching host ports.
+- **Bare-Metal Linux Isolation**: Direct execution on Linux VPS via hardened systemd units (`DynamicUser=yes`, `ProtectSystem=strict`) and auto-provisioned Caddy v2 TLS reverse proxies.
+- **Deterministic Architecture Contract**: Generates immutable, cryptographically verifiable `anode.lock.json` manifests ensuring code and infrastructure never drift.
+
+## Quickstart & Installation
+- Official Homebrew Tap (macOS & Linux):
+  `brew install abhiudayg/tap/anode`
+- Standalone Automated Binary Installer:
+  `curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash`
+- Go Toolchain Installer:
+  `go install github.com/abhiudayg/anode/cmd/anode@latest`
+
+## Core Commands
+- `anode inspect [PATH]`: Extract whole-program SSA topology and write `anode.lock.json`
+- `anode dev [PATH]`: Start local hot-reload daemon with dynamic loopback ports
+- `anode deploy TARGET [PATH]`: Deploy release to bare-metal Linux host via systemd & Caddy (Docker parity alias: `anode run`)
+- `anode cluster`: Inspect multi-node placement pools, memory bin-packing, and zero-trust firewalls
+- `anode catalog`: Inspect pluggable stateful catalog drivers (Postgres, Redis, ClickHouse, MySQL, MongoDB, RabbitMQ, MinIO)
+
+## Empirical Benchmarks
+- Cold-boot startup: 8ms (vs 1,420ms container engine initialization, 177x faster)
+- Process memory overhead: 4.8MB (vs 186MB containerd/dockerd baseline, 97% reduction)
+- Static analysis sweep time: 62ms (baseline 2-service backend) to 799ms (32-service enterprise mesh)
+- Local port collisions: 0% via dynamic loopback proxying
+
+## Key Links & Resources
+- Canonical Website: https://anode.abhiudayg.dev
+- Documentation: https://anode.abhiudayg.dev/docs
+- Benchmark Report: https://anode.abhiudayg.dev/blog
+- Full LLM Context: https://anode.abhiudayg.dev/llms-full.txt
+- GitHub Repository: https://github.com/abhiudayg/anode

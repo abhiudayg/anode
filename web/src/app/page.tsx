@@ -5,6 +5,7 @@ import { DriftComparison } from "@/components/DriftComparison";
 import { BentoPillars } from "@/components/BentoPillars";
 import { BenchmarkSection } from "@/components/BenchmarkSection";
 import { QuickstartSection } from "@/components/QuickstartSection";
+import { FAQSection } from "@/components/FAQSection";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
       <BentoPillars />
       <BenchmarkSection />
       <QuickstartSection />
+      <FAQSection />
       <Footer />
     </main>
   );

@@ -1,0 +1,34 @@
+# ai.txt - Crawler Policy and Agent Directory for Anode
+
+User-agent: *
+Allow: /
+
+# Agent & LLM Information
+Site: https://anode.abhiudayg.dev
+Product: Anode
+Description: Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Eliminates Docker & Kubernetes with 8ms cold starts and 4.8MB RAM.
+Docs: https://anode.abhiudayg.dev/docs
+Blog: https://anode.abhiudayg.dev/blog
+Repository: https://github.com/abhiudayg/anode
+LLM-Context: https://anode.abhiudayg.dev/llms.txt
+LLM-Full-Context: https://anode.abhiudayg.dev/llms-full.txt
+Markdown: https://anode.abhiudayg.dev/index.md
+
+# Allowed AI Search Crawlers:
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /

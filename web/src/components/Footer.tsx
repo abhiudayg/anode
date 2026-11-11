@@ -49,6 +49,14 @@ export function Footer() {
               Tradeoffs & Limits
             </Link>
             <a
+              href="/llms.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-cyan-400 transition-colors"
+            >
+              llms.txt
+            </a>
+            <a
               href="https://github.com/abhiudayg/anode"
               target="_blank"
               rel="noopener noreferrer"
@@ -59,10 +67,26 @@ export function Footer() {
             </a>
           </div>
 
-          {/* Verification Badge */}
-          <div className="text-[11px] font-mono-code text-neutral-500 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span>4-Pillar Topology Verified</span>
+          {/* Badges & Verification */}
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="text-[11px] font-mono-code text-neutral-500 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span>4-Pillar Topology Verified</span>
+            </div>
+            <a
+              href="https://launchranked.com/products/site/anode.abhiudayg.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-opacity hover:opacity-85"
+            >
+              <img
+                src="https://launchranked.com/badge/site/anode.abhiudayg.dev?theme=light"
+                alt="Launched on LaunchRanked"
+                width={236}
+                height={54}
+                className="h-8 w-auto rounded border border-white/[0.12] shadow-sm"
+              />
+            </a>
           </div>
         </div>
       </div>

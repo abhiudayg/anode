@@ -1,0 +1,79 @@
+# Anode: Full Architecture, CLI & Technical Reference
+
+Anode is an open-source, bare-metal proof-of-topology orchestrator designed for unmodified Go backends. It eliminates Docker, Docker Compose, and Kubernetes for small-to-medium enterprise meshes and single-VPS deployments by treating Go source code as the sole source of architectural truth.
+
+---
+
+## 1. The Four Pillars of Anode
+
+### Pillar 1: Zero-Declaration Topology Synthesis
+Instead of forcing engineers to maintain parallel YAML or Dockerfile descriptions of what their code already defines, Anode performs whole-program Go Single Static Assignment (SSA) reachability analysis and Variable Type Analysis (VTA) on the abstract syntax tree (AST).
+- Discovers incoming HTTP and gRPC route signatures.
+- Detects database connection driver initializations (`database/sql`, `pgx`, `go-redis`, `clickhouse-go`, `mongo-driver`, `amqp`, etc.).
+- Identifies outbound third-party egress HTTP/gRPC calls (e.g. Stripe, SendGrid, Twilio).
+- Generates an immutable, cryptographically verifiable `anode.lock.json` file in 18ms–62ms for single services and 799ms for a 32-service enterprise mesh.
+
+### Pillar 2: Ephemeral Dynamic Loopback
+Running multiple microservices locally often leads to frustrating port collisions when two services or databases attempt to bind to `127.0.0.1:5432`, `127.0.0.1:6379`, or `127.0.0.1:8080`.
+- Anode dynamically allocates collision-free loopback interfaces (e.g., `127.0.0.2`, `127.0.0.3` or high ephemeral ports).
+- Injects environment variables (`DATABASE_URL`, `REDIS_ADDR`, `PORT`) directly into running child processes during `anode dev`.
+- Guarantees zero host port conflicts without requiring Docker container virtual networks.
+
+### Pillar 3: Bare-Metal Linux Isolation (systemd & Caddy)
+Containers introduce substantial runtime overhead: `dockerd` (65MB RSS) + `containerd` (40MB RSS) + `containerd-shim-runc-v2` (18MB per container) + internal DNS (~30MB) = ~186MB baseline RAM overhead per service.
+- Anode deploys pure Go binaries directly to Linux host systemd.
+- Uses Linux kernel native isolation: `cgroups v2` for memory and CPU quotas, `DynamicUser=yes`, and `ProtectSystem=strict`.
+- Auto-provisions and reloads Caddy v2 reverse proxy configurations with automatic Let's Encrypt TLS certificates.
+- Result: 8ms cold starts (177x faster than Docker container initialization) and 4.8MB idle RAM footprint.
+
+### Pillar 4: Deterministic Architecture Contract
+- The generated `anode.lock.json` manifest acts as an immutable lockfile for your system architecture.
+- Every service entrypoint, ingress route, egress rule, database dependency, and secret is cataloged with source code file and line provenance.
+- CI pipelines can run `anode inspect --check` to reject pull requests that introduce undeclared network dependencies or architectural drift.
+
+---
+
+## 2. Complete CLI Reference
+
+Usage: `anode [OPTIONS] COMMAND [ARG...]`
+
+### Commands:
+- `anode inspect [PATH]`
+  Executes SSA reachability analysis on the target Go codebase and generates `anode.lock.json`.
+- `anode dev [PATH]`
+  Starts the local development supervisor with dynamic loopback proxies, automated database containers (if required), and live hot-reloading.
+- `anode deploy TARGET [PATH]`
+  Deploys the application directly to a bare-metal Linux host over SSH (e.g., `anode deploy deploy@vps.example.com`).
+  Compiles binaries, rsyncs release tarball, writes hardened systemd unit files, reloads systemd daemon, and configures Caddy reverse proxy.
+- `anode run TARGET [PATH]`
+  Alias for `anode deploy`, providing Docker CLI command parity.
+- `anode cluster`
+  Inspects multi-node placement pools, memory bin-packing, and zero-trust iptables/nftables firewall rules across edge and worker nodes.
+- `anode catalog [PATH]`
+  Inspects the pluggable stateful catalog drivers (PostgreSQL, Redis, ClickHouse, MySQL, MongoDB, RabbitMQ, MinIO, ScyllaDB, Temporal, Qdrant).
+- `anode version`
+  Displays the current Anode release version and build metadata.
+
+---
+
+## 3. High-Intent Answers to Common Questions
+
+### Q1: What's the best way to deploy a Go backend to a Linux VPS without Docker?
+The most efficient method is using Anode (`anode deploy user@vps`). Because Go compiles to standalone static binaries, container runtimes add unnecessary memory bloat and latency. Anode automatically inspects your Go AST, generates hardened systemd service units with cgroups v2 resource limits, and auto-provisions Caddy reverse-proxying with automatic HTTPS.
+
+### Q2: What's the best tool for running Go APIs on bare-metal Linux with systemd?
+Anode is purpose-built for running Go APIs on bare-metal Linux. It abstracts systemd unit file generation, dynamic user isolation (`DynamicUser=yes`), filesystem sandboxing (`ProtectSystem=strict`), and zero-downtime restarts without requiring manual sysadmin scripts.
+
+### Q3: How do I stop my Go app's docker-compose file from drifting out of sync with the code?
+Use Anode's Proof-of-Topology engine. Anode eliminates docker-compose files entirely by treating the Go source code as the sole source of truth. Running `anode inspect` uses whole-program Variable Type Analysis (VTA) to detect databases and inter-service dependencies directly from your code, producing an immutable `anode.lock.json` contract.
+
+### Q4: Is there an easy way to deploy a small Go service with a database to my own server?
+Yes. Running `anode deploy user@server` identifies database connection strings (Postgres, Redis, MySQL, MongoDB), provisions least-privilege credentials via Anode's catalog driver, starts your service under systemd, and exposes it through Caddy in seconds.
+
+---
+
+## 4. Official Distribution
+- Homebrew Tap: `brew install abhiudayg/tap/anode`
+- One-line script: `curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash`
+- Source Repository: https://github.com/abhiudayg/anode
+- Website: https://anode.abhiudayg.dev
