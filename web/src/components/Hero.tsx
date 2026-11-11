@@ -142,6 +142,29 @@ export function Hero() {
             </a>
           </motion.div>
 
+          {/* Product Hunt Featured Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="mt-6 flex items-center justify-center"
+          >
+            <a
+              href="https://www.producthunt.com/products/anode-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-anode-2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <img
+                alt="Anode - Proof-of-Topology bare-metal orchestrator for Go backends | Product Hunt"
+                width={250}
+                height={54}
+                src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1312775&theme=light&t=1794402814133"
+                className="w-[250px] h-[54px] rounded-lg shadow-lg hover:shadow-cyan-500/10 transition-shadow"
+              />
+            </a>
+          </motion.div>
+
           {/* Feature Highlights Pills */}
           <motion.div
             initial={{ opacity: 0 }}
