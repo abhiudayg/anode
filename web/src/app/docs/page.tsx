@@ -1,11 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import {
-  BookOpen,
   Terminal,
   Cpu,
   Layers,
@@ -13,8 +11,6 @@ import {
   ShieldCheck,
   Server,
   Zap,
-  ArrowRight,
-  ChevronRight,
   FileCode,
   Gauge,
   CheckCircle2,
@@ -22,10 +18,7 @@ import {
   Search,
   Check,
   Copy,
-  Lock,
-  GitBranch,
   ShieldAlert,
-  HardDrive,
   ExternalLink,
   HelpCircle
 } from "lucide-react";
@@ -565,10 +558,10 @@ Run 'anode COMMAND --help' for more information on a command.`}
                 </p>
 
                 <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 space-y-2">
-                  <div className="text-neutral-500">// Problem with CHA:</div>
+                  <div className="text-neutral-500">{"// Problem with CHA:"}</div>
                   <div className="text-red-400">type Database interface {'{'} Query(...) {'}'}</div>
-                  <div className="text-red-400">type SQLiteMock struct {'{...}'} // test helper</div>
-                  <div className="text-red-400">type PostgresDriver struct {'{...}'} // production</div>
+                  <div className="text-red-400">type SQLiteMock struct {'{...}'} {"// test helper"}</div>
+                  <div className="text-red-400">type PostgresDriver struct {'{...}'} {"// production"}</div>
                   <div className="text-neutral-400">↳ CHA cannot distinguish which struct actually flows into `main()`!</div>
                 </div>
 
@@ -723,10 +716,10 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                 </p>
 
                 <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 space-y-2">
-                  <div className="text-cyan-400">// internal/devengine/engine.go</div>
+                  <div className="text-cyan-400">{"// internal/devengine/engine.go"}</div>
                   <div>l, err := net.ListenTCP(&quot;tcp&quot;, &amp;net.TCPAddr{`{IP: net.ParseIP("127.0.0.1"), Port: 0}`})</div>
                   <div>assignedPort := l.Addr().(*net.TCPAddr).Port</div>
-                  <div className="text-neutral-500">// Returns guaranteed free port from kernel ephemeral range: e.g. 54329</div>
+                  <div className="text-neutral-500">{"// Returns guaranteed free port from kernel ephemeral range: e.g. 54329"}</div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -1398,11 +1391,11 @@ terraform -chdir=infra/terraform apply`}</code>
                     <strong>Cause:</strong> Anode requires Linux cgroups v2 for fine-grained process isolation and memory pressure limits. Distributions older than Ubuntu 22.04 or Debian 11 default to v1.
                   </p>
                   <div className="p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-emerald-300">
-                    # Enable cgroups v2 on Debian/Ubuntu:
-
-                    sudo sed -i 's/GRUB_CMDLINE_LINUX="$/GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=1 /' /etc/default/grub
-
-                    sudo update-grub &amp;&amp; sudo reboot
+                    <div># Enable cgroups v2 on Debian/Ubuntu:</div>
+                    <div className="mt-2 text-cyan-200">
+                      {`sudo sed -i 's/GRUB_CMDLINE_LINUX="$/GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=1 /' /etc/default/grub`}
+                    </div>
+                    <div className="mt-1 text-neutral-400">sudo update-grub &amp;&amp; sudo reboot</div>
                   </div>
                 </div>
 
@@ -1410,7 +1403,7 @@ terraform -chdir=infra/terraform apply`}</code>
                 <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-2">
                   <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono-code font-bold">
                     <Zap className="w-4 h-4" />
-                    <span>Diagnostics: 0 Ingress Interfaces Detected during 'anode inspect'</span>
+                    <span>Diagnostics: 0 Ingress Interfaces Detected during &apos;anode inspect&apos;</span>
                   </div>
                   <p className="text-xs text-neutral-300 leading-relaxed">
                     <strong>Cause:</strong> If your HTTP handlers are dynamically registered through complex runtime reflection or untyped map lookups, static Single Static Assignment (SSA) cannot trace the path from `func main()`.

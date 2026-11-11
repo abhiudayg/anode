@@ -3,17 +3,9 @@ import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { 
-  Check, 
-  X, 
-  Zap, 
-  ShieldCheck, 
   ArrowRight, 
-  Terminal, 
-  Cpu, 
-  Server, 
   GitCompare,
-  AlertTriangle,
-  ChevronRight
+  AlertTriangle
 } from "lucide-react";
 
 export const metadata: Metadata = {

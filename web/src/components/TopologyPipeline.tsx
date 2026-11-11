@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Code2, Cpu, FileJson, Laptop, Server, ChevronRight, CheckCircle2, ArrowRight } from "lucide-react";
+import { Code2, Cpu, FileJson, Server, CheckCircle2 } from "lucide-react";
 
 interface PipelineStep {
   id: string;
   title: string;
   subtitle: string;
-  icon: any;
+  icon: React.ComponentType<{ className?: string }>;
   badge: string;
   details: {
     description: string;
@@ -134,7 +133,7 @@ Restart=always`
 
         {/* Interactive Steps Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {steps.map((step, idx) => {
+          {steps.map((step) => {
             const Icon = step.icon;
             const isSelected = activeStep === step.id;
             return (

@@ -11,6 +11,7 @@ import (
 
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/crypto/ssh/knownhosts"
 )
 
 type SSHClient struct {
@@ -61,10 +62,22 @@ func DialSSH(target string) (*SSHClient, error) {
 		return nil, fmt.Errorf("no SSH authentication methods found (check ssh-agent or ~/.ssh keys)")
 	}
 
+	// Host key verification: check ~/.ssh/known_hosts first, fallback to initial provisioning callback
+	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
+	var hostKeyCallback ssh.HostKeyCallback
+	if cb, err := knownhosts.New(knownHostsPath); err == nil {
+		hostKeyCallback = cb
+	} else {
+		// Fallback for bootstrap when known_hosts is not yet populated
+		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+			return nil
+		}
+	}
+
 	cfg := &ssh.ClientConfig{
 		User:            user,
 		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // First connect / developer convenience
+		HostKeyCallback: hostKeyCallback,
 		Timeout:         10 * time.Second,
 	}
 

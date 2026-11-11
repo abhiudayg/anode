@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Terminal, Copy, Check, Play, RefreshCw, FileCode, CheckCircle2, Server, Database, Network } from "lucide-react";
+import { Terminal, Copy, Check, Play, RefreshCw, FileCode, CheckCircle2, Server } from "lucide-react";
 
 export function InteractiveTerminal() {
   const [activeTab, setActiveTab] = useState<"inspect" | "dev" | "lock">("inspect");

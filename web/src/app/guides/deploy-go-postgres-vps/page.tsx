@@ -4,16 +4,7 @@ import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { 
   Database, 
-  Check, 
-  ArrowRight, 
-  Terminal, 
-  Zap, 
-  Cpu, 
-  ShieldCheck, 
-  ChevronRight, 
-  BookOpen,
-  FileCode2,
-  Lock
+  ArrowRight
 } from "lucide-react";
 
 export const metadata: Metadata = {

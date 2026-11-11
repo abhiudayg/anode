@@ -8,24 +8,14 @@ import {
   Calendar,
   Clock,
   ArrowRight,
-  User,
-  Layers,
-  Cpu,
-  Server,
-  ShieldCheck,
   Terminal,
-  Code2,
-  CheckCircle2,
   AlertTriangle,
   ChevronLeft,
   ChevronRight,
   Share2,
-  Bookmark,
-  Check,
-  Filter,
-  BookOpen
+  Check
 } from "lucide-react";
-import { BLOG_POSTS, BlogPost } from "@/data/blogPosts";
+import { BLOG_POSTS } from "@/data/blogPosts";
 
 const POSTS_PER_PAGE = 3;
 

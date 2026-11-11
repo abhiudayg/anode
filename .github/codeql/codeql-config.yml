@@ -1,0 +1,16 @@
+name: "Anode CodeQL Configuration"
+
+# Exclude third-party realworld benchmarks, test fixtures, and build artifacts from scanning
+paths-ignore:
+  - 'examples/**'
+  - '**/testdata/**'
+  - '**/node_modules/**'
+  - 'web/.next/**'
+  - 'web/out/**'
+  - '**/*.min.js'
+
+# Scan only Anode core code and documentation/web application
+paths:
+  - 'cmd/**'
+  - 'internal/**'
+  - 'web/src/**'

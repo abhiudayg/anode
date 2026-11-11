@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "motion/react";
-import { AlertTriangle, CheckCircle2, XCircle, ArrowRightLeft, Layers, FileCode } from "lucide-react";
+import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
 
 export function DriftComparison() {
-  const [view, setView] = useState<"side-by-side" | "diff">("side-by-side");
 
   return (
     <section id="drift" className="py-24 relative overflow-hidden bg-[#08090b] border-t border-white/[0.06]">
@@ -99,7 +96,7 @@ export function DriftComparison() {
                   <span>anode inspect (Auto-derived from Go AST)</span>
                   <span className="text-emerald-400 font-bold">Zero YAML</span>
                 </div>
-                <p className="text-cyan-300">// 100% Deterministic SSA Call Graph Pass</p>
+                <p className="text-cyan-300">{"// 100% Deterministic SSA Call Graph Pass"}</p>
                 <p className="text-neutral-300">
                   Detected: <span className="text-emerald-300">sql.Open(&quot;postgres&quot;)</span> + <span className="text-emerald-300">./migrations/*.sql</span>
                 </p>

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
-import { Terminal, Copy, Check, ArrowRight, ShieldCheck, Zap, GitBranch, Sparkles, Download, Cpu } from "lucide-react";
+import { Copy, Check, ArrowRight, ShieldCheck, Zap, GitBranch } from "lucide-react";
 import confetti from "canvas-confetti";
 import { InteractiveTerminal } from "./InteractiveTerminal";
 

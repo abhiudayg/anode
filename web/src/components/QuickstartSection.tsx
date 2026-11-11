@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Terminal, Copy, Check, ArrowRight, BookOpen } from "lucide-react";
+import { Copy, Check, ArrowRight, BookOpen } from "lucide-react";
 import { GithubIcon } from "./Icons";
 import confetti from "canvas-confetti";
 
