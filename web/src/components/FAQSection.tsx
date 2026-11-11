@@ -1,6 +1,11 @@
+"use client";
+
+import { useState } from "react";
 import { HelpCircle, ChevronRight } from "lucide-react";
 
 export function FAQSection() {
+  const [openIndices, setOpenIndices] = useState<number[]>([0]);
+
   const faqs = [
     {
       q: "What are the best alternatives to Docker Compose and Kubernetes for deploying Go microservices without Dockerfiles or YAML?",
@@ -24,6 +29,12 @@ export function FAQSection() {
     },
   ];
 
+  const toggleIndex = (idx: number) => {
+    setOpenIndices((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
+  };
+
   return (
     <section id="faq" className="py-24 border-t border-white/[0.06] bg-[#07080b]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -40,23 +51,52 @@ export function FAQSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {faqs.map((faq, idx) => (
-            <div
-              key={idx}
-              className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]/70 hover:border-cyan-500/30 transition-all flex flex-col justify-between"
-            >
-              <div>
-                <h3 className="text-base font-semibold text-white mb-3 flex items-start gap-2.5">
-                  <ChevronRight className="w-4 h-4 text-cyan-400 shrink-0 mt-1" />
-                  <span>{faq.q}</span>
-                </h3>
-                <p className="text-sm text-neutral-400 leading-relaxed pl-6">
-                  {faq.a}
-                </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto items-start">
+          {faqs.map((faq, idx) => {
+            const isOpen = openIndices.includes(idx);
+            return (
+              <div
+                key={idx}
+                onClick={() => toggleIndex(idx)}
+                className={`p-6 rounded-2xl border transition-all duration-200 cursor-pointer select-none ${
+                  isOpen
+                    ? "border-cyan-500/40 bg-[#0c0e14]/90 shadow-lg shadow-cyan-950/20"
+                    : "border-white/[0.08] bg-[#0c0e14]/60 hover:border-white/[0.18] hover:bg-[#0c0e14]/80"
+                }`}
+              >
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleIndex(idx);
+                  }}
+                  className="w-full text-left flex items-start justify-between gap-3 focus:outline-none"
+                >
+                  <h3 className="text-base font-semibold text-white flex items-start gap-2.5">
+                    <ChevronRight
+                      className={`w-4 h-4 text-cyan-400 shrink-0 mt-1 transition-transform duration-200 ${
+                        isOpen ? "rotate-90 text-cyan-300" : ""
+                      }`}
+                    />
+                    <span className="leading-snug">{faq.q}</span>
+                  </h3>
+                </button>
+
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    isOpen
+                      ? "max-h-96 opacity-100 mt-3 pt-3 border-t border-white/[0.06]"
+                      : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <p className="text-sm text-neutral-400 leading-relaxed pl-6.5">
+                    {faq.a}
+                  </p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
