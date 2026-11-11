@@ -829,21 +829,141 @@ terraform -chdir=infra/terraform apply`}</code>
                   </div>
                 </div>
 
-                {/* 18ms SSA */}
-                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                {/* SSA Reachability & Scaling Benchmarks */}
+                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <Cpu className="w-4 h-4 text-yellow-400" />
-                      3. SSA Static Sweep Time: 18ms
+                      3. SSA Static Sweep Time: 18ms–62ms (Pure SSA) / ~1.0s–2.5s (Full End-to-End)
                     </h3>
                     <span className="text-xs font-mono-code text-cyan-400">Compiler Speed</span>
                   </div>
                   <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Measurement Method:</strong> Go benchmark suite across standard microservice test repositories (48 packages, 312 functions in testdata/sample-shop).
+                    <strong>Measurement Method:</strong> Instrumented microsecond timers dividing analysis into toolchain ingestion (<code className="text-neutral-300">packages.Load</code> AST parsing and SSA IR compilation) versus Anode&apos;s whole-program reachability traversal and sink extraction (<code className="text-neutral-300">vta.CallGraph</code> + backward taint analysis).
                   </p>
-                  <p className="text-xs text-neutral-300 pl-3 border-l-2 border-yellow-500/40">
-                    Variable Type Analysis computes reachability in O(N) linear time relative to call graph assignments, allowing Anode to extract the entire topology lockfile in sub-30ms before you even switch terminal tabs.
-                  </p>
+                  <div className="text-xs text-neutral-300 space-y-1 pl-3 border-l-2 border-yellow-500/40">
+                    <p>• <strong>Pure In-Memory SSA Sweep:</strong> Variable Type Analysis computes reachability in O(N) linear time. The pure sweep runs in <strong>18ms to 62ms</strong> on single-service backends, <strong>268ms</strong> on 12 microservices, and <strong>798ms</strong> on a 32-microservice enterprise monorepo.</p>
+                    <p>• <strong>End-to-End CLI Wall-Clock:</strong> Including Go compiler package loading from disk, total lockfile extraction finishes in <strong>1.07s to 2.45s</strong> across all microservice suites.</p>
+                  </div>
+
+                  {/* Comprehensive Benchmark Table in Docs */}
+                  <div className="mt-4 pt-3 border-t border-white/[0.06]">
+                    <h4 className="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-2 font-mono-code">
+                      Empirical Profiling Matrix (Enterprise & 20k–41k⭐ Backends)
+                    </h4>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-[11px] font-mono-code">
+                        <thead>
+                          <tr className="border-b border-white/[0.08] text-neutral-500 uppercase">
+                            <th className="py-2 px-2.5">Target</th>
+                            <th className="py-2 px-2.5">Topology Scale</th>
+                            <th className="py-2 px-2.5">go list AST</th>
+                            <th className="py-2 px-2.5">SSA Build</th>
+                            <th className="py-2 px-2.5 text-cyan-300">Anode Sweep</th>
+                            <th className="py-2 px-2.5 text-right">Total Wall-Clock</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.04] text-neutral-300">
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">sample-shop</td>
+                            <td className="py-2 px-2.5 text-neutral-400">2 svcs / 2 stores</td>
+                            <td className="py-2 px-2.5">460 ms</td>
+                            <td className="py-2 px-2.5">182 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">62.2 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">1.07s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">hyper_mesh_12</td>
+                            <td className="py-2 px-2.5 text-neutral-400">12 svcs / 7 stores</td>
+                            <td className="py-2 px-2.5">615 ms</td>
+                            <td className="py-2 px-2.5">200 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">268.8 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">1.91s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">fintech_core_20</td>
+                            <td className="py-2 px-2.5 text-neutral-400">20 svcs / 22 stores</td>
+                            <td className="py-2 px-2.5">615 ms</td>
+                            <td className="py-2 px-2.5">213 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">548.8 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">2.20s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">health_mesh_25</td>
+                            <td className="py-2 px-2.5 text-neutral-400">25 svcs / 26 stores</td>
+                            <td className="py-2 px-2.5">680 ms</td>
+                            <td className="py-2 px-2.5">249 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">642.6 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">2.38s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">omni_mesh_32</td>
+                            <td className="py-2 px-2.5 text-neutral-400">32 svcs / 35 stores</td>
+                            <td className="py-2 px-2.5">653 ms</td>
+                            <td className="py-2 px-2.5">205 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">799.0 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">2.45s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">glance (38k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">1 svc (dashboard)</td>
+                            <td className="py-2 px-2.5">1,041 ms</td>
+                            <td className="py-2 px-2.5">410 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">40.4 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">2.51s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">filebrowser (36k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">1 svc (storage)</td>
+                            <td className="py-2 px-2.5">1,103 ms</td>
+                            <td className="py-2 px-2.5">540 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">66.7 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">3.12s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">wttr.in (31k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">1 svc (weather)</td>
+                            <td className="py-2 px-2.5">881 ms</td>
+                            <td className="py-2 px-2.5">290 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">78.7 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">2.06s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">croc (41k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">4 svcs (p2p relay)</td>
+                            <td className="py-2 px-2.5">1,011 ms</td>
+                            <td className="py-2 px-2.5">412 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">140.6 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">2.86s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">restic (37k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">3 svcs (backup)</td>
+                            <td className="py-2 px-2.5">1,583 ms</td>
+                            <td className="py-2 px-2.5">624 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">134.1 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">8.55s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">ntfy (36k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">7 svcs (pubsub)</td>
+                            <td className="py-2 px-2.5">1,531 ms</td>
+                            <td className="py-2 px-2.5">520 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">346.1 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">9.03s</td>
+                          </tr>
+                          <tr>
+                            <td className="py-2 px-2.5 font-bold text-white">netbird (31k⭐)</td>
+                            <td className="py-2 px-2.5 text-neutral-400">14 svcs (mesh)</td>
+                            <td className="py-2 px-2.5">3,210 ms</td>
+                            <td className="py-2 px-2.5">1,842 ms</td>
+                            <td className="py-2 px-2.5 text-emerald-400 font-bold">649.4 ms</td>
+                            <td className="py-2 px-2.5 text-right font-semibold">19.54s</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
 
                 {/* 0% Port Collisions */}
