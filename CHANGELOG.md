@@ -7,11 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2026-11-10
+## [1.0.0] - 2026-11-11
 
 ### 🚀 Added
 - **4-Pillar Proof of Topology Engine**:
-  - **Pillar 1 (Database Provenance)**: Migration-driven stateful provisioning. Databases (`postgres`, `redis`) are provisioned only when verifiable migration assets (`migrations/*.sql` or Goose) exist. Unverified sinks are treated as unmanaged external dependencies.
+  - **Pillar 1 (Database Provenance)**: Migration-driven stateful provisioning. Databases (`postgres`, `redis`, etc.) are provisioned only when verifiable migration assets (`migrations/*.sql` or Goose) exist. Unverified sinks are treated as unmanaged external dependencies.
   - **Pillar 2 (Typed Interface Linking)**: 1:1 matching between generated Protobuf gRPC client stubs (`New<X>Client`) and server registrations (`Register<X>Server`), plus standard library HTTP router route table extraction (`chi`, `gin`, `echo`, Go 1.22+ `http.ServeMux`).
   - **Pillar 3 (Commit-Backed Lockfile)**: Cryptographically deterministic `anode.lock.json` committed to Git for pull request reviews and architectural audibility.
   - **Pillar 4 (Actionable Diagnostics)**: Ambiguous dynamic connection strings emit compiler warnings with exact `file:line` provenance and actionable remediation suggestions.
@@ -19,9 +19,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Whole-program Static Single Assignment (SSA) intermediate representation using `golang.org/x/tools/go/ssa`.
   - Variable Type Analysis (VTA) call graph rooted strictly at `func main()`, mathematically pruning dead code and mock test drivers.
   - Standard library choke point detection on `database/sql.Open`, `github.com/jackc/pgx/v5/pgxpool.New`, `net.Listen`, and `net/http.ListenAndServe`.
-  - Recursive backward taint tracking through structs, `ssa.Store`, `ssa.FieldAddr`, and `fmt.Sprintf` varargs slices (`internal/analyzer/taint.go`).
+  - Recursive backward taint tracking through structs, `ssa.Store`, `ssa.FieldAddr`, and `fmt.Sprintf` varargs slices (`internal/analyzer/taint.go`) with cycle-safe Phi node traversal guards.
+  - Generic instantiation (`ssa.InstantiateGenerics`) supporting complex third-party crypto and AST libraries.
+- **Docker-Style CLI Experience (`cmd/anode`)**:
+  - Docker-style synopsis: `Usage: anode [OPTIONS] COMMAND [ARG...]`.
+  - Added `anode run` drop-in alias for `deploy`.
+  - Added `anode catalog` management command to inspect stateful infrastructure drivers and local project overrides.
+  - Added `anode cluster` for placement inspect and firewall synthesis.
+  - Context-aware `--help` / `-h` screens across all subcommands.
 - **Local Dev Orchestrator (`anode dev`)**:
-  - Ephemeral kernel socket allocation via `net.ListenTCP("tcp", "127.0.0.1:0")` to guarantee 0% host port collisions (e.g. Postgres on 54329, Redis on 63792).
+  - Ephemeral kernel socket allocation via `net.ListenTCP("tcp", "127.0.0.1:0")` to guarantee 0% host port collisions.
   - Dual environment variable injection: both unified DSN (`DATABASE_URL`) and decomposed credentials (`DB_HOST`, `DB_PORT`, `DB_USER`).
   - Automated migration execution prior to application process boot.
   - Sub-second hot-reloading supervisor.
@@ -29,12 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **OmniMesh-32 (`examples/omni_mesh_32`)**: Hyper-scale stress-test benchmark modeling 32 distinct Go microservices across 14 infrastructure drivers (PostgreSQL, MariaDB, TimescaleDB, CockroachDB, ScyllaDB, ClickHouse, MongoDB, Redis, Valkey, Memcached, RabbitMQ, Kafka, MinIO, Temporal, Qdrant).
   - **HealthMesh-25 (`examples/health_mesh_25`)**: HIPAA-compliant hospital & telehealth system modeling 25 microservices with FHIR document stores, typed WebRTC gRPC stubs, e-prescriptions, and medical billing claims.
   - **Fintech Core 20 (`examples/fintech_core_20`)**: Modular neo-banking and trading engine with layered package separation (`config` -> `repo` -> `handler`), Kafka order books, TimescaleDB double-entry ledger, and ScyllaDB payments.
-  - **Real-World OSS Benchmarks (`examples/realworld_benchmarks/`)**: Evaluated Anode against 10 famous, unmodified production Go backend codebases: `croc`, `glance`, `1Panel`, `restic`, `filebrowser`, `ntfy`, `netbird`, `wttr.in`, `cloudreve`, and `navidrome`. Verified multi-dialect DB driver resolution, Gin/Chi/Mux routing discovery, and automated systemd + Caddy deployment synthesis.
-- **Docker-Style CLI Experience (`cmd/anode`)**:
-  - Docker-style synopsis: `Usage: anode [OPTIONS] COMMAND [ARG...]`.
-  - Added `anode run` drop-in alias for `deploy`.
-  - Added `anode catalog` management command to inspect stateful infrastructure drivers and local project overrides.
-  - Context-aware `--help` / `-h` screens across all subcommands.
+  - **Real-World Open-Source Benchmarks (`examples/realworld_benchmarks/`)**: Evaluated Anode against 10 famous, unmodified production Go backend codebases: `croc`, `glance`, `1Panel`, `restic`, `filebrowser`, `ntfy`, `netbird`, `wttr.in`, `cloudreve`, and `navidrome`. Verified multi-dialect DB driver resolution, Gin/Chi/Mux routing discovery, and automated systemd + Caddy deployment synthesis.
+  - **Harmonized SSA Sweep Profiles**: Sub-100ms on single-service backends scaling to 799ms on a 32-service enterprise monorepo with direct repository links and streamlined metrics.
 - **Pluggable Infrastructure Catalog & Security Matrix (`internal/catalog`)**:
   - Declarative service catalog (`defaults.yaml`) with 28 out-of-the-box drivers (PostgreSQL, MySQL, MariaDB, CockroachDB, TimescaleDB, Redis, Valkey, KeyDB, Dragonfly, Memcached, Kafka/Redpanda, RabbitMQ, NATS, ClickHouse, MongoDB, ScyllaDB, Cassandra, Elasticsearch, OpenSearch, Meilisearch, Qdrant, Chroma, Milvus, Weaviate, MinIO, Temporal).
   - Version matrix pinning (e.g. Postgres 14/15/16/17, MySQL 8.0/8.4, Redis 6/7) with intelligent fallback resolution.
