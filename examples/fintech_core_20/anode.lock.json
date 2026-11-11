@@ -376,13 +376,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "ledger_engine",
-          "protocol": "grpc",
-          "interface": "RegisterLedgerServiceServer",
-          "inject_env": "LEDGER_GRPC_ADDR",
-          "provenance": "services/fraud_guard/evaluator/client.go:16"
-        },
-        {
           "resource_ref": "db-fraud-qdrant",
           "protocol": "qdrant",
           "inject_env": "FRAUD_QDRANT_URL",
@@ -390,6 +383,13 @@
             "FRAUD_QDRANT_URL"
           ],
           "provenance": "services/fraud_guard/vectors/qdrant.go:14"
+        },
+        {
+          "service_ref": "ledger_engine",
+          "protocol": "grpc",
+          "interface": "RegisterLedgerServiceServer",
+          "inject_env": "LEDGER_GRPC_ADDR",
+          "provenance": "services/fraud_guard/evaluator/client.go:16"
         }
       ],
       "secrets": []
@@ -424,16 +424,16 @@
       "entrypoint": "./services/ledger_engine",
       "ingress": [
         {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterLedgerServiceServer"
+        },
+        {
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
             "GET /v1/ledger/balance"
           ]
-        },
-        {
-          "protocol": "grpc",
-          "port_env": "PORT",
-          "service": "RegisterLedgerServiceServer"
         }
       ],
       "bindings": [
@@ -460,13 +460,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "api_gateway",
-          "protocol": "http",
-          "interface": "/v1/accounts/me",
-          "inject_env": "ACCOUNTS_SERVICE_URL",
-          "provenance": "services/loan_underwriting/main.go:28"
-        },
-        {
           "resource_ref": "db-loans-mongo",
           "protocol": "mongodb",
           "inject_env": "LOANS_MONGO_URL",
@@ -474,6 +467,13 @@
             "LOANS_MONGO_URL"
           ],
           "provenance": "services/loan_underwriting/store/mongo.go:14"
+        },
+        {
+          "service_ref": "api_gateway",
+          "protocol": "http",
+          "interface": "/v1/accounts/me",
+          "inject_env": "ACCOUNTS_SERVICE_URL",
+          "provenance": "services/loan_underwriting/main.go:28"
         }
       ],
       "secrets": []
@@ -569,15 +569,6 @@
       ],
       "bindings": [
         {
-          "resource_ref": "db-recon-clickhouse",
-          "protocol": "clickhouse",
-          "inject_env": "RECON_CLICKHOUSE_URL",
-          "expanded_env": [
-            "RECON_CLICKHOUSE_URL"
-          ],
-          "provenance": "services/reconciliation_job/olap/clickhouse.go:14"
-        },
-        {
           "resource_ref": "db-recon-kafka-brokers",
           "protocol": "kafka",
           "inject_env": "RECON_KAFKA_BROKERS",
@@ -585,6 +576,15 @@
             "RECON_KAFKA_BROKERS"
           ],
           "provenance": "services/reconciliation_job/engine/kafka.go:14"
+        },
+        {
+          "resource_ref": "db-recon-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "RECON_CLICKHOUSE_URL",
+          "expanded_env": [
+            "RECON_CLICKHOUSE_URL"
+          ],
+          "provenance": "services/reconciliation_job/olap/clickhouse.go:14"
         }
       ],
       "secrets": []
@@ -632,15 +632,6 @@
       ],
       "bindings": [
         {
-          "resource_ref": "db-statements-minio",
-          "protocol": "minio",
-          "inject_env": "STATEMENTS_MINIO_URL",
-          "expanded_env": [
-            "STATEMENTS_MINIO_URL"
-          ],
-          "provenance": "services/statement_gen/pdf/minio.go:14"
-        },
-        {
           "resource_ref": "db-statements-rabbitmq",
           "protocol": "rabbitmq",
           "inject_env": "STATEMENTS_RABBITMQ_URL",
@@ -648,6 +639,15 @@
             "STATEMENTS_RABBITMQ_URL"
           ],
           "provenance": "services/statement_gen/queue/rabbit.go:14"
+        },
+        {
+          "resource_ref": "db-statements-minio",
+          "protocol": "minio",
+          "inject_env": "STATEMENTS_MINIO_URL",
+          "expanded_env": [
+            "STATEMENTS_MINIO_URL"
+          ],
+          "provenance": "services/statement_gen/pdf/minio.go:14"
         }
       ],
       "secrets": []

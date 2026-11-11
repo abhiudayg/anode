@@ -26,10 +26,10 @@ export function BenchmarkSection() {
     },
     {
       metric: "Topology Static Sweep",
-      anode: "18–62ms",
+      anode: "62–799ms",
       traditional: "Manual YAML",
       advantage: "Sub-second",
-      description: "SSA and Variable Type Analysis resolves topologies in milliseconds; 32 services in 798ms.",
+      description: "Whole-program SSA reachability resolves single services in ~60ms and scales to an entire 32-service enterprise mesh in 799ms.",
       icon: Cpu,
     },
     {
