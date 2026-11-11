@@ -63,18 +63,96 @@ anode/
 ├── examples/                   # Stress-test benchmarks (12, 20, 25, 32 microservices)
 └── .github/
     ├── workflows/              # CI test suite, CodeQL analysis, release workflows
-    └── codeql/                 # CodeQL path filters (excludes third-party benchmarks)
+    ├── codeql/                 # CodeQL path filters (excludes third-party benchmarks)
+    ├── ISSUE_TEMPLATE/         # Bug reports, topology failures, and feature requests
+    └── pull_request_template.md # Mandatory PR submission checklist
 ```
 
 ---
 
-## 3. Standard Agent Workflow & Patterns
+## 3. Deep Technical Specification: CLI Binary Roadmap
+
+To provide complete Docker parity without container daemons, the following 4 core binary commands are defined with explicit edge cases and failure modes:
+
+### A. `anode ps` / `anode status <user@host>` (Process & Cgroup Monitoring)
+* **Purpose**: Inspect running Go processes, cgroups v2 resource ceilings, systemd service states, and port listeners over SSH (or locally).
+* **Use Cases**:
+  1. Instant post-deploy verification of microservice topology.
+  2. Memory pressure & leak diagnostics (monitoring Proportional Set Size / PSS vs RSS).
+  3. Caddy edge routing verification (checking TLS certificates and proxy pass status).
+* **Edge Cases & Failure Recovery**:
+  - *Edge Case 1: Missing cgroups v2 (`/sys/fs/cgroup/memory.current` not readable)*:
+    - *Fallback*: Read `/proc/[pid]/smaps_rollup` (PSS/RSS) or `/proc/[pid]/statm`. Warn if cgroups v1 is active.
+  - *Edge Case 2: Multi-process services or worker forks*:
+    - *Handling*: `systemctl show -p MainPID` only reports the root. Inspect `systemd-cgls` or `systemctl show -p TasksCurrent` to report total process/thread count and aggregate memory footprint.
+  - *Edge Case 3: Flapping/Crashing services (`CrashLoopBackOff`)*:
+    - *Handling*: Detect `SubState=auto-restart` or `ActiveState=failed`. Extract exit code, restart count (`NRestarts`), and time since last restart instead of printing a blank uptime.
+  - *Edge Case 4: Non-root SSH user*:
+    - *Handling*: Check both system systemd (`/etc/systemd/system`) and user units (`systemctl --user`).
+
+### B. `anode logs <user@host> [SERVICE] [FLAGS]` (Journald Streaming Tail)
+* **Purpose**: Stream live systemd journal logs to the developer's local terminal with Docker CLI parity (`docker logs -f`).
+* **Use Cases**:
+  1. Live debugging: Tail production service stdout/stderr (`anode logs root@vps api -f`).
+  2. Crash post-mortem: Inspect previous invocation crash logs (`--previous` or `--since="1h"`).
+  3. Topology multi-tail: Tail all services simultaneously with color-coded prefix tags (`[orders]`, `[payments]`).
+* **Edge Cases & Failure Recovery**:
+  - *Edge Case 1: Journald binary rate-limiting*:
+    - *Handling*: If systemd rate-limiting suppresses lines (`Suppressed N messages`), parse and notify the user with instructions to adjust `RateLimitBurst`.
+  - *Edge Case 2: Clean SSH disconnect on SIGINT*:
+    - *Handling*: When the developer presses `Ctrl+C` locally, transmit a remote `SIGTERM` to the spawned `journalctl` process over SSH to prevent orphaned tail processes on the server.
+  - *Edge Case 3: Log rotation & disk bounds*:
+    - *Handling*: If journald rotated or truncated logs, report `No entries found` cleanly without error exit.
+
+### C. `anode rollback <user@host> [PATH]` (Sub-Second Zero-Downtime Rollback)
+* **Purpose**: Revert production release to the immediately preceding version in `<50ms` with zero recompilation.
+* **Use Cases**:
+  1. Immediate rollback on production HTTP 500 error spikes or boot panics.
+  2. Automated canary rollback if post-deployment smoke tests fail.
+* **Edge Cases & Failure Recovery**:
+  - *Edge Case 1: Breaking database migrations*:
+    - *Handling*: Inspect `anode.lock.json` migration records. If release B ran a non-backward-compatible migration, warn the developer before proceeding (`Down migration or schema compatibility required`).
+  - *Edge Case 2: Single-release VPS (no prior release)*:
+    - *Handling*: If `/var/lib/anode/releases/` contains only 1 release, abort with exit code 1: `No previous release found`.
+  - *Edge Case 3: Dynamic port misalignment in Caddy*:
+    - *Handling*: Rolling back binaries without updating Caddy will proxy traffic to dead ports. The rollback coordinator must atomically flip BOTH the `/var/lib/anode/releases/latest` symlink AND the `/etc/caddy/Caddyfile` associated with that release, then execute `systemctl reload caddy`.
+
+### D. `anode doctor [PATH]` (Pre-Flight & Topology Sanity Linter)
+* **Purpose**: Pre-flight verification of developer toolchain, Go compiler, local container engines, and SSH remote connectivity.
+* **Use Cases**:
+  1. CI pre-flight gate before running `anode deploy`.
+  2. Onboarding diagnostic for new engineers or fresh Go repositories.
+* **Edge Cases & Failure Recovery**:
+  - *Edge Case 1: GOTOOLCHAIN and Go version mismatches*:
+    - *Handling*: Verify local Go compiler against `go.mod` requirement (`go >= 1.27.3`). Check `CGO_ENABLED=0` capability.
+  - *Edge Case 2: Remote VPS unreachable or firewalled*:
+    - *Handling*: Timeout after 3s instead of hanging. Differentiate between DNS failure, port 22 closed, and rejected public key.
+  - *Edge Case 3: Missing local Docker/Podman for `anode dev`*:
+    - *Handling*: Warn that `anode dev` can run in mock/headless mode, but ephemeral DBs will require manual connection strings.
+
+---
+
+## 4. GitHub Linguist & Language Breakdown Enforcment
+
+GitHub determines the repository language breakdown using the open-source **Linguist** library.
+To ensure that Anode is accurately indexed as **Go (95%+)** rather than TypeScript:
+
+1. Root `.gitattributes` MUST maintain:
+   - `web/** linguist-documentation` and `web/** linguist-detectable=false` (Next.js docs and tools are documentation).
+   - `examples/** linguist-vendored` and `examples/** linguist-detectable=false` (test benchmarks).
+   - `*.lock.json linguist-generated=true` (generated contracts).
+   - `cmd/**`, `internal/**`, `pkg/**` marked `linguist-detectable=true`.
+2. Never commit compiled JS/TS bundles (`dist/`, `build/`, `out/`, `.next/`) to git.
+
+---
+
+## 5. Standard Agent Workflow & Patterns
 
 When assigned an issue, enhancement, or bugfix in this repository, follow this execution sequence:
 
 ### Step 1: Context & Invariant Verification
 1. Read the relevant files in `cmd/` or `internal/`.
-2. Ensure any new CLI flags or commands align with Docker parity (e.g., `anode ps`, `anode logs`, `anode rollback`).
+2. Ensure any new CLI flags or commands align with Docker parity (e.g., `anode ps`, `anode logs`, `anode rollback`, `anode doctor`).
 3. Verify that changes do NOT break the 4 Proof-of-Topology pillars.
 
 ### Step 2: Implementation & Tests

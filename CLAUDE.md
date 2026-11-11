@@ -1,6 +1,8 @@
-# CLAUDE.md — Anthropic Claude & AI Pair-Programming Guide
+# CLAUDE.md — Anthropic Claude & AI Pair-Programming Protocol
 
-This file provides quick-reference commands, code style rules, and development protocols for **Anode** (`github.com/abhiudayg/anode`).
+> **CRITICAL ARCHITECTURAL DIRECTIVE**:
+> All AI coding assistants, models, and contributors MUST adhere strictly to the rules, invariants, and navigation patterns detailed in [`AGENTS.md`](./AGENTS.md).
+> [`AGENTS.md`](./AGENTS.md) is the single authoritative source of truth for Anode's Proof-of-Topology architecture, binary design, and coding patterns.
 
 ---
 
@@ -11,7 +13,7 @@ This file provides quick-reference commands, code style rules, and development p
 # Run all unit tests
 go test -v ./...
 
-# Run tests for a specific internal package
+# Run tests for specific packages
 go test -v ./internal/analyzer/...
 go test -v ./internal/deployer/...
 
@@ -41,37 +43,24 @@ bun run dev
 
 ---
 
-## 📐 Code Style & Conventions
-
-### Go Architecture Guidelines
-- **Go Version**: Idiomatic **Go 1.27+**.
-- **The Zero-SDK Rule**: Never require user applications to import Anode code. All analysis is done by inspecting Go standard library types (`database/sql`, `net/http`) and popular routers (`chi`, `gin`, `fiber`, `echo`) statically.
-- **Error Handling**: Explicit return of `error` values. Wrap errors with context: `fmt.Errorf("step description: %w", err)`.
-- **Formatting**: Format code with `gofmt -s -w .` before committing.
-- **Testing**: Place unit tests adjacent to source files (`foo_test.go`). Use table-driven tests for multiple inputs.
-
-### TypeScript / Next.js Guidelines
-- **Framework**: Next.js 16 (App Router) with Tailwind CSS.
-- **Type Safety**: Strict typing without `any`. Use `unknown` or specific interfaces.
-- **JSX Hygiene**: Escape apostrophes and quotation marks in JSX text (`&apos;`, `&quot;`) or wrap comments in `{"// comment"}` to adhere to ESLint rules.
-- **Imports**: Group standard library/React imports first, then external packages, then internal components (`@/components/...`). Clean up all unused imports before committing.
+## 📐 Non-Negotiable Invariants (from `AGENTS.md`)
+1. **The Zero-SDK Rule**: User Go applications NEVER import an Anode SDK. All deduction is static via Go SSA & VTA across standard library calls (`database/sql`, `net/http`) and popular routers.
+2. **Deterministic Contract**: `anode.lock.json` must be deterministic and commit-backed (`SHA-256`).
+3. **Zero Port Collisions**: Local dev multiplexes across `127.0.0.0/8` dynamic loopbacks.
+4. **Least-Privilege Systemd**: `DynamicUser=yes`, `ProtectSystem=strict`, cgroups v2 resource ceilings.
 
 ---
 
-## 🔒 Security & CodeQL Scanning
-- Custom CodeQL configuration resides in `.github/codeql/codeql-config.yml`.
-- `examples/**` is excluded from CodeQL scanning to avoid false positives from third-party benchmark repositories.
-- Never use `ssh.InsecureIgnoreHostKey()` unconditionally. Check `~/.ssh/known_hosts` first via `golang.org/x/crypto/ssh/knownhosts`.
+## 🔒 Security, Language Stats, & CodeQL
+- **GitHub Linguist**: Root `.gitattributes` marks `web/**` as documentation and `examples/**` as vendored to ensure repository language metrics reflect **Go (95%+)**.
+- **CodeQL**: Configured in `.github/codeql/codeql-config.yml` to ignore third-party benchmarks in `examples/`.
+- **SSH Keys**: Never use `ssh.InsecureIgnoreHostKey()` unconditionally. Check `~/.ssh/known_hosts` first via `golang.org/x/crypto/ssh/knownhosts`.
 
 ---
 
 ## 🚀 Commit & Pull Request Protocol
-1. **Commit Message Format**: Follow Conventional Commits:
-   - `feat(...)`, `fix(...)`, `docs(...)`, `perf(...)`, `test(...)`, `chore(...)`
+1. **Commit Messages**: Follow Conventional Commits (`feat:`, `fix:`, `docs:`, `perf:`, `test:`, `chore:`).
 2. **GPG Signing**: All commits MUST be GPG-signed (`git commit -S -m "..."`).
-3. **PR Template**: Follow `.github/pull_request_template.md` completely.
-4. **Feature Map Updates**: Whenever adding or modifying CLI commands or flags:
-   - Update help text in `cmd/anode/main.go`
-   - Update documentation in `web/src/app/docs/page.tsx`
-   - Update `README.md`
-   - Add unit tests covering the new functionality.
+3. **PR Template**: Follow [`.github/pull_request_template.md`](./.github/pull_request_template.md) completely.
+4. **Issue Templates**: Use [`.github/ISSUE_TEMPLATE/`](./.github/ISSUE_TEMPLATE/) for bug reports, topology failures, and feature requests.
+5. **Feature Map Updates**: When modifying CLI commands, update `cmd/anode/main.go`, `web/src/app/docs/page.tsx`, and `README.md`.
