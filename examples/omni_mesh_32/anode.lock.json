@@ -321,11 +321,18 @@
       ],
       "bindings": [
         {
-          "service_ref": "users",
+          "service_ref": "media",
           "protocol": "http",
-          "interface": "/v1/users",
-          "inject_env": "USERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:28"
+          "interface": "/v1/media",
+          "inject_env": "MEDIA_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:43"
+        },
+        {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:38"
         },
         {
           "service_ref": "orders",
@@ -335,11 +342,11 @@
           "provenance": "services/apigateway/main.go:33"
         },
         {
-          "service_ref": "media",
+          "service_ref": "users",
           "protocol": "http",
-          "interface": "/v1/media",
-          "inject_env": "MEDIA_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:43"
+          "interface": "/v1/users",
+          "inject_env": "USERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:28"
         },
         {
           "service_ref": "auth",
@@ -347,13 +354,6 @@
           "interface": "/v1/auth/token",
           "inject_env": "AUTH_SERVICE_URL",
           "provenance": "services/apigateway/main.go:23"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:38"
         }
       ],
       "secrets": []
@@ -397,17 +397,17 @@
       ],
       "bindings": [
         {
+          "resource_ref": "redis-auth",
+          "protocol": "redis",
+          "inject_env": "AUTH_REDIS_ADDR",
+          "provenance": "services/auth/main.go:21"
+        },
+        {
           "service_ref": "users",
           "protocol": "http",
           "interface": "/v1/users/lookup",
           "inject_env": "USERS_SERVICE_URL",
           "provenance": "services/auth/main.go:27"
-        },
-        {
-          "resource_ref": "redis-auth",
-          "protocol": "redis",
-          "inject_env": "AUTH_REDIS_ADDR",
-          "provenance": "services/auth/main.go:21"
         }
       ],
       "secrets": [
@@ -431,6 +431,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search/sync",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/catalog/main.go:24"
+        },
+        {
           "resource_ref": "db-catalog-mongo",
           "protocol": "mongodb",
           "inject_env": "CATALOG_MONGO_URL",
@@ -438,13 +445,6 @@
             "CATALOG_MONGO_URL"
           ],
           "provenance": "services/catalog/main.go:17"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search/sync",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/catalog/main.go:24"
         }
       ],
       "secrets": []
@@ -551,13 +551,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/refund",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/disputes/main.go:24"
-        },
-        {
           "resource_ref": "db-disputes-temporal",
           "protocol": "temporal",
           "inject_env": "DISPUTES_TEMPORAL_URL",
@@ -565,6 +558,13 @@
             "DISPUTES_TEMPORAL_URL"
           ],
           "provenance": "services/disputes/main.go:19"
+        },
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/refund",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/disputes/main.go:24"
         }
       ],
       "secrets": []
@@ -617,13 +617,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "auditlog",
-          "protocol": "http",
-          "interface": "/v1/audit/log",
-          "inject_env": "AUDITLOG_SERVICE_URL",
-          "provenance": "services/email/main.go:24"
-        },
-        {
           "resource_ref": "db-email-rabbitmq",
           "protocol": "rabbitmq",
           "inject_env": "EMAIL_RABBITMQ_URL",
@@ -631,6 +624,13 @@
             "EMAIL_RABBITMQ_URL"
           ],
           "provenance": "services/email/main.go:19"
+        },
+        {
+          "service_ref": "auditlog",
+          "protocol": "http",
+          "interface": "/v1/audit/log",
+          "inject_env": "AUDITLOG_SERVICE_URL",
+          "provenance": "services/email/main.go:24"
         }
       ],
       "secrets": []

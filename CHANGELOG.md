@@ -29,7 +29,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **OmniMesh-32 (`examples/omni_mesh_32`)**: Hyper-scale stress-test benchmark modeling 32 distinct Go microservices across 14 infrastructure drivers (PostgreSQL, MariaDB, TimescaleDB, CockroachDB, ScyllaDB, ClickHouse, MongoDB, Redis, Valkey, Memcached, RabbitMQ, Kafka, MinIO, Temporal, Qdrant).
   - **HealthMesh-25 (`examples/health_mesh_25`)**: HIPAA-compliant hospital & telehealth system modeling 25 microservices with FHIR document stores, typed WebRTC gRPC stubs, e-prescriptions, and medical billing claims.
   - **Fintech Core 20 (`examples/fintech_core_20`)**: Modular neo-banking and trading engine with layered package separation (`config` -> `repo` -> `handler`), Kafka order books, TimescaleDB double-entry ledger, and ScyllaDB payments.
-  - **Real-World OSS Benchmarks (20K–41K Stars) (`examples/realworld_benchmarks/`)**: Evaluated Anode against 10 famous, unmodified production Go backend codebases: `croc` (~40.9k⭐), `glance` (~38.1k⭐), `1Panel` (~37.4k⭐), `restic` (~37.1k⭐), `filebrowser` (~35.9k⭐), `ntfy` (~35.5k⭐), `netbird` (~30.8k⭐), `wttr.in` (~30.7k⭐), `cloudreve` (~28.9k⭐), and `navidrome` (~24.6k⭐). Verified multi-dialect DB driver resolution, Gin/Chi/Mux routing discovery, and automated systemd + Caddy deployment synthesis.
+  - **Real-World OSS Benchmarks (`examples/realworld_benchmarks/`)**: Evaluated Anode against 10 famous, unmodified production Go backend codebases: `croc`, `glance`, `1Panel`, `restic`, `filebrowser`, `ntfy`, `netbird`, `wttr.in`, `cloudreve`, and `navidrome`. Verified multi-dialect DB driver resolution, Gin/Chi/Mux routing discovery, and automated systemd + Caddy deployment synthesis.
+- **Docker-Style CLI Experience (`cmd/anode`)**:
+  - Docker-style synopsis: `Usage: anode [OPTIONS] COMMAND [ARG...]`.
+  - Added `anode run` drop-in alias for `deploy`.
+  - Added `anode catalog` management command to inspect stateful infrastructure drivers and local project overrides.
+  - Context-aware `--help` / `-h` screens across all subcommands.
 - **Pluggable Infrastructure Catalog & Security Matrix (`internal/catalog`)**:
   - Declarative service catalog (`defaults.yaml`) with 28 out-of-the-box drivers (PostgreSQL, MySQL, MariaDB, CockroachDB, TimescaleDB, Redis, Valkey, KeyDB, Dragonfly, Memcached, Kafka/Redpanda, RabbitMQ, NATS, ClickHouse, MongoDB, ScyllaDB, Cassandra, Elasticsearch, OpenSearch, Meilisearch, Qdrant, Chroma, Milvus, Weaviate, MinIO, Temporal).
   - Version matrix pinning (e.g. Postgres 14/15/16/17, MySQL 8.0/8.4, Redis 6/7) with intelligent fallback resolution.

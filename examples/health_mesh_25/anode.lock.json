@@ -286,17 +286,17 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-staff",
-          "protocol": "redis",
-          "inject_env": "STAFF_REDIS_ADDR",
-          "provenance": "services/auth_sso/main.go:21"
-        },
-        {
           "service_ref": "patient_registry",
           "protocol": "http",
           "interface": "/v1/patients/query",
           "inject_env": "PATIENTS_SERVICE_URL",
           "provenance": "services/auth_sso/main.go:27"
+        },
+        {
+          "resource_ref": "redis-staff",
+          "protocol": "redis",
+          "inject_env": "STAFF_REDIS_ADDR",
+          "provenance": "services/auth_sso/main.go:21"
         }
       ],
       "secrets": [
@@ -720,6 +720,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "pharmacy_inventory",
+          "protocol": "http",
+          "interface": "/v1/pharmacy/check-stock",
+          "inject_env": "PHARMACY_INVENTORY_URL",
+          "provenance": "services/prescriptions/main.go:24"
+        },
+        {
           "resource_ref": "db-prescriptions-cockroach",
           "protocol": "cockroachdb",
           "inject_env": "PRESCRIPTIONS_COCKROACH_URL",
@@ -727,13 +734,6 @@
             "PRESCRIPTIONS_COCKROACH_URL"
           ],
           "provenance": "services/prescriptions/main.go:19"
-        },
-        {
-          "service_ref": "pharmacy_inventory",
-          "protocol": "http",
-          "interface": "/v1/pharmacy/check-stock",
-          "inject_env": "PHARMACY_INVENTORY_URL",
-          "provenance": "services/prescriptions/main.go:24"
         }
       ],
       "secrets": []

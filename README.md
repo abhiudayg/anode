@@ -214,10 +214,11 @@ Anode provides automated provisioning scripts for spinning up and configuring te
 
 | Command | Description |
 | :--- | :--- |
-| `anode inspect [dir]` | Compiles workspace SSA, executes reachability pruning, and writes `anode.lock.json`. |
-| `anode dev [dir]` | Allocates free ports, provisions local DBs, runs Goose migrations, and supervises processes. |
-| `anode deploy <user@host> [dir]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
-| `anode deploy <user@host> --dry-run` | Synthesizes and validates deployment units and Caddyfile without requiring live SSH. |
+| `anode inspect [PATH]` | Compiles workspace SSA, executes reachability pruning, and writes `anode.lock.json`. |
+| `anode dev [PATH]` | Allocates free loopback ports, provisions local DBs, runs migrations, and supervises processes. |
+| `anode deploy TARGET [PATH]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
+| `anode run TARGET [PATH]` | Drop-in alias for `anode deploy` (Docker CLI parity). |
+| `anode catalog [PATH]` | Inspects 28+ built-in stateful drivers and merges repo-level overrides (`anode.catalog.yaml`). |
 | `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
 | `anode version` | Displays the current Anode release version. |
 
@@ -234,7 +235,7 @@ Real-world architectures used to stress-test Anode are maintained in [`examples/
 * [**`examples/fintech_core_20`**](examples/fintech_core_20/README.md) — **20-microservice neo-banking & trading engine** with modular package separation (`config` -> `repo` -> `handler`), Kafka order book matching, TimescaleDB double-entry ledger, and ScyllaDB payments.
 * [**`examples/health_mesh_25`**](examples/health_mesh_25/README.md) — **25-microservice HIPAA hospital & telehealth ecosystem** with FHIR document stores, WebRTC signaling, gRPC, and medical billing claims.
 * [**`examples/omni_mesh_32`**](examples/omni_mesh_32/README.md) — **32-microservice hyper-scale enterprise benchmark** combining 14 infrastructure backing stores (`postgres`, `clickhouse`, `scylladb`, `mongodb`, `mariadb`, `timescaledb`, `cockroachdb`, `rabbitmq`, `kafka`, `minio`, `temporal`, `qdrant`, `valkey`, `memcached`), gRPC contracts, and zero-trust egress policies.
-* [**`examples/realworld_benchmarks`**](examples/realworld_benchmarks/README.md) — **10 Famous Open-Source Go Backend Applications (20K–41K Stars)**: Real-world evaluation across `croc` (~40.9k⭐), `glance` (~38.1k⭐), `1Panel` (~37.4k⭐), `restic` (~37.1k⭐), `filebrowser` (~35.9k⭐), `ntfy` (~35.5k⭐), `netbird` (~30.8k⭐), `wttr.in` (~30.7k⭐), `cloudreve` (~28.9k⭐), and `navidrome` (~24.6k⭐). Demonstrates zero-code-change architecture discovery, multi-dialect DB mapping, and automated deployment synthesis.
+* [**`examples/realworld_benchmarks`**](examples/realworld_benchmarks/README.md) — **10 Open-Source Go Backend Applications**: Real-world evaluation across `croc`, `glance`, `1Panel`, `restic`, `filebrowser`, `ntfy`, `netbird`, `wttr.in`, `cloudreve`, and `navidrome`. Demonstrates zero-code-change architecture discovery, multi-dialect DB mapping, and automated deployment synthesis.
 
 ---
 
@@ -246,26 +247,26 @@ Anode compiles architecture directly from source without heuristics or runtime i
 
 ### Measured Empirical Scaling Profile
 
-Below are the empirically measured timings across synthetic enterprise topologies and 10 production open-source Go backend applications (20K–41K GitHub stars):
+Below are the empirically measured timings across synthetic enterprise topologies and 10 production open-source Go backend applications:
 
-| Benchmark Suite | Services | DBs / Stores | `go list` AST Load | SSA Build | VTA CallGraph | **Anode SSA Sweep** | **Total CLI Wall-Clock** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **`sample-shop`** *(Baseline)* | 2 | 2 | 460 ms | 182 ms | 367 ms | **62.2 ms** | **1.07s** |
-| **`hyper_mesh_12`** | 12 | 7 | 615 ms | 200 ms | 825 ms | **268.8 ms** | **1.91s** |
-| **`fintech_core_20`** | 20 | 22 | 615 ms | 213 ms | 820 ms | **548.8 ms** | **2.20s** |
-| **`health_mesh_25`** | 25 | 26 | 680 ms | 249 ms | 804 ms | **642.6 ms** | **2.38s** |
-| **`omni_mesh_32`** | 32 | 35 | 653 ms | 205 ms | 795 ms | **799.0 ms** | **2.45s** |
-| **`glance`** (~38.1k⭐) | 1 | 0 | 1,041 ms | 410 ms | 1,017 ms | **40.4 ms** | **2.51s** |
-| **`filebrowser`** (~35.9k⭐) | 1 | 1 | 1,103 ms | 540 ms | 1,412 ms | **66.7 ms** | **3.12s** |
-| **`wttr.in`** (~30.7k⭐) | 1 | 1 | 881 ms | 290 ms | 814 ms | **78.7 ms** | **2.06s** |
-| **`navidrome`** (~24.6k⭐) | 1 | 1 | 1,837 ms | 633 ms | 2,306 ms | **125.1 ms** | **4.90s** |
-| **`croc`** (~40.9k⭐) | 4 | 0 | 1,011 ms | 412 ms | 1,293 ms | **140.6 ms** | **2.86s** |
-| **`cloudreve`** (~28.9k⭐) | 1 | 1 | 2,473 ms | 1,233 ms | 3,745 ms | **152.5 ms** | **7.60s** |
-| **`restic`** (~37.1k⭐) | 3 | 0 | 1,583 ms | 624 ms | 6,210 ms | **134.1 ms** | **8.55s** |
-| **`ntfy`** (~35.5k⭐) | 7 | 2 | 1,531 ms | 520 ms | 6,638 ms | **346.1 ms** | **9.03s** |
-| **`netbird`** (~30.8k⭐) | 14 | 5 | 3,210 ms | 1,842 ms | 13,840 ms | **649.4 ms** | **19.54s** |
+| Benchmark Target | Services | DBs / Stores | `go list` AST Load | SSA Build | VTA CallGraph | **Anode SSA Sweep** |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| [**`sample-shop`**](examples/sample-shop/) *(Baseline)* | 2 | 2 | 460 ms | 182 ms | 367 ms | **62.2 ms** |
+| [**`hyper_mesh_12`**](examples/hyper_mesh_12/) | 12 | 7 | 615 ms | 200 ms | 825 ms | **268.8 ms** |
+| [**`fintech_core_20`**](examples/fintech_core_20/) | 20 | 22 | 615 ms | 213 ms | 820 ms | **548.8 ms** |
+| [**`health_mesh_25`**](examples/health_mesh_25/) | 25 | 26 | 680 ms | 249 ms | 804 ms | **642.6 ms** |
+| [**`omni_mesh_32`**](examples/omni_mesh_32/) | 32 | 35 | 653 ms | 205 ms | 795 ms | **799.0 ms** |
+| [**`glance`**](https://github.com/glanceapp/glance) | 1 | 0 | 1,041 ms | 410 ms | 1,017 ms | **40.4 ms** |
+| [**`filebrowser`**](https://github.com/filebrowser/filebrowser) | 1 | 1 | 1,103 ms | 540 ms | 1,412 ms | **66.7 ms** |
+| [**`wttr.in`**](https://github.com/chubin/wttr.in) | 1 | 1 | 881 ms | 290 ms | 814 ms | **78.7 ms** |
+| [**`navidrome`**](https://github.com/navidrome/navidrome) | 1 | 1 | 1,837 ms | 633 ms | 2,306 ms | **125.1 ms** |
+| [**`croc`**](https://github.com/schollz/croc) | 4 | 0 | 1,011 ms | 412 ms | 1,293 ms | **140.6 ms** |
+| [**`cloudreve`**](https://github.com/cloudreve/cloudreve) | 1 | 1 | 2,473 ms | 1,233 ms | 3,745 ms | **152.5 ms** |
+| [**`restic`**](https://github.com/restic/restic) | 3 | 0 | 1,583 ms | 624 ms | 6,210 ms | **134.1 ms** |
+| [**`ntfy`**](https://github.com/binwiederhier/ntfy) | 7 | 2 | 1,531 ms | 520 ms | 6,638 ms | **346.1 ms** |
+| [**`netbird`**](https://github.com/netbirdio/netbird) | 14 | 5 | 3,210 ms | 1,842 ms | 13,840 ms | **649.4 ms** |
 
-> **Key Takeaway:** Anode's actual topology sweep executes in **sub-100ms** on standard backends and under **800ms** on large 32-service enterprise monorepos. Full end-to-end lockfile extraction finishes in **~1.0s to 2.5s** before a developer even switches terminal tabs.
+> **Key Takeaway:** Anode's actual topology sweep executes in **sub-100ms** on standard backends and under **800ms** on large 32-service enterprise monorepos.
 
 ---
 
