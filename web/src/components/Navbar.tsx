@@ -60,18 +60,12 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-3.5 xl:gap-6">
+          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
             <Link
               href="/#topology"
               className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
-              <span className="hidden xl:inline">Proof-of-</span>Topology
-            </Link>
-            <Link
-              href="/#pillars"
-              className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
-            >
-              <span className="hidden xl:inline">The 4 </span>Pillars
+              Architecture
             </Link>
 
             {/* Guides Dropdown */}
@@ -376,10 +370,11 @@ export function Navbar() {
               href="https://github.com/abhiudayg/anode"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-neutral-300 hover:text-white text-xs font-mono-code transition-all whitespace-nowrap shrink-0"
+              className="hidden sm:flex items-center gap-2 px-2.5 xl:px-3 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/[0.15] text-neutral-300 hover:text-white text-xs font-mono-code transition-all whitespace-nowrap shrink-0"
+              title="GitHub Repository"
             >
               <GithubIcon className="w-3.5 h-3.5 shrink-0" />
-              <span>GitHub</span>
+              <span className="hidden xl:inline">GitHub</span>
             </a>
 
             <Link

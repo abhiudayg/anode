@@ -9,7 +9,7 @@
 ### The Docker Compose & Kubernetes Alternative for Go Backends. Deploy unmodified Go to any Linux VPS without Dockerfiles, container daemons, or YAML drift.
 
 [![Website: anode.abhiudayg.dev](https://img.shields.io/badge/website-anode.abhiudayg.dev-00ADD8.svg?style=flat&logo=safari)](https://anode.abhiudayg.dev)
-[![Go Version](https://img.shields.io/badge/go-1.22+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
+[![Go Version](https://img.shields.io/badge/go-1.27+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Verification: agstack](https://img.shields.io/badge/verified-agstack%20passed-success.svg)](#verification--quality-guarantees)
 [![Architecture: Proof--of--Topology](https://img.shields.io/badge/architecture-4--Pillar%20Topology-purple.svg)](https://anode.abhiudayg.dev/docs#overview)
@@ -229,7 +229,7 @@ Anode provides automated provisioning scripts for spinning up and configuring te
 
 Real-world architectures used to stress-test Anode are maintained in [`examples/`](examples/):
 
-* [**`examples/sample-shop`**](examples/sample-shop/README.md) — 2-tier baseline microservice architecture with Go 1.22+ routing and Postgres.
+* [**`examples/sample-shop`**](examples/sample-shop/README.md) — 2-tier baseline microservice architecture with Go 1.27+ routing and Postgres.
 * [**`examples/complex_ecommerce`**](examples/complex_ecommerce/README.md) — 3 services with composite DSN unpacking, pre-traffic migrations, and Stripe/SendGrid egress.
 * [**`examples/benchmark_app`**](examples/benchmark_app/README.md) — Rapid Type Analysis (RTA) dead-code reachability pruning and sub-150ms throughput.
 * [**`examples/hyper_mesh_12`**](examples/hyper_mesh_12/README.md) — **12-microservice flagship stress test** with mixed REST, gRPC stubs, Redis caching, and 3-hop struct pointer indirections.

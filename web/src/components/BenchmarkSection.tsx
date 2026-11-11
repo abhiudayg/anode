@@ -352,7 +352,7 @@ export function BenchmarkSection() {
             <div className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
               <span>
-                <strong>Methodology:</strong> Measured with Go 1.22+ SSA and Variable Type Analysis (VTA). Anode SSA Sweep represents pure in-memory reachability and sink inspection across whole-program call graphs.
+                <strong>Methodology:</strong> Measured with Go 1.27+ SSA and Variable Type Analysis (VTA). Anode SSA Sweep represents pure in-memory reachability and sink inspection across whole-program call graphs.
               </span>
             </div>
             <Link

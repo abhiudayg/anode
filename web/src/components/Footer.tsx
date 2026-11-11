@@ -195,12 +195,13 @@ export function Footer() {
         </div>
 
         {/* Sub-Footer */}
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-500 font-mono-code">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-400 font-mono-code">
           <div>
             © 2026 Anode. Open source under Apache 2.0 license.
           </div>
-          <div>
-            Compiled with Go 1.22+ SSA • Bare-Metal Linux Native
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            <span>Compiled with Go 1.27+ SSA • Bare-Metal Linux Native</span>
           </div>
         </div>
       </div>

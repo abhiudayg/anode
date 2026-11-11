@@ -148,7 +148,7 @@ export default function DeployGoWithoutDockerGuide() {
               <span>•</span>
               <span>Read time: 3 min</span>
               <span>•</span>
-              <span className="text-cyan-400 font-medium">Verified for Go 1.22+</span>
+              <span className="text-cyan-400 font-medium">Verified for Go 1.27+</span>
             </div>
           </header>
 

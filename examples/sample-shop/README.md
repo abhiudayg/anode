@@ -69,7 +69,7 @@ Anode analyzed the Go source code via Go SSA (Static Single Assignment) form and
    - `db-orders`: Detected as Postgres from `sql.Open("postgres", ...)` in `orders/main.go:40`.
    - `db-payments-db`: Detected as Postgres from `sql.Open("postgres", ...)` in `payments/main.go:31`.
 3. **Secret Isolation**: `STRIPE_SECRET_KEY` was accurately marked as a secret (never treated as plain config or injected with default dummy credentials).
-4. **Ingress Route Mapping**: Extracted Go 1.22+ `http.NewServeMux` routing patterns (`POST /v1/orders`, `POST /v1/charges`).
+4. **Ingress Route Mapping**: Extracted Go 1.27+ `http.NewServeMux` routing patterns (`POST /v1/orders`, `POST /v1/charges`).
 
 ---
 

@@ -599,7 +599,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
                     <h4 className="text-xs font-bold text-cyan-400 font-mono-code">1. Ingress Network Listeners</h4>
                     <p className="text-xs text-neutral-300">
-                      Anode inspects calls to <code className="text-neutral-200">net/http.ListenAndServe</code>, <code className="text-neutral-200">net.Listen</code>, and popular routers (<code className="text-neutral-200">chi</code>, <code className="text-neutral-200">gin</code>, <code className="text-neutral-200">echo</code>, stdlib 1.22+ <code className="text-neutral-200">http.ServeMux</code>).
+                      Anode inspects calls to <code className="text-neutral-200">net/http.ListenAndServe</code>, <code className="text-neutral-200">net.Listen</code>, and popular routers (<code className="text-neutral-200">chi</code>, <code className="text-neutral-200">gin</code>, <code className="text-neutral-200">echo</code>, stdlib 1.27+ <code className="text-neutral-200">http.ServeMux</code>).
                     </p>
                     <pre className="p-3 rounded-lg bg-black/50 border border-white/[0.04] text-[11px] font-mono-code text-cyan-300">
                       <code>{`// Automatically deduces listen port env and route endpoints
@@ -968,7 +968,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   Empirical Numbers & Verification Analysis
                 </h1>
                 <p className="text-sm text-neutral-300">
-                  Every performance claim in Anode is benchmarked and verified under Linux kernel 6.x and Go 1.22+. Here is the rigorous engineering methodology behind each number.
+                  Every performance claim in Anode is benchmarked and verified under Linux kernel 6.x and Go 1.27+. Here is the rigorous engineering methodology behind each number.
                 </p>
 
                 {/* 8ms vs 1420ms */}
@@ -1017,7 +1017,7 @@ terraform -chdir=infra/terraform apply`}</code>
                     <span className="text-xs font-mono-code text-cyan-400">Compiler Speed</span>
                   </div>
                   <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Measurement Method:</strong> Whole-program reachability traversal and sink extraction (<code className="text-neutral-300">vta.CallGraph</code> + backward taint analysis) evaluated with Go 1.22+ SSA.
+                    <strong>Measurement Method:</strong> Whole-program reachability traversal and sink extraction (<code className="text-neutral-300">vta.CallGraph</code> + backward taint analysis) evaluated with Go 1.27+ SSA.
                   </p>
                   <div className="text-xs text-neutral-300 space-y-1 pl-3 border-l-2 border-yellow-500/40">
                     <p>• <strong>Pure In-Memory SSA Sweep:</strong> Variable Type Analysis computes reachability in O(N) linear time. The pure sweep runs in <strong>18ms to 62ms</strong> on single-service backends, <strong>268ms</strong> on 12 microservices, and <strong>798ms</strong> on a 32-microservice enterprise monorepo.</p>
