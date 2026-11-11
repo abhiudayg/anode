@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export const viewport: Viewport = {
   themeColor: "#08090b",
@@ -192,6 +193,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-[#08090b] text-[#f3f4f6] min-h-screen">
+        <CommandPalette />
         <SmoothScroll>
           {children}
         </SmoothScroll>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap, Server, Database, Wrench } from "lucide-react";
+import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap, Server, Database, Wrench, Search, Cpu } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Navbar() {
@@ -268,6 +268,27 @@ export function Navbar() {
                 <div className="absolute top-full -left-6 w-80 pt-2 z-50">
                   <div className="rounded-2xl border border-white/[0.1] bg-[#0c0e14]/95 backdrop-blur-2xl p-2 shadow-2xl shadow-black/80 space-y-1">
                     <Link
+                      href="/tools/ssa-visualizer"
+                      onClick={() => setToolsOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Cpu className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors flex items-center gap-1.5">
+                          <span>SSA Call Graph Visualizer</span>
+                          <span className="text-[9px] font-mono-code px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-300">
+                            New Mini-Tool
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                          Paste Go code to live-synthesize contracts &amp; systemd
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
                       href="/tools/compose-to-systemd"
                       onClick={() => setToolsOpen(false)}
                       className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
@@ -333,7 +354,24 @@ export function Navbar() {
           </nav>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Search Cmd + K Button */}
+            <button
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("open-command-palette"));
+                }
+              }}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-white/[0.03] hover:bg-white/[0.08] hover:border-cyan-500/30 text-neutral-400 hover:text-white text-xs font-mono-code transition-all"
+              title="Search documentation, guides, and tools (Cmd + K)"
+            >
+              <Search className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden md:inline">Search</span>
+              <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded bg-white/[0.06] border border-white/[0.1] text-[10px] text-neutral-400">
+                ⌘K
+              </kbd>
+            </button>
+
             <a
               href="https://github.com/abhiudayg/anode"
               target="_blank"
@@ -472,6 +510,14 @@ export function Navbar() {
                 <span>Free Developer Tools</span>
                 <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300">Free</span>
               </div>
+              <Link
+                href="/tools/ssa-visualizer"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-cyan-300 hover:bg-white/[0.04]"
+              >
+                <Cpu className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Live SSA Call Graph Visualizer</span>
+              </Link>
               <Link
                 href="/tools/compose-to-systemd"
                 onClick={() => setMobileMenuOpen(false)}

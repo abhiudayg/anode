@@ -30,6 +30,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
     {
+      url: `${baseUrl}/tools/ssa-visualizer`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.9,
+    },
+    {
       url: `${baseUrl}/deploy/hetzner-vps`,
       lastModified: now,
       changeFrequency: "weekly",
@@ -103,6 +109,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
     {
       url: `${baseUrl}/blog/stress-testing-10-famous-go-backends`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/zero-downtime-rolling-restarts-linux-sockets`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
+      url: `${baseUrl}/blog/dynamicuser-sandboxing-without-root-daemons`,
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.8,

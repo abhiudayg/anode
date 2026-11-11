@@ -13,6 +13,7 @@
 - [Deploy Fiber Without Docker](https://anode.abhiudayg.dev/guides/deploy-fiber-without-docker): Run high-throughput Go Fiber apps on systemd with 8ms cold boot.
 - [Hetzner VPS Guide](https://anode.abhiudayg.dev/deploy/hetzner-vps): How to deploy Go backends to Hetzner Cloud with 8ms cold starts.
 - [DigitalOcean Droplet Guide](https://anode.abhiudayg.dev/deploy/digitalocean-droplet): How to run Go binaries on DigitalOcean without Docker.
+- [Live SSA Call Graph Visualizer](https://anode.abhiudayg.dev/tools/ssa-visualizer): Free interactive browser AST simulator to live-synthesize contracts and systemd units.
 - [Compose to Systemd Tool](https://anode.abhiudayg.dev/tools/compose-to-systemd): Free online client-side Docker Compose to systemd converter.
 - [Architecture Deep Dive](https://anode.abhiudayg.dev/docs#overview): How Go Single Static Assignment (SSA) and Variable Type Analysis (VTA) synthesize infrastructure topology.
 - [The 4 Pillars](https://anode.abhiudayg.dev/docs#pillars): Zero-declaration synthesis, ephemeral loopbacks, bare-metal systemd isolation, and deterministic lockfile.
@@ -25,6 +26,8 @@
 - [Inside the SSA Compiler Core](https://anode.abhiudayg.dev/blog/inside-the-ssa-compiler-core): How Variable Type Analysis and backward taint tracking infer infrastructure topology.
 - [Ephemeral Loopback Proxies & Zero Port Collisions](https://anode.abhiudayg.dev/blog/ephemeral-loopback-proxies-zero-port-collisions): Utilizing the 127.0.0.0/8 loopback subnet and socket splicing.
 - [Stress-Testing 10 Real-World Go Backends](https://anode.abhiudayg.dev/blog/stress-testing-10-famous-go-backends): Benchmarks across croc, glance, filebrowser, restic, and a 32-service mesh.
+- [Zero-Downtime Rolling Restarts](https://anode.abhiudayg.dev/blog/zero-downtime-rolling-restarts-linux-sockets): Socket handover and SO_REUSEPORT without dropped connections.
+- [DynamicUser Sandboxing](https://anode.abhiudayg.dev/blog/dynamicuser-sandboxing-without-root-daemons): Hardening bare-metal Go backends without root daemons.
 - [glance Benchmark](https://github.com/glanceapp/glance): Single-service dashboard analysis and loopback allocation.
 - [filebrowser Benchmark](https://github.com/filebrowser/filebrowser): Multi-store static topology extraction.
 - [restic Benchmark](https://github.com/restic/restic): Large Go codebase AST reachability performance.

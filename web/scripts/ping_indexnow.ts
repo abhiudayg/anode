@@ -14,12 +14,15 @@ const URL_LIST = [
   `https://${HOST}/deploy/hetzner-vps`,
   `https://${HOST}/deploy/digitalocean-droplet`,
   `https://${HOST}/tools/compose-to-systemd`,
+  `https://${HOST}/tools/ssa-visualizer`,
   `https://${HOST}/docs`,
   `https://${HOST}/blog`,
   `https://${HOST}/blog/why-we-ditched-docker-for-go-backends`,
   `https://${HOST}/blog/inside-the-ssa-compiler-core`,
   `https://${HOST}/blog/ephemeral-loopback-proxies-zero-port-collisions`,
   `https://${HOST}/blog/stress-testing-10-famous-go-backends`,
+  `https://${HOST}/blog/zero-downtime-rolling-restarts-linux-sockets`,
+  `https://${HOST}/blog/dynamicuser-sandboxing-without-root-daemons`,
   `https://${HOST}/llms.txt`,
   `https://${HOST}/llms-full.txt`
 ];

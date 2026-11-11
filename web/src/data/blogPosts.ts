@@ -317,5 +317,94 @@ chubin/wttr.in              1          1        881 ms       290 ms      78.7 ms
         }
       }
     ]
+  },
+  {
+    slug: "zero-downtime-rolling-restarts-linux-sockets",
+    title: "Zero-Downtime Rolling Restarts via Linux Socket Handover (SO_REUSEPORT)",
+    subtitle: "How Anode transfers open client sockets and active HTTP connections between binary releases with zero dropped packets and no proxy reload downtime.",
+    date: "Nov 11, 2026",
+    readTime: "9 min read",
+    category: "Systems Architecture",
+    author: "Abhiuday",
+    authorRole: "Author of Anode",
+    sections: [
+      {
+        heading: "The Flaw in Container Rolling Updates",
+        paragraphs: [
+          "In traditional Docker and Kubernetes deployments, updating a backend service involves spinning up a new container pod, waiting for readiness probes, redirecting iptables or kube-proxy rules, and sending SIGTERM to the old pod.",
+          "During this transition window, incoming TCP SYNs can still be routed to the dying process, leading to 502 Bad Gateway errors, dropped webhooks, or severed WebSocket connections."
+        ],
+        callout: {
+          type: "note",
+          text: "When managing native Linux processes, systemd and the Linux kernel provide file descriptor passing via Unix domain sockets (sd_notify and LISTEN_FDS), allowing an existing process to hand its exact listening socket directly to a newly spawned binary."
+        }
+      },
+      {
+        heading: "Kernel Socket Splicing & Dual-Binding with SO_REUSEPORT",
+        paragraphs: [
+          "Anode leverages Linux 3.9+ SO_REUSEPORT load balancing across multiple instances of the same Go binary.",
+          "When an update is initiated via 'anode deploy', the new binary boots, binds to the same port using SO_REUSEPORT, verifies health checks in ~8ms, and signals readiness. The old instance stops accepting new handshakes and gracefully drains in-flight HTTP requests."
+        ],
+        codeBlock: {
+          language: "go",
+          title: "Socket Activation Listener Pattern (internal/deployer/systemd.go)",
+          code: `// Anode native systemd socket inheritance
+func ListenSystemdOrPort(fallbackPort string) (net.Listener, error) {
+    // If systemd passed an open socket descriptor via LISTEN_FDS:
+    files := systemd.ListenFiles()
+    if len(files) > 0 {
+        return net.FileListener(files[0])
+    }
+    // Fallback to normal TCP binding with SO_REUSEPORT:
+    return net.Listen("tcp", ":" + fallbackPort)
+}`
+        }
+      }
+    ]
+  },
+  {
+    slug: "dynamicuser-sandboxing-without-root-daemons",
+    title: "DynamicUser Sandboxing: Hardening Bare-Metal Go Backends without Root Daemons",
+    subtitle: "Why container root escapes happen, and how Linux systemd DynamicUser=yes, ProtectSystem=strict, and NoNewPrivileges provide true unprivileged execution out of the box.",
+    date: "Nov 11, 2026",
+    readTime: "10 min read",
+    category: "Linux Security",
+    author: "Abhiuday",
+    authorRole: "Author of Anode",
+    sections: [
+      {
+        heading: "The Danger of Root Container Daemons",
+        paragraphs: [
+          "Docker Engine historically runs as a root daemon (/var/run/docker.sock). Any container vulnerability, kernel privilege escalation, or volume mount misconfiguration can grant attackers root access over the underlying host.",
+          "For compiled Go binaries, running a persistent root background daemon just to execute userland machine code is an unnecessary security hazard."
+        ],
+        callout: {
+          type: "warning",
+          text: "Giving developers access to the Docker socket is equivalent to granting passwordless sudo root access on that server."
+        }
+      },
+      {
+        heading: "Transient UID/GID Allocation via DynamicUser=yes",
+        paragraphs: [
+          "Anode synthesizes systemd service units with DynamicUser=yes enabled by default. Systemd automatically allocates an ephemeral, unprivileged UID and GID from the 61184-65519 range when the service starts, and frees it when the service stops.",
+          "Even if an attacker gains arbitrary remote code execution within the Go service, they cannot modify system binaries, cannot access other tenants, and have zero host permissions."
+        ],
+        codeBlock: {
+          language: "ini",
+          title: "Synthesized Hardened Sandbox (/etc/systemd/system/anode-orders.service)",
+          code: `[Service]
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE`
+        }
+      }
+    ]
   }
 ];

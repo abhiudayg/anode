@@ -18,15 +18,24 @@ import {
   CheckCircle2,
   AlertTriangle,
   ChevronLeft,
+  ChevronRight,
   Share2,
   Bookmark,
-  Check
+  Check,
+  Filter,
+  BookOpen
 } from "lucide-react";
 import { BLOG_POSTS, BlogPost } from "@/data/blogPosts";
+
+const POSTS_PER_PAGE = 3;
 
 export default function BlogPage() {
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  const categories = ["All", ...Array.from(new Set(BLOG_POSTS.map((p) => p.category)))];
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -59,6 +68,16 @@ export default function BlogPage() {
       setTimeout(() => setCopiedLink(false), 2000);
     }
   };
+
+  const filteredPosts =
+    selectedCategory === "All"
+      ? BLOG_POSTS
+      : BLOG_POSTS.filter((p) => p.category === selectedCategory);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPosts.length / POSTS_PER_PAGE));
+  const validCurrentPage = Math.min(currentPage, totalPages);
+  const startIndex = (validCurrentPage - 1) * POSTS_PER_PAGE;
+  const paginatedPosts = filteredPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
 
   return (
     <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
@@ -215,7 +234,7 @@ export default function BlogPage() {
           </article>
         ) : (
           /* Essay Listing View */
-          <div className="space-y-12">
+          <div className="space-y-10">
             <div className="text-center max-w-2xl mx-auto space-y-4">
               <span className="text-xs font-mono-code uppercase tracking-wider text-purple-400 bg-purple-950/60 border border-purple-800/40 px-3 py-1 rounded-full inline-block font-semibold">
                 Engineering &amp; Systems Research
@@ -228,49 +247,155 @@ export default function BlogPage() {
               </p>
             </div>
 
-            <div className="space-y-6">
-              {BLOG_POSTS.map((post) => (
-                <div
-                  key={post.slug}
-                  onClick={() => {
-                    setSelectedSlug(post.slug);
-                    if (typeof window !== "undefined") {
-                      window.history.pushState(null, "", `#${post.slug}`);
-                    }
-                  }}
-                  className="rounded-2xl border border-white/[0.08] bg-[#0c0e14]/90 p-6 sm:p-8 hover:border-cyan-500/40 transition-all duration-300 cursor-pointer group shadow-xl hover:shadow-[0_0_30px_rgba(0,173,216,0.1)]"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-neutral-400 font-mono-code">
-                    <span className="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-800/40 font-semibold">
-                      {post.category}
+            {/* Category Filter Grouping */}
+            <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+              {categories.map((cat) => {
+                const count =
+                  cat === "All"
+                    ? BLOG_POSTS.length
+                    : BLOG_POSTS.filter((p) => p.category === cat).length;
+                const isActive = selectedCategory === cat;
+
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setCurrentPage(1);
+                    }}
+                    className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono-code transition-all ${
+                      isActive
+                        ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_15px_rgba(0,173,216,0.25)] font-semibold"
+                        : "bg-white/[0.03] text-neutral-400 border border-white/[0.08] hover:text-white hover:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span>{cat === "All" ? "All Essays" : cat}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                        isActive
+                          ? "bg-cyan-400/20 text-cyan-200"
+                          : "bg-white/[0.06] text-neutral-500"
+                      }`}
+                    >
+                      {count}
                     </span>
-                    <div className="flex items-center gap-3">
-                      <span>{post.date}</span>
-                      <span>•</span>
-                      <span>{post.readTime}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Posts List */}
+            <div className="space-y-6">
+              {paginatedPosts.length === 0 ? (
+                <div className="text-center py-16 rounded-2xl border border-white/[0.06] bg-[#0c0e14]/50">
+                  <p className="text-sm text-neutral-400">
+                    No essays found in this category.
+                  </p>
+                </div>
+              ) : (
+                paginatedPosts.map((post) => (
+                  <div
+                    key={post.slug}
+                    onClick={() => {
+                      setSelectedSlug(post.slug);
+                      if (typeof window !== "undefined") {
+                        window.history.pushState(null, "", `#${post.slug}`);
+                      }
+                    }}
+                    className="rounded-2xl border border-white/[0.08] bg-[#0c0e14]/90 p-6 sm:p-8 hover:border-cyan-500/40 transition-all duration-300 cursor-pointer group shadow-xl hover:shadow-[0_0_30px_rgba(0,173,216,0.1)]"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-neutral-400 font-mono-code">
+                      <span className="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-800/40 font-semibold">
+                        {post.category}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span>{post.date}</span>
+                        <span>•</span>
+                        <span>{post.readTime}</span>
+                      </div>
+                    </div>
+
+                    <h2 className="text-xl sm:text-2xl font-bold text-white group-hover:text-cyan-300 transition-colors">
+                      {post.title}
+                    </h2>
+
+                    <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
+                      {post.subtitle}
+                    </p>
+
+                    <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between">
+                      <span className="text-xs font-mono-code text-neutral-500">
+                        By {post.author} • {post.authorRole}
+                      </span>
+                      <span className="text-xs font-mono-code text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform font-medium">
+                        <span>Read Architectural Essay</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </span>
                     </div>
                   </div>
-
-                  <h2 className="text-xl sm:text-2xl font-bold text-white group-hover:text-cyan-300 transition-colors">
-                    {post.title}
-                  </h2>
-
-                  <p className="mt-3 text-sm text-neutral-400 leading-relaxed">
-                    {post.subtitle}
-                  </p>
-
-                  <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-                    <span className="text-xs font-mono-code text-neutral-500">
-                      By {post.author} • {post.authorRole}
-                    </span>
-                    <span className="text-xs font-mono-code text-cyan-400 flex items-center gap-1 group-hover:translate-x-1 transition-transform font-medium">
-                      <span>Read Architectural Essay</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </span>
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-white/[0.08]">
+                <div className="text-xs font-mono-code text-neutral-400">
+                  Showing{" "}
+                  <span className="text-white font-medium">
+                    {startIndex + 1}–
+                    {Math.min(startIndex + POSTS_PER_PAGE, filteredPosts.length)}
+                  </span>{" "}
+                  of{" "}
+                  <span className="text-white font-medium">
+                    {filteredPosts.length}
+                  </span>{" "}
+                  technical essays
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    disabled={validCurrentPage <= 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors ${
+                      validCurrentPage <= 1
+                        ? "opacity-40 cursor-not-allowed bg-white/[0.02] text-neutral-500 border border-white/[0.04]"
+                        : "bg-white/[0.04] text-neutral-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.08]"
+                    }`}
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span>Previous</span>
+                  </button>
+
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-xs font-mono-code transition-all ${
+                        validCurrentPage === pageNum
+                          ? "bg-cyan-500 text-black font-bold shadow-md shadow-cyan-500/30"
+                          : "bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-white/[0.08]"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  <button
+                    disabled={validCurrentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors ${
+                      validCurrentPage >= totalPages
+                        ? "opacity-40 cursor-not-allowed bg-white/[0.02] text-neutral-500 border border-white/[0.04]"
+                        : "bg-white/[0.04] text-neutral-300 hover:text-white hover:bg-white/[0.08] border border-white/[0.08]"
+                    }`}
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </main>

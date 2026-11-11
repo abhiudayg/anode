@@ -5,6 +5,7 @@ import (
 	"go/types"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/abhiudayg/anode/internal/iag"
 	"golang.org/x/tools/go/callgraph"
@@ -14,8 +15,16 @@ import (
 	"golang.org/x/tools/go/ssa/ssautil"
 )
 
+type AnalysisStats struct {
+	PackageCount  int
+	FunctionCount int
+	MainFiles     []string
+	Duration      time.Duration
+}
+
 type Loader struct {
 	rootDir string
+	stats   AnalysisStats
 }
 
 func NewLoader(rootDir string) *Loader {
@@ -28,6 +37,7 @@ func NewLoader(rootDir string) *Loader {
 
 // LoadAndAnalyze loads Go packages, builds SSA, runs reachability, and extracts the IAG
 func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
+	start := time.Now()
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
 			packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes |
@@ -58,10 +68,15 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 	cg := vta.CallGraph(allFuncs, nil)
 
 	var mainFns []*ssa.Function
+	var mainFiles []string
 	for _, spkg := range ssaPkgs {
 		if spkg != nil && spkg.Pkg.Name() == "main" {
 			if mainFn := spkg.Func("main"); mainFn != nil {
 				mainFns = append(mainFns, mainFn)
+				if mainFn.Pos().IsValid() {
+					pos := prog.Fset.Position(mainFn.Pos())
+					mainFiles = append(mainFiles, filepath.Base(pos.Filename))
+				}
 			}
 		}
 	}
@@ -105,7 +120,18 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 	// Link cross-service topologies and typed contracts (PILLAR 2)
 	l.linkServices(lockfile)
 
+	l.stats = AnalysisStats{
+		PackageCount:  len(pkgs),
+		FunctionCount: len(allFuncs),
+		MainFiles:     mainFiles,
+		Duration:      time.Since(start),
+	}
+
 	return lockfile, nil
+}
+
+func (l *Loader) Stats() AnalysisStats {
+	return l.stats
 }
 
 func extractServiceName(mainFn *ssa.Function) string {
