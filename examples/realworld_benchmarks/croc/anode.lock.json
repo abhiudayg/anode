@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0",
+  "resources": {},
+  "services": {
+    "croc": {
+      "name": "croc",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterNetcheckServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/net/netcheck/netcheck.go:1156"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "internal/update/update.go:47"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterRegionServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/wgengine/magicsock/derp.go:399"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "UNRAID_CSRF_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/client/web/web.go:905"
+        },
+        {
+          "env_var": "CROC_STORE_TOKEN",
+          "provenance": "src/cli/cli.go:984"
+        },
+        {
+          "env_var": "CROC_SECRET",
+          "provenance": "src/cli/cli.go:1098"
+        },
+        {
+          "env_var": "CROC_SECRET",
+          "provenance": "src/cli/cli.go:1097"
+        },
+        {
+          "env_var": "CROC_SECRET",
+          "provenance": "src/cli/cli.go:1101"
+        },
+        {
+          "env_var": "SSLKEYLOGFILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/net/tlsdial/tlsdial.go:94"
+        },
+        {
+          "env_var": "SUPERVISOR_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/hostinfo/hostinfo.go:420"
+        },
+        {
+          "env_var": "HASSIO_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/hostinfo/hostinfo.go:420"
+        },
+        {
+          "env_var": "CROC_SECRET",
+          "provenance": "src/cli/cli.go:754"
+        },
+        {
+          "env_var": "CROC_SECRET",
+          "provenance": "src/cli/ssh.go:51"
+        },
+        {
+          "env_var": "CROC_SECRET",
+          "provenance": "src/cli/ssh.go:26"
+        }
+      ]
+    },
+    "croc-update": {
+      "name": "croc-update",
+      "entrypoint": "./cmd/croc-update",
+      "ingress": [],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "internal/update/update.go:47"
+        }
+      ],
+      "secrets": []
+    },
+    "croc-web": {
+      "name": "croc-web",
+      "entrypoint": "./cmd/croc-web",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/healthz",
+            "/ws",
+            "/config.js",
+            "/ads.txt"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": []
+    },
+    "install": {
+      "name": "install",
+      "entrypoint": "./src/install",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "croc",
+      "target_host": "https://unused/machine/tka/bootstrap",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "croc",
+      "target_host": "https:///derp/latency-check",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "croc",
+      "target_host": "https:///derp/probe",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "croc",
+      "target_host": "https:///bootstrap-dns?q=",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "croc",
+      "target_host": "https://unused/machine/tka/sync/send",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "croc",
+      "target_host": "https://unused/machine/tka/sync/offer",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterNetcheckServer\" in service \"croc\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/net/netcheck/netcheck.go:1156",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"croc\" has no matching server registration in this workspace",
+      "provenance": "internal/update/update.go:47",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterRegionServer\" in service \"croc\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/tailscale.com@v1.104.5/wgengine/magicsock/derp.go:399",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"croc-update\" has no matching server registration in this workspace",
+      "provenance": "internal/update/update.go:47",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

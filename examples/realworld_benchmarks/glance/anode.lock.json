@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.0",
+  "resources": {},
+  "services": {
+    "glance": {
+      "name": "glance",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/",
+            "GET /{$}",
+            "GET /{page}",
+            "GET /api/pages/{page}/content/{$}",
+            "POST /api/set-theme/{key}",
+            "/api/widgets/{widget}/{path...}",
+            "GET /api/healthz",
+            "GET /login",
+            "GET /logout",
+            "POST /api/authenticate",
+            "GET /manifest.json"
+          ]
+        }
+      ],
+      "bindings": [],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "glance",
+      "target_host": "https://www.reddit.com/",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "glance",
+      "target_host": "https://www.reddit.com/?",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "glance",
+      "target_host": "https://gql.twitch.tv/gql",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "glance",
+      "target_host": "https://www.reddit.com/api/v1/access_token",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "glance",
+      "target_host": "https://api.open-meteo.com/v1/forecast?",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ]
+}

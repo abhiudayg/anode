@@ -1,0 +1,39 @@
+{
+  "version": "1.0",
+  "services": {
+    "relay": {
+      "command": "--debug relay",
+      "publishedPorts": [
+        {
+          "publishedAs": 9021,
+          "fromContainerPort": 65535,
+          "protocol": "tcp"
+        }
+      ],
+      "health": {
+        "command": "P=\"${CROC_RELAY_PORTS:-${CROC_PORTS:-9009,9010,9011,9012,9013,9014,9015,9016,9017}}\"; IFS=,; set -- $P; for p in \"$@\"; do nc -z -w 3 127.0.0.1 \"$p\" || exit 1; done"
+      },
+      "extraSwarmParams": "--constraint node.labels.disco-role==main --publish published=9009,target=9009,protocol=tcp,mode=host --publish published=9010,target=9010,protocol=tcp,mode=host --publish published=9011,target=9011,protocol=tcp,mode=host --publish published=9012,target=9012,protocol=tcp,mode=host --publish published=9013,target=9013,protocol=tcp,mode=host --publish published=9014,target=9014,protocol=tcp,mode=host --publish published=9015,target=9015,protocol=tcp,mode=host --publish published=9016,target=9016,protocol=tcp,mode=host --publish published=9017,target=9017,protocol=tcp,mode=host"
+    },
+    "web": {
+      "port": 8080,
+      "command": "web --debug --bind 0.0.0.0:8080 --store-dir /www/croc/storage",
+      "publishedPorts": [
+        {
+          "publishedAs": 9020,
+          "fromContainerPort": 65535,
+          "protocol": "tcp"
+        }
+      ],
+      "volumes": [
+        {
+          "name": "croc-store",
+          "destinationPath": "/www/croc/storage"
+        }
+      ],
+      "health": {
+        "command": "wget -qO- http://127.0.0.1:8080/healthz >/dev/null"
+      }
+    }
+  }
+}

@@ -63,6 +63,18 @@ The Topology Compiler analyzes plain Go AST/SSA structures across monorepos with
    - Expected: Output locks 32 services, 14 stateful database/cache/queue kinds, gRPC contracts, and 5 zero-trust egress rules with exit code `0`.
    - Impact: Establishes enterprise-scale production readiness for large-scale microservice deployments.
 
+6. **realworld-glance-inspection** (entries 6–6) — verifies 38K-star Glance dashboard aggregator.
+   - Request: `CMD anode inspect ./testdata/realworld_benchmarks/glance`
+   - Why: Proves zero-modification extraction of Go 1.22+ pattern mux routes and external egress rules (Twitch, Reddit, Open-Meteo).
+   - Expected: Output locks `glance` service, HTTP routes, and egress rules with exit code `0`.
+   - Impact: Confirms production capability against large-scale popular open-source Go repositories.
+
+7. **realworld-filebrowser-inspection** (entries 7–7) — verifies 35K-star FileBrowser web file manager.
+   - Request: `CMD anode inspect ./testdata/realworld_benchmarks/filebrowser`
+   - Why: Proves zero-modification extraction of Redis upload caching and HTTP REST endpoints.
+   - Expected: Output locks `filebrowser` service, HTTP ingress, and `redis-filebrowser` resource with exit code `0`.
+   - Impact: Establishes compatibility with real-world file streaming and storage backend architectures.
+
 ## Gotchas
 
 - Standard library package prefix isolation must be strictly maintained to prevent monorepo call-graph bleed.

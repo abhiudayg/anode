@@ -1,0 +1,1921 @@
+import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
+import { promises as fs } from "node:fs";
+import { basename, dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import {
+  expect,
+  test as base,
+  type Download,
+  type Locator,
+  type Page,
+  type TestInfo,
+} from "@playwright/test";
+
+import { disableWasm } from "./no-wasm";
+const test = base.extend({
+  context: async ({context}, use, info) => {
+    const verify = info.title.startsWith("CLI SSH host") ? undefined : await disableWasm(context);
+    await use(context);
+    await verify?.();
+  },
+});
+
+const webDirectory = dirname(dirname(fileURLToPath(import.meta.url)));
+const crocBinary = join(
+  webDirectory,
+  ".e2e",
+  process.env.CROC_E2E_BINARY_NAME ?? "croc",
+);
+const relayPorts = process.env.CROC_E2E_RELAY_PORTS?.split(",") ?? [];
+const relayAddress =
+  process.env.CROC_E2E_RELAY_ADDRESS ?? `127.0.0.1:${relayPorts[0]}`;
+const webAddress = process.env.CROC_E2E_WEB_ADDRESS ?? "/";
+const relayPassword = "pass123";
+const transferTimeout = 60_000;
+
+type FixtureSet = {
+  paths: string[];
+  contents: Map<string, Buffer>;
+};
+
+type RunningCroc = {
+  child: ReturnType<typeof spawn>;
+  done: Promise<void>;
+  output(): string;
+  stop(): void;
+};
+
+function patternedBytes(size: number, seed: number) {
+  const bytes = Buffer.alloc(size);
+  for (let index = 0; index < bytes.length; index += 1) {
+    bytes[index] = (index * 31 + seed * 47) % 251;
+  }
+  return bytes;
+}
+
+async function createFixtures(testInfo: TestInfo): Promise<FixtureSet> {
+  const directory = testInfo.outputPath("fixtures");
+  await fs.mkdir(directory, { recursive: true });
+  const contents = new Map<string, Buffer>([
+    // This file spans every advertised data connection at least once.
+    ["alpha.bin", patternedBytes(32 * 1024 * 6 + 137, 1)],
+    ["beta.bin", patternedBytes(32 * 1024 * 2 + 19, 2)],
+    ["empty.dat", Buffer.alloc(0)],
+  ]);
+  for (const [name, bytes] of contents) {
+    await fs.writeFile(join(directory, name), bytes);
+  }
+  return {
+    paths: [...contents.keys()].map((name) => join(directory, name)),
+    contents,
+  };
+}
+
+async function createCrocBinaryFixture(): Promise<FixtureSet> {
+  return {
+    paths: [process.env.CROC_E2E_PERF_FIXTURE ?? crocBinary],
+    contents: new Map([[basename(process.env.CROC_E2E_PERF_FIXTURE ?? crocBinary), await fs.readFile(process.env.CROC_E2E_PERF_FIXTURE ?? crocBinary)]]),
+  };
+}
+
+function runCroc(
+  args: string[],
+  secret: string,
+  configDirectory: string,
+  executable = crocBinary,
+  extraEnvironment: NodeJS.ProcessEnv = {},
+): RunningCroc {
+  let output = "";
+  const child = spawn(executable, args, {
+    cwd: webDirectory,
+    env: {
+      ...process.env,
+      CROC_CONFIG_DIR: configDirectory,
+      CROC_SECRET: secret,
+      ...extraEnvironment,
+    },
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  child.stdout?.on("data", (chunk) => {
+    output += chunk.toString();
+  });
+  child.stderr?.on("data", (chunk) => {
+    output += chunk.toString();
+  });
+  const done = new Promise<void>((resolve, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => {
+      if (code === 0) resolve();
+      else {
+        reject(
+          new Error(
+            `croc exited with ${signal ?? code ?? "unknown"}\n${output.trim()}`,
+          ),
+        );
+      }
+    });
+  });
+  return {
+    child,
+    done,
+    output() {
+      return output;
+    },
+    stop() {
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill("SIGTERM");
+      }
+    },
+  };
+}
+
+function commonCLIArgs() {
+  return [
+    "--relay",
+    relayAddress,
+    "--relay6",
+    "",
+    "--pass",
+    relayPassword,
+    "--yes",
+    "--overwrite",
+    "--ignore-stdin",
+    "--disable-clipboard",
+  ];
+}
+
+async function chooseTask(page: Page, name: "Send live" | "Store files" | "Receive files" | "Join SSH") {
+  const launcher = page.locator(".task-launcher");
+  if (await launcher.isVisible()) {
+    await page.getByRole("button", {name,exact:true}).click();
+  } else {
+    const hashes = {"Send live":"send-panel","Store files":"store","Receive files":"receive","Join SSH":"ssh"};
+    await page.evaluate(hash => {window.location.hash=hash;},hashes[name]);
+  }
+  const panels = {"Send live":".send-panel","Store files":".send-panel","Receive files":".receive-panel","Join SSH":".ssh-panel"};
+  await expect(page.locator(panels[name])).toBeVisible();
+}
+
+async function configurePage(page: Page, address=webAddress) {
+  await page.goto(address);
+  await page.getByRole("button", {name: "relay", exact: true}).click();
+  await page.getByLabel("WebSocket gateway").fill("/ws");
+  await page
+    .getByRole("textbox", { name: "Relay password", exact: true })
+    .fill(relayPassword);
+  await expect(page.getByLabel("CLI relay addresses")).toHaveValue(relayAddress);
+  await page.getByRole("button", {name: "Close relay settings"}).click();
+  await chooseTask(page, "Send live");
+}
+
+async function prepareWebSender(
+  page: Page,
+  fixtures: FixtureSet,
+) {
+  const panel = page.locator(".send-panel");
+  await panel.locator('input[type="file"]').setInputFiles(fixtures.paths);
+  await expect(panel.getByText(`${fixtures.contents.size} files`, { exact: true })).toBeVisible();
+  return panel;
+}
+
+async function readGeneratedSecret(panel: Locator) {
+  const code = panel.getByLabel("Croc code");
+  await expect(code).toHaveText(/^[a-z]+(?:-[a-z]+){2,5}$/);
+  return (await code.textContent())!.trim();
+}
+
+async function connectWebReceiver(page: Page, secret: string) {
+  await chooseTask(page, "Receive files");
+  const panel = page.locator(".receive-panel");
+  await panel.getByLabel("Croc code or stored link").fill(secret);
+  await panel.getByLabel("Croc code or stored link").press("Enter");
+  return panel;
+}
+
+async function acceptAsDownloads(page: Page, panel: Locator) {
+  const downloads: Download[] = [];
+  page.on("download", (download) => downloads.push(download));
+  await expect(panel.getByRole("button", { name: "Download files" })).toBeVisible();
+  await page.evaluate(() => Object.defineProperty(window, "showDirectoryPicker", {
+    configurable: true, value: undefined,
+  }));
+  await panel.getByRole("button", { name: "Download files" }).click();
+  return downloads;
+}
+
+async function expectDownloads(
+  downloads: Download[],
+  fixtures: FixtureSet,
+) {
+  await expect
+    .poll(() => downloads.length, { timeout: transferTimeout })
+    .toBe(fixtures.contents.size);
+  const actual = new Map<string, Buffer>();
+  for (const download of downloads) {
+    const path = await download.path();
+    expect(path, `download path for ${download.suggestedFilename()}`).not.toBeNull();
+    actual.set(download.suggestedFilename(), await fs.readFile(path!));
+  }
+  expect([...actual.keys()].sort()).toEqual([...fixtures.contents.keys()].sort());
+  for (const [name, expected] of fixtures.contents) {
+    const received = actual.get(name)!;
+    expect(received.length, name).toBe(expected.length);
+    // Deep-equality matchers expand large Buffers into per-byte objects and
+    // can exhaust Node's heap on the executable fixture.
+    expect(createHash("sha256").update(received).digest("hex"), name)
+      .toBe(createHash("sha256").update(expected).digest("hex"));
+  }
+}
+
+async function expectDirectory(
+  directory: string,
+  fixtures: FixtureSet,
+) {
+  expect((await fs.readdir(directory)).sort()).toEqual(
+    [...fixtures.contents.keys()].sort(),
+  );
+  for (const [name, expected] of fixtures.contents) {
+    const received = await fs.readFile(join(directory, name));
+    expect(received.length, name).toBe(expected.length);
+    expect(createHash("sha256").update(received).digest("hex"), name)
+      .toBe(createHash("sha256").update(expected).digest("hex"));
+  }
+}
+
+async function expectTransferMetrics(panel: Locator) {
+  const metrics = panel.locator(".progress-metrics");
+  await expect(metrics).toContainText(/Rate.*\/s.*(?:ETA|Elapsed)/);
+}
+
+async function expectCompletedTransferMetrics(panel: Locator) {
+  const metrics = panel.locator(".progress-metrics");
+  await expect(metrics).toContainText(/Rate.*\/s.*Elapsed.*\d+[smh]/);
+  await expect(metrics).not.toContainText("ETA");
+  await expect(metrics).not.toContainText(/measuring|calculating/i);
+}
+
+
+
+test("publishes rich metadata and project links", async ({ page }) => {
+  const domWarnings: string[] = [];
+  page.on("console", (message) => {
+    if (message.text().startsWith("[DOM]")) {
+      domWarnings.push(message.text());
+    }
+  });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "platform", {
+      configurable: true,
+      value: "MacIntel",
+    });
+  });
+  await page.route(
+    "https://api.github.com/repos/schollz/croc/releases/latest",
+    async (route) => {
+      await route.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          tag_name: "v99.0.0",
+          html_url: "https://github.com/schollz/croc/releases/tag/v99.0.0",
+          assets: [
+            {
+              name: "croc_v99.0.0_macOS-64bit.tar.gz",
+              browser_download_url: "https://example.test/croc-macos-intel",
+            },
+            {
+              name: "croc_v99.0.0_macOS-ARM64.tar.gz",
+              browser_download_url: "https://example.test/croc-macos-arm",
+            },
+          ],
+        }),
+      });
+    },
+  );
+  await page.goto("/");
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    "href",
+    "https://getcroc.com/",
+  );
+  await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    "content",
+    "croc — fast, simple, secure file transfer",
+  );
+  await expect(page).toHaveTitle("croc — fast, simple, secure file transfer");
+  const relayPassword = page.getByLabel("Relay password", { exact: true });
+  await expect(relayPassword).toHaveAttribute("autocomplete", "off");
+  await expect(relayPassword.locator("xpath=ancestor::form"))
+    .toHaveClass("settings-grid");
+  expect(domWarnings).toEqual([]);
+  const structuredData = JSON.parse(
+    (await page.locator('script[type="application/ld+json"]').textContent()) ?? "{}",
+  ) as {
+    "@type"?: string;
+    aggregateRating?: {
+      ratingValue?: number;
+      ratingCount?: number;
+      reviewCount?: number;
+    };
+    offers?: { price?: number };
+    review?: Array<{
+      author?: { "@type"?: string; name?: string };
+      datePublished?: string;
+      reviewBody?: string;
+      reviewRating?: { ratingValue?: number };
+    }>;
+  };
+  expect(structuredData["@type"]).toBe("WebApplication");
+  expect(structuredData.offers?.price).toBe(0);
+  expect(structuredData.aggregateRating).toMatchObject({
+    ratingValue: 4.94,
+    ratingCount: 50,
+    reviewCount: 50,
+  });
+  expect(structuredData.review).toHaveLength(50);
+  const initialReviewerNames = [
+    "ioricloud",
+    "gazeebo",
+    "BelugaBilliam",
+    "StartupTree",
+    "ntoshev",
+    "alexeldeib",
+    "njt",
+    "Deozaan",
+    "poetaster",
+    "Tôi_là_người_thật",
+  ];
+  expect(
+    structuredData.review?.slice(0, 10).map((review) => review.author?.name),
+  ).toEqual(initialReviewerNames);
+  expect(
+    structuredData.review?.slice(0, 10).map((review) => review.datePublished),
+  ).toEqual([
+    "2023-04-14",
+    "2023-02-12",
+    "2023-11-29",
+    "2020-09-18",
+    "2021-03-12",
+    "2022-06-24",
+    "2022-11-03",
+    "2021-10-10",
+    "2026-01-13",
+    "2026-08-10",
+  ]);
+  expect(
+    structuredData.review?.slice(0, 10).map(
+      (review) => review.reviewRating?.ratingValue,
+    ),
+  ).toEqual([5, 4, 5, 5, 5, 5, 4, 5, 5, 4]);
+  expect(
+    structuredData.review?.every(
+      (review) =>
+        review.author?.["@type"] === "Person" &&
+        /^\d{4}-\d{2}(?:-\d{2})?$/.test(review.datePublished ?? ""),
+    ),
+  ).toBe(true);
+  expect(structuredData.review?.slice(0, 3).map((review) => review.reviewBody))
+    .toEqual([
+      "I use croc here a lot. Awesome binary for me",
+      "Croc's my most used transfer tool",
+      "Croc for easy file transfer, Linux compatible and it's quicker than ftp/SFTP",
+    ]);
+  const additionalReviews = [
+    ["justusthane", "2026-07-12", "I've found croc to be more reliable than MW in across different network architectures"],
+    ["ikeashark", "2025-10", "100% endorse croc"],
+    ["janandonly", "2025-03-12", "I like https://github.com/schollz/croc"],
+    ["hoppyhoppy2", "2024-08-17", "A similar project with some nice features that I use is croc"],
+    ["robviren", "2024-02-15", "I have gotten a lot of use out of croc."],
+    ["robviren", "2024-02-15", "Super pain free."],
+    ["robviren", "2024-02-15", "sends stuff pretty easily."],
+    ["poopsmithe", "2024-02-15", "croc is like a better magic-wormhole"],
+    ["poopsmithe", "2024-02-15", "croc does it automatically."],
+    ["dain", "2024-02-15", "Transfer is encrypted, no account needed."],
+    ["ytch", "2024-02-15", "I like it too."],
+    ["ytch", "2024-02-15", "Croc is easy to install/use in almost all network environments."],
+    ["outime", "2023-10-19", "I use croc quite a lot"],
+    ["outime", "2023-10-19", "good when sender and receiver are on different networks."],
+    ["pepa65", "2023-09-23", "when I discovered croc, I switched to that"],
+    ["pepa65", "2023-09-23", "it has been very reliable."],
+    ["jrootabega", "2022-10-25", "I think croc is a superior solution here."],
+    ["jrootabega", "2022-10-25", "Encrypted transfer. Automatic local peer detection. Human speakable commands."],
+    ["bzmrgonz", "2022-07-10", "croc is a more friendly solution"],
+    ["bzmrgonz", "2022-07-10", "In any event, quick and easy."],
+    ["ntoshev", "2021-03-12", "croc is my favourite way of transferring files between computers I control."],
+    ["ntoshev", "2021-03-12", "a bit more polished."],
+    ["ntoshev", "2021-03-12", "it offers the best possible UX."],
+    ["tptacek", "2021-05-24", "I'm a huge fan of croc!"],
+    ["tptacek", "2021-05-24", "there's so much more to love about it."],
+    ["smusamashah", "2021-05-24", "On Android, you can install croc in Termux"],
+    ["jtbayly", "2020-09-18", "I switched to croc… to send large files."],
+    ["jtbayly", "2020-09-18", "Works great across macOS and Windows."],
+    ["jtbayly", "2020-09-18", "quick for large files"],
+    ["greenbush", "2020-06-27", "I've been using croc for a few months and it works perfectly"],
+    ["terrywang", "2020-06-27", "I've been using croc… it's fast and reliable."],
+    ["terrywang", "2020-06-27", "Personally I think it's better than magic-wormhole"],
+    ["BusTrainBus", "2020-09-03", "Croc is fantastic because it solves a problem that no other tool does."],
+    ["BusTrainBus", "2020-09-03", "Magic Wormhole stumbles at the first hurdle (installability)."],
+    ["StartupTree", "2020-09-18", "Croc has binaries for windows available for download"],
+    ["StartupTree", "2020-09-18", "With croc the clients are first party."],
+    ["fredley", "2020-09-18", "It works on Windows"],
+    ["fredley", "2020-09-18", "I can connect with most people in the world."],
+    ["anotherhue", "2024-03-10", "I used to use MW but switched to croc"],
+    ["anotherhue", "2024-03-10", "the single binary was easier to deploy."],
+  ] as const;
+  expect(
+    structuredData.review?.slice(10).map((review) => [
+      review.author?.name,
+      review.datePublished,
+      review.reviewBody,
+    ]),
+  ).toEqual(additionalReviews);
+  expect(
+    structuredData.review
+      ?.slice(10)
+      .every((review) => review.reviewRating?.ratingValue === 5),
+  ).toBe(true);
+  const homeReviews = page.locator("details.home-reviews");
+  await expect(homeReviews).not.toHaveAttribute("open", "");
+  await expect(homeReviews.locator("summary")).toContainText(
+    /4\.94\/5\s*from 50 reviewers\s*read reviews/,
+  );
+  await homeReviews.locator("summary").click();
+  await expect(homeReviews).toHaveAttribute("open", "");
+  const visibleReviews = homeReviews.locator(".home-review-list > li");
+  await expect(visibleReviews).toHaveCount(50);
+  await expect(homeReviews).not.toContainText(
+    /Reddit|Hacker News|Lobsters|DonationCoder|Sailfish|Facebook/,
+  );
+  const renderedReviewData = await visibleReviews.evaluateAll((items) =>
+    items.map((item) => ({
+      author: item.querySelector("cite")?.textContent,
+      body: item.querySelector("blockquote > p")?.textContent,
+      date: item.querySelector("time")?.getAttribute("datetime"),
+      rating: item
+        .querySelector(".home-review-rating")
+        ?.getAttribute("aria-label"),
+    })),
+  );
+  expect(renderedReviewData).toEqual(
+    structuredData.review?.map((review) => ({
+      author: review.author?.name,
+      body: review.reviewBody,
+      date: review.datePublished,
+      rating: `Rated ${review.reviewRating?.ratingValue} out of 5`,
+    })),
+  );
+  await expect(
+    page.locator(".site-footer").getByRole("link", { name: "github", exact: true }),
+  ).toHaveAttribute("href", "https://github.com/schollz/croc");
+  await expect(
+    page.getByRole("link", { name: /Read all \d+ posts/i }),
+  ).toHaveAttribute("href", "/blog");
+  await expect(
+    page.getByRole("link", { name: "schollz", exact: true }),
+  ).toHaveAttribute("href", "https://github.com/sponsors/schollz");
+  const toolsMenu = page.locator("footer details.tools-menu");
+  await expect(toolsMenu.locator("summary")).toHaveText("other tools");
+  await toolsMenu.locator("summary").click();
+  await expect(toolsMenu).toHaveAttribute("open", "");
+  await expect(
+    page.locator('footer a[href="https://wthrtxt.com"]'),
+  ).toContainText("wthrtxt");
+  await expect(
+    page.locator('footer a[href="https://cowyo.com"]'),
+  ).toContainText("cowyo");
+  await expect(
+    page.locator('footer a[href="https://yesnotice.com"]'),
+  ).toContainText("yesnotice");
+  await expect(
+    page.locator('footer a[href="https://pianos.pub"]'),
+  ).toContainText("find a piano wherever you are");
+  await expect(
+    page.locator('footer a[href="https://makemydrivefun.com"]'),
+  ).toContainText("strange roadside detours");
+  await expect(
+    page.locator('footer a[href="https://makestopmotion.com"]'),
+  ).toContainText("claymation in browsers");
+  await expect(
+    page.getByRole("link", { name: "github", exact: true }),
+  ).toHaveAttribute(
+    "href",
+    "https://github.com/schollz/croc",
+  );
+  await expect(
+    page.getByRole("link", { name: "disco", exact: true }),
+  ).toHaveAttribute("href", "https://disco.cloud");
+  await expect(
+    page.getByRole("heading", { name: "Download croc for macOS." }),
+  ).toBeVisible();
+  await chooseTask(page, "Receive files");
+  const receivePanel = page.locator(".receive-panel");
+  await expect(
+    receivePanel.getByRole("button", { name: "Receive", exact: true }),
+  ).toHaveCSS("font-size", "12px");
+  await expect(
+    receivePanel.getByText(
+      "Enter a croc code or encrypted stored link. Review before saving or displaying.",
+    ),
+  ).toHaveCSS("font-size", "12px");
+  await expect(
+    page.getByText("Detected macOS. Release assets come directly from GitHub."),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('a[href="https://example.test/croc-macos-intel"]'),
+  ).toBeVisible();
+  await expect(
+    page.locator('a[href="https://example.test/croc-macos-arm"]'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "Other releases" }),
+  ).toHaveAttribute(
+    "href",
+    "https://github.com/schollz/croc/releases/latest",
+  );
+});
+
+test("serves the installer to curl and the app to browsers", async ({
+  page,
+  request,
+}) => {
+  const installer = await request.get("/", {
+    headers: { "User-Agent": "curl/8.10.1" },
+  });
+  expect(installer.ok()).toBe(true);
+  expect(installer.headers()["content-type"]).toBe("text/plain; charset=utf-8");
+  expect(installer.headers()["cache-control"]).toBe("no-store");
+  expect(installer.headers()["vary"]).toBe("User-Agent");
+  const installerText = await installer.text();
+  expect(installerText).toMatch(
+    /^#!\/bin\/bash[\s\S]*api\.github\.com\/repos\/schollz\/croc\/releases\/latest/,
+  );
+  expect(installerText).not.toMatch(/croc_version="\d+\.\d+\.\d+"/);
+
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "croc: end-to-end encrypted transfers." }),
+  ).toBeVisible();
+  expect((await page.locator("html").textContent()) ?? "").not.toContain(
+    "croc Installer Script",
+  );
+});
+
+test("opens directly without an analytics popover", async ({ page }) => {
+  await page.goto("/");
+  await expect(
+    page.getByRole("dialog", { name: "Optional analytics" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "croc: end-to-end encrypted transfers." }),
+  ).toBeVisible();
+});
+
+test("mobile task launcher opens focused screens and preserves selected content", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  const cards = page.locator(".task-card");
+  await expect(cards).toHaveCount(4);
+  for (const card of await cards.all()) expect((await card.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await chooseTask(page, "Send live");
+  const sendPanel = page.locator(".send-panel");
+  await expect(page.locator(".receive-panel")).toHaveCount(0);
+  await expect(page.getByRole("tablist")).toHaveCount(0);
+  await sendPanel.getByRole("button", { name: "Send text instead" }).click();
+  const composer = sendPanel.getByLabel("Text to send");
+  await expect(composer).toHaveCSS("font-size", "16px");
+  await composer.fill("hello from mobile");
+  await expect(sendPanel.getByRole("button", { name: "Send text", exact: true })).toBeEnabled();
+  await chooseTask(page, "Receive files");
+  await expect(page.locator(".send-panel")).toHaveCount(0);
+  const input = page.getByLabel("Croc code or stored link");
+  await expect(input).toHaveCSS("font-size", "16px");
+  await input.fill("acid-acorn-acre");
+  await chooseTask(page, "Send live");
+  await expect(composer).toHaveValue("hello from mobile");
+  await chooseTask(page, "Receive files");
+  await expect(input).toHaveValue("acid-acorn-acre");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+});
+
+test("receive links open with the Receive panel top edge visible", async ({
+  page,
+}) => {
+  await page.goto("/?code=x");
+
+  const receivePanel = page.locator("#receive");
+  await expect(receivePanel).toBeVisible();
+  await expect(page.locator(".send-panel")).toHaveCount(0);
+  await expect(receivePanel.locator("#receive-code")).toHaveCount(0);
+  await expect(receivePanel.getByText(/Enter a croc code|Paste or type the code/))
+    .toHaveCount(0);
+  const panelTop = await receivePanel.evaluate(element=>element.getBoundingClientRect().top);
+  expect(panelTop).toBeGreaterThanOrEqual(0);
+  expect(panelTop).toBeLessThan((page.viewportSize()?.height ?? 844)/3);
+  const headerBottom = await page.locator(".site-header").evaluate(element=>element.getBoundingClientRect().bottom);
+  expect(headerBottom).toBeLessThanOrEqual(panelTop);
+});
+
+test("task launcher replaces stacked toggles and keeps secondary controls in the footer", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.route("https://api.github.com/repos/schollz/croc/releases/latest", route => route.fulfill({
+    contentType: "application/json", body: JSON.stringify({ tag_name: "v99.0.0", assets: [] }),
+  }));
+  await page.goto("/");
+  for (const width of [1280, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect(page.locator(".task-card")).toHaveCount(4);
+    await expect(page.getByRole("tablist")).toHaveCount(0);
+    for (const task of ["Send live", "Store files", "Receive files", "Join SSH"] as const) {
+      await chooseTask(page, task);
+      await expect(page.getByRole("region", {name:task === "Join SSH" ? "SSH terminal" : "File transfer controls"})).toBeVisible();
+      await expect(page.getByRole("tablist")).toHaveCount(0);
+      await expect(page.getByRole("group", { name: "Send mode" })).toHaveCount(0);
+      if (task === "Store files") {
+        await expect(page.getByLabel("Storage lifetime", { exact: true })).toBeVisible();
+        const [valueBox, unitBox] = await Promise.all([
+          page.getByLabel("Storage lifetime", { exact: true }).boundingBox(),
+          page.getByLabel("Storage lifetime unit").boundingBox(),
+        ]);
+        expect(unitBox!.height).toBe(valueBox!.height);
+        expect(unitBox!.y).toBe(valueBox!.y);
+        await expect(page.getByRole("button", { name: "Send text instead" })).toHaveCount(0);
+      }
+      if (task === "Join SSH") await expect(page.getByLabel("SSH invitation", { exact: true })).toBeEditable();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBeLessThanOrEqual(0);
+      await page.evaluate(() => {window.location.hash="";});
+    }
+  }
+  await chooseTask(page, "Receive files");
+  await page.goBack();
+  await expect(page.locator(".task-launcher")).toBeVisible();
+  await page.goForward();
+  await expect(page.locator(".receive-panel")).toBeVisible();
+  const footer = page.locator(".site-footer");
+  await expect(page.locator('a[href="/blog"]').first()).toHaveAttribute("href", "/blog");
+  await expect(footer.getByRole("link", { name: "github", exact: true })).toHaveAttribute("href", "https://github.com/schollz/croc");
+  await footer.getByRole("button", { name: "Switch to dark mode" }).click();
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await expect(page.locator(".receive-panel")).toBeVisible();
+});
+
+test("copying a croc code shows confirmation", async ({ page }) => {
+  await configurePage(page);
+  await page.evaluate(() => {
+    const writes: string[] = [];
+    Object.defineProperty(window, "__crocClipboardWrites", {
+      configurable: true,
+      value: writes,
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          writes.push(value);
+        },
+      },
+    });
+  });
+  const panel = page.locator(".send-panel");
+  await panel.locator('input[type="file"]').setInputFiles({
+    name: "copy-test.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("copy test"),
+  });
+  await panel.getByRole("button", { name: "Send file" }).click();
+  const code = await readGeneratedSecret(panel);
+  const copyButton = panel.getByRole("button", { name: "Copy code" });
+  await copyButton.click();
+  const codeStatus = panel.locator(".send-code").getByRole("status");
+  await expect(codeStatus).toHaveText("Copied");
+  await expect(codeStatus).toHaveClass("visually-hidden");
+  await expect(panel.getByRole("button", { name: "Code copied" })).toHaveClass(
+    /copied/,
+  );
+  await expect(panel.getByLabel("Croc code", {exact:true})).toHaveClass(/copied/);
+  await expect(panel.getByLabel("Croc code", {exact:true})).toHaveCSS(
+    "animation-name",
+    "copy-confirmed-code",
+  );
+
+  const browserLink = panel.getByRole("textbox", {
+    name: "Browser link",
+    exact: true,
+  });
+  const expectedURL = new URL("/", page.url());
+  expectedURL.searchParams.set("code", code);
+  await expect(browserLink).toHaveValue(expectedURL.href);
+
+  const linkCopyButton = panel.locator(".direct-share-row").getByRole("button");
+  await expect(linkCopyButton).toHaveAccessibleName("Copy browser link");
+  await linkCopyButton.click();
+  await expect(linkCopyButton.getByRole("status")).toHaveText("Copied");
+  await expect(linkCopyButton).toHaveAccessibleName("Browser link copied");
+  await expect(panel.getByRole("button", { name: "Code copied" })).toBeVisible();
+  expect(
+    await page.evaluate(
+      () =>
+        (window as typeof window & { __crocClipboardWrites: string[] })
+          .__crocClipboardWrites,
+    ),
+  ).toEqual([code, expectedURL.href]);
+
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async () => {
+          throw new Error("Clipboard unavailable");
+        },
+      },
+    });
+  });
+  await linkCopyButton.click();
+  await expect(linkCopyButton).toHaveAccessibleName("Browser link copy failed");
+  await expect(linkCopyButton.getByRole("status")).toHaveText("Copy failed");
+});
+
+test("hashes natively on direct file selection and reveals a mobile-sized code after Send", async ({
+  page,
+}) => {
+  const wasmRequests: string[] = [];
+  await page.addInitScript(() => {
+    const originalStream = Blob.prototype.stream;
+    Blob.prototype.stream = function stream() {
+      const state = window as typeof window & { __crocHashReads?: number };
+      state.__crocHashReads = (state.__crocHashReads ?? 0) + 1;
+      return originalStream.call(this);
+    };
+  });
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname.endsWith("/croc.wasm")) {
+      wasmRequests.push(request.url());
+    }
+  });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await expect(page.locator('link[rel="preload"][href="/croc.wasm"]')).toHaveCount(0);
+  await chooseTask(page, "Send live");
+  const panel = page.locator(".send-panel");
+  const sendButton = panel.getByRole("button", { name: "Send file" });
+  await expect(sendButton).toBeDisabled();
+  await expect(panel.getByLabel("Croc code")).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Show QR code" })).toHaveCount(0);
+  await expect(panel).not.toContainText("Generated codes use");
+  await page.waitForTimeout(250);
+  expect(wasmRequests).toHaveLength(0);
+  const hashReadsBeforeSelection = await page.evaluate(
+    () =>
+      (window as typeof window & { __crocHashReads?: number })
+        .__crocHashReads ?? 0,
+  );
+
+  await panel.locator('input[type="file"]').setInputFiles({
+    name: "mobile-test.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("mobile test"),
+  });
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as typeof window & { __crocHashReads?: number })
+            .__crocHashReads ?? 0,
+      ),
+    )
+    .toBeGreaterThan(hashReadsBeforeSelection);
+  expect(wasmRequests).toHaveLength(0);
+  await expect(sendButton).toBeEnabled();
+  await sendButton.click();
+  await expect(sendButton).toHaveCount(0);
+  const code = panel.getByLabel("Croc code");
+  const codeLabel = panel.getByText("Use this code:", { exact: true });
+  const copyButton = panel.getByRole("button", { name: "Copy code" });
+  await expect(code).toHaveText(/^[a-z]+(?:-[a-z]+){2,5}$/);
+  await expect(code).toHaveCSS("font-size", "14px");
+  await expect(panel.getByRole("button", { name: "Generate a new code" })).toHaveCount(0);
+  await expect(panel.getByRole("button", { name: "Show QR code" })).toBeVisible();
+  const browserLink = panel.getByRole("textbox", {
+    name: "Browser link",
+    exact: true,
+  });
+  const browserLinkCopy = panel.getByRole("button", {
+    name: "Copy browser link",
+  });
+  await expect(browserLink).toBeVisible();
+  await expect(browserLinkCopy).toBeVisible();
+  const [labelBox, codeBox, copyBox] = await Promise.all([
+    codeLabel.boundingBox(),
+    code.boundingBox(),
+    copyButton.boundingBox(),
+  ]);
+  expect(labelBox!.y + labelBox!.height).toBeLessThanOrEqual(codeBox!.y);
+  expect(
+    Math.abs(
+      codeBox!.y + codeBox!.height / 2 - (copyBox!.y + copyBox!.height / 2),
+    ),
+  ).toBeLessThanOrEqual(1);
+  expect(codeBox!.x + codeBox!.width).toBeLessThanOrEqual(copyBox!.x);
+  expect(await code.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(
+    true,
+  );
+  const [browserLinkBox, browserLinkCopyBox] = await Promise.all([
+    browserLink.boundingBox(),
+    browserLinkCopy.boundingBox(),
+  ]);
+  expect(browserLinkBox!.x + browserLinkBox!.width).toBeLessThanOrEqual(
+    browserLinkCopyBox!.x,
+  );
+});
+
+for (const secret of [
+  "poker-hedge-floss",
+  "1234-legacy-code",
+  "alpha-beta-gamma-delta",
+  "yo-yo-yo-yo-yo-yo",
+]) {
+  test(`CLI → Web transfers and verifies multiple files (${secret})`, async ({
+    page,
+  }, testInfo) => {
+    const fixtures = await createFixtures(testInfo);
+    const configDirectory = testInfo.outputPath("croc-config");
+    await fs.mkdir(configDirectory, { recursive: true });
+    await configurePage(page);
+    await page.goto(`/?code=${encodeURIComponent(secret)}`);
+    await expect(page.locator(".send-panel")).toHaveCount(0);
+    const receivePanel = page.locator(".receive-panel");
+    await expect(receivePanel.getByLabel("Croc code")).toHaveCount(0);
+    await expect(
+      receivePanel.getByRole("button", { name: "Cancel receive" }),
+    ).toBeVisible();
+    const cli = runCroc(
+      [...commonCLIArgs(), "send", "--no-local", ...fixtures.paths],
+      secret,
+      configDirectory,
+      process.env.CROC_E2E_SENDER_BINARY,
+    );
+    try {
+      const downloads = await acceptAsDownloads(page, receivePanel);
+      const metricsVisible = expectTransferMetrics(receivePanel);
+      await expect(receivePanel).toContainText(
+        "All files received and verified",
+        {
+          timeout: transferTimeout,
+        },
+      );
+      await expectCompletedTransferMetrics(receivePanel);
+      await cli.done;
+      await metricsVisible;
+      await expectDownloads(downloads, fixtures);
+    } finally {
+      cli.stop();
+      await cli.done.catch(() => undefined);
+    }
+  });
+}
+
+test("CLI → Web preserves nested directory destinations and empty folders", async ({
+  page,
+}, info) => {
+  const root = info.outputPath("tree");
+  await fs.mkdir(join(root, "nested"), { recursive: true });
+  await fs.mkdir(join(root, "empty-folder"), { recursive: true });
+  const payload = patternedBytes(32769, 5);
+  await fs.writeFile(join(root, "nested", "chunk.bin"), payload);
+  await fs.writeFile(join(root, "empty.dat"), Buffer.alloc(0));
+  const config = info.outputPath("config");
+  await fs.mkdir(config, { recursive: true });
+  await configurePage(page);
+  await page.evaluate(() => {
+    const files = new Map<string, Uint8Array>(),
+      folders = new Set<string>([""]);
+    Object.assign(window, {
+      __directoryFiles: files,
+      __directoryFolders: folders,
+    });
+    const directory = (prefix: string): unknown => ({
+      async getDirectoryHandle(name: string, options?: { create?: boolean }) {
+        const path = prefix ? `${prefix}/${name}` : name;
+        if (!folders.has(path) && !options?.create)
+          throw new DOMException("Missing", "NotFoundError");
+        folders.add(path);
+        return directory(path);
+      },
+      async getFileHandle(name: string, options?: { create?: boolean }) {
+        const path = prefix ? `${prefix}/${name}` : name;
+        if (!files.has(path) && !options?.create)
+          throw new DOMException("Missing", "NotFoundError");
+        if (!files.has(path)) files.set(path, new Uint8Array());
+        return {
+          async getFile() {
+            return new File([files.get(path)!.slice()], name);
+          },
+          async createWritable() {
+            files.set(path, new Uint8Array());
+            return {
+              async write({
+                position,
+                data,
+              }: {
+                position: number;
+                data: Uint8Array;
+              }) {
+                const old = files.get(path)!,
+                  bytes = new Uint8Array(
+                    Math.max(old.length, position + data.length),
+                  );
+                bytes.set(old);
+                bytes.set(data, position);
+                files.set(path, bytes);
+              },
+              async close() {},
+              async abort() {
+                files.delete(path);
+              },
+            };
+          },
+        };
+      },
+    });
+    Object.defineProperty(window, "showDirectoryPicker", {
+      configurable: true,
+      value: async () => directory(""),
+    });
+  });
+  const panel = await connectWebReceiver(page, "1114-nested-folders");
+  const cli = runCroc(
+    [...commonCLIArgs(), "send", "--no-local", root],
+    "1114-nested-folders",
+    config,
+  );
+  try {
+    await panel.getByRole("button", { name: "Download files" }).click();
+    await expect(panel).toContainText("All files received and verified", {
+      timeout: transferTimeout,
+    });
+    await cli.done;
+    const actual = await page.evaluate(() => {
+      const state = window as typeof window & {
+        __directoryFiles: Map<string, Uint8Array>;
+        __directoryFolders: Set<string>;
+      };
+      return {
+        files: [...state.__directoryFiles].map(
+          ([path, bytes]) => [path, Array.from(bytes)] as const,
+        ),
+        folders: [...state.__directoryFolders],
+      };
+    });
+    const contents = new Map(actual.files);
+    expect([...contents.keys()].sort()).toEqual([
+      "tree/empty.dat",
+      "tree/nested/chunk.bin",
+    ]);
+    expect(Buffer.from(contents.get("tree/nested/chunk.bin")!)).toEqual(
+      payload,
+    );
+    expect(contents.get("tree/empty.dat")).toEqual([]);
+    expect(actual.folders).toContain("tree/empty-folder");
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("CLI → Web verifies a large croc executable", async ({
+  page,
+}, testInfo) => {
+  const secret = "1112-large-cli-to-web-e2e";
+  const fixtures = await createCrocBinaryFixture();
+  const configDirectory = testInfo.outputPath("croc-config");
+  await fs.mkdir(configDirectory, { recursive: true });
+  await configurePage(page);
+  const receivePanel = await connectWebReceiver(page, secret);
+  const cli = runCroc(
+    [...commonCLIArgs(), "send", "--no-local", ...fixtures.paths],
+    secret,
+    configDirectory,
+    process.env.CROC_E2E_SENDER_BINARY,
+  );
+  try {
+    const started = performance.now();
+    const downloads = await acceptAsDownloads(page, receivePanel);
+    await expect(receivePanel).toContainText("All files received and verified", {
+      timeout: transferTimeout,
+    });
+    await cli.done;
+    await expectDownloads(downloads, fixtures);
+    if (process.env.CROC_E2E_PERF_OUTPUT) {
+      const bytes = [...fixtures.contents.values()].reduce((sum,b)=>sum+b.length,0);
+      const elapsedMs = performance.now()-started;
+      await fs.writeFile(process.env.CROC_E2E_PERF_OUTPUT, JSON.stringify({bytes,elapsedMs,MiBps:bytes/1048576/(elapsedMs/1000)})+"\n");
+    }
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("Web → CLI transfers and verifies multiple files", async ({
+  page,
+}, testInfo) => {
+  const fixtures = await createFixtures(testInfo);
+  const destination = testInfo.outputPath("received");
+  const configDirectory = testInfo.outputPath("croc-config");
+  await Promise.all([
+    fs.mkdir(destination, { recursive: true }),
+    fs.mkdir(configDirectory, { recursive: true }),
+  ]);
+  await configurePage(page);
+  const sendPanel = await prepareWebSender(page, fixtures);
+  await sendPanel.getByRole("button", { name: "Send 3 files" }).click();
+  const secret = await readGeneratedSecret(sendPanel);
+  const cli = runCroc(
+    [...commonCLIArgs(), "--out", destination],
+    secret,
+    configDirectory,
+  );
+  try {
+    const metricsVisible = expectTransferMetrics(sendPanel);
+    await expect(sendPanel).toContainText("All files arrived safely", {
+      timeout: transferTimeout,
+    });
+    await expectCompletedTransferMetrics(sendPanel);
+    await cli.done;
+    await metricsVisible;
+    await expectDirectory(destination, fixtures);
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("Web → CLI sends exact multiline Unicode text", async ({
+  page,
+}, testInfo) => {
+  const message = "hello from croc web\nhttps://example.com/🐊\nfinal line";
+  const configDirectory = testInfo.outputPath("text-receiver-config");
+  await fs.mkdir(configDirectory, { recursive: true });
+  await configurePage(page);
+  const panel = page.locator(".send-panel");
+  await panel.getByRole("button", { name: "Send text instead" }).click();
+  await panel.getByLabel("Text to send").fill(message);
+  await panel.getByRole("button", { name: "Send text" }).click();
+  const secret = await readGeneratedSecret(panel);
+  const cli = runCroc(
+    [...commonCLIArgs(), "--quiet"],
+    secret,
+    configDirectory,
+  );
+  try {
+    await expect(panel).toContainText("Text arrived safely", {
+      timeout: transferTimeout,
+    });
+    await cli.done;
+    expect(cli.output()).toBe(message);
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("CLI → Web reviews, verifies, displays, and copies text without a download", async ({
+  page,
+}, testInfo) => {
+  const secret = "1113-cli-text-to-web";
+  const message = "sent from the CLI\nmultiline 🐊 text";
+  const configDirectory = testInfo.outputPath("text-sender-config");
+  await fs.mkdir(configDirectory, { recursive: true });
+  await configurePage(page);
+  await page.evaluate(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText: async () => undefined },
+    });
+  });
+  const downloads: Download[] = [];
+  page.on("download", (download) => downloads.push(download));
+  const panel = await connectWebReceiver(page, secret);
+  const cli = runCroc(
+    [...commonCLIArgs(), "send", "--no-local", "--text", message],
+    secret,
+    configDirectory,
+    process.env.CROC_E2E_SENDER_BINARY,
+  );
+  try {
+    await expect(panel.getByText("Incoming text", { exact: true })).toBeVisible();
+    await expect(panel.getByRole("button", { name: "Download files" })).toHaveCount(0);
+    await expect(panel.getByLabel("Received text")).toHaveCount(0);
+    await panel.getByRole("button", { name: "Display text" }).click();
+    await expect(panel.getByLabel("Received text")).toHaveText(message, {
+      timeout: transferTimeout,
+    });
+    await expect(panel).toContainText("Text received and verified");
+    expect(downloads).toHaveLength(0);
+    await panel.getByRole("button", { name: "Copy text" }).click();
+    await expect(panel.getByRole("button", { name: "Text copied" })).toBeVisible();
+    await expect(panel.locator(".received-text").getByRole("status"))
+      .toContainText("Text copied");
+    await cli.done;
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("Web → Web transfers and verifies multiple files", async ({
+  browser,
+}, testInfo) => {
+  const fixtures = await createFixtures(testInfo);
+  const contextOptions = {acceptDownloads:true,viewport:testInfo.project.use.viewport,isMobile:testInfo.project.use.isMobile,hasTouch:testInfo.project.use.hasTouch};
+  const senderContext = await browser.newContext(contextOptions);
+  const receiverContext = await browser.newContext(contextOptions);
+  const verifySender = await disableWasm(senderContext);
+  const verifyReceiver = await disableWasm(receiverContext);
+  const senderPage = await senderContext.newPage();
+  const receiverPage = await receiverContext.newPage();
+  try {
+    await Promise.all([
+      configurePage(senderPage),
+      configurePage(receiverPage),
+    ]);
+    const sendPanel = await prepareWebSender(senderPage, fixtures);
+    await sendPanel.getByRole("button", { name: "Send 3 files" }).click();
+    const secret = await readGeneratedSecret(sendPanel);
+    const receivePanel = await connectWebReceiver(receiverPage, secret);
+    const downloads = await acceptAsDownloads(receiverPage, receivePanel);
+    await Promise.all([
+      expect(sendPanel).toContainText("All files arrived safely", {
+        timeout: transferTimeout,
+      }),
+      expect(receivePanel).toContainText("All files received and verified", {
+        timeout: transferTimeout,
+      }),
+    ]);
+    await expectDownloads(downloads, fixtures);
+    await verifySender();
+    await verifyReceiver();
+  } finally {
+    await Promise.all([senderContext.close(), receiverContext.close()]);
+  }
+});
+
+test("Web stored upload → CLI download consumes the transfer", async ({
+  page,
+}, testInfo) => {
+  const fixtures = await createFixtures(testInfo);
+  const destination = testInfo.outputPath("stored-received");
+  const configDirectory = testInfo.outputPath("stored-croc-config");
+  await Promise.all([
+    fs.mkdir(destination, { recursive: true }),
+    fs.mkdir(configDirectory, { recursive: true }),
+  ]);
+  await configurePage(page);
+  const panel = page.locator(".send-panel");
+  await chooseTask(page, "Store files");
+  await panel.locator('input[type="file"]').setInputFiles(fixtures.paths);
+  await expect(panel.getByText("Storage lifetime", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Verified downloads", { exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Store 3 files" }).click();
+  await expect(panel.getByText("Storage lifetime", { exact: true })).toHaveCount(0);
+  await expect(panel.getByText("Verified downloads", { exact: true })).toHaveCount(0);
+  await expect(panel.getByText("Encrypted link ready")).toBeVisible({
+    timeout: transferTimeout,
+  });
+  const token = await panel.getByLabel("CLI token").inputValue();
+  const receiver = runCroc(
+    [...commonCLIArgs(), "--out", destination],
+    "unused-for-stored-transfer",
+    configDirectory,
+    crocBinary,
+    { CROC_STORE_TOKEN: token },
+  );
+  try {
+    await receiver.done;
+    await expectDirectory(destination, fixtures);
+    await expect(panel.getByText("Encrypted link ready")).toBeVisible();
+  } finally {
+    receiver.stop();
+    await receiver.done.catch(() => undefined);
+  }
+});
+
+test("stored settings return after an upload is revoked", async ({ page }) => {
+  await configurePage(page);
+  const panel = page.locator(".send-panel");
+  await chooseTask(page, "Store files");
+  await panel.locator('input[type="file"]').setInputFiles({
+    name: "revoke-test.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("revoke test"),
+  });
+  await panel.getByRole("button", { name: "Store file" }).click();
+  await expect(panel.getByText("Encrypted link ready")).toBeVisible({
+    timeout: transferTimeout,
+  });
+  await expect(panel.getByText("Storage lifetime", { exact: true })).toHaveCount(0);
+  await expect(panel.getByText("Verified downloads", { exact: true })).toHaveCount(0);
+
+  await panel.getByRole("button", { name: "Revoke now" }).click();
+  await expect(panel).toContainText("Stored transfer revoked", {
+    timeout: transferTimeout,
+  });
+  await expect(panel.getByText("Storage lifetime", { exact: true })).toBeVisible();
+  await expect(panel.getByText("Verified downloads", { exact: true })).toBeVisible();
+});
+
+test("CLI stored upload → Web download verifies and consumes files", async ({
+  page,
+}, testInfo) => {
+  const fixtures = await createFixtures(testInfo);
+  const configDirectory = testInfo.outputPath("stored-croc-config");
+  await fs.mkdir(configDirectory, { recursive: true });
+  await configurePage(page);
+  const origin = new URL(page.url()).origin;
+  const sender = runCroc(
+    [
+      ...commonCLIArgs(),
+      "send",
+      "--store",
+      "--store-url",
+      origin,
+      ...fixtures.paths,
+    ],
+    "unused-for-stored-transfer",
+    configDirectory,
+  );
+  try {
+    await sender.done;
+    const browserURL = sender.output().match(
+      /https?:\/\/\S+\/s\/[A-Za-z0-9_-]{22}#v1\.[A-Za-z0-9_-]+/,
+    )?.[0];
+    expect(browserURL, sender.output()).toBeTruthy();
+    await chooseTask(page, "Receive files");
+    const panel = page.locator(".receive-panel");
+    await panel.getByLabel("Croc code or stored link").fill(browserURL!);
+    await panel.getByLabel("Croc code or stored link").press("Enter");
+    await expect(panel.getByRole("button", { name: "Download files" })).toBeVisible();
+    const network = await page.context().newCDPSession(page);
+    await network.send("Network.enable");
+    await network.send("Network.emulateNetworkConditions", {
+      offline: false,
+      latency: 0,
+      downloadThroughput: 64 * 1024,
+      uploadThroughput: -1,
+    });
+    const downloads = await acceptAsDownloads(page, panel);
+    const progress = panel.getByRole("progressbar", { name: "Transfer progress" });
+    const percent = async () => Number(await progress.getAttribute("aria-valuenow"));
+    await expect.poll(percent).toBeGreaterThan(0);
+    // Each fixture is smaller than one encrypted chunk. Progress must advance
+    // while the first response is still arriving, before that file completes.
+    const totalSize = [...fixtures.contents.values()].reduce((sum, bytes) => sum + bytes.length, 0);
+    const firstFilePercent = Math.round(fixtures.contents.get("alpha.bin")!.length / totalSize * 100);
+    expect(await percent()).toBeLessThan(firstFilePercent);
+    await expectTransferMetrics(panel);
+    await expect(panel).toContainText(
+      "All files received and verified; stored ciphertext removed",
+      { timeout: transferTimeout },
+    );
+    await expectCompletedTransferMetrics(panel);
+    await expectDownloads(downloads, fixtures);
+
+    await network.detach();
+    await page.goto("about:blank");
+    await page.goto(browserURL!);
+    await expect(page.locator(".receive-panel")).toContainText(
+      /expired or has no downloads remaining/i,
+      { timeout: transferTimeout },
+    );
+  } finally {
+    sender.stop();
+    await sender.done.catch(() => undefined);
+  }
+});
+
+for (const entry of ["invitation link", "typed invitation"] as const) {
+  test(`CLI SSH host → Web terminal runs an interactive command via ${entry}`, async ({
+    page,
+  }, testInfo) => {
+    const configDirectory = testInfo.outputPath("ssh-host-config");
+    await fs.mkdir(configDirectory, { recursive: true });
+    const host = runCroc(
+      [
+        "--relay",
+        relayAddress,
+        "--pass",
+        relayPassword,
+        "--disable-clipboard",
+        "ssh",
+        "--headless",
+        "--duration",
+        "2m",
+      ],
+      "",
+      configDirectory,
+    );
+    try {
+      await expect.poll(() => host.output(), { timeout: transferTimeout }).toContain(
+        "Shared SSH terminal is ready",
+      );
+      const browserURL = host
+        .output()
+        .match(/Browser read\/write:\s+(https:\/\/\S+)/)?.[1];
+      expect(browserURL, host.output()).toBeTruthy();
+
+      await configurePage(page);
+      const localBrowserURL = new URL(browserURL!);
+      if (entry === "invitation link") {
+        const configuredURL = new URL(page.url());
+        localBrowserURL.protocol = configuredURL.protocol;
+        localBrowserURL.host = configuredURL.host;
+        await page.goto(localBrowserURL.href);
+      } else {
+        const invitation = new URLSearchParams(
+          localBrowserURL.hash.split("?", 2)[1],
+        ).get("code");
+        expect(invitation).toBeTruthy();
+        await chooseTask(page, "Join SSH");
+        const input = page.getByLabel("SSH invitation", { exact: true });
+        await expect(input).toBeEditable();
+        await input.pressSequentially(invitation!);
+        await expect(input).toHaveValue(invitation!);
+        await input.press("Enter");
+      }
+      const panel = page.locator(".ssh-panel");
+      await expect(panel).toContainText("Connected with read-write access", {
+        timeout: transferTimeout,
+      });
+
+      await panel.locator(".xterm-helper-textarea").focus();
+      await page.keyboard.type("printf 'CROC_BROWSER_%s\\n' 'SSH_OK'");
+      await page.keyboard.press("Enter");
+      await expect(panel.locator(".xterm-rows")).toContainText(
+        "CROC_BROWSER_SSH_OK",
+        { timeout: transferTimeout },
+      );
+      await panel.getByRole("button", { name: "Disconnect" }).click();
+    } finally {
+      host.stop();
+      await host.done.catch(() => undefined);
+    }
+  });
+}
+
+test("CLI → Web rejects a wrong password before offering metadata", async ({
+  page,
+}, info) => {
+  const fixtures = await createFixtures(info),
+    config = info.outputPath("config");
+  await fs.mkdir(config, { recursive: true });
+  await configurePage(page);
+  const panel = await connectWebReceiver(page, "1234-wrong-password");
+  const cli = runCroc(
+    [...commonCLIArgs(), "send", "--no-local", ...fixtures.paths],
+    "1234-right-password",
+    config,
+  );
+  const stopped = cli.done.catch(() => undefined);
+  try {
+    await expect(panel).toContainText(
+      /confirmation failed|incorrect passphrase|Relay connection closed/i,
+      { timeout: transferTimeout },
+    );
+    await stopped;
+    expect(cli.output()).toMatch(/confirmation failed|password mismatch/i);
+    await expect(
+      panel.getByRole("button", { name: "Download files" }),
+    ).toHaveCount(0);
+    await expect(panel.getByText("alpha.bin", { exact: true })).toHaveCount(0);
+  } finally {
+    cli.stop();
+    await stopped;
+  }
+});
+
+test("cancels a pending handshake and starts another receive without reloading", async ({
+  page,
+}) => {
+  await configurePage(page);
+  for (const code of ["4321-first-session", "4322-next-session"]) {
+    const panel = await connectWebReceiver(page, code);
+    await expect(panel).toContainText("Authenticating code");
+    await panel.getByRole("button", { name: "Cancel receive" }).click();
+    await expect(panel).toContainText(/cancelled/i);
+  }
+});
+
+
+test("Web → Web repeats exact multiline Unicode text transfers in the same pages", async ({
+  browser,
+}, info) => {
+  const options = {
+    acceptDownloads: true,
+    viewport: info.project.use.viewport,
+    isMobile: info.project.use.isMobile,
+    hasTouch: info.project.use.hasTouch,
+  };
+  const sender = await browser.newContext(options),
+    receiver = await browser.newContext(options);
+  const verifySender = await disableWasm(sender),
+    verifyReceiver = await disableWasm(receiver);
+  try {
+    const from = await sender.newPage(),
+      to = await receiver.newPage();
+    await Promise.all([configurePage(from), configurePage(to)]);
+    const sendPanel = from.locator(".send-panel");
+    await sendPanel.getByRole("button", { name: "Send text instead" }).click();
+    for (const message of [
+      "hello 🐊\n\n世界\nfinal line\n",
+      "second transfer\n\tindented text 🦀\n",
+    ]) {
+      await sendPanel.getByLabel("Text to send").fill(message);
+      await sendPanel
+        .getByRole("button", { name: "Send text", exact: true })
+        .click();
+      const code = await readGeneratedSecret(sendPanel);
+      const receivePanel = await connectWebReceiver(to, code);
+      await receivePanel.getByRole("button", { name: "Display text" }).click();
+      await expect(sendPanel).toContainText("Text arrived safely", {
+        timeout: transferTimeout,
+      });
+      await expect(receivePanel).toContainText("Text received and verified", {
+        timeout: transferTimeout,
+      });
+      expect(await receivePanel.getByLabel("Received text").textContent()).toBe(
+        message,
+      );
+    }
+    await verifySender();
+    await verifyReceiver();
+  } finally {
+    await Promise.all([sender.close(), receiver.close()]);
+  }
+});
+
+async function createBundleFixtures(
+  info: TestInfo,
+  count = 12,
+): Promise<FixtureSet> {
+  const directory = info.outputPath("bundle-fixtures");
+  await fs.mkdir(directory, { recursive: true });
+  const contents = new Map<string, Buffer>();
+  for (let i = 0; i < count; i++) {
+    const name = `bundle-${String(i).padStart(3, "0")}.bin`;
+    const bytes = patternedBytes(32768 + i * 177, i);
+    contents.set(name, bytes);
+    await fs.writeFile(join(directory, name), bytes);
+  }
+  return {
+    paths: [...contents.keys()].map((name) => join(directory, name)),
+    contents,
+  };
+}
+
+test("small-file bundles CLI → Web preserve individual downloads", async ({
+  page,
+}, info) => {
+  const fixtures = await createBundleFixtures(info);
+  const config = info.outputPath("config");
+  await fs.mkdir(config, { recursive: true });
+  await configurePage(page);
+  const panel = await connectWebReceiver(page, "2111-bundled-downloads");
+  const cli = runCroc(
+    [...commonCLIArgs(), "--debug", "send", "--no-local", ...fixtures.paths],
+    "2111-bundled-downloads",
+    config,
+  );
+  try {
+    const downloads = await acceptAsDownloads(page, panel);
+    await expect(panel).toContainText("All files received and verified", {
+      timeout: transferTimeout,
+    });
+    await cli.done;
+    await expectDownloads(downloads, fixtures);
+    expect(cli.output()).toContain("bundle-request");
+    expect(cli.output()).toContain("bundle-closed");
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("small-file bundles Web → CLI verify original files", async ({
+  page,
+}, info) => {
+  const fixtures = await createBundleFixtures(info);
+  const destination = info.outputPath("received"),
+    config = info.outputPath("config");
+  await Promise.all([
+    fs.mkdir(destination, { recursive: true }),
+    fs.mkdir(config, { recursive: true }),
+  ]);
+  await configurePage(page);
+  const panel = await prepareWebSender(page, fixtures);
+  await panel.getByRole("button", { name: "Send 12 files" }).click();
+  const secret = await readGeneratedSecret(panel);
+  const cli = runCroc(
+    [...commonCLIArgs(), "--debug", "--out", destination],
+    secret,
+    config,
+  );
+  try {
+    await expect(panel).toContainText("All files arrived safely", {
+      timeout: transferTimeout,
+    });
+    await cli.done;
+    await expectDirectory(destination, fixtures);
+    expect(cli.output()).toContain("bundle-request");
+    expect(cli.output()).toContain("bundle-closed");
+  } finally {
+    cli.stop();
+    await cli.done.catch(() => undefined);
+  }
+});
+
+test("small-file bundles Web → Web preserve individual downloads", async ({
+  browser,
+}, info) => {
+  const fixtures = await createBundleFixtures(info);
+  const options = {
+    acceptDownloads: true,
+    viewport: info.project.use.viewport,
+    isMobile: info.project.use.isMobile,
+    hasTouch: info.project.use.hasTouch,
+  };
+  const a = await browser.newContext(options),
+    b = await browser.newContext(options);
+  const verifyA = await disableWasm(a),
+    verifyB = await disableWasm(b);
+  const sender = await a.newPage(),
+    receiver = await b.newPage();
+  try {
+    await configurePage(sender);
+    await configurePage(receiver);
+    const send = await prepareWebSender(sender, fixtures);
+    await send.getByRole("button", { name: "Send 12 files" }).click();
+    const receive = await connectWebReceiver(
+      receiver,
+      await readGeneratedSecret(send),
+    );
+    const downloads = await acceptAsDownloads(receiver, receive);
+    await Promise.all([
+      expect(send).toContainText("All files arrived safely", {
+        timeout: transferTimeout,
+      }),
+      expect(receive).toContainText("All files received and verified", {
+        timeout: transferTimeout,
+      }),
+    ]);
+    await expectDownloads(downloads, fixtures);
+    await verifyA();
+    await verifyB();
+  } finally {
+    await a.close();
+    await b.close();
+  }
+});
+
+async function observeBundleControls(page: Page) {
+  await page.addInitScript(() => {
+    const controls: string[] = [];
+    Object.assign(window, { __bundleControlTypes: controls });
+    const original = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (message, options) {
+      if (
+        message?.method === "compress" &&
+        message.args?.[0] instanceof Uint8Array
+      ) {
+        try {
+          const decoded = JSON.parse(new TextDecoder().decode(message.args[0]));
+          if (typeof decoded.t === "string") controls.push(decoded.t);
+        } catch {
+          /* Payload samples are not JSON control frames. */
+        }
+      }
+      return Reflect.apply(original, this, [message, options]);
+    };
+  });
+}
+async function bundleControls(page: Page) {
+  return page.evaluate(() =>
+    (
+      (window as typeof window & { __bundleControlTypes: string[] })
+        .__bundleControlTypes ?? []
+    ).filter((type) => type.startsWith("bundle-")),
+  );
+}
+
+for (const [label, oldBrowser, oldCLI] of [
+  ["new browser and frozen CLI", false, true],
+  ["frozen browser and new CLI", true, false],
+] as const) {
+  for (const direction of ["CLI → Web", "Web → CLI"] as const)
+    test(`frozen bundle compatibility ${label} ${direction}`, async ({
+      page,
+    }, info) => {
+      test.skip(
+        !process.env.CROC_E2E_FROZEN_SOURCE || !process.env.CROC_E2E_OLD_BINARY,
+        "Build the frozen ebcdc31b artifacts first",
+      );
+      const fixtures = await createBundleFixtures(info, 4),
+        config = info.outputPath("config"),
+        destination = info.outputPath("received");
+      await Promise.all([
+        fs.mkdir(config, { recursive: true }),
+        fs.mkdir(destination, { recursive: true }),
+      ]);
+      await observeBundleControls(page);
+      await configurePage(
+        page,
+        oldBrowser ? process.env.CROC_E2E_FROZEN_WEB_URL! : webAddress,
+      );
+      const binary = oldCLI ? process.env.CROC_E2E_OLD_BINARY : crocBinary;
+      let cli: RunningCroc;
+      if (direction === "CLI → Web") {
+        const code = "3111-frozen-compatibility";
+        const panel = await connectWebReceiver(page, code);
+        cli = runCroc(
+          [
+            ...commonCLIArgs(),
+            "--debug",
+            "send",
+            "--no-local",
+            ...fixtures.paths,
+          ],
+          code,
+          config,
+          binary,
+        );
+        try {
+          const downloads = await acceptAsDownloads(page, panel);
+          await expect(panel).toContainText("All files received and verified", {
+            timeout: transferTimeout,
+          });
+          await cli.done;
+          await expectDownloads(downloads, fixtures);
+        } finally {
+          cli.stop();
+          await cli.done.catch(() => undefined);
+        }
+      } else {
+        const panel = await prepareWebSender(page, fixtures);
+        await panel.getByRole("button", { name: "Send 4 files" }).click();
+        cli = runCroc(
+          [...commonCLIArgs(), "--debug", "--out", destination],
+          await readGeneratedSecret(panel),
+          config,
+          binary,
+        );
+        try {
+          await expect(panel).toContainText("All files arrived safely", {
+            timeout: transferTimeout,
+          });
+          await cli.done;
+          await expectDirectory(destination, fixtures);
+        } finally {
+          cli.stop();
+          await cli.done.catch(() => undefined);
+        }
+      }
+      expect(cli!.output()).not.toMatch(/(?:writing|read) bundle-/);
+      expect(await bundleControls(page)).toEqual([]);
+    });
+}
+
+for (const oldSender of [true, false])
+  test(`frozen bundle compatibility ${oldSender ? "frozen → new" : "new → frozen"} browser`, async ({
+    browser,
+  }, info) => {
+    test.skip(
+      !process.env.CROC_E2E_FROZEN_SOURCE,
+      "Build the frozen ebcdc31b artifacts first",
+    );
+    const fixtures = await createBundleFixtures(info, 4);
+    const options = {
+      acceptDownloads: true,
+      viewport: info.project.use.viewport,
+      isMobile: info.project.use.isMobile,
+      hasTouch: info.project.use.hasTouch,
+    };
+    const a = await browser.newContext(options),
+      b = await browser.newContext(options);
+    const verifyA = await disableWasm(a),
+      verifyB = await disableWasm(b);
+    const sender = await a.newPage(),
+      receiver = await b.newPage();
+    try {
+      await observeBundleControls(sender);
+      await observeBundleControls(receiver);
+      await configurePage(
+        sender,
+        oldSender ? process.env.CROC_E2E_FROZEN_WEB_URL! : webAddress,
+      );
+      await configurePage(
+        receiver,
+        oldSender ? webAddress : process.env.CROC_E2E_FROZEN_WEB_URL!,
+      );
+      const send = await prepareWebSender(sender, fixtures);
+      await send.getByRole("button", { name: "Send 4 files" }).click();
+      const receive = await connectWebReceiver(
+        receiver,
+        await readGeneratedSecret(send),
+      );
+      const downloads = await acceptAsDownloads(receiver, receive);
+      await Promise.all([
+        expect(send).toContainText("All files arrived safely", {
+          timeout: transferTimeout,
+        }),
+        expect(receive).toContainText("All files received and verified", {
+          timeout: transferTimeout,
+        }),
+      ]);
+      await expectDownloads(downloads, fixtures);
+      expect(await bundleControls(sender)).toEqual([]);
+      expect(await bundleControls(receiver)).toEqual([]);
+      await verifyA();
+      await verifyB();
+    } finally {
+      await a.close();
+      await b.close();
+    }
+  });
+
+test("small-file bundles repeat into real folder destinations without reloading", async ({
+  browser,
+  playwright,
+}, info) => {
+  const fixtures = await createBundleFixtures(info);
+  const options = {
+    acceptDownloads: true,
+    viewport: info.project.use.viewport,
+    isMobile: info.project.use.isMobile,
+    hasTouch: info.project.use.hasTouch,
+  };
+  const a = await browser.newContext(options);
+  const b =
+    info.project.name === "webkit"
+      ? await playwright.webkit.launchPersistentContext(
+          info.outputPath("folder-profile"),
+          { headless: true, ...options },
+        )
+      : await browser.newContext(options);
+  const verifyA = await disableWasm(a),
+    verifyB = await disableWasm(b);
+  const sender = await a.newPage(),
+    receiver = await b.newPage();
+  try {
+    await configurePage(sender);
+    await configurePage(receiver);
+    await receiver.evaluate(async () => {
+      await navigator.storage.getDirectory();
+      Object.defineProperty(window, "showDirectoryPicker", {
+        configurable: true,
+        value: () => navigator.storage.getDirectory(),
+      });
+    });
+    receiver.on("dialog", (dialog) => dialog.accept());
+    const send = await prepareWebSender(sender, fixtures);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await send.getByRole("button", { name: "Send 12 files" }).click();
+      const receive = await connectWebReceiver(
+        receiver,
+        await readGeneratedSecret(send),
+      );
+      await receive.getByRole("button", { name: "Download files" }).click();
+      await Promise.all([
+        expect(send).toContainText("All files arrived safely", {
+          timeout: transferTimeout,
+        }),
+        expect(receive).toContainText("All files received and verified", {
+          timeout: transferTimeout,
+        }),
+      ]);
+      const actual = await receiver.evaluate(async () => {
+        const root = await navigator.storage.getDirectory();
+        const entries: Record<string, { size: number; sha256: string }> = {};
+        for await (const [name, handle] of root.entries())
+          if (handle.kind === "file") {
+            const file = await handle.getFile();
+            const digest = await crypto.subtle.digest(
+              "SHA-256",
+              await file.arrayBuffer(),
+            );
+            entries[name] = {
+              size: file.size,
+              sha256: [...new Uint8Array(digest)]
+                .map((b) => b.toString(16).padStart(2, "0"))
+                .join(""),
+            };
+          }
+        return entries;
+      });
+      expect(Object.keys(actual).sort()).toEqual(
+        [...fixtures.contents.keys()].sort(),
+      );
+      for (const [name, bytes] of fixtures.contents)
+        expect(actual[name]).toEqual({
+          size: bytes.length,
+          sha256: createHash("sha256").update(bytes).digest("hex"),
+        });
+    }
+    await verifyA();
+    await verifyB();
+  } finally {
+    await a.close();
+    await b.close();
+  }
+});
+
+test("small-file bundles cancel an active payload and retry without reloading", async ({
+  browser,
+}, info) => {
+  const fixtures = await createBundleFixtures(info);
+  const options = {
+    acceptDownloads: true,
+    viewport: info.project.use.viewport,
+    isMobile: info.project.use.isMobile,
+    hasTouch: info.project.use.hasTouch,
+  };
+  const a = await browser.newContext(options),
+    b = await browser.newContext(options);
+  const verifyA = await disableWasm(a),
+    verifyB = await disableWasm(b);
+  const sender = await a.newPage(),
+    receiver = await b.newPage();
+  await sender.addInitScript(() => {
+    Object.assign(window, {
+      __delayBundleChunks: true,
+      __bundleEncodingStarted: false,
+    });
+    const original = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (message, options) {
+      const state = window as typeof window & {
+        __delayBundleChunks: boolean;
+        __bundleEncodingStarted: boolean;
+      };
+      if (message?.method === "encodeChunk" && state.__delayBundleChunks) {
+        state.__bundleEncodingStarted = true;
+        setTimeout(
+          () => Reflect.apply(original, this, [message, options]),
+          200,
+        );
+        return;
+      }
+      return Reflect.apply(original, this, [message, options]);
+    };
+  });
+  try {
+    await configurePage(sender);
+    await configurePage(receiver);
+    const send = await prepareWebSender(sender, fixtures);
+    await send.getByRole("button", { name: "Send 12 files" }).click();
+    const receive = await connectWebReceiver(
+      receiver,
+      await readGeneratedSecret(send),
+    );
+    await acceptAsDownloads(receiver, receive);
+    await expect
+      .poll(() =>
+        sender.evaluate(
+          () =>
+            (window as typeof window & { __bundleEncodingStarted: boolean })
+              .__bundleEncodingStarted,
+        ),
+      )
+      .toBe(true);
+    await send.getByRole("button", { name: "Cancel send" }).click();
+    const cancelReceive = receive.getByRole("button", { name: "Cancel receive" });
+    // The sender's cancellation can remove this button between locating and
+    // clicking it. Either a local click or peer shutdown ends the receive.
+    await cancelReceive.click({ timeout: 1000 }).catch(async (error) => {
+      if (await cancelReceive.isVisible()) throw error;
+    });
+    await expect(send).toContainText(/cancelled/i);
+    await expect(
+      send.getByRole("button", { name: "Send 12 files" }),
+    ).toBeEnabled();
+    await sender.evaluate(() =>
+      Object.assign(window, { __delayBundleChunks: false }),
+    );
+    await send.getByRole("button", { name: "Send 12 files" }).click();
+    const again = await connectWebReceiver(
+      receiver,
+      await readGeneratedSecret(send),
+    );
+    const downloads = await acceptAsDownloads(receiver, again);
+    await Promise.all([
+      expect(send).toContainText("All files arrived safely", {
+        timeout: transferTimeout,
+      }),
+      expect(again).toContainText("All files received and verified", {
+        timeout: transferTimeout,
+      }),
+    ]);
+    await expectDownloads(downloads, fixtures);
+    await verifyA();
+    await verifyB();
+  } finally {
+    await a.close();
+    await b.close();
+  }
+});

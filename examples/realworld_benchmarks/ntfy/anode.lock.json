@@ -1,0 +1,292 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-ntfy": {
+      "kind": "sqlite",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "webpush/store_sqlite.go:75"
+    },
+    "db-pgimport": {
+      "kind": "sqlite",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "tools/pgimport/main.go:468"
+    }
+  },
+  "services": {
+    "fbsend": {
+      "name": "fbsend",
+      "entrypoint": "./tools/fbsend",
+      "ingress": [],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/firebase.google.com/go/v4@v4.22.0/messaging/messaging.go:915"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/clientconn.go:1526"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterS2AServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.11/internal/handshaker/handshaker.go:129"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.10.0/metadata.go:530"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterRouteLookupServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/balancer/rls/control_channel.go:96"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterOpenRcaServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/orca/producer.go:42"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHandshakerServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/credentials/alts/internal/handshaker/handshaker.go:171"
+        }
+      ],
+      "secrets": []
+    },
+    "loadgen": {
+      "name": "loadgen",
+      "entrypoint": "./tools/loadgen",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "ntfy": {
+      "name": "ntfy",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "POST /v1/cluster/message",
+            "POST /v1/cluster/state",
+            "GET /v1/cluster/members",
+            "GET /v1/cluster/health",
+            "GET /v1/cluster/status",
+            "/",
+            "/debug/pprof/",
+            "/debug/pprof/cmdline",
+            "/debug/pprof/profile",
+            "/debug/pprof/symbol",
+            "/debug/pprof/trace"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-ntfy",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "webpush/store_sqlite.go:75"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterS2AServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.11/internal/v2/s2av2.go:366"
+        },
+        {
+          "resource_ref": "db-ntfy",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "message/cache_sqlite.go:143"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.10.0/metadata.go:530"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/firebase.google.com/go/v4@v4.22.0/messaging/messaging.go:915"
+        },
+        {
+          "resource_ref": "db-ntfy",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "user/manager_sqlite.go:345"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/clientconn.go:1526"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHandshakerServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/credentials/alts/internal/handshaker/handshaker.go:171"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterOpenRcaServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/orca/producer.go:42"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterRouteLookupServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/balancer/rls/control_channel.go:96"
+        }
+      ],
+      "secrets": []
+    },
+    "pgimport": {
+      "name": "pgimport",
+      "entrypoint": "./tools/pgimport",
+      "ingress": [],
+      "bindings": [
+        {
+          "resource_ref": "db-pgimport",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "tools/pgimport/main.go:468"
+        }
+      ],
+      "secrets": []
+    },
+    "publish-go": {
+      "name": "publish-go",
+      "entrypoint": "./examples/publish-go",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "s3cli": {
+      "name": "s3cli",
+      "entrypoint": "./tools/s3cli",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "subscribe-go": {
+      "name": "subscribe-go",
+      "entrypoint": "./examples/subscribe-go",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "publish-go",
+      "target_host": "https://ntfy.sh/phil_alerts",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterS2AServiceServer\" in service \"ntfy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.11/internal/v2/s2av2.go:366",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"ntfy\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.10.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"ntfy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/firebase.google.com/go/v4@v4.22.0/messaging/messaging.go:915",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"ntfy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/clientconn.go:1526",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHandshakerServiceServer\" in service \"ntfy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/credentials/alts/internal/handshaker/handshaker.go:171",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterOpenRcaServiceServer\" in service \"ntfy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/orca/producer.go:42",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterRouteLookupServiceServer\" in service \"ntfy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/balancer/rls/control_channel.go:96",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"fbsend\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/firebase.google.com/go/v4@v4.22.0/messaging/messaging.go:915",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"fbsend\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/clientconn.go:1526",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterS2AServiceServer\" in service \"fbsend\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.11/internal/handshaker/handshaker.go:129",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"fbsend\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.10.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterRouteLookupServiceServer\" in service \"fbsend\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/balancer/rls/control_channel.go:96",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterOpenRcaServiceServer\" in service \"fbsend\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/orca/producer.go:42",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHandshakerServiceServer\" in service \"fbsend\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.84.0/credentials/alts/internal/handshaker/handshaker.go:171",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

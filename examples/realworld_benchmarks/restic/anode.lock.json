@@ -1,0 +1,292 @@
+{
+  "schema_version": "1.0",
+  "resources": {},
+  "services": {
+    "build-release-binaries": {
+      "name": "build-release-binaries",
+      "entrypoint": "./helpers/build-release-binaries",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "prepare-release": {
+      "name": "prepare-release",
+      "entrypoint": "./helpers/prepare-release",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "restic": {
+      "name": "restic",
+      "entrypoint": "./cmd/restic",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "service_ref": "MSI_ENDPOINT",
+          "protocol": "http",
+          "inject_env": "MSI_ENDPOINT",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure!a!d/microsoft-authentication-library-for-go@v1.8.0/apps/managedidentity/azure_ml.go:13"
+        },
+        {
+          "service_ref": "IDENTITY_ENDPOINT",
+          "protocol": "http",
+          "inject_env": "IDENTITY_ENDPOINT",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure!a!d/microsoft-authentication-library-for-go@v1.8.0/apps/managedidentity/managedidentity.go:576"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterMetricServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/monitoring@v1.30.0/apiv3/v2/metric_client.go:326"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterS2AServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBlockBlobServer",
+          "inject_env": "",
+          "provenance": "internal/backend/azure/azure.go:284"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterMetricServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!google!cloud!platform/opentelemetry-operations-go/exporter/metric@v0.57.0/metric.go:117"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterContainerServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure/azure-sdk-for-go/sdk/storage/azblob@v1.8.1/internal/base/clients.go:83"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBlobServer",
+          "inject_env": "",
+          "provenance": "internal/backend/azure/azure.go:388"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterOpenRcaServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/orca/producer.go:42"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHandshakerServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/credentials/alts/internal/handshaker/handshaker.go:171"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterRouteLookupServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/balancer/rls/control_channel.go:96"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/clientconn.go:1525"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.67.0/transport.go:76"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "MSI_SECRET",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure!a!d/microsoft-authentication-library-for-go@v1.8.0/apps/managedidentity/azure_ml.go:18"
+        },
+        {
+          "env_var": "AZURE_CLIENT_SECRET",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure/azure-sdk-for-go/sdk/azidentity@v1.14.1/environment_credential.go:94"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY_ID",
+          "provenance": "internal/backend/s3/s3.go:144"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "internal/backend/s3/s3.go:145"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/iam_aws.go:123"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/iam_aws.go:128"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/iam_aws.go:143"
+        },
+        {
+          "env_var": "RESTIC_KEY_HINT",
+          "provenance": "internal/global/global.go:123"
+        },
+        {
+          "env_var": "MSI_SECRET",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure!a!d/microsoft-authentication-library-for-go@v1.8.0/apps/managedidentity/managedidentity.go:291"
+        },
+        {
+          "env_var": "AZURE_KUBERNETES_TOKEN_PROXY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure/azure-sdk-for-go/sdk/azidentity@v1.14.1/internal/customtokenproxy/transport.go:87"
+        },
+        {
+          "env_var": "B2_ACCOUNT_KEY",
+          "provenance": "internal/backend/b2/config.go:93"
+        },
+        {
+          "env_var": "AZURE_ACCOUNT_KEY",
+          "provenance": "internal/backend/azure/config.go:72"
+        },
+        {
+          "env_var": "RESTIC_KEY_HINT2",
+          "provenance": "internal/global/secondary_repo.go:45"
+        },
+        {
+          "env_var": "RESTIC_FROM_KEY_HINT",
+          "provenance": "internal/global/secondary_repo.go:58"
+        },
+        {
+          "env_var": "GOOGLE_ACCESS_TOKEN",
+          "provenance": "internal/backend/gs/gs.go:64"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_minio.go:50"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY_ID",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_aws.go:43"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.3.0/pkg/credentials/env_aws.go:62"
+        }
+      ]
+    }
+  },
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"restic\" via env \"MSI_ENDPOINT\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure!a!d/microsoft-authentication-library-for-go@v1.8.0/apps/managedidentity/azure_ml.go:13",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"restic\" via env \"IDENTITY_ENDPOINT\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure!a!d/microsoft-authentication-library-for-go@v1.8.0/apps/managedidentity/managedidentity.go:576",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterMetricServiceServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/monitoring@v1.30.0/apiv3/v2/metric_client.go:326",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterS2AServiceServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBlockBlobServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "internal/backend/azure/azure.go:284",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterMetricServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!google!cloud!platform/opentelemetry-operations-go/exporter/metric@v0.57.0/metric.go:117",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterContainerServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/!azure/azure-sdk-for-go/sdk/storage/azblob@v1.8.1/internal/base/clients.go:83",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBlobServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "internal/backend/azure/azure.go:388",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterOpenRcaServiceServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/orca/producer.go:42",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"restic\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHandshakerServiceServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/credentials/alts/internal/handshaker/handshaker.go:171",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterRouteLookupServiceServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/balancer/rls/control_channel.go:96",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.83.2/clientconn.go:1525",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"restic\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.67.0/transport.go:76",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

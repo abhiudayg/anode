@@ -1,0 +1,160 @@
+package util
+
+import (
+	"github.com/stretchr/testify/require"
+	"testing"
+	"time"
+)
+
+var (
+	// 2021-12-10 10:17:23 (Friday)
+	base = time.Date(2021, 12, 10, 10, 17, 23, 0, time.UTC)
+)
+
+func TestParseFutureTime_11am_FutureTime(t *testing.T) {
+	d, err := ParseFutureTime("11am", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 10, 11, 0, 0, 0, time.UTC), d) // Same day
+}
+
+func TestParseFutureTime_9am_PastTime(t *testing.T) {
+	d, err := ParseFutureTime("9am", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 11, 9, 0, 0, 0, time.UTC), d) // Next day
+}
+
+func TestParseFutureTime_Monday_10_30pm_FutureTime(t *testing.T) {
+	d, err := ParseFutureTime("Monday, 10:30pm", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 13, 22, 30, 0, 0, time.UTC), d)
+}
+
+func TestParseFutureTime_30m(t *testing.T) {
+	d, err := ParseFutureTime("30m", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 10, 10, 47, 23, 0, time.UTC), d)
+}
+
+func TestParseFutureTime_30min(t *testing.T) {
+	d, err := ParseFutureTime("30min", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 10, 10, 47, 23, 0, time.UTC), d)
+}
+
+func TestParseFutureTime_3h(t *testing.T) {
+	d, err := ParseFutureTime("3h", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 10, 13, 17, 23, 0, time.UTC), d)
+}
+
+func TestParseFutureTime_1day(t *testing.T) {
+	d, err := ParseFutureTime("1 day", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 11, 10, 17, 23, 0, time.UTC), d)
+}
+
+func TestParseFutureTime_UnixTime(t *testing.T) {
+	d, err := ParseFutureTime("1639183911", base)
+	require.Nil(t, err)
+	require.Equal(t, time.Date(2021, 12, 11, 0, 51, 51, 0, time.UTC), d)
+}
+
+func TestParseDuration(t *testing.T) {
+	d, err := ParseDuration("2d")
+	require.Nil(t, err)
+	require.Equal(t, 48*time.Hour, d)
+
+	d, err = ParseDuration("2h")
+	require.Nil(t, err)
+	require.Equal(t, 2*time.Hour, d)
+
+	d, err = ParseDuration("0")
+	require.Nil(t, err)
+	require.Equal(t, time.Duration(0), d)
+}
+
+func TestFormatDuration(t *testing.T) {
+	values := []struct {
+		duration time.Duration
+		expected string
+	}{
+		{24 * time.Second, "24s"},
+		{56 * time.Minute, "56m"},
+		{time.Hour, "1h"},
+		{2 * time.Hour, "2h"},
+		{24 * time.Hour, "1d"},
+		{3 * 24 * time.Hour, "3d"},
+	}
+	for _, value := range values {
+		require.Equal(t, value.expected, FormatDuration(value.duration))
+		d, err := ParseDuration(FormatDuration(value.duration))
+		require.Nil(t, err)
+		require.Equalf(t, value.duration, d, "duration does not match: %v != %v", value.duration, d)
+	}
+}
+
+func TestFormatDuration_Rounded(t *testing.T) {
+	require.Equal(t, "1d", FormatDuration(47*time.Hour))
+}
+
+func TestParseFutureTimeRFC3339(t *testing.T) {
+	now := time.Date(
+		2026, 9, 2,
+		7, 0, 0, 0,
+		time.UTC,
+	)
+
+	tests := []struct {
+		input    string
+		expected time.Time
+	}{
+		{
+			"2026-09-02T10:00:00Z",
+			time.Date(2026, 9, 2, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			"2026-09-02T10:00:00+02:00",
+			time.Date(2026, 9, 2, 10, 0, 0, 0,
+				time.FixedZone("", 2*60*60)),
+		},
+	}
+
+	for _, tt := range tests {
+		actual, err := ParseFutureTime(tt.input, now)
+		require.NoError(t, err)
+		require.True(t, tt.expected.Equal(actual),
+			"expected %v, got %v", tt.expected, actual)
+	}
+}
+
+func TestParseFutureTime_RFC3339InThePastIsAnError(t *testing.T) {
+	// A well-formed RFC 3339 timestamp that already passed must be rejected, not handed to the
+	// natural-language parser (which used to turn it into "tomorrow")
+	now := time.Date(2026, 10, 7, 14, 0, 0, 0, time.UTC)
+	_, err := ParseFutureTime("2021-12-10T11:00:00-05:00", now)
+	require.Error(t, err)
+	_, err = ParseFutureTime("2026-10-07T13:59:59Z", now)
+	require.Error(t, err)
+}
+
+func TestParseFutureTime_TimezoneDST(t *testing.T) {
+	location, err := time.LoadLocation("America/New_York")
+	require.NoError(t, err)
+	for _, test := range []struct {
+		name string
+		now  time.Time
+		want time.Time
+	}{
+		{"spring", time.Date(2026, 3, 7, 10, 0, 0, 0, location), time.Date(2026, 3, 8, 14, 0, 0, 0, time.UTC)},
+		{"fall", time.Date(2026, 10, 31, 10, 0, 0, 0, location), time.Date(2026, 11, 1, 15, 0, 0, 0, time.UTC)},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := ParseFutureTime("tomorrow 10am", test.now)
+			require.NoError(t, err)
+			require.True(t, test.want.Equal(got), "want %s, got %s", test.want, got)
+			got, err = ParseFutureTime("24h", test.now)
+			require.NoError(t, err)
+			require.Equal(t, 24*time.Hour, got.Sub(test.now))
+		})
+	}
+}

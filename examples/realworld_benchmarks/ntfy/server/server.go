@@ -1,0 +1,2475 @@
+package server
+
+import (
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"embed"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net"
+	"net/http"
+	"net/http/pprof"
+	"net/netip"
+	"net/url"
+	"os"
+	"path"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+	"unicode/utf8"
+
+	"github.com/emersion/go-smtp"
+	"github.com/gorilla/websocket"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"golang.org/x/sync/errgroup"
+	"heckel.io/ntfy/v2/action"
+	"heckel.io/ntfy/v2/attachment"
+	"heckel.io/ntfy/v2/ban"
+	"heckel.io/ntfy/v2/cluster"
+	"heckel.io/ntfy/v2/db"
+	"heckel.io/ntfy/v2/db/pg"
+	"heckel.io/ntfy/v2/limit"
+	"heckel.io/ntfy/v2/log"
+	"heckel.io/ntfy/v2/mail"
+	"heckel.io/ntfy/v2/message"
+	"heckel.io/ntfy/v2/metrics"
+	"heckel.io/ntfy/v2/model"
+	"heckel.io/ntfy/v2/payments"
+	tp "heckel.io/ntfy/v2/topic"
+	"heckel.io/ntfy/v2/twilio"
+	"heckel.io/ntfy/v2/user"
+	"heckel.io/ntfy/v2/util"
+	"heckel.io/ntfy/v2/webpush"
+)
+
+// Server is the main server, providing the UI and API for ntfy
+type Server struct {
+	config            *Config
+	db                *db.DB          // Shared PostgreSQL connection pool (with optional replicas), nil when using SQLite
+	cluster           cluster.Cluster // Fans messages out to peer cluster nodes (nop when not clustered)
+	httpServers       []*http.Server
+	httpsServer       *http.Server
+	httpMetricsServer *http.Server
+	httpProfileServer *http.Server
+	httpClusterServer *http.Server // Dedicated private listener for node-to-node fan-out (experimental-cluster-listen)
+	unixListener      net.Listener
+	adminUnixListener net.Listener // Serves the admin API on the local admin socket, see handleAdminSocket
+	smtpServer        *smtp.Server
+	smtpServerBackend *smtpBackend
+	mailer            mail.Sender
+	topics            map[string]*topic
+	limiter           *limit.Service // Decides on and counts the visitors' usage, keyed by visitor key
+	visitors          *visitorEnv    // Shared by all visitors, which are built per request
+	topicService      *tp.Service    // Cluster-wide topic state: subscriber activity and rate visitors of the UnifiedPush topics
+	ban               *ban.Service   // Abuse ban-feed; nil when the feature is disabled (no ban file)
+	firebaseClient    *firebaseClient
+	twilio            *twilio.Client
+	messages          int64                               // Total number of messages (persisted if messageCache enabled)
+	messagesHistory   []int64                             // Last n values of the messages counter, used to determine rate
+	messagesFlushed   int64                               // Value of the messages counter at the last stats flush; the difference is written as a delta
+	userManager       *user.Manager                       // Might be nil!
+	messageCache      *message.Cache                      // Database that stores the messages
+	webPush           *webpush.Store                      // Database that stores web push subscriptions
+	attachment        *attachment.Store                   // Attachment store (file system or S3)
+	stripe            stripeAPI                           // Stripe API, can be replaced with a mock
+	priceCache        *util.LookupCache[map[string]int64] // Stripe price ID -> price as cents (USD implied!)
+	metricsHandler    http.Handler                        // Handles /metrics if enable-metrics set, and listen-metrics-http not set
+	closeChan         chan bool
+	tail              *message.Tail // Reads what was written, see runTail; nil without a message cache
+	stopOnce          sync.Once
+	stopped           atomic.Bool     // Set by Stop; read by Run, which must not start listeners afterwards
+	streams           *streamRegistry // Open subscriber connections, for Drain
+	readOnly          atomic.Bool     // Second phase of a drain: new subscriptions and publishes get 503 (see Drain)
+	mu                sync.RWMutex
+}
+
+// handleFunc extends the normal http.HandlerFunc to be able to easily return errors
+type handleFunc func(http.ResponseWriter, *http.Request, *visitor) error
+
+var (
+	// If changed, don't forget to update Android App and auth_sqlite.go
+	topicRegex             = regexp.MustCompile(`^[-_A-Za-z0-9]{1,64}$`)               // No /!
+	topicPathRegex         = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}$`)              // Regex must match JS & Android app!
+	externalTopicPathRegex = regexp.MustCompile(`^/[^/]+\.[^/]+/[-_A-Za-z0-9]{1,64}$`) // Extended topic path, for web-app, e.g. /example.com/mytopic
+	jsonPathRegex          = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*/json$`)
+	ssePathRegex           = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*/sse$`)
+	rawPathRegex           = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*/raw$`)
+	wsPathRegex            = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*/ws$`)
+	authPathRegex          = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}(,[-_A-Za-z0-9]{1,64})*/auth$`)
+	publishPathRegex       = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}/(publish|send|trigger)$`)
+	updatePathRegex        = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}/[-_A-Za-z0-9]{1,64}$`)
+	clearPathRegex         = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}/[-_A-Za-z0-9]{1,64}/(read|clear)$`)
+	deletePathRegex        = regexp.MustCompile(`^/[-_A-Za-z0-9]{1,64}/[-_A-Za-z0-9]{1,64}/delete$`)
+	sequenceIDRegex        = topicRegex
+
+	webAppConfigPath              = "/config.js"
+	webAppManifestPath            = "/manifest.webmanifest"
+	webAppEmailVerifyPathPrefix   = "/account/email/verify/"                                       // Browser landing route; raw token appended
+	webAppEmailVerifyRegex        = regexp.MustCompile(`^/account/email/verify/[-_A-Za-z0-9]+$`)   // Magic-link landing (served by the web app)
+	webAppPasswordResetPathPrefix = "/account/password/reset/"                                     // Browser landing route; raw token appended
+	webAppPasswordResetRegex      = regexp.MustCompile(`^/account/password/reset/[-_A-Za-z0-9]+$`) // Password-reset landing (served by the web app)
+
+	accountPath                                          = "/account"
+	matrixPushPath                                       = "/_matrix/push/v1/notify"
+	metricsPath                                          = "/metrics"
+	apiHealthPath                                        = "/v1/health"
+	apiReadyPath                                         = "/v1/ready"
+	apiVersionPath                                       = "/v1/version"
+	apiConfigPath                                        = "/v1/config"
+	apiStatsPath                                         = "/v1/stats"
+	apiWebPushPath                                       = "/v1/webpush"
+	apiTiersPath                                         = "/v1/tiers"
+	apiUsersPath                                         = "/v1/users"
+	apiUsersAccessPath                                   = "/v1/users/access"
+	apiUsersTokensPath                                   = "/v1/users/tokens"
+	apiUsersPasswordResetPath                            = "/v1/users/password/reset"
+	apiAccountPath                                       = "/v1/account"
+	apiAccountLoginPath                                  = "/v1/account/login"
+	apiAccountTokenPath                                  = "/v1/account/token"
+	apiAccountPasswordPath                               = "/v1/account/password"
+	apiAccountSettingsPath                               = "/v1/account/settings"
+	apiAccountSubscriptionPath                           = "/v1/account/subscription"
+	apiAccountReservationPath                            = "/v1/account/reservation"
+	apiAccountPhonePath                                  = "/v1/account/phone"
+	apiAccountPhoneVerifyPath                            = "/v1/account/phone/verify"
+	apiAccountEmailPath                                  = "/v1/account/email"
+	apiAccountEmailVerifyPath                            = "/v1/account/email/verify"
+	apiAccountEmailPrimaryPath                           = "/v1/account/email/primary"
+	apiAccountEmailResendPath                            = "/v1/account/email/resend"
+	apiAccountPasswordResetRequestPath                   = "/v1/account/password/reset/request"
+	apiAccountPasswordResetPath                          = "/v1/account/password/reset"
+	apiAccountBillingTiersPath                           = "/v1/account/billing/tiers"
+	apiAccountBillingPortalPath                          = "/v1/account/billing/portal"
+	apiAccountBillingWebhookPath                         = "/v1/account/billing/webhook"
+	apiAccountBillingSubscriptionPath                    = "/v1/account/billing/subscription"
+	apiAccountBillingSubscriptionCheckoutSuccessTemplate = "/v1/account/billing/subscription/success/{CHECKOUT_SESSION_ID}"
+	apiAccountBillingSubscriptionCheckoutSuccessRegex    = regexp.MustCompile(`/v1/account/billing/subscription/success/(.+)$`)
+	apiAccountReservationSingleRegex                     = regexp.MustCompile(`/v1/account/reservation/([-_A-Za-z0-9]{1,64})$`)
+	staticRegex                                          = regexp.MustCompile(`^/(static/.+|app.html|sw.js|sw.js.map)$`)
+	docsRegex                                            = regexp.MustCompile(`^/docs(|/.*)$`)
+	fileRegex                                            = regexp.MustCompile(`^/file/([-_A-Za-z0-9]{1,64})(?:\.[A-Za-z0-9]{1,16})?$`)
+	urlRegex                                             = regexp.MustCompile(`^https?://`)
+	phoneNumberRegex                                     = regexp.MustCompile(`^\+\d{1,100}$`)
+	emailAddressRegex                                    = regexp.MustCompile(`^[^\s,;]+@[^\s,;]+$`)
+
+	//go:embed site
+	webFs       embed.FS
+	webFsCached = &util.CachingEmbedFS{ModTime: time.Now(), FS: webFs}
+	webSiteDir  = "/site"
+	webAppIndex = "/app.html" // React app
+
+	//go:embed docs
+	docsStaticFs     embed.FS
+	docsStaticCached = &util.CachingEmbedFS{ModTime: time.Now(), FS: docsStaticFs}
+)
+
+const (
+	firebaseControlTopic     = "~control"                // See Android if changed
+	firebasePollTopic        = "~poll"                   // See iOS if changed (DISABLED for now)
+	emptyMessageBody         = "triggered"               // Used when a message body is empty
+	newMessageBody           = "New message"             // Used in poll requests as generic message
+	defaultAttachmentMessage = "You received a file: %s" // Used if message body is empty, and there is an attachment
+	encodingBase64           = "base64"                  // Used mainly for binary UnifiedPush messages
+	jsonBodyBytesLimit       = 131072                    // Max number of bytes for a request bodys (unless MessageLimit is higher)
+	unifiedPushTopicPrefix   = "up"                      // Temporarily, we rate limit all "up*" topics based on the subscriber
+	unifiedPushTopicLength   = 14                        // Length of UnifiedPush topics, including the "up" part
+	messagesHistoryMax       = 10                        // Number of message count values to keep in memory
+	subscribeTopicsLimit     = 150                       // Max distinct topics in one subscription; each one runs its own replay query (matches the ntfy.sh nginx edge rule)
+
+	// stopTimeout bounds the entire shutdown. The stores wait for their own background work
+	// (the attachment sync loop queries the database), and none of those waits has a deadline,
+	// so this is the backstop that keeps a wedged database from stalling us until SIGKILL.
+	stopTimeout = 10 * time.Second
+)
+
+// WebSocket constants
+const (
+	wsWriteWait  = 2 * time.Second
+	wsBufferSize = 1024
+	wsReadLimit  = 64 // We only ever receive PINGs
+	wsPongWait   = 15 * time.Second
+)
+
+// New instantiates a new Server. It creates the cache and adds a Firebase
+// subscriber (if configured).
+func New(conf *Config) (*Server, error) {
+	var sender mail.Sender
+	if conf.SMTPSenderAddr != "" {
+		sender = mail.NewSender(&mail.Config{
+			BaseURL:  conf.BaseURL,
+			SMTPAddr: conf.SMTPSenderAddr,
+			SMTPUser: conf.SMTPSenderUser,
+			SMTPPass: conf.SMTPSenderPass,
+			From:     conf.SMTPSenderFrom,
+		})
+	}
+	var stripe stripeAPI
+	if payments.Available && conf.StripeSecretKey != "" {
+		stripe = newStripeAPI()
+	}
+	// Open shared PostgreSQL connection pool if configured
+	var pool *db.DB
+	if conf.DatabaseURL != "" {
+		primary, err := pg.Open(conf.DatabaseURL)
+		if err != nil {
+			return nil, err
+		}
+		var replicas []*db.Host
+		for _, replicaURL := range conf.DatabaseReplicaURLs {
+			r, err := pg.OpenReplica(replicaURL)
+			if err != nil {
+				// Close already-opened replicas before returning
+				for _, opened := range replicas {
+					opened.DB.Close()
+				}
+				primary.DB.Close()
+				return nil, fmt.Errorf("failed to open database replica: %w", err)
+			}
+			replicas = append(replicas, r)
+		}
+		pool = db.New(primary, replicas)
+	}
+	messageCache, err := createMessageCache(conf, pool)
+	if err != nil {
+		return nil, err
+	}
+	var wp *webpush.Store
+	if conf.WebPushPublicKey != "" {
+		if pool != nil {
+			wp, err = webpush.NewPostgresStore(pool)
+		} else {
+			wp, err = webpush.NewSQLiteStore(conf.WebPushFile, conf.WebPushStartupQueries)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	topicIDs, err := messageCache.Topics()
+	if err != nil {
+		return nil, err
+	}
+	topics := make(map[string]*topic, len(topicIDs))
+	for _, id := range topicIDs {
+		topics[id] = newTopic(id)
+	}
+	messages, err := messageCache.Stats()
+	if err != nil {
+		return nil, err
+	}
+	attachmentStore, err := createAttachmentStore(conf, messageCache)
+	if err != nil {
+		return nil, err
+	}
+	twilioClient := twilio.NewClient(&twilio.Config{
+		Account:       conf.TwilioAccount,
+		AuthToken:     conf.TwilioAuthToken,
+		PhoneNumber:   conf.TwilioPhoneNumber,
+		CallsBaseURL:  conf.TwilioCallsBaseURL,
+		VerifyBaseURL: conf.TwilioVerifyBaseURL,
+		VerifyService: conf.TwilioVerifyService,
+		CallFormat:    conf.TwilioCallFormat,
+		BuildVersion:  conf.BuildVersion,
+	})
+	var banner *ban.Service
+	if conf.BanFile != "" {
+		banner = ban.NewService(&ban.Config{
+			File:           conf.BanFile,
+			Window:         conf.BanWindow,
+			Threshold:      conf.BanThreshold,
+			Weights:        conf.BanWeights,
+			PrefixBitsIPv4: conf.VisitorPrefixBitsIPv4,
+			PrefixBitsIPv6: conf.VisitorPrefixBitsIPv6,
+		})
+	}
+	// Peers reach this node on the dedicated cluster listener, never on the public ones
+	advertiseURL := conf.ClusterAdvertiseURL
+	if advertiseURL == "" && conf.ClusterListen != "" {
+		advertiseURL = "http://" + conf.ClusterListen
+	}
+	s := &Server{
+		config:          conf,
+		db:              pool,
+		messageCache:    messageCache,
+		webPush:         wp,
+		attachment:      attachmentStore,
+		twilio:          twilioClient,
+		mailer:          sender,
+		ban:             banner,
+		topics:          topics,
+		messages:        messages,
+		messagesHistory: []int64{messages},
+		messagesFlushed: messages, // The loaded total is already persisted; only new publishes are deltas
+		stripe:          stripe,
+		streams:         newStreamRegistry(),
+	}
+	s.priceCache = util.NewLookupCache(s.fetchStripePrices, conf.StripePriceCacheDuration)
+	var userManager *user.Manager
+	var userDB *db.DB // The shared pool on Postgres, the auth-file on SQLite; also holds the usage table
+	if conf.AuthFile != "" || pool != nil {
+		authConfig := &user.Config{
+			Filename:                  conf.AuthFile,
+			DatabaseURL:               conf.DatabaseURL,
+			StartupQueries:            conf.AuthStartupQueries,
+			DefaultAccess:             conf.AuthDefault,
+			ProvisionEnabled:          true, // Enable provisioning of users and access
+			Users:                     conf.AuthUsers,
+			Access:                    conf.AuthAccess,
+			Tokens:                    conf.AuthTokens,
+			BcryptCost:                conf.AuthBcryptCost,
+			QueueWriterInterval:       conf.AuthStatsQueueWriterInterval,
+			AccessCacheEnabled:        conf.AuthAccessCacheEnabled,
+			AccessCacheReloadInterval: conf.AuthAccessCacheReloadInterval,
+			AccessCacheChangedFunc:    s.reauthorizeSubscribers,
+			AccessWrittenFunc:         s.broadcastAccessChanged,
+		}
+		if pool != nil {
+			userDB = pool
+			userManager, err = user.NewPostgresManager(userDB, authConfig)
+		} else {
+			if userDB, err = user.OpenSQLite(conf.AuthFile); err != nil {
+				return nil, err
+			}
+			userManager, err = user.NewSQLiteManager(userDB, conf.AuthStartupQueries, authConfig)
+		}
+		if err != nil {
+			return nil, err
+		}
+	}
+	var firebaseClient *firebaseClient
+	if conf.FirebaseKeyFile != "" {
+		sender, err := newFirebaseSender(conf.FirebaseKeyFile)
+		if err != nil {
+			return nil, err
+		}
+		// This awkward logic is required because Go is weird about nil types and interfaces.
+		// See issue #641, and https://go.dev/play/p/uur1flrv1t3 for an example
+		var auther user.Auther
+		if userManager != nil {
+			auther = userManager
+		}
+		firebaseClient = newFirebaseClient(sender, auther)
+	}
+	s.userManager = userManager
+	s.limiter = limit.New(createUsageStore(pool, userDB))
+	s.visitors = newVisitorEnv(conf, s.limiter, messageCache, userManager)
+	s.topicService = tp.New(createTopicStore(pool, userDB))
+	s.firebaseClient = firebaseClient
+	if pool != nil {
+		metrics.SetDBPoolsFunc(s.dbPoolStats)
+	}
+	s.cluster, err = cluster.New(&cluster.Config{
+		Enabled:           conf.ClusterListen != "", // Setting experimental-cluster-listen implicitly enables clustering
+		NodeID:            cluster.NodeID(conf.ClusterNodeID),
+		AdvertiseURL:      advertiseURL,
+		Role:              conf.ClusterRole,
+		Secret:            conf.ClusterSecret,
+		BatchLinger:       conf.ClusterBatchLinger,
+		UsersDeletedFunc:  s.handleUsersDeleted,
+		AccessChangedFunc: s.handlePeerAccessChanged,
+		IsolatedFunc:      s.maybeCloseLocalSubscribers,
+		MaxMessageBytes:   int64(conf.MessageSizeLimit)*4 + 1024, // Envelope overhead over the raw message
+	}, pool, s.deliverFromBus)
+	if err != nil {
+		return nil, err
+	}
+	if conf.CacheDuration > 0 {
+		tail, err := messageCache.Tail()
+		if err != nil {
+			return nil, err
+		}
+		s.tail = tail
+		go s.runTail()
+	}
+	if err := s.limiter.Start(context.Background()); err != nil {
+		return nil, err
+	}
+	if err := s.topicService.Start(context.Background()); err != nil {
+		return nil, err
+	}
+	return s, nil
+}
+
+// dbPoolStats reports the database connection pools for the ntfy_db_* metrics
+func (s *Server) dbPoolStats() []*metrics.DBPool {
+	pools := make([]*metrics.DBPool, 0)
+	for _, p := range s.db.Stats() {
+		pools = append(pools, &metrics.DBPool{
+			Role:         p.Role,
+			Addr:         p.Addr,
+			Up:           p.Healthy,
+			Stats:        p.Stats,
+			PingDuration: p.PingDuration,
+		})
+	}
+	return pools
+}
+
+// createUsageStore returns the store of the usage table, which is part of the user schema (the
+// user manager creates and migrates it): on the shared pool on Postgres, in the auth-file on
+// SQLite. Without a user database, the daily counts are kept in memory only.
+func createUsageStore(pool, userDB *db.DB) *limit.Store {
+	if pool != nil {
+		return limit.NewPostgresStore(pool)
+	} else if userDB != nil {
+		return limit.NewSQLiteStore(userDB)
+	}
+	return nil
+}
+
+// createTopicStore returns the store of the topic table (user schema, like createUsageStore), or nil for memory only
+func createTopicStore(pool, userDB *db.DB) *tp.Store {
+	if pool != nil {
+		return tp.NewPostgresStore(pool)
+	} else if userDB != nil {
+		return tp.NewSQLiteStore(userDB)
+	}
+	return nil
+}
+
+func createMessageCache(conf *Config, pool *db.DB) (*message.Cache, error) {
+	if conf.CacheDuration == 0 {
+		return message.NewNopStore()
+	} else if pool != nil {
+		return message.NewPostgresStore(pool, conf.CacheBatchSize, conf.CacheBatchTimeout)
+	} else if conf.CacheFile != "" {
+		return message.NewSQLiteStore(conf.CacheFile, conf.CacheStartupQueries, conf.CacheDuration, conf.CacheBatchSize, conf.CacheBatchTimeout, false)
+	}
+	return message.NewMemStore()
+}
+
+func createAttachmentStore(conf *Config, messageCache *message.Cache) (*attachment.Store, error) {
+	if strings.HasPrefix(conf.AttachmentCacheDir, "s3://") {
+		return attachment.NewS3Store(conf.AttachmentCacheDir, conf.AttachmentTotalSizeLimit, conf.AttachmentOrphanGracePeriod, messageCache.AttachmentsWithSizes)
+	} else if conf.AttachmentCacheDir != "" {
+		return attachment.NewFileStore(conf.AttachmentCacheDir, conf.AttachmentTotalSizeLimit, conf.AttachmentOrphanGracePeriod, messageCache.AttachmentsWithSizes)
+	}
+	return nil, nil
+}
+
+// testHookBeforeSubscribe, if non-nil, is called by the subscribe handlers after the request was
+// authorized and before its stream subscribes. Tests use it to land an access change in between;
+// it is always nil in production.
+var testHookBeforeSubscribe func()
+
+// Run executes the main server. It listens on HTTP (+ HTTPS, if configured), and starts
+// a manager go routine to print stats and prune messages.
+func (s *Server) Run() error {
+	var listenStr string
+	for _, addr := range s.config.ListenHTTP {
+		listenStr += fmt.Sprintf(" %s[http]", addr)
+	}
+	if s.config.ListenHTTPS != "" {
+		listenStr += fmt.Sprintf(" %s[https]", s.config.ListenHTTPS)
+	}
+	if s.config.ListenUnix != "" {
+		listenStr += fmt.Sprintf(" %s[unix]", s.config.ListenUnix)
+	}
+	if s.config.ListenAdminUnix != "" && s.userManager != nil {
+		listenStr += fmt.Sprintf(" %s[admin]", s.config.ListenAdminUnix)
+	}
+	if s.config.SMTPServerListen != "" {
+		listenStr += fmt.Sprintf(" %s[smtp]", s.config.SMTPServerListen)
+	}
+	if s.config.MetricsListenHTTP != "" {
+		listenStr += fmt.Sprintf(" %s[http/metrics]", s.config.MetricsListenHTTP)
+	}
+	if s.config.ProfileListenHTTP != "" {
+		listenStr += fmt.Sprintf(" %s[http/profile]", s.config.ProfileListenHTTP)
+	}
+	log.Tag(tagStartup).Info("Listening on%s, ntfy %s, log level is %s", listenStr, s.config.BuildVersion, log.CurrentLevel().String())
+	if log.IsFile() {
+		fmt.Fprintf(os.Stderr, "Listening on%s, ntfy %s\n", listenStr, s.config.BuildVersion)
+		fmt.Fprintf(os.Stderr, "Logs are written to %s\n", log.File())
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", s.handle)
+	errChan := make(chan error)
+	if s.stopped.Load() {
+		return nil // Stopped before we got here; a stuck shutdown must not block us on the lock
+	}
+	s.mu.Lock()
+	if s.stopped.Load() {
+		s.mu.Unlock()
+		return nil // Stopped while we waited for the lock, i.e. the stores are closed by now
+	}
+	s.closeChan = make(chan bool)
+	for _, addr := range s.config.ListenHTTP {
+		httpServer := &http.Server{Addr: addr, Handler: mux}
+		s.httpServers = append(s.httpServers, httpServer)
+		go func() {
+			errChan <- httpServer.ListenAndServe()
+		}()
+	}
+	if s.config.ListenHTTPS != "" {
+		s.httpsServer = &http.Server{Addr: s.config.ListenHTTPS, Handler: mux}
+		go func() {
+			errChan <- s.httpsServer.ListenAndServeTLS(s.config.CertFile, s.config.KeyFile)
+		}()
+	}
+	if s.config.ListenUnix != "" {
+		go func() {
+			var err error
+			s.mu.Lock()
+			if s.stopped.Load() {
+				s.mu.Unlock()
+				return // Nobody would close this listener anymore
+			}
+			os.Remove(s.config.ListenUnix)
+			s.unixListener, err = net.Listen("unix", s.config.ListenUnix)
+			if err != nil {
+				s.mu.Unlock()
+				errChan <- err
+				return
+			}
+			defer s.unixListener.Close()
+			if s.config.ListenUnixMode > 0 {
+				if err := os.Chmod(s.config.ListenUnix, s.config.ListenUnixMode); err != nil {
+					s.mu.Unlock()
+					errChan <- err
+					return
+				}
+			}
+			s.mu.Unlock()
+			httpServer := &http.Server{Handler: mux}
+			errChan <- httpServer.Serve(s.unixListener)
+		}()
+	}
+	if s.config.ListenAdminUnix != "" && s.userManager != nil { // Without auth, there is nothing to administer
+		go func() {
+			var err error
+			s.mu.Lock()
+			if s.stopped.Load() {
+				s.mu.Unlock()
+				return // Nobody would close this listener anymore
+			}
+			s.adminUnixListener, err = s.listenAdminSocket()
+			if err != nil {
+				s.mu.Unlock()
+				// Not fatal, unlike the other listeners: nothing depends on the (experimental) admin socket yet
+				log.Tag(tagStartup).Err(err).Warn("Admin socket %s not available", s.config.ListenAdminUnix)
+				return
+			}
+			defer s.adminUnixListener.Close()
+			s.mu.Unlock()
+			httpServer := &http.Server{Handler: http.HandlerFunc(s.handleAdminSocket)}
+			errChan <- httpServer.Serve(s.adminUnixListener)
+		}()
+	}
+	if s.config.MetricsListenHTTP != "" {
+		s.httpMetricsServer = &http.Server{Addr: s.config.MetricsListenHTTP, Handler: promhttp.Handler()}
+		go func() {
+			errChan <- s.httpMetricsServer.ListenAndServe()
+		}()
+	} else if s.config.EnableMetrics {
+		s.metricsHandler = promhttp.Handler()
+	}
+	if s.config.ClusterListen != "" {
+		// The cluster serves the whole private listener: every path on it is the peer API, which
+		// the cluster owns and authenticates itself
+		s.httpClusterServer = &http.Server{Addr: s.config.ClusterListen, Handler: s.cluster}
+		go func() {
+			errChan <- s.httpClusterServer.ListenAndServe()
+		}()
+	}
+	if s.config.ProfileListenHTTP != "" {
+		profileMux := http.NewServeMux()
+		profileMux.HandleFunc("/debug/pprof/", pprof.Index)
+		profileMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		profileMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		profileMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		profileMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		s.httpProfileServer = &http.Server{Addr: s.config.ProfileListenHTTP, Handler: profileMux}
+		go func() {
+			errChan <- s.httpProfileServer.ListenAndServe()
+		}()
+	}
+	if s.config.SMTPServerListen != "" {
+		go func() {
+			errChan <- s.runSMTPServer()
+		}()
+	}
+	s.mu.Unlock()
+	go s.runManager()
+	go s.runDelayedSender()
+	go s.runFirebaseKeepaliver()
+
+	return <-errChan
+}
+
+// Stop stops the HTTP (+HTTPS) server and all managers. It is idempotent: a signal handler and
+// the serve command both call it, and the second call waits for the first to finish.
+func (s *Server) Stop() {
+	s.stopped.Store(true) // Before the lock: Run must see this even if stop() is stuck
+	s.stopOnce.Do(s.stopBounded)
+}
+
+// stopBounded runs the shutdown and gives up on it after stopTimeout, so that a store which
+// never finishes closing cannot keep the process alive
+func (s *Server) stopBounded() {
+	done := make(chan struct{})
+	go func() {
+		s.stop()
+		close(done)
+	}()
+	select {
+	case <-done:
+	case <-time.After(stopTimeout):
+		log.Tag(tagStartup).Warn("Shutdown did not finish within %v, exiting anyway", stopTimeout)
+	}
+}
+
+func (s *Server) stop() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, httpServer := range s.httpServers {
+		httpServer.Close()
+	}
+	if s.httpsServer != nil {
+		s.httpsServer.Close()
+	}
+	if s.unixListener != nil {
+		s.unixListener.Close()
+	}
+	if s.adminUnixListener != nil {
+		s.adminUnixListener.Close()
+	}
+	if s.smtpServer != nil {
+		s.smtpServer.Close()
+	}
+	if s.attachment != nil {
+		s.attachment.Close()
+	}
+	if s.httpClusterServer != nil {
+		s.httpClusterServer.Close()
+	}
+	if s.tail != nil {
+		s.tail.Close() // Before the databases close under it
+	}
+	if s.cluster != nil {
+		s.cluster.Close() // Before the databases close, so it can deregister the node and its heartbeat stops
+	}
+	s.limiter.Close()      // Writes the unflushed daily counts, before the databases close under it
+	s.topicService.Close() // Likewise, the changed topics
+	s.closeDatabases()
+	if s.ban != nil {
+		s.ban.Close()
+	}
+	if s.closeChan != nil {
+		close(s.closeChan)
+	}
+}
+
+func (s *Server) closeDatabases() {
+	// Message cache first: it may still be writing its last batch, and on Postgres all stores
+	// share one pool, so closing any other store first would close the pool under that write
+	if s.messageCache != nil {
+		s.messageCache.Close()
+	}
+	if s.userManager != nil {
+		s.userManager.Close()
+	}
+	if s.webPush != nil {
+		s.webPush.Close()
+	}
+	if s.db != nil {
+		s.db.Close()
+	}
+}
+
+// handle is the main entry point for all HTTP requests
+func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
+	r, v, err := s.maybeAuthenticate(r) // Note: Always returns v (and r, with the client IP in its context), even on error
+	if err != nil {
+		s.handleError(w, r, v, err)
+		return
+	}
+	ev := logvr(v, r)
+	if ev.IsTrace() {
+		ev.Field("http_request", renderHTTPRequest(r)).Trace("HTTP request started")
+	} else if logvr(v, r).IsDebug() {
+		ev.Debug("HTTP request started")
+	}
+	logvr(v, r).
+		Timing(func() {
+			if err := s.handleInternal(w, r, v); err != nil {
+				s.handleError(w, r, v, err)
+				return
+			}
+			metrics.HTTPRequests.WithLabelValues("200", "20000", r.Method).Inc()
+		}).
+		Debug("HTTP request finished")
+}
+
+func (s *Server) handleError(w http.ResponseWriter, r *http.Request, v *visitor, err error) {
+	httpErr, ok := err.(*errHTTP)
+	if !ok {
+		httpErr = errHTTPInternalError
+	}
+	metrics.HTTPRequests.WithLabelValues(strconv.Itoa(httpErr.HTTPCode), strconv.Itoa(httpErr.Code), r.Method).Inc()
+	isRateLimiting := util.Contains(rateLimitingErrorCodes, httpErr.HTTPCode)
+	isNormalError := strings.Contains(err.Error(), "i/o timeout") || util.Contains(normalErrorCodes, httpErr.HTTPCode) ||
+		httpErr.Code == errHTTPServiceUnavailableDraining.Code // A draining node rejects every new subscription, by design
+	if retryAfter := httpErr.retryAfterSeconds(); retryAfter != "" {
+		w.Header().Set("Retry-After", retryAfter)
+	}
+	if httpErr.decision != nil {
+		setRateLimitHeaders(w, *httpErr.decision)
+	}
+	ev := logvr(v, r).Err(err)
+	if websocket.IsWebSocketUpgrade(r) {
+		ev.Tag(tagWebsocket).Fields(websocketErrorContext(err))
+		if isNormalError {
+			ev.Debug("WebSocket error (this error is okay, it happens a lot): %s", err.Error())
+		} else {
+			ev.Info("WebSocket error: %s", err.Error())
+		}
+		// Write error response only if the connection was not hijacked yet. Bytes written to hijacked
+		// connections are WebSocket frames, not HTTP, and will cause "http: response.WriteHeader on hijacked
+		// connection" log spam.
+		var postUpgradeErr *errWebSocketPostUpgrade
+		if !errors.As(err, &postUpgradeErr) {
+			w.WriteHeader(httpErr.HTTPCode)
+		}
+		return
+	}
+	if isNormalError {
+		ev.Debug("Connection closed with HTTP %d (ntfy error %d)", httpErr.HTTPCode, httpErr.Code)
+	} else {
+		ev.Info("Connection closed with HTTP %d (ntfy error %d)", httpErr.HTTPCode, httpErr.Code)
+	}
+	if isRateLimiting && s.config.StripeSecretKey != "" {
+		u := v.User()
+		if u == nil || u.Tier == nil {
+			httpErr = httpErr.Wrap("increase your limits with a paid plan, see %s", s.config.BaseURL)
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+	w.WriteHeader(httpErr.HTTPCode)
+	io.WriteString(w, httpErr.JSON()+"\n")
+	if s.ban != nil {
+		if ip, err := fromContext[netip.Addr](r, contextVisitorIP); err == nil {
+			s.ban.Record(ip, httpErr.HTTPCode, httpErr.Code)
+		}
+	}
+}
+
+func (s *Server) handleInternal(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	if r.Method == http.MethodGet && r.URL.Path == "/" && s.config.WebRoot == "/" {
+		return s.ensureWebEnabled(s.handleWebApp)(w, r, v)
+	} else if r.Method == http.MethodHead && r.URL.Path == "/" {
+		return s.ensureWebEnabled(s.handleEmpty)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiHealthPath {
+		return s.handleHealth(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiReadyPath {
+		return s.handleReady(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiVersionPath {
+		return s.ensureAdmin(s.handleVersion)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiConfigPath {
+		return s.handleConfig(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == webAppConfigPath {
+		return s.ensureWebEnabled(s.handleWebConfig)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == webAppManifestPath {
+		return s.ensureWebPushEnabled(s.handleWebManifest)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiUsersPath {
+		return s.ensureAdmin(s.handleUsersGet)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiUsersPath {
+		return s.ensureAdmin(s.handleUsersAdd)(w, r, v)
+	} else if r.Method == http.MethodPut && r.URL.Path == apiUsersPath {
+		return s.ensureAdmin(s.handleUsersUpdate)(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiUsersPath {
+		return s.ensureAdmin(s.handleUsersDelete)(w, r, v)
+	} else if (r.Method == http.MethodPut || r.Method == http.MethodPost) && r.URL.Path == apiUsersAccessPath {
+		return s.ensureAdmin(s.handleAccessAllow)(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiUsersAccessPath {
+		return s.ensureAdmin(s.handleAccessReset)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiUsersTokensPath {
+		return s.ensureAdmin(s.handleUsersTokensGet)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiUsersTokensPath {
+		return s.ensureAdmin(s.handleUsersTokensAdd)(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiUsersTokensPath {
+		return s.ensureAdmin(s.handleUsersTokensDelete)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiUsersPasswordResetPath {
+		return s.ensureAdmin(s.handleUsersPasswordReset)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiTiersPath && v.User().IsAdmin() {
+		return s.ensureAdmin(s.handleAdminTiersGet)(w, r, v) // Non-admins get the billing tiers, see below
+	} else if r.Method == http.MethodPost && r.URL.Path == apiTiersPath {
+		return s.ensureAdmin(s.handleAdminTiersAdd)(w, r, v)
+	} else if r.Method == http.MethodPut && r.URL.Path == apiTiersPath {
+		return s.ensureAdmin(s.handleAdminTiersUpdate)(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiTiersPath {
+		return s.ensureAdmin(s.handleAdminTiersDelete)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountPath {
+		return s.ensureUserManager(s.handleAccountCreate)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiAccountPath {
+		return s.handleAccountGet(w, r, v) // Allowed by anonymous
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAccountPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountDelete))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountPasswordPath {
+		return s.ensureUser(s.handleAccountPasswordChange)(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountLoginPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountLogin))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountTokenPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountTokenCreate))(w, r, v)
+	} else if r.Method == http.MethodPatch && r.URL.Path == apiAccountTokenPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountTokenUpdate))(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAccountTokenPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountTokenDelete))(w, r, v)
+	} else if r.Method == http.MethodPatch && r.URL.Path == apiAccountSettingsPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountSettingsChange))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountSubscriptionPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountSubscriptionAdd))(w, r, v)
+	} else if r.Method == http.MethodPatch && r.URL.Path == apiAccountSubscriptionPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountSubscriptionChange))(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAccountSubscriptionPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountSubscriptionDelete))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountReservationPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountReservationAdd))(w, r, v)
+	} else if r.Method == http.MethodDelete && apiAccountReservationSingleRegex.MatchString(r.URL.Path) {
+		return s.ensureUser(s.withAccountSync(s.handleAccountReservationDelete))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountBillingSubscriptionPath {
+		return s.ensurePaymentsEnabled(s.ensureUser(s.handleAccountBillingSubscriptionCreate))(w, r, v) // Account sync via incoming Stripe webhook
+	} else if r.Method == http.MethodGet && apiAccountBillingSubscriptionCheckoutSuccessRegex.MatchString(r.URL.Path) {
+		return s.ensurePaymentsEnabled(s.ensureUserManager(s.handleAccountBillingSubscriptionCreateSuccess))(w, r, v) // No user context!
+	} else if r.Method == http.MethodPut && r.URL.Path == apiAccountBillingSubscriptionPath {
+		return s.ensurePaymentsEnabled(s.ensureStripeCustomer(s.handleAccountBillingSubscriptionUpdate))(w, r, v) // Account sync via incoming Stripe webhook
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAccountBillingSubscriptionPath {
+		return s.ensurePaymentsEnabled(s.ensureStripeCustomer(s.handleAccountBillingSubscriptionDelete))(w, r, v) // Account sync via incoming Stripe webhook
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountBillingPortalPath {
+		return s.ensurePaymentsEnabled(s.ensureStripeCustomer(s.handleAccountBillingPortalSessionCreate))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountBillingWebhookPath {
+		return s.ensurePaymentsEnabled(s.ensureUserManager(s.handleAccountBillingWebhook))(w, r, v) // This request comes from Stripe!
+	} else if r.Method == http.MethodPut && r.URL.Path == apiAccountPhoneVerifyPath {
+		return s.ensureUser(s.ensureCallsEnabled(s.withAccountSync(s.handleAccountPhoneNumberVerify)))(w, r, v)
+	} else if r.Method == http.MethodPut && r.URL.Path == apiAccountPhonePath {
+		return s.ensureUser(s.ensureCallsEnabled(s.withAccountSync(s.handleAccountPhoneNumberAdd)))(w, r, v)
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAccountPhonePath {
+		return s.ensureUser(s.ensureCallsEnabled(s.withAccountSync(s.handleAccountPhoneNumberDelete)))(w, r, v)
+	} else if r.Method == http.MethodPut && r.URL.Path == apiAccountEmailPath {
+		return s.ensureUser(s.ensureEmailsEnabled(s.withAccountSync(s.handleAccountEmailAdd)))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountEmailVerifyPath {
+		return s.ensureEmailsEnabled(s.limitRequests(s.handleAccountEmailVerify))(w, r, v) // No ensureUser: clicked from a mail client, possibly logged out
+	} else if r.Method == http.MethodDelete && r.URL.Path == apiAccountEmailPath {
+		return s.ensureUser(s.ensureEmailsEnabled(s.withAccountSync(s.handleAccountEmailDelete)))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountEmailPrimaryPath {
+		return s.ensureUser(s.withAccountSync(s.handleAccountEmailSetPrimary))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountEmailResendPath {
+		return s.ensureUser(s.ensureEmailsEnabled(s.handleAccountEmailResend))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountPasswordResetRequestPath {
+		return s.ensureEmailsEnabled(s.limitRequests(s.handleAccountPasswordResetRequest))(w, r, v) // Unauthenticated
+	} else if r.Method == http.MethodPost && r.URL.Path == apiAccountPasswordResetPath {
+		return s.ensureEmailsEnabled(s.limitRequests(s.handleAccountPasswordReset))(w, r, v) // Unauthenticated
+	} else if r.Method == http.MethodPost && apiWebPushPath == r.URL.Path {
+		return s.ensureWebPushEnabled(s.limitRequests(s.handleWebPushUpdate))(w, r, v)
+	} else if r.Method == http.MethodDelete && apiWebPushPath == r.URL.Path {
+		return s.ensureWebPushEnabled(s.limitRequests(s.handleWebPushDelete))(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiStatsPath {
+		return s.handleStats(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiAccountBillingTiersPath {
+		return s.ensurePaymentsEnabled(s.handleBillingTiersGet)(w, r, v)
+	} else if r.Method == http.MethodGet && r.URL.Path == apiTiersPath {
+		return s.ensurePaymentsEnabled(s.handleBillingTiersGet)(w, r, v) // Non-admins: web apps before v2.36.0, remove after 2026-11-22
+	} else if r.Method == http.MethodGet && r.URL.Path == matrixPushPath {
+		return s.handleMatrixDiscovery(w)
+	} else if r.Method == http.MethodGet && r.URL.Path == metricsPath && s.metricsHandler != nil {
+		return s.handleMetrics(w, r, v)
+	} else if r.Method == http.MethodGet && staticRegex.MatchString(r.URL.Path) {
+		return s.ensureWebEnabled(s.handleStatic)(w, r, v)
+	} else if r.Method == http.MethodGet && docsRegex.MatchString(r.URL.Path) {
+		return s.ensureWebEnabled(s.handleDocs)(w, r, v)
+	} else if (r.Method == http.MethodGet || r.Method == http.MethodHead) && fileRegex.MatchString(r.URL.Path) && s.attachment != nil {
+		return s.limitRequests(s.handleFile)(w, r, v)
+	} else if r.Method == http.MethodOptions {
+		return s.limitRequests(s.handleOptions)(w, r, v) // Should work even if the web app is not enabled, see #598
+	} else if (r.Method == http.MethodPut || r.Method == http.MethodPost) && r.URL.Path == "/" {
+		return s.transformBodyJSON(s.limitRequestsWithTopic(s.authorizeTopicWrite(s.handlePublish)))(w, r, v)
+	} else if r.Method == http.MethodPost && r.URL.Path == matrixPushPath {
+		return s.transformMatrixJSON(s.limitRequestsWithTopic(s.authorizeTopicWrite(s.handlePublishMatrix)))(w, r, v)
+	} else if (r.Method == http.MethodPut || r.Method == http.MethodPost) && (topicPathRegex.MatchString(r.URL.Path) || updatePathRegex.MatchString(r.URL.Path)) {
+		return s.limitRequestsWithTopic(s.authorizeTopicWrite(s.handlePublish))(w, r, v)
+	} else if (r.Method == http.MethodDelete && updatePathRegex.MatchString(r.URL.Path)) || (r.Method == http.MethodGet && deletePathRegex.MatchString(r.URL.Path)) {
+		return s.limitRequestsWithTopic(s.authorizeTopicWrite(s.handleDelete))(w, r, v)
+	} else if (r.Method == http.MethodGet || r.Method == http.MethodPut) && clearPathRegex.MatchString(r.URL.Path) {
+		return s.limitRequestsWithTopic(s.authorizeTopicWrite(s.handleClear))(w, r, v)
+	} else if r.Method == http.MethodGet && publishPathRegex.MatchString(r.URL.Path) {
+		return s.limitRequestsWithTopic(s.authorizeTopicWrite(s.handlePublish))(w, r, v)
+	} else if r.Method == http.MethodGet && jsonPathRegex.MatchString(r.URL.Path) {
+		return s.limitRequests(s.authorizeTopicRead(s.handleSubscribeJSON))(w, r, v)
+	} else if r.Method == http.MethodGet && ssePathRegex.MatchString(r.URL.Path) {
+		return s.limitRequests(s.authorizeTopicRead(s.handleSubscribeSSE))(w, r, v)
+	} else if r.Method == http.MethodGet && rawPathRegex.MatchString(r.URL.Path) {
+		return s.limitRequests(s.authorizeTopicRead(s.handleSubscribeRaw))(w, r, v)
+	} else if r.Method == http.MethodGet && wsPathRegex.MatchString(r.URL.Path) {
+		return s.limitRequests(s.authorizeTopicRead(s.handleSubscribeWS))(w, r, v)
+	} else if r.Method == http.MethodGet && authPathRegex.MatchString(r.URL.Path) {
+		return s.limitRequests(s.authorizeTopicRead(s.handleTopicAuth))(w, r, v)
+	} else if r.Method == http.MethodGet && (webAppEmailVerifyRegex.MatchString(r.URL.Path) || webAppPasswordResetRegex.MatchString(r.URL.Path)) {
+		return s.ensureWebEnabled(s.handleWebAppNoIndex)(w, r, v) // Magic-link landing pages (client-side routes)
+	} else if r.Method == http.MethodGet && (topicPathRegex.MatchString(r.URL.Path) || externalTopicPathRegex.MatchString(r.URL.Path)) {
+		return s.ensureWebEnabled(s.handleTopic)(w, r, v)
+	}
+	return errHTTPNotFound
+}
+
+func (s *Server) handleTopic(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	unifiedpush := readBoolParam(r, false, "x-unifiedpush", "unifiedpush", "up") // see PUT/POST too!
+	if unifiedpush {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+		_, err := io.WriteString(w, `{"unifiedpush":{"version":1}}`+"\n")
+		return err
+	}
+	return s.handleWebApp(w, r, v)
+}
+
+func (s *Server) handleEmpty(_ http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	return nil
+}
+
+func (s *Server) handleTopicAuth(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	return s.writeJSON(w, newSuccessResponse())
+}
+
+func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	// Unhealthy = the registry heartbeat went stale and peers stopped forwarding to this node. For
+	// monitoring; load balancers check /v1/ready, which keeps the only active node in
+	healthy := s.cluster.Healthy()
+	if !healthy {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+	return s.writeJSON(w, &apiHealthResponse{Healthy: healthy, Role: s.cluster.Role()})
+}
+
+// handleReady answers whether a load balancer should send clients here (see cluster.Cluster's
+// Ready). A passive node is healthy (see handleHealth) but never ready.
+func (s *Server) handleReady(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	ready := s.cluster.Ready()
+	if !ready {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
+	return s.writeJSON(w, &apiReadyResponse{
+		Ready:    ready,
+		Role:     s.cluster.Role(),
+		Draining: s.cluster.Draining(),
+	})
+}
+
+// handleMetrics returns Prometheus metrics. This endpoint is only called if enable-metrics is set,
+// and listen-metrics-http is not set.
+func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request, _ *visitor) error {
+	s.metricsHandler.ServeHTTP(w, r)
+	return nil
+}
+
+// handleStats returns the publicly available server stats
+func (s *Server) handleStats(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	s.mu.RLock()
+	messages, n, rate := s.messages, len(s.messagesHistory), float64(0)
+	if n > 1 {
+		rate = float64(s.messagesHistory[n-1]-s.messagesHistory[0]) / (float64(n-1) * s.config.ManagerInterval.Seconds())
+	}
+	s.mu.RUnlock()
+	response := &apiStatsResponse{
+		Messages:     messages,
+		MessagesRate: rate,
+	}
+	return s.writeJSON(w, response)
+}
+
+// handleFile processes the download of attachment files. The method handles GET and HEAD requests against a file.
+// Before streaming the file to a client, it locates uploader (m.Sender or m.User) in the message cache, so it
+// can associate the download bandwidth with the uploader.
+func (s *Server) handleFile(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	if s.attachment == nil {
+		return errHTTPInternalError
+	}
+	matches := fileRegex.FindStringSubmatch(r.URL.Path)
+	if len(matches) != 2 {
+		return errHTTPInternalErrorInvalidPath
+	}
+	messageID := matches[1]
+	reader, size, err := s.attachment.Read(messageID)
+	if err != nil {
+		return errHTTPNotFound.Fields(log.Context{
+			"message_id":    messageID,
+			"error_context": "attachment_store",
+		})
+	}
+	defer reader.Close()
+	w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", size))
+	if r.Method == http.MethodHead {
+		return nil
+	}
+	// Find message in database, and associate bandwidth to the uploader user
+	// This is an easy way to
+	//   - avoid abuse (e.g. 1 uploader, 1k downloaders)
+	//   - and also uses the higher bandwidth limits of a paying user
+	m, err := s.messageCache.Message(messageID)
+	if errors.Is(err, model.ErrMessageNotFound) {
+		if s.config.CacheBatchTimeout > 0 {
+			// Strange edge case: If we immediately after upload request the file (the web app does this for images),
+			// and messages are persisted asynchronously, retry fetching from the database
+			m, err = util.Retry(func() (*model.Message, error) {
+				return s.messageCache.Message(messageID)
+			}, s.config.CacheBatchTimeout, 100*time.Millisecond, 300*time.Millisecond, 600*time.Millisecond)
+		}
+		if err != nil {
+			return errHTTPNotFound.Fields(log.Context{
+				"message_id":    messageID,
+				"error_context": "message_cache",
+			})
+		}
+	} else if err != nil {
+		return err
+	}
+	bandwidthVisitor := v
+	if s.userManager != nil && m.User != "" {
+		u, err := s.userManager.UserByID(m.User)
+		if err != nil {
+			return err
+		}
+		bandwidthVisitor = s.visitor(v.IP(), u)
+	} else if m.Sender.IsValid() {
+		bandwidthVisitor = s.visitor(m.Sender, nil)
+	}
+	if d := bandwidthVisitor.BandwidthAllowed(size); !d.OK {
+		return errHTTPTooManyRequestsLimitAttachmentBandwidth.With(m).WithLimitDecision(d)
+	}
+	// Actually send file
+	if m.Attachment.Name != "" {
+		w.Header().Set("Content-Disposition", "attachment; filename="+strconv.Quote(m.Attachment.Name))
+	}
+	_, err = io.Copy(util.NewContentTypeWriter(w, r.URL.Path), reader)
+	return err
+}
+
+func (s *Server) handleMatrixDiscovery(w http.ResponseWriter) error {
+	if s.config.BaseURL == "" {
+		return errHTTPInternalErrorMissingBaseURL
+	}
+	return writeMatrixDiscoveryResponse(w)
+}
+
+// dispatch delivers m to local subscribers and fires the requested side-effect targets. It is
+// the single choke point through which every published message must pass; t may be nil when
+// the topic has no local subscribers (delayed sender).
+func (s *Server) dispatch(v *visitor, t *topic, m *model.Message, opts dispatchOpts) error {
+	// Hand the message to the other cluster nodes: fire-and-forget, so a slow or dead peer never
+	// delays the publisher. Nop single-node.
+	if err := s.cluster.ForwardMessage(m); err != nil {
+		logvm(v, m).Err(err).Warn("Unable to forward message to cluster peers")
+	}
+	// Deliver to local subscribers
+	if t != nil {
+		if opts.async {
+			go func() {
+				if err := t.Publish(v, m); err != nil {
+					logvm(v, m).Err(err).Warn("Unable to publish message")
+				}
+			}()
+		} else if err := t.Publish(v, m); err != nil {
+			return err
+		}
+	}
+	// Fire the requested side-effect targets
+	if s.firebaseClient != nil && opts.firebase {
+		go s.sendToFirebase(v, m)
+	}
+	if s.mailer != nil && opts.email != "" {
+		go s.sendEmail(v, m, opts.email)
+	}
+	if s.config.TwilioAccount != "" && opts.call != "" {
+		go s.callPhone(v, m, opts.call)
+	}
+	if s.config.UpstreamBaseURL != "" && opts.upstream {
+		go s.forwardPollRequest(v, m)
+	}
+	if s.config.WebPushPublicKey != "" && opts.webPush {
+		go s.publishToWebPushEndpoints(v, m)
+	}
+	return nil
+}
+
+func (s *Server) handlePublishInternal(w http.ResponseWriter, r *http.Request, v *visitor) (*model.Message, error) {
+	if s.readOnly.Load() {
+		return nil, errHTTPServiceUnavailableDraining // Read-only; the load balancers stopped sending requests in the drain delay
+	}
+	start := time.Now()
+	t, err := fromContext[*topic](r, contextTopic)
+	if err != nil {
+		return nil, err
+	}
+	vrate, err := fromContext[*visitor](r, contextRateVisitor)
+	if err != nil {
+		return nil, err
+	}
+	body, err := util.Peek(r.Body, s.config.MessageSizeLimit)
+	if err != nil {
+		return nil, err
+	}
+	m := model.NewDefaultMessage(t.ID, "")
+	cache, firebase, email, call, template, unifiedpush, priorityStr, e := s.parsePublishParams(r, m)
+	if e != nil {
+		return nil, e.With(t)
+	}
+	if unifiedpush && s.config.VisitorSubscriberRateLimiting && vrate == v { // No rate visitor, see limitRequestsWithTopic
+		// UnifiedPush clients must subscribe before publishing to allow proper subscriber-based rate limiting.
+		// The 5xx response is because some app servers (in particular Mastodon) will remove
+		// the subscription as invalid if any 400-499 code (except 429/408) is returned.
+		// See https://github.com/mastodon/mastodon/blob/730bb3e211a84a2f30e3e2bbeae3f77149824a68/app/workers/web/push_notification_worker.rb#L35-L46
+		// A topic abandoned for unifiedPushAbandonedAfter gets a 410 instead, so the subscription is removed: every
+		// app server that removes it on a 404 also does on a 410, and some (Misskey and its forks) only on a 410.
+		if s.unifiedPushTopicAbandoned(r, t) {
+			return nil, errHTTPGoneUnifiedPushTopicAbandoned.With(t)
+		}
+		return nil, errHTTPInsufficientStorageUnifiedPush.With(t)
+	} else if !util.ContainsIP(s.config.VisitorRequestExemptPrefixes, v.ip) {
+		d := vrate.MessageAllowed()
+		if !d.OK {
+			return nil, errHTTPTooManyRequestsLimitMessages.With(t).WithLimitDecision(d)
+		}
+		setRateLimitHeaders(w, d)
+	}
+	if email != "" {
+		var httpErr *errHTTP
+		email, httpErr = s.convertEmailAddress(v.User(), email)
+		if httpErr != nil {
+			return nil, httpErr.With(t)
+		} else if d := vrate.EmailAllowed(); !d.OK {
+			return nil, errHTTPTooManyRequestsLimitEmails.With(t).WithLimitDecision(d)
+		}
+	}
+	if call != "" {
+		var httpErr *errHTTP
+		call, httpErr = s.convertPhoneNumber(v.User(), call)
+		if httpErr != nil {
+			return nil, httpErr.With(t)
+		} else if d := vrate.CallAllowed(); !d.OK {
+			return nil, errHTTPTooManyRequestsLimitCalls.With(t).WithLimitDecision(d)
+		}
+	}
+	if m.PollID != "" {
+		m = model.NewPollRequestMessage(t.ID, m.PollID)
+	}
+	m.Sender = v.IP()
+	m.User = v.MaybeUserID()
+	if cache {
+		m.Expires = time.Unix(m.Time, 0).Add(v.Limits().MessageExpiryDuration).Unix()
+	}
+	if err := s.handlePublishBody(r, v, m, body, template, unifiedpush, priorityStr); err != nil {
+		return nil, err
+	}
+	if m.Message == "" {
+		m.Message = emptyMessageBody
+	}
+	m.SanitizeUTF8()
+	delayed := m.Time > time.Now().Unix()
+	ev := logvrm(v, r, m).
+		Tag(tagPublish).
+		With(t).
+		Fields(log.Context{
+			"message_delayed":     delayed,
+			"message_firebase":    firebase,
+			"message_unifiedpush": unifiedpush,
+			"message_email":       email,
+			"message_call":        call,
+		})
+	if ev.IsTrace() {
+		ev.Field("message_body", util.MaybeMarshalJSON(m)).Trace("Received message")
+	} else if ev.IsDebug() {
+		ev.Debug("Received message")
+	}
+	if !delayed {
+		err := s.dispatch(v, t, m, dispatchOpts{
+			firebase: firebase,
+			email:    email,
+			call:     call,
+			upstream: !unifiedpush, // UP messages are not sent to upstream
+			webPush:  true,
+		})
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		logvrm(v, r, m).Tag(tagPublish).Debug("Message delayed, will process later")
+	}
+	if cache {
+		// Delete any existing scheduled message with the same sequence ID. Without a client-provided
+		// sequence ID, it is the message's own fresh ID and nothing can match, so skip the round trip.
+		if m.SequenceID != m.ID {
+			deletedIDs, err := s.messageCache.DeleteScheduledBySequenceID(t.ID, m.SequenceID)
+			if err != nil {
+				return nil, err
+			}
+			// Delete attachment files for deleted scheduled messages
+			if s.attachment != nil && len(deletedIDs) > 0 {
+				if err := s.attachment.Remove(deletedIDs...); err != nil {
+					logvrm(v, r, m).Tag(tagPublish).Err(err).Warn("Error removing attachments for deleted scheduled messages")
+				}
+			}
+		}
+		logvrm(v, r, m).Tag(tagPublish).Debug("Adding message to cache")
+		if err := s.messageCache.AddMessage(m); err != nil {
+			return nil, err
+		}
+	}
+	s.mu.Lock()
+	s.messages++
+	s.mu.Unlock()
+	if unifiedpush {
+		metrics.UnifiedPushPublishedSuccess.Inc()
+	}
+	metrics.MessagePublishDurationMillis.Set(float64(time.Since(start).Milliseconds()))
+	return m, nil
+}
+
+func (s *Server) handlePublish(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	m, err := s.handlePublishInternal(w, r, v)
+	if err != nil {
+		metrics.MessagesPublishedFailure.Inc()
+		return err
+	}
+	metrics.MessagesPublishedSuccess.Inc()
+	return s.writeJSON(w, m.ForJSON())
+}
+
+func (s *Server) handlePublishMatrix(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	_, err := s.handlePublishInternal(w, r, v)
+	if err != nil {
+		metrics.MessagesPublishedFailure.Inc()
+		metrics.MatrixPublishedFailure.Inc()
+		// An abandoned topic (see unifiedPushTopicAbandoned) gets its pushkey rejected, so the Matrix server
+		// stops sending to it; anything else is returned as is (a 507 is transient to the Matrix server)
+		if e, ok := err.(*errHTTP); ok && e.Code == errHTTPGoneUnifiedPushTopicAbandoned.Code {
+			pushKey, err := fromContext[string](r, contextMatrixPushKey)
+			if err != nil {
+				return err
+			}
+			return writeMatrixResponse(w, pushKey)
+		}
+		return err
+	}
+	metrics.MessagesPublishedSuccess.Inc()
+	metrics.MatrixPublishedSuccess.Inc()
+	return writeMatrixSuccess(w)
+}
+
+func (s *Server) handleDelete(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	return s.handleActionMessage(w, r, v, model.MessageDeleteEvent)
+}
+
+func (s *Server) handleClear(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	return s.handleActionMessage(w, r, v, model.MessageClearEvent)
+}
+
+func (s *Server) handleActionMessage(w http.ResponseWriter, r *http.Request, v *visitor, event string) error {
+	t, err := fromContext[*topic](r, contextTopic)
+	if err != nil {
+		return err
+	}
+	vrate, err := fromContext[*visitor](r, contextRateVisitor)
+	if err != nil {
+		return err
+	}
+	if !util.ContainsIP(s.config.VisitorRequestExemptPrefixes, v.ip) {
+		d := vrate.MessageAllowed()
+		if !d.OK {
+			return errHTTPTooManyRequestsLimitMessages.With(t).WithLimitDecision(d)
+		}
+		setRateLimitHeaders(w, d)
+	}
+	sequenceID, e := s.sequenceIDFromPath(r.URL.Path)
+	if e != nil {
+		return e.With(t)
+	}
+	// Create an action message with the given event type
+	m := model.NewActionMessage(event, t.ID, sequenceID)
+	m.Sender = v.IP()
+	m.User = v.MaybeUserID()
+	m.Expires = time.Unix(m.Time, 0).Add(v.Limits().MessageExpiryDuration).Unix()
+	// Publish to subscribers, Firebase (for Android clients), and web push endpoints
+	if err := s.dispatch(v, t, m, dispatchOpts{firebase: true, webPush: true}); err != nil {
+		return err
+	}
+	if event == model.MessageDeleteEvent {
+		// Delete any existing scheduled message with the same sequence ID
+		deletedIDs, err := s.messageCache.DeleteScheduledBySequenceID(t.ID, sequenceID)
+		if err != nil {
+			return err
+		}
+		// Delete attachment files for deleted scheduled messages
+		if s.attachment != nil && len(deletedIDs) > 0 {
+			if err := s.attachment.Remove(deletedIDs...); err != nil {
+				logvrm(v, r, m).Tag(tagPublish).Err(err).Warn("Error removing attachments for deleted scheduled messages")
+			}
+		}
+	}
+	// Add to message cache
+	if err := s.messageCache.AddMessage(m); err != nil {
+		return err
+	}
+	logvrm(v, r, m).Tag(tagPublish).Debug("Published %s for sequence ID %s", event, sequenceID)
+	s.mu.Lock()
+	s.messages++
+	s.mu.Unlock()
+	return s.writeJSON(w, m.ForJSON())
+}
+
+func (s *Server) sendToFirebase(v *visitor, m *model.Message) {
+	logvm(v, m).Tag(tagFirebase).Debug("Publishing to Firebase")
+	if err := s.firebaseClient.Send(v, m); err != nil {
+		metrics.FirebasePublishedFailure.Inc()
+		if errors.Is(err, errFirebaseTemporarilyBanned) {
+			logvm(v, m).Tag(tagFirebase).Err(err).Debug("Unable to publish to Firebase: %v", err.Error())
+		} else {
+			logvm(v, m).Tag(tagFirebase).Err(err).Warn("Unable to publish to Firebase: %v", err.Error())
+		}
+		return
+	}
+	metrics.FirebasePublishedSuccess.Inc()
+}
+
+func (s *Server) sendEmail(v *visitor, m *model.Message, email string) {
+	logvm(v, m).Tag(tagEmail).Field("email", email).Info("Sending email to %s", email)
+	if err := s.mailer.SendNotification(email, m, v.ip.String()); err != nil {
+		logvm(v, m).Tag(tagEmail).Field("email", email).Err(err).Warn("Unable to send email to %s: %v", email, err.Error())
+		metrics.EmailsPublishedFailure.Inc()
+		return
+	}
+	metrics.EmailsPublishedSuccess.Inc()
+}
+
+func (s *Server) forwardPollRequest(v *visitor, m *model.Message) {
+	topicURL := fmt.Sprintf("%s/%s", s.config.BaseURL, m.Topic)
+	topicHash := fmt.Sprintf("%x", sha256.Sum256([]byte(topicURL)))
+	forwardURL := fmt.Sprintf("%s/%s", s.config.UpstreamBaseURL, topicHash)
+	logvm(v, m).Debug("Publishing poll request to %s", forwardURL)
+	req, err := http.NewRequest("POST", forwardURL, strings.NewReader(""))
+	if err != nil {
+		logvm(v, m).Err(err).Warn("Unable to publish poll request")
+		return
+	}
+	req.Header.Set("User-Agent", "ntfy/"+s.config.BuildVersion)
+	req.Header.Set("X-Poll-ID", m.ID)
+	if s.config.UpstreamAccessToken != "" {
+		req.Header.Set("Authorization", util.BearerAuth(s.config.UpstreamAccessToken))
+	}
+	var httpClient = &http.Client{
+		Timeout: time.Second * 10,
+	}
+	response, err := httpClient.Do(req)
+	if err != nil {
+		logvm(v, m).Err(err).Warn("Unable to publish poll request")
+		return
+	} else if response.StatusCode != http.StatusOK {
+		if response.StatusCode == http.StatusTooManyRequests {
+			logvm(v, m).Err(err).Warn("Unable to publish poll request, the upstream server %s responded with HTTP %s; you may solve this by sending fewer daily messages, or by configuring upstream-access-token (assuming you have an account with higher rate limits) ", s.config.UpstreamBaseURL, response.Status)
+		} else {
+			logvm(v, m).Err(err).Warn("Unable to publish poll request, the upstream server %s responded with HTTP %s", s.config.UpstreamBaseURL, response.Status)
+		}
+		return
+	}
+}
+
+func (s *Server) parsePublishParams(r *http.Request, m *model.Message) (cache bool, firebase bool, email, call string, template templateMode, unifiedpush bool, priorityStr string, err *errHTTP) {
+	if r.Method != http.MethodGet && updatePathRegex.MatchString(r.URL.Path) {
+		pathSequenceID, err := s.sequenceIDFromPath(r.URL.Path)
+		if err != nil {
+			return false, false, "", "", "", false, "", err
+		}
+		m.SequenceID = pathSequenceID
+	} else {
+		sequenceID := readParam(r, "x-sequence-id", "sequence-id", "sid")
+		if sequenceID != "" {
+			if sequenceIDRegex.MatchString(sequenceID) {
+				m.SequenceID = sequenceID
+			} else {
+				return false, false, "", "", "", false, "", errHTTPBadRequestSequenceIDInvalid
+			}
+		} else {
+			m.SequenceID = m.ID
+		}
+	}
+	cache = readBoolParam(r, true, "x-cache", "cache")
+	firebase = readBoolParam(r, true, "x-firebase", "firebase")
+	m.Title = readParam(r, "x-title", "title", "t")
+	if len(m.Title) > messageTitleSizeLimit {
+		return false, false, "", "", "", false, "", errHTTPBadRequestTitleTooLarge
+	}
+	m.Click = readParam(r, "x-click", "click")
+	icon := readParam(r, "x-icon", "icon")
+	filename := readParam(r, "x-filename", "filename", "file", "f")
+	attach := readParam(r, "x-attach", "attach", "a")
+	if attach != "" || filename != "" {
+		m.Attachment = &model.Attachment{}
+	}
+	if filename != "" {
+		m.Attachment.Name = filename
+	}
+	if attach != "" {
+		if !urlRegex.MatchString(attach) {
+			return false, false, "", "", "", false, "", errHTTPBadRequestAttachmentURLInvalid
+		}
+		m.Attachment.URL = attach
+		if m.Attachment.Name == "" {
+			u, err := url.Parse(m.Attachment.URL)
+			if err == nil {
+				m.Attachment.Name = path.Base(u.Path)
+				if m.Attachment.Name == "." || m.Attachment.Name == "/" {
+					m.Attachment.Name = ""
+				}
+			}
+		}
+		if m.Attachment.Name == "" {
+			m.Attachment.Name = "attachment"
+		}
+	}
+	if icon != "" {
+		if !urlRegex.MatchString(icon) {
+			return false, false, "", "", "", false, "", errHTTPBadRequestIconURLInvalid
+		}
+		m.Icon = icon
+	}
+	email = readParam(r, "x-email", "x-e-mail", "email", "e-mail", "mail", "e")
+	if email != "" && !emailAddressRegex.MatchString(email) && !toBool(email) {
+		return false, false, "", "", "", false, "", errHTTPBadRequestEmailAddressInvalid
+	}
+	if s.mailer == nil && email != "" {
+		return false, false, "", "", "", false, "", errHTTPBadRequestEmailDisabled
+	}
+	call = readParam(r, "x-call", "call")
+	if call != "" && (s.config.TwilioAccount == "" || s.userManager == nil) {
+		return false, false, "", "", "", false, "", errHTTPBadRequestPhoneCallsDisabled
+	} else if call != "" && !isBoolValue(call) && !phoneNumberRegex.MatchString(call) {
+		return false, false, "", "", "", false, "", errHTTPBadRequestPhoneNumberInvalid
+	}
+	template = templateMode(readParam(r, "x-template", "template", "tpl"))
+	messageStr := readParam(r, "x-message", "message", "m")
+	if !template.InlineMode() {
+		// Convert "\n" to literal newline everything but inline mode
+		messageStr = strings.ReplaceAll(messageStr, "\\n", "\n")
+	}
+	if messageStr != "" {
+		m.Message = messageStr
+	}
+	var e error
+	priorityStr = readParam(r, "x-priority", "priority", "prio", "p")
+	if !template.Enabled() {
+		m.Priority, e = util.ParsePriority(priorityStr)
+		if e != nil {
+			return false, false, "", "", "", false, "", errHTTPBadRequestPriorityInvalid
+		}
+		priorityStr = "" // Clear since it's already parsed
+	}
+	m.Tags = readCommaSeparatedParam(r, "x-tags", "tags", "tag", "ta")
+	// Measured across all tags, not each one: a publisher can add arbitrarily many
+	tagsSize := 0
+	for _, tag := range m.Tags {
+		tagsSize += len(tag)
+	}
+	if tagsSize > messageTagsSizeLimit {
+		return false, false, "", "", "", false, "", errHTTPBadRequestTagsTooLarge
+	}
+	delayStr := readParam(r, "x-delay", "delay", "x-at", "at", "x-in", "in")
+	if delayStr != "" {
+		if !cache {
+			return false, false, "", "", "", false, "", errHTTPBadRequestDelayNoCache
+		}
+		if email != "" {
+			return false, false, "", "", "", false, "", errHTTPBadRequestDelayNoEmail // we cannot store the email address (yet)
+		}
+		if call != "" {
+			return false, false, "", "", "", false, "", errHTTPBadRequestDelayNoCall // we cannot store the phone number (yet)
+		}
+		now := time.Now()
+		if timezone := readParam(r, "x-timezone", "timezone"); timezone != "" {
+			location, err := time.LoadLocation(timezone)
+			if err != nil {
+				return false, false, "", "", "", false, "", errHTTPBadRequestTimezoneInvalid
+			}
+			now = now.In(location)
+		}
+		delay, err := util.ParseFutureTime(delayStr, now)
+		if err != nil {
+			return false, false, "", "", "", false, "", errHTTPBadRequestDelayCannotParse
+		} else if delay.Unix() < time.Now().Add(s.config.MessageDelayMin).Unix() {
+			return false, false, "", "", "", false, "", errHTTPBadRequestDelayTooSmall
+		} else if delay.Unix() > time.Now().Add(s.config.MessageDelayMax).Unix() {
+			return false, false, "", "", "", false, "", errHTTPBadRequestDelayTooLarge
+		}
+		m.Time = delay.Unix()
+	}
+	actionsStr := readParam(r, "x-actions", "actions", "action")
+	if actionsStr != "" {
+		m.Actions, e = action.Parse(actionsStr)
+		if e != nil {
+			return false, false, "", "", "", false, "", errHTTPBadRequestActionsInvalid.Wrap("%s", e.Error())
+		}
+	}
+	contentType, markdown := readParam(r, "content-type", "content_type"), readBoolParam(r, false, "x-markdown", "markdown", "md")
+	if markdown || isMarkdownContentType(contentType) {
+		m.ContentType = "text/markdown"
+	}
+	unifiedpush = readBoolParam(r, false, "x-unifiedpush", "unifiedpush", "up") // see GET too!
+	contentEncoding := readParam(r, "content-encoding")
+	if unifiedpush || contentEncoding == "aes128gcm" {
+		firebase = false
+		unifiedpush = true
+	}
+	m.PollID = readParam(r, "x-poll-id", "poll-id")
+	if m.PollID != "" {
+		unifiedpush = false
+		cache = false
+		email = ""
+	}
+	return cache, firebase, email, call, template, unifiedpush, priorityStr, nil
+}
+
+// handlePublishBody consumes the PUT/POST body and decides whether the body is an attachment or the message.
+//
+//  1. curl -X POST -H "Poll: 1234" ntfy.sh/...
+//     If a message is flagged as poll request, the body does not matter and is discarded
+//  2. curl -T somebinarydata.bin "ntfy.sh/mytopic?up=1"
+//     If UnifiedPush is enabled, encode as base64 if body is binary, and do not trim
+//  3. curl -H "Attach: http://example.com/file.jpg" ntfy.sh/mytopic
+//     Body must be a message, because we attached an external URL
+//  4. curl -T short.txt -H "Filename: short.txt" ntfy.sh/mytopic
+//     Body must be attachment, because we passed a filename
+//  5. curl -H "Template: yes" -T file.txt ntfy.sh/mytopic
+//     If templating is enabled, read up to 32k and treat message body as JSON
+//  6. curl -T file.txt ntfy.sh/mytopic
+//     If file.txt is <= 4096 (message limit) and valid UTF-8, treat it as a message
+//  7. curl -T file.txt ntfy.sh/mytopic
+//     In all other cases, mostly if file.txt is > message limit, treat it as an attachment
+func (s *Server) handlePublishBody(r *http.Request, v *visitor, m *model.Message, body *util.PeekedReadCloser, template templateMode, unifiedpush bool, priorityStr string) error {
+	if m.Event == model.PollRequestEvent { // Case 1
+		return s.handleBodyDiscard(body)
+	} else if unifiedpush {
+		return s.handleBodyAsMessageAutoDetect(m, body) // Case 2
+	} else if m.Attachment != nil && m.Attachment.URL != "" {
+		return s.handleBodyAsTextMessage(m, body) // Case 3
+	} else if m.Attachment != nil && m.Attachment.Name != "" {
+		return s.handleBodyAsAttachment(r, v, m, body) // Case 4
+	} else if template.Enabled() {
+		return s.handleBodyAsTemplatedTextMessage(r.Context(), m, template, body, priorityStr) // Case 5
+	} else if !body.LimitReached && utf8.Valid(body.PeekedBytes) {
+		return s.handleBodyAsTextMessage(m, body) // Case 6
+	}
+	return s.handleBodyAsAttachment(r, v, m, body) // Case 7
+}
+
+func (s *Server) handleBodyDiscard(body *util.PeekedReadCloser) error {
+	_, err := io.Copy(io.Discard, body)
+	_ = body.Close()
+	return err
+}
+
+func (s *Server) handleBodyAsMessageAutoDetect(m *model.Message, body *util.PeekedReadCloser) error {
+	if utf8.Valid(body.PeekedBytes) {
+		m.Message = string(body.PeekedBytes) // Do not trim
+	} else {
+		m.Message = base64.StdEncoding.EncodeToString(body.PeekedBytes)
+		m.Encoding = encodingBase64
+	}
+	return nil
+}
+
+func (s *Server) handleBodyAsTextMessage(m *model.Message, body *util.PeekedReadCloser) error {
+	if !utf8.Valid(body.PeekedBytes) {
+		return errHTTPBadRequestMessageNotUTF8.With(m)
+	}
+	if len(body.PeekedBytes) > 0 { // Empty body should not override message (publish via GET!)
+		m.Message = strings.TrimSpace(string(body.PeekedBytes)) // Truncates the message to the peek limit if required
+	}
+	if m.Attachment != nil && m.Attachment.Name != "" && m.Message == "" {
+		m.Message = fmt.Sprintf(defaultAttachmentMessage, m.Attachment.Name)
+	}
+	return nil
+}
+
+func (s *Server) handleBodyAsAttachment(r *http.Request, v *visitor, m *model.Message, body *util.PeekedReadCloser) error {
+	if s.attachment == nil || s.config.BaseURL == "" {
+		return errHTTPBadRequestAttachmentsDisallowed.With(m)
+	}
+	vinfo, err := v.Info()
+	if err != nil {
+		return err
+	}
+	attachmentExpiry := time.Now().Add(vinfo.Limits.AttachmentExpiryDuration).Unix()
+	if m.Expires > 0 && attachmentExpiry > m.Expires {
+		attachmentExpiry = m.Expires // Attachment must never outlive the message
+	}
+	if m.Time > attachmentExpiry {
+		return errHTTPBadRequestAttachmentsExpiryBeforeDelivery.With(m)
+	}
+	// Early "do-not-trust" check, hard limit see below
+	if r.ContentLength > 0 && (r.ContentLength > vinfo.Stats.AttachmentTotalSizeRemaining || r.ContentLength > vinfo.Limits.AttachmentFileSizeLimit) {
+		return errHTTPEntityTooLargeAttachment.With(m).Fields(log.Context{
+			"message_content_length":          r.ContentLength,
+			"attachment_total_size_remaining": vinfo.Stats.AttachmentTotalSizeRemaining,
+			"attachment_file_size_limit":      vinfo.Limits.AttachmentFileSizeLimit,
+		})
+	}
+	if m.Attachment == nil {
+		m.Attachment = &model.Attachment{}
+	}
+	var ext string
+	m.Attachment.Expires = attachmentExpiry
+	m.Attachment.Type, ext = util.DetectContentType(body.PeekedBytes, m.Attachment.Name)
+	m.Attachment.URL = fmt.Sprintf("%s/file/%s%s", s.config.BaseURL, m.ID, ext)
+	if m.Attachment.Name == "" {
+		m.Attachment.Name = fmt.Sprintf("attachment%s", ext)
+	}
+	if m.Message == "" {
+		m.Message = fmt.Sprintf(defaultAttachmentMessage, m.Attachment.Name)
+	}
+	limiters := []util.Limiter{
+		v.BandwidthLimiter(),
+		util.NewFixedLimiter(vinfo.Limits.AttachmentFileSizeLimit),
+		util.NewFixedLimiter(vinfo.Stats.AttachmentTotalSizeRemaining),
+	}
+	m.Attachment.Size, err = s.attachment.Write(m.ID, body, r.ContentLength, limiters...)
+	if errors.Is(err, util.ErrLimitReached) {
+		return errHTTPEntityTooLargeAttachment.With(m)
+	} else if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) handleSubscribeJSON(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	encoder := func(msg *model.Message) (string, error) {
+		var buf bytes.Buffer
+		if err := util.EncodeJSON(&buf, msg.ForJSON()); err != nil {
+			return "", err
+		}
+		return buf.String(), nil
+	}
+	return s.handleSubscribeHTTP(w, r, v, "application/x-ndjson", encoder)
+}
+
+func (s *Server) handleSubscribeSSE(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	encoder := func(msg *model.Message) (string, error) {
+		var buf bytes.Buffer
+		if err := util.EncodeJSON(&buf, msg.ForJSON()); err != nil {
+			return "", err
+		}
+		if msg.Event != model.MessageEvent && msg.Event != model.MessageDeleteEvent && msg.Event != model.MessageClearEvent {
+			return fmt.Sprintf("event: %s\ndata: %s\n", msg.Event, buf.String()), nil // Browser's .onmessage() does not fire on this!
+		}
+		return fmt.Sprintf("data: %s\n", buf.String()), nil
+	}
+	return s.handleSubscribeHTTP(w, r, v, "text/event-stream", encoder)
+}
+
+func (s *Server) handleSubscribeRaw(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	encoder := func(msg *model.Message) (string, error) {
+		if msg.Event == model.MessageEvent { // only handle default events
+			return strings.ReplaceAll(msg.Message, "\n", " ") + "\n", nil
+		}
+		return "\n", nil // "keepalive" and "open" events just send an empty line
+	}
+	return s.handleSubscribeHTTP(w, r, v, "text/plain", encoder)
+}
+
+func (s *Server) handleSubscribeHTTP(w http.ResponseWriter, r *http.Request, v *visitor, contentType string, encoder messageEncoder) error {
+	logvr(v, r).Tag(tagSubscribe).Debug("HTTP stream connection opened")
+	defer logvr(v, r).Tag(tagSubscribe).Debug("HTTP stream connection closed")
+	if !v.SubscriptionAllowed() {
+		return errHTTPTooManyRequestsLimitSubscriptions
+	}
+	defer v.RemoveSubscription()
+	topics, topicsStr, err := s.topicsFromPath(v, r.URL.Path)
+	if err != nil {
+		return err
+	}
+	poll, since, scheduled, filters, err := parseSubscribeParams(r)
+	if err != nil {
+		return err
+	} else if !poll && s.readOnly.Load() {
+		return errHTTPServiceUnavailableDraining
+	}
+	var wlock sync.Mutex
+	var closed bool
+	// Only messages replayed from the cache are charged against the visitor's daily bandwidth
+	// budget, the same one attachment traffic uses. This is set in the poll branch below, which
+	// returns before any Subscribe, so sub() is never called concurrently while it is true.
+	meterPollBandwidth := false
+	defer func() {
+		// This blocks until any in-flight sub() call finishes writing/flushing the response writer,
+		// then marks the connection as closed so future sub() calls are no-ops. This prevents a panic
+		// from writing to a response writer that has been cleaned up after the handler returns.
+		// See https://github.com/binwiederhier/ntfy/issues/338#issuecomment-1163425889
+		// and https://github.com/binwiederhier/ntfy/pull/1598.
+		wlock.Lock()
+		closed = true
+		wlock.Unlock()
+	}()
+	sub := func(v *visitor, msg *model.Message) error {
+		if !filters.Pass(msg) {
+			return nil
+		}
+		encoded, err := encoder(msg)
+		if err != nil {
+			return err
+		}
+		// Charge the encoded length, i.e. what actually goes over the wire. Charge before writing,
+		// so an exhausted budget fails the first message and surfaces as a clean 429 with nothing
+		// written.
+		if meterPollBandwidth {
+			if d := v.BandwidthAllowed(int64(len(encoded))); !d.OK {
+				return errHTTPTooManyRequestsLimitAttachmentBandwidth.WithLimitDecision(d)
+			}
+		}
+		wlock.Lock()
+		defer wlock.Unlock()
+		if closed {
+			return nil
+		}
+		if _, err := w.Write([]byte(encoded)); err != nil {
+			return err
+		}
+		if fl, ok := w.(http.Flusher); ok {
+			fl.Flush()
+		}
+		return nil
+	}
+	if err := s.maybeSetRateVisitors(r, v, topics); err != nil {
+		return err
+	}
+	w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+	w.Header().Set("Content-Type", contentType+"; charset=utf-8")                    // Android/Volley client needs charset!
+	if poll {
+		for _, t := range topics {
+			t.Keepalive()
+		}
+		meterPollBandwidth = true
+		return s.sendOldMessages(w, topics, since, scheduled, v, sub)
+	}
+	w.Header().Set("Incremental", "?1") // Ask proxies to forward the stream without buffering (RFC 10036)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	if testHookBeforeSubscribe != nil {
+		testHookBeforeSubscribe()
+	}
+	streamID := s.streams.Add(cancel)
+	defer s.streams.Remove(streamID)
+	subscriberIDs := make([]int, 0)
+	for _, t := range topics {
+		subscriberIDs = append(subscriberIDs, t.Subscribe(sub, v.User(), cancel))
+	}
+	defer func() {
+		for i, subscriberID := range subscriberIDs {
+			topics[i].Unsubscribe(subscriberID) // Order!
+		}
+		s.maybeTouchTopics(topics) // The subscriber was last seen now
+	}()
+	if err := s.authorizeSubscribed(v, topics); err != nil {
+		return err
+	}
+	if err := sub(v, model.NewOpenMessage(topicsStr)); err != nil { // Send out open message
+		return err
+	}
+	if err := s.sendOldMessages(w, topics, since, scheduled, v, sub); err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-r.Context().Done():
+			return nil
+		case <-time.After(s.config.KeepaliveInterval):
+			ev := logvr(v, r).Tag(tagSubscribe)
+			if len(topics) == 1 {
+				ev.With(topics[0]).Trace("Sending keepalive message to %s", topics[0].ID)
+			} else {
+				ev.Trace("Sending keepalive message to %d topics", len(topics))
+			}
+			v.Keepalive()
+			for _, t := range topics {
+				t.Keepalive()
+			}
+			if err := sub(v, model.NewKeepaliveMessage(topicsStr)); err != nil { // Send keepalive message
+				return err
+			}
+		}
+	}
+}
+
+func (s *Server) handleSubscribeWS(w http.ResponseWriter, r *http.Request, v *visitor) error {
+	if strings.ToLower(r.Header.Get("Upgrade")) != "websocket" {
+		return errHTTPBadRequestWebSocketsUpgradeHeaderMissing
+	}
+	if !v.SubscriptionAllowed() {
+		return errHTTPTooManyRequestsLimitSubscriptions
+	}
+	defer v.RemoveSubscription()
+	logvr(v, r).Tag(tagWebsocket).Debug("WebSocket connection opened")
+	defer logvr(v, r).Tag(tagWebsocket).Debug("WebSocket connection closed")
+	topics, topicsStr, err := s.topicsFromPath(v, r.URL.Path)
+	if err != nil {
+		return err
+	}
+	poll, since, scheduled, filters, err := parseSubscribeParams(r)
+	if err != nil {
+		return err
+	} else if !poll && s.readOnly.Load() {
+		return errHTTPServiceUnavailableDraining // Before the upgrade, so the load balancer can retry elsewhere
+	}
+	upgrader := &websocket.Upgrader{
+		ReadBufferSize:  wsBufferSize,
+		WriteBufferSize: wsBufferSize,
+		CheckOrigin: func(r *http.Request) bool {
+			return true // We're open for business!
+		},
+	}
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+
+	// Subscription connections can be canceled externally, see topic.CancelSubscribersExceptUser
+	cancelCtx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Use errgroup to run WebSocket reader and writer in Go routines
+	var wlock sync.Mutex
+	g, gctx := errgroup.WithContext(cancelCtx)
+	g.Go(func() error {
+		pongWait := s.config.KeepaliveInterval + wsPongWait
+		conn.SetReadLimit(wsReadLimit)
+		if err := conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+			return err
+		}
+		conn.SetPongHandler(func(appData string) error {
+			logvr(v, r).Tag(tagWebsocket).Trace("Received WebSocket pong")
+			return conn.SetReadDeadline(time.Now().Add(pongWait))
+		})
+		for {
+			_, _, err := conn.NextReader()
+			if err != nil {
+				return err
+			}
+			select {
+			case <-gctx.Done():
+				return nil
+			default:
+			}
+		}
+	})
+	g.Go(func() error {
+		ping := func() error {
+			wlock.Lock()
+			defer wlock.Unlock()
+			if err := conn.SetWriteDeadline(time.Now().Add(wsWriteWait)); err != nil {
+				return err
+			}
+			logvr(v, r).Tag(tagWebsocket).Trace("Sending WebSocket ping")
+			return conn.WriteMessage(websocket.PingMessage, nil)
+		}
+		for {
+			select {
+			case <-gctx.Done():
+				return nil
+			case <-cancelCtx.Done():
+				logvr(v, r).Tag(tagWebsocket).Trace("Cancel received, closing subscriber connection")
+				conn.Close()
+				return &websocket.CloseError{Code: websocket.CloseNormalClosure, Text: "subscription was canceled"}
+			case <-time.After(s.config.KeepaliveInterval):
+				v.Keepalive()
+				for _, t := range topics {
+					t.Keepalive()
+				}
+				if err := ping(); err != nil {
+					return err
+				}
+			}
+		}
+	})
+	sub := func(v *visitor, msg *model.Message) error {
+		if !filters.Pass(msg) {
+			return nil
+		}
+		wlock.Lock()
+		defer wlock.Unlock()
+		if err := conn.SetWriteDeadline(time.Now().Add(wsWriteWait)); err != nil {
+			return err
+		}
+		return conn.WriteJSON(msg)
+	}
+	if err := s.maybeSetRateVisitors(r, v, topics); err != nil {
+		return err
+	}
+	w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+	if poll {
+		for _, t := range topics {
+			t.Keepalive()
+		}
+		return s.sendOldMessages(w, topics, since, scheduled, v, sub)
+	}
+	if testHookBeforeSubscribe != nil {
+		testHookBeforeSubscribe()
+	}
+	streamID := s.streams.Add(cancel)
+	defer s.streams.Remove(streamID)
+	subscriberIDs := make([]int, 0)
+	for _, t := range topics {
+		subscriberIDs = append(subscriberIDs, t.Subscribe(sub, v.User(), cancel))
+	}
+	defer func() {
+		for i, subscriberID := range subscriberIDs {
+			topics[i].Unsubscribe(subscriberID) // Order!
+		}
+		s.maybeTouchTopics(topics) // The subscriber was last seen now
+	}()
+	if err := s.authorizeSubscribed(v, topics); err != nil {
+		return err
+	}
+	if err := sub(v, model.NewOpenMessage(topicsStr)); err != nil { // Send out open message
+		return err
+	}
+	if err := s.sendOldMessages(w, topics, since, scheduled, v, sub); err != nil {
+		return err
+	}
+	err = g.Wait()
+	if err != nil && cancelCtx.Err() != nil {
+		// We closed the connection ourselves (drain, or a canceled subscription), so the reader's
+		// "use of closed network connection" may win the race against the writer's close error
+		logvr(v, r).Tag(tagWebsocket).Err(err).Debug("WebSocket connection closed by server")
+		return nil
+	}
+	if err != nil && websocket.IsCloseError(err, websocket.CloseNormalClosure, websocket.CloseGoingAway, websocket.CloseAbnormalClosure, websocket.CloseNoStatusReceived) {
+		logvr(v, r).Tag(tagWebsocket).Err(err).Fields(websocketErrorContext(err)).Trace("WebSocket connection closed")
+		return nil // Normal closures are not errors; note: "1006 (abnormal closure)" is treated as normal, because people disconnect a lot
+	}
+	if err != nil {
+		return &errWebSocketPostUpgrade{err}
+	}
+	return nil
+}
+
+func parseSubscribeParams(r *http.Request) (poll bool, since model.SinceMarker, scheduled bool, filters *queryFilter, err error) {
+	poll = readBoolParam(r, false, "x-poll", "poll", "po")
+	scheduled = readBoolParam(r, false, "x-scheduled", "scheduled", "sched")
+	since, err = parseSince(r, poll)
+	if err != nil {
+		return
+	}
+	filters, err = parseQueryFilters(r)
+	if err != nil {
+		return
+	}
+	return
+}
+
+// maybeSetRateVisitors makes v the rate visitor of a topic (topic.Service.SetRateVisitor), indicating that all messages published
+// to that topic will be rate limited against the rate visitor instead of the publishing visitor.
+//
+// Setting the rate visitor is ony allowed if the `visitor-subscriber-rate-limiting` setting is enabled, AND
+// - auth-file is not set (everything is open by default)
+// - or the topic is reserved, and v.user is the owner
+// - or the topic is not reserved, and v.user has write access
+//
+// This only applies to UnifiedPush topics ("up...").
+func (s *Server) maybeSetRateVisitors(r *http.Request, v *visitor, topics []*topic) error {
+	// Bail out if not enabled
+	if !s.config.VisitorSubscriberRateLimiting {
+		return nil
+	}
+
+	// Make a list of topics that we'll actually set the rate visitor on; the others count as subscriber activity only
+	eligibleRateTopics := make([]*topic, 0)
+	for _, t := range topics {
+		if isUnifiedPushTopic(t.ID) {
+			eligibleRateTopics = append(eligibleRateTopics, t)
+		}
+	}
+	if len(eligibleRateTopics) == 0 {
+		return nil
+	}
+	s.maybeTouchTopics(eligibleRateTopics)
+
+	// With access control, set the rate visitor only if the topic is reserved and v.user is the
+	// owner, or not reserved and v.user has write access; without it, v may write to everything
+	writableRateTopics := eligibleRateTopics
+	if s.userManager != nil {
+		writableRateTopics = make([]*topic, 0)
+		for _, t := range eligibleRateTopics {
+			ownerUserID, err := s.userManager.ReservationOwner(t.ID)
+			if err != nil {
+				return err
+			}
+			if ownerUserID == "" {
+				if err := s.userManager.Authorize(v.User(), t.ID, user.PermissionWrite); err == nil {
+					writableRateTopics = append(writableRateTopics, t)
+				}
+			} else if ownerUserID == v.MaybeUserID() {
+				writableRateTopics = append(writableRateTopics, t)
+			}
+		}
+	}
+
+	// Make v the rate visitor of the topics it may write to
+	for _, t := range writableRateTopics {
+		logvr(v, r).
+			Tag(tagSubscribe).
+			With(t).
+			Debug("Setting visitor as rate visitor for topic %s", t.ID)
+		s.topicService.SetRateVisitor(t.ID, v.MaybeUserID(), v.MaskedIP())
+		t.Keepalive()
+	}
+	return nil
+}
+
+// sendOldMessages selects old messages from the messageCache and calls sub for each of them. It uses since as the
+// marker, returning only messages that are newer than the marker.
+func (s *Server) sendOldMessages(w http.ResponseWriter, topics []*topic, since model.SinceMarker, scheduled bool, v *visitor, sub subscriber) error {
+	if since.IsNone() {
+		return nil
+	}
+	var marker *message.Marker
+	if since.IsID() {
+		var err error
+		if marker, err = s.messageCache.ResolveMarker(since.ID()); err != nil {
+			return err
+		}
+	}
+	messages := make([]*model.Message, 0)
+	truncated := false
+	for _, t := range topics {
+		var topicMessages []*model.Message
+		var topicTruncated bool
+		var err error
+		if marker != nil {
+			topicMessages, topicTruncated, err = s.messageCache.MessagesAfterMarker(t.ID, marker, scheduled, s.config.MessagePollSizeLimit)
+		} else {
+			topicMessages, topicTruncated, err = s.messageCache.MessagesCapped(t.ID, sinceForTopic(t, since), scheduled, s.config.MessagePollSizeLimit)
+		}
+		if err != nil {
+			return err
+		}
+		truncated = truncated || topicTruncated
+		messages = append(messages, topicMessages...)
+	}
+	// Stable: Time has second granularity, so a multi-topic replay has many equal keys. An unstable
+	// sort reorders them and a topic's own messages come back out of publish order (#1297).
+	sort.SliceStable(messages, func(i, j int) bool {
+		return messages[i].Time < messages[j].Time
+	})
+	// Must be set before the first message is written, or the header is already on the wire. On the
+	// WebSocket path the response has been hijacked by then, so this is a no-op there.
+	if truncated {
+		w.Header().Set("X-Messages-Truncated", "1")
+	}
+	for _, m := range messages {
+		if err := sub(v, m); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// parseSince returns a timestamp identifying the time span from which cached messages should be received.
+//
+// Values in the "since=..." parameter can be either a unix timestamp or a duration (e.g. 12h),
+// "all" for all messages, or "latest" for the most recent message for a topic
+func parseSince(r *http.Request, poll bool) (model.SinceMarker, error) {
+	since := readParam(r, "x-since", "since", "si")
+
+	// Easy cases (empty, all, none)
+	if since == "" {
+		if poll {
+			return model.SinceAllMessages, nil
+		}
+		return model.SinceNoMessages, nil
+	} else if since == "all" {
+		return model.SinceAllMessages, nil
+	} else if since == "latest" {
+		return model.SinceLatestMessage, nil
+	} else if since == "none" {
+		return model.SinceNoMessages, nil
+	}
+
+	// ID, timestamp, duration
+	if model.ValidMessageID(since) {
+		return model.NewSinceID(since), nil
+	} else if s, err := strconv.ParseInt(since, 10, 64); err == nil {
+		return model.NewSinceTime(s), nil
+	} else if d, err := time.ParseDuration(since); err == nil {
+		return model.NewSinceTime(time.Now().Add(-1 * d).Unix()), nil
+	}
+	return model.SinceNoMessages, errHTTPBadRequestSinceInvalid
+}
+
+func (s *Server) handleOptions(w http.ResponseWriter, _ *http.Request, _ *visitor) error {
+	w.Header().Set("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE")
+	w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+	w.Header().Set("Access-Control-Allow-Headers", "*")                              // CORS, allow auth via JS // FIXME is this terrible?
+	return nil
+}
+
+// topicFromPath returns the topic from a root path (e.g. /mytopic), creating it if it doesn't exist.
+// The visitor is consulted for the per-visitor topic-creation rate limit; pass nil to bypass (internal use).
+func (s *Server) topicFromPath(v *visitor, path string) (*topic, error) {
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 {
+		return nil, errHTTPBadRequestTopicInvalid
+	}
+	return s.topicFromID(v, parts[1])
+}
+
+// topicsFromPath returns the topic from a root path (e.g. /mytopic,mytopic2), creating it if it doesn't exist.
+// The visitor is consulted for the per-visitor topic-creation rate limit; pass nil to bypass (internal use).
+func (s *Server) topicsFromPath(v *visitor, path string) ([]*topic, string, error) {
+	parts := strings.Split(path, "/")
+	if len(parts) < 2 {
+		return nil, "", errHTTPBadRequestTopicInvalid
+	}
+	// De-duplicate, or each repetition of a topic replays (and buffers) its cache again
+	topicIDs := util.Dedup(util.SplitNoEmpty(parts[1], ","))
+	if len(topicIDs) > subscribeTopicsLimit {
+		return nil, "", errHTTPBadRequestTooManyTopics
+	}
+	topics, err := s.topicsFromIDs(v, topicIDs...)
+	if err != nil {
+		return nil, "", err
+	}
+	return topics, parts[1], nil
+}
+
+// sequenceIDFromPath returns the sequence ID from a path like /mytopic/sequenceIdHere
+func (s *Server) sequenceIDFromPath(path string) (string, *errHTTP) {
+	parts := strings.Split(path, "/")
+	if len(parts) < 3 {
+		return "", errHTTPBadRequestSequenceIDInvalid
+	}
+	return parts[2], nil
+}
+
+// topicsFromIDs returns the topics with the given IDs, creating them if they don't exist.
+// If v is non-nil, its per-visitor topic-creation rate limiter is consulted before each new
+// insertion into the in-memory topic map. Pass nil to bypass the limit (internal use only).
+func (s *Server) topicsFromIDs(v *visitor, ids ...string) ([]*topic, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	topics := make([]*topic, 0)
+	for _, id := range ids {
+		if util.Contains(s.config.DisallowedTopics, id) {
+			return nil, errHTTPBadRequestTopicDisallowed
+		}
+		if _, ok := s.topics[id]; !ok {
+			if len(s.topics) >= s.config.TotalTopicLimit {
+				return nil, errHTTPTooManyRequestsLimitTotalTopics
+			}
+			if v != nil {
+				if d := v.TopicCreationAllowed(); !d.OK {
+					return nil, errHTTPTooManyRequestsLimitTopicCreation.WithLimitDecision(d)
+				}
+			}
+			s.topics[id] = newTopic(id)
+		}
+		topics = append(topics, s.topics[id])
+	}
+	return topics, nil
+}
+
+// topicFromID returns the topic with the given ID, creating it if it doesn't exist.
+// The visitor is consulted for the per-visitor topic-creation rate limit; pass nil to bypass (internal use).
+func (s *Server) topicFromID(v *visitor, id string) (*topic, error) {
+	topics, err := s.topicsFromIDs(v, id)
+	if err != nil {
+		return nil, err
+	}
+	return topics[0], nil
+}
+
+// topicsFromPattern returns a list of topics matching the given pattern, but it does not create them.
+func (s *Server) topicsFromPattern(pattern string) ([]*topic, error) {
+	patternRegexp, err := regexp.Compile("^" + strings.ReplaceAll(pattern, "*", ".*") + "$")
+	if err != nil {
+		return nil, err
+	}
+	topics := make([]*topic, 0)
+	for _, t := range s.allTopics() {
+		if patternRegexp.MatchString(t.ID) {
+			topics = append(topics, t)
+		}
+	}
+	return topics, nil
+}
+
+// allTopics returns all topics. Callers that scan them (~313k on ntfy.sh) do so without s.mu held,
+// which every request that creates a visitor or topic needs.
+func (s *Server) allTopics() []*topic {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	topics := make([]*topic, 0, len(s.topics))
+	for _, t := range s.topics {
+		topics = append(topics, t)
+	}
+	return topics
+}
+
+func (s *Server) runSMTPServer() error {
+	s.smtpServerBackend = newMailBackend(s.config, s.handle)
+	s.smtpServer = smtp.NewServer(s.smtpServerBackend)
+	s.smtpServer.Addr = s.config.SMTPServerListen
+	s.smtpServer.Domain = s.config.SMTPServerDomain
+	s.smtpServer.ReadTimeout = 10 * time.Second
+	s.smtpServer.WriteTimeout = 10 * time.Second
+	s.smtpServer.MaxMessageBytes = 1024 * 1024 // Must be much larger than message size (headers, multipart, etc.)
+	s.smtpServer.MaxRecipients = 1
+	s.smtpServer.AllowInsecureAuth = true
+	return s.smtpServer.ListenAndServe()
+}
+
+func (s *Server) runManager() {
+	for {
+		select {
+		case <-time.After(s.config.ManagerInterval):
+			log.
+				Tag(tagManager).
+				Timing(s.execManager).
+				Debug("Manager finished")
+		case <-s.closeChan:
+			return
+		}
+	}
+}
+
+func (s *Server) runFirebaseKeepaliver() {
+	if s.firebaseClient == nil {
+		return
+	}
+	v := newVisitor(s.visitors, netip.IPv4Unspecified(), nil) // Background process, not a real visitor, uses IP 0.0.0.0
+	for {
+		select {
+		case <-time.After(s.config.FirebaseKeepaliveInterval):
+			// Leader only: a keepalive wakes every subscribed phone, so the cluster sends it
+			// once rather than once per node. Per tick, to survive a failover.
+			if !s.cluster.IsLeader() {
+				continue
+			}
+			s.sendToFirebase(v, model.NewKeepaliveMessage(firebaseControlTopic))
+		/*
+			FIXME: Disable iOS polling entirely for now due to thundering herd problem (see #677)
+			       To solve this, we'd have to shard the iOS poll topics to spread out the polling evenly.
+			       Given that it's not really necessary to poll, turning it off for now should not have any impact.
+
+			case <-time.After(s.config.FirebasePollInterval):
+				s.sendToFirebase(v, model.NewKeepaliveMessage(firebasePollTopic))
+		*/
+		case <-s.closeChan:
+			return
+		}
+	}
+}
+
+func (s *Server) runDelayedSender() {
+	for {
+		select {
+		case <-time.After(s.config.DelayedSenderInterval):
+			// Leader only, to keep delayed sends on one node. A preference, not what makes
+			// delivery safe: MessagesDue claims each row, so a non-leader is harmless.
+			if !s.cluster.IsLeader() {
+				continue
+			}
+			if err := s.sendDelayedMessages(); err != nil {
+				log.Tag(tagPublish).Err(err).Warn("Error sending delayed messages")
+			}
+		case <-s.closeChan:
+			return
+		}
+	}
+}
+
+func (s *Server) sendDelayedMessages() error {
+	if s.cluster.Draining() {
+		return nil // On its way out: claiming now could leave a claimed message unsent; the next leader sends it
+	}
+	messages, err := s.messageCache.MessagesDue()
+	if err != nil {
+		return err
+	}
+	for _, m := range messages {
+		var u *user.User
+		if s.userManager != nil && m.User != "" {
+			u, err = s.userManager.UserByID(m.User)
+			if err != nil {
+				log.With(m).Err(err).Warn("Error sending delayed message")
+				continue
+			}
+		}
+		v := s.visitor(m.Sender, u)
+		if err := s.sendDelayedMessage(v, m); err != nil {
+			logvm(v, m).Err(err).Warn("Error sending delayed message")
+		}
+	}
+	return nil
+}
+
+func (s *Server) sendDelayedMessage(v *visitor, m *model.Message) error {
+	logvm(v, m).Debug("Sending delayed message")
+	s.mu.RLock()
+	t := s.topics[m.Topic] // May be nil if there are no local subscribers; dispatch handles that
+	s.mu.RUnlock()
+	// We do not rate-limit messages here, since we've rate limited them in the PUT/POST handler.
+	// Firebase subscribers may not show up in the topics map, so side effects fire regardless.
+	err := s.dispatch(v, t, m, dispatchOpts{
+		firebase: true,
+		upstream: true,
+		webPush:  true,
+		async:    true,
+	})
+	if err != nil {
+		return err
+	}
+	if err := s.messageCache.MarkPublished(m); err != nil {
+		return err
+	}
+	return nil
+}
+
+// transformBodyJSON peeks the request body, reads the JSON, and converts it to headers
+// before passing it on to the next handler. This is meant to be used in combination with handlePublish.
+func (s *Server) transformBodyJSON(next handleFunc) handleFunc {
+	return func(w http.ResponseWriter, r *http.Request, v *visitor) error {
+		m, err := readJSONWithLimit[publishMessage](r.Body, s.config.MessageSizeLimit*2, false) // 2x to account for JSON format overhead
+		if err != nil {
+			return err
+		}
+		if !topicRegex.MatchString(m.Topic) {
+			return errHTTPBadRequestTopicInvalid
+		}
+		if m.Message == "" {
+			m.Message = emptyMessageBody
+		}
+		r.URL.Path = "/" + m.Topic
+		r.Body = io.NopCloser(strings.NewReader(m.Message))
+		if m.Title != "" {
+			r.Header.Set("X-Title", m.Title)
+		}
+		if m.Priority != 0 {
+			r.Header.Set("X-Priority", fmt.Sprintf("%d", m.Priority))
+		}
+		if len(m.Tags) > 0 {
+			r.Header.Set("X-Tags", strings.Join(m.Tags, ","))
+		}
+		if m.Attach != "" {
+			r.Header.Set("X-Attach", m.Attach)
+		}
+		if m.Filename != "" {
+			r.Header.Set("X-Filename", m.Filename)
+		}
+		if m.Click != "" {
+			r.Header.Set("X-Click", m.Click)
+		}
+		if m.Icon != "" {
+			r.Header.Set("X-Icon", m.Icon)
+		}
+		if m.Markdown {
+			r.Header.Set("X-Markdown", "yes")
+		}
+		if len(m.Actions) > 0 {
+			actionsStr, err := json.Marshal(m.Actions)
+			if err != nil {
+				return errHTTPBadRequestMessageJSONInvalid
+			}
+			r.Header.Set("X-Actions", string(actionsStr))
+		}
+		if m.Email != "" {
+			r.Header.Set("X-Email", m.Email)
+		}
+		if m.Delay != "" {
+			r.Header.Set("X-Delay", m.Delay)
+		}
+		if m.Timezone != "" {
+			r.Header.Set("X-Timezone", m.Timezone)
+		}
+		if m.Call != "" {
+			r.Header.Set("X-Call", m.Call)
+		}
+		if m.Cache != "" {
+			r.Header.Set("X-Cache", m.Cache)
+		}
+		if m.Firebase != "" {
+			r.Header.Set("X-Firebase", m.Firebase)
+		}
+		if m.SequenceID != "" {
+			r.Header.Set("X-Sequence-ID", m.SequenceID)
+		}
+		return next(w, r, v)
+	}
+}
+
+func (s *Server) transformMatrixJSON(next handleFunc) handleFunc {
+	return func(w http.ResponseWriter, r *http.Request, v *visitor) error {
+		newRequest, err := newRequestFromMatrixJSON(r, s.config.BaseURL, s.config.MessageSizeLimit)
+		if err != nil {
+			logvr(v, r).Tag(tagMatrix).Err(err).Debug("Invalid Matrix request")
+			if e, ok := err.(*errMatrixPushkeyRejected); ok {
+				return writeMatrixResponse(w, e.rejectedPushKey)
+			}
+			return err
+		}
+		if err := next(w, newRequest, v); err != nil {
+			logvr(v, r).Tag(tagMatrix).Err(err).Debug("Error handling Matrix request")
+			return err
+		}
+		return nil
+	}
+}
+
+// visitor returns the visitor for this request. It is built per request, so concurrent requests from
+// the same IP (which share a limiter key) cannot see each other's user (#1051).
+func (s *Server) visitor(ip netip.Addr, user *user.User) *visitor {
+	return newVisitor(s.visitors, ip, user)
+}
+
+func (s *Server) writeJSON(w http.ResponseWriter, v any) error {
+	return s.writeJSONWithContentType(w, v, "application/json")
+}
+
+func (s *Server) writeJSONWithContentType(w http.ResponseWriter, v any, contentType string) error {
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Access-Control-Allow-Origin", s.config.AccessControlAllowOrigin) // CORS, allow cross-origin requests
+	return util.EncodeJSON(w, v)
+}
+
+func (s *Server) updateAndWriteStats(messagesCount int64) {
+	s.mu.Lock()
+	s.messagesHistory = append(s.messagesHistory, messagesCount)
+	if len(s.messagesHistory) > messagesHistoryMax {
+		s.messagesHistory = s.messagesHistory[1:]
+	}
+	snapshot, delta := s.messages, s.messages-s.messagesFlushed
+	s.mu.Unlock()
+	// Write this node's delta and fold the cluster-wide total back in, so every node's counter
+	// (and /v1/stats) converges on the shared sum instead of overwriting it
+	if err := s.messageCache.AddStats(delta); err != nil {
+		log.Tag(tagManager).Err(err).Warn("Cannot write messages stats")
+		return // Delta remains unflushed; retried on the next tick
+	}
+	total, err := s.messageCache.Stats()
+	if err != nil {
+		log.Tag(tagManager).Err(err).Warn("Cannot read messages stats")
+		total = snapshot // Keep the local view; only the flush marker moves
+	}
+	s.mu.Lock()
+	// The marker is the folded total (everything the database already has, incl. peer counts),
+	// so the next delta is only this node's new publishes; peer counts must never be re-added
+	s.messagesFlushed = total
+	s.messages = total + (s.messages - snapshot) // Publishes that arrived while flushing stay counted
+	s.mu.Unlock()
+}

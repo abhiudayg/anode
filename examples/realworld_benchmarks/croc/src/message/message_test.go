@@ -1,0 +1,145 @@
+package message
+
+import (
+	"bytes"
+	"errors"
+	"fmt"
+	"net"
+	"testing"
+
+	"github.com/schollz/croc/v11/src/comm"
+	"github.com/schollz/croc/v11/src/compress"
+	"github.com/schollz/croc/v11/src/crypt"
+	log "github.com/schollz/croc/v11/src/logger"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestBundleEnvelopeBoundBeforeContentDecode(t *testing.T) {
+	oversized := bytes.Repeat([]byte("x"), 16<<10)
+	if _, err := Encode(nil, Message{Type: TypeBundleRequest, Bytes: oversized}); !errors.Is(err, ErrMessageTooLarge) {
+		t.Fatalf("oversized bundle encode = %v", err)
+	}
+	// Invalid base64 must not be decoded before the bundle-specific JSON limit.
+	raw := append([]byte(`{"t":"bundle-request","b":"`), oversized...)
+	raw = append(raw, []byte(`!"}`)...)
+	if _, err := Decode(nil, compress.Compress(raw)); !errors.Is(err, ErrMessageTooLarge) {
+		t.Fatalf("oversized bundle decode = %v", err)
+	}
+	frame, err := Encode(nil, Message{Type: TypeFileInfo, Bytes: oversized})
+	if err != nil {
+		t.Fatal("changed manifest limit", err)
+	}
+	if _, err = Decode(nil, frame); err != nil {
+		t.Fatal("changed manifest decode limit", err)
+	}
+}
+
+var TypeMessage Type = "message"
+
+func TestMessage(t *testing.T) {
+	log.SetLevel("debug")
+	m := Message{Type: TypeMessage, Message: "hello, world"}
+	e, salt, err := crypt.New([]byte("pass"), nil)
+	assert.Nil(t, err)
+	fmt.Println(string(salt))
+	b, err := Encode(e, m)
+	assert.Nil(t, err)
+	fmt.Printf("%x\n", b)
+
+	m2, err := Decode(e, b)
+	assert.Nil(t, err)
+	assert.Equal(t, m, m2)
+	assert.Equal(t, `{"t":"message","m":"hello, world"}`, m.String())
+	_, err = Decode([]byte("not pass"), b)
+	assert.NotNil(t, err)
+	_, err = Encode([]byte("0"), m)
+	assert.NotNil(t, err)
+}
+
+func TestMessageNoPass(t *testing.T) {
+	log.SetLevel("debug")
+	m := Message{Type: TypeMessage, Message: "hello, world"}
+	b, err := Encode(nil, m)
+	assert.Nil(t, err)
+	fmt.Printf("%x\n", b)
+
+	m2, err := Decode(nil, b)
+	assert.Nil(t, err)
+	assert.Equal(t, m, m2)
+	assert.Equal(t, `{"t":"message","m":"hello, world"}`, m.String())
+}
+
+func TestDecodeRejectsMalformedCompressedMessage(t *testing.T) {
+	_, err := Decode(nil, []byte("not a deflate stream"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "decompress message")
+}
+
+func TestEncodeRejectsOversizedDecompressedMessage(t *testing.T) {
+	_, err := encodeWithLimit(nil, Message{Type: TypeMessage, Message: "too large"}, 8)
+	assert.ErrorIs(t, err, ErrMessageTooLarge)
+
+	_, err = encodeWithLimit(nil, Message{Type: TypeMessage}, len(`{"t":"message"}`))
+	assert.NoError(t, err)
+}
+
+func TestDecodeWithLimitRejectsCompressedExpansion(t *testing.T) {
+	encoded, err := Encode(nil, Message{Type: TypeMessage, Message: "too large"})
+	assert.NoError(t, err)
+	_, err = DecodeWithLimit(nil, encoded, 8)
+	assert.ErrorIs(t, err, compress.ErrDecompressedSizeExceeded)
+}
+
+func TestPakeVersionAndConfirmationRoundTrip(t *testing.T) {
+	want := Message{
+		Type:     TypePAKEConfirm,
+		Version:  2,
+		Bytes:    []byte("confirmation-tag"),
+		Features: []string{"experimental-tailcat-v1"},
+	}
+	encoded, err := Encode(nil, want)
+	assert.NoError(t, err)
+	got, err := Decode(nil, encoded)
+	assert.NoError(t, err)
+	assert.Equal(t, want, got)
+}
+
+func TestSend(t *testing.T) {
+	clientConn, serverConn := net.Pipe()
+	defer clientConn.Close()
+	defer serverConn.Close()
+
+	client := comm.New(clientConn)
+	server := comm.New(serverConn)
+	want := Message{Type: TypeMessage, Message: "hello, world"}
+	e, salt, err := crypt.New([]byte("pass"), nil)
+	log.Debug(salt)
+	if err != nil {
+		t.Fatalf("create encryption key: %v", err)
+	}
+
+	type receiveResult struct {
+		message Message
+		err     error
+	}
+	resultCh := make(chan receiveResult, 1)
+	go func() {
+		data, err := server.Receive()
+		if err != nil {
+			resultCh <- receiveResult{err: err}
+			return
+		}
+		got, err := Decode(e, data)
+		resultCh <- receiveResult{message: got, err: err}
+	}()
+
+	if err := Send(client, e, want); err != nil {
+		t.Fatalf("send message: %v", err)
+	}
+
+	result := <-resultCh
+	if result.err != nil {
+		t.Fatalf("receive message: %v", result.err)
+	}
+	assert.Equal(t, want, result.message)
+}

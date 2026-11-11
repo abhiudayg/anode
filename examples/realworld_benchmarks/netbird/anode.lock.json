@@ -1,0 +1,1359 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-combined": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "management/internals/network_map_db/pgsql/pg_store.go:117"
+    },
+    "db-idp-migrate": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "management/internals/shared/db/open.go:169"
+    },
+    "db-management": {
+      "kind": "sqlite",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/storage/sql/sqlite.go:32"
+    },
+    "redis-combined": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "management/internals/modules/mcpapi/grants_redis.go:62"
+    },
+    "redis-management": {
+      "kind": "redis",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "management/internals/modules/mcpapi/grants_redis.go:62"
+    }
+  },
+  "services": {
+    "client": {
+      "name": "client",
+      "entrypoint": "./client",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterDaemonServiceServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDaemonServiceServer",
+          "inject_env": "",
+          "provenance": "client/cmd/login.go:178"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterConnectServer",
+          "inject_env": "",
+          "provenance": "client/server/server.go:2838"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/feature/ec2/imds@v1.18.6/api_client.go:283"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPUServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:247"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterCryptoSetupServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterSOAPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:103"
+        },
+        {
+          "service_ref": "combined",
+          "protocol": "grpc",
+          "interface": "RegisterManagementServiceServer",
+          "inject_env": "",
+          "provenance": "shared/management/client/grpc.go:166"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterFlowServiceServer",
+          "inject_env": "",
+          "provenance": "flow/client/client.go:211"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterMultiServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/network.go:37"
+        },
+        {
+          "service_ref": "signal",
+          "protocol": "grpc",
+          "interface": "RegisterSignalExchangeServer",
+          "inject_env": "",
+          "provenance": "shared/signal/client/grpc.go:158"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        }
+      ]
+    },
+    "combined": {
+      "name": "combined",
+      "entrypoint": "./combined",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterSignalExchangeServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/health"
+          ]
+        },
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterManagementServiceServer"
+        },
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterProxyServiceServer"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDexServer",
+          "inject_env": "",
+          "provenance": "management/server/idp/dex.go:93"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/connector/openshift/openshift.go:71"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "management/internals/network_map_db/pgsql/pg_store.go:117"
+        },
+        {
+          "resource_ref": "redis-combined",
+          "protocol": "redis",
+          "inject_env": "",
+          "provenance": "management/internals/modules/mcpapi/grants_redis.go:62"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "management/internals/shared/db/open.go:169"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/sso@v1.29.1/api_client.go:461"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "management/internals/network_map_db/sqlite/sqlite_store.go:71"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/gorm.io/driver/sqlite@v1.5.7/sqlite.go:53"
+        },
+        {
+          "resource_ref": "redis-combined",
+          "protocol": "redis",
+          "inject_env": "",
+          "provenance": "management/server/cache/redis.go:33"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/gorm.io/driver/postgres@v1.5.7/postgres.go:90"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterAPIServer",
+          "inject_env": "",
+          "provenance": "management/server/idp/authentik.go:98"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/storage/sql/sqlite.go:32"
+        },
+        {
+          "resource_ref": "db-combined",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/storage/sql/config.go:168"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterS2AServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        },
+        {
+          "env_var": "NB_MCP_OAUTH_KEY",
+          "provenance": "management/internals/modules/mcpapi/seal.go:117"
+        },
+        {
+          "env_var": "NB_AUTH_SECRET",
+          "provenance": "combined/cmd/config.go:470"
+        },
+        {
+          "env_var": "NB_STORE_ENCRYPTION_KEY",
+          "provenance": "combined/cmd/config.go:474"
+        },
+        {
+          "env_var": "NB_IDP_SESSION_COOKIE_ENCRYPTION_KEY",
+          "provenance": "management/server/idp/embedded.go:311"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        }
+      ]
+    },
+    "example": {
+      "name": "example",
+      "entrypoint": "./sharedsock/example",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "gotestsummary": {
+      "name": "gotestsummary",
+      "entrypoint": "./tools/gotestsummary",
+      "ingress": [],
+      "bindings": [],
+      "secrets": []
+    },
+    "idp-migrate": {
+      "name": "idp-migrate",
+      "entrypoint": "./tools/idp-migrate",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterS2AServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363"
+        },
+        {
+          "resource_ref": "db-idp-migrate",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "management/internals/shared/db/open.go:169"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDexServer",
+          "inject_env": "",
+          "provenance": "management/server/idp/dex.go:93"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.67.0/transport.go:76"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterAPIServer",
+          "inject_env": "",
+          "provenance": "management/server/idp/authentik.go:98"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530"
+        },
+        {
+          "resource_ref": "db-idp-migrate",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/gorm.io/driver/postgres@v1.5.7/postgres.go:90"
+        },
+        {
+          "resource_ref": "db-idp-migrate",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/gorm.io/driver/sqlite@v1.5.7/sqlite.go:53"
+        }
+      ],
+      "secrets": []
+    },
+    "management": {
+      "name": "management",
+      "entrypoint": "./management",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterManagementServiceServer"
+        },
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterProxyServiceServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDexServer",
+          "inject_env": "",
+          "provenance": "management/server/idp/dex.go:93"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterS2AServiceServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/connector/gitlab/gitlab.go:60"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/storage/sql/sqlite.go:32"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "sqlite",
+          "inject_env": "",
+          "provenance": "management/internals/network_map_db/sqlite/sqlite_store.go:71"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.34.2/api_client.go:461"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        },
+        {
+          "resource_ref": "redis-management",
+          "protocol": "redis",
+          "inject_env": "",
+          "provenance": "management/internals/modules/mcpapi/grants_redis.go:62"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/storage/sql/config.go:168"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterAPIServer",
+          "inject_env": "",
+          "provenance": "management/server/idp/authentik.go:98"
+        },
+        {
+          "resource_ref": "redis-management",
+          "protocol": "redis",
+          "inject_env": "",
+          "provenance": "management/server/cache/redis.go:33"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/gorm.io/driver/postgres@v1.5.7/postgres.go:90"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "management/internals/network_map_db/pgsql/pg_store.go:117"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/gorm.io/driver/sqlite@v1.5.7/sqlite.go:53"
+        },
+        {
+          "resource_ref": "db-management",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "management/internals/shared/db/open.go:169"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        },
+        {
+          "env_var": "NB_MCP_OAUTH_KEY",
+          "provenance": "management/internals/modules/mcpapi/seal.go:117"
+        },
+        {
+          "env_var": "NB_IDP_SESSION_COOKIE_ENCRYPTION_KEY",
+          "provenance": "management/server/idp/embedded.go:311"
+        }
+      ]
+    },
+    "nblink": {
+      "name": "nblink",
+      "entrypoint": "./client/link/cmd/nblink",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterMultiServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/network.go:37"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterSOAPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:103"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterCryptoSetupServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterConnectServer",
+          "inject_env": "",
+          "provenance": "client/embed/embed.go:308"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterFlowServiceServer",
+          "inject_env": "",
+          "provenance": "flow/client/client.go:211"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/route53@v1.42.3/api_client.go:273"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPUServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:247"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        },
+        {
+          "service_ref": "combined",
+          "protocol": "grpc",
+          "interface": "RegisterManagementServiceServer",
+          "inject_env": "",
+          "provenance": "shared/management/client/grpc.go:166"
+        },
+        {
+          "service_ref": "combined",
+          "protocol": "grpc",
+          "interface": "RegisterSignalExchangeServer",
+          "inject_env": "",
+          "provenance": "shared/signal/client/grpc.go:158"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        }
+      ]
+    },
+    "proxy": {
+      "name": "proxy",
+      "entrypoint": "./proxy/cmd/proxy",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/healthz/live",
+            "/healthz/ready",
+            "/healthz/startup",
+            "/healthz"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/sso@v1.29.1/api_client.go:461"
+        },
+        {
+          "service_ref": "GCE_METADATA_HOST",
+          "protocol": "http",
+          "inject_env": "GCE_METADATA_HOST",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterMultiServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/network.go:37"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterFlowServiceServer",
+          "inject_env": "",
+          "provenance": "flow/client/client.go:211"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterSOAPServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/device.go:179"
+        },
+        {
+          "service_ref": "management",
+          "protocol": "grpc",
+          "interface": "RegisterProxyServiceServer",
+          "inject_env": "",
+          "provenance": "proxy/server.go:578"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterConnectServer",
+          "inject_env": "",
+          "provenance": "client/embed/embed.go:308"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterLeaseServer",
+          "inject_env": "",
+          "provenance": "proxy/internal/acme/locker_k8s.go:33"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterCryptoSetupServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        },
+        {
+          "service_ref": "combined",
+          "protocol": "grpc",
+          "interface": "RegisterManagementServiceServer",
+          "inject_env": "",
+          "provenance": "shared/management/client/grpc.go:166"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTPUServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:247"
+        },
+        {
+          "service_ref": "signal",
+          "protocol": "grpc",
+          "interface": "RegisterSignalExchangeServer",
+          "inject_env": "",
+          "provenance": "shared/signal/client/grpc.go:158"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDefaultServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/crowdsecurity/go-cs-bouncer@v0.0.21/client.go:84"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        },
+        {
+          "env_var": "NB_PROXY_TOKEN",
+          "provenance": "proxy/cmd/proxy/cmd/root.go:155"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        }
+      ]
+    },
+    "relay": {
+      "name": "relay",
+      "entrypoint": "./relay",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/health",
+            "/relay"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/feature/ec2/imds@v1.18.6/api_client.go:283"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        }
+      ]
+    },
+    "signal": {
+      "name": "signal",
+      "entrypoint": "./signal",
+      "ingress": [
+        {
+          "protocol": "grpc",
+          "port_env": "PORT",
+          "service": "RegisterSignalExchangeServer"
+        },
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve.go:54"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        }
+      ]
+    },
+    "signer": {
+      "name": "signer",
+      "entrypoint": "./client/cmd/signer",
+      "ingress": [],
+      "bindings": [],
+      "secrets": [
+        {
+          "env_var": "NB_ARTIFACT_PRIV_KEY",
+          "provenance": "client/cmd/signer/artifactsign.go:121"
+        }
+      ]
+    },
+    "testec2": {
+      "name": "testec2",
+      "entrypoint": "./relay/testec2",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterCryptoSetupServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496"
+        }
+      ],
+      "secrets": []
+    },
+    "ui": {
+      "name": "ui",
+      "entrypoint": "./client/ui",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/sso@v1.29.1/api_client.go:461"
+        },
+        {
+          "service_ref": "client",
+          "protocol": "grpc",
+          "interface": "RegisterDaemonServiceServer",
+          "inject_env": "",
+          "provenance": "client/ui/grpc.go:60"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHTTP2Server",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        }
+      ]
+    },
+    "upload-server": {
+      "name": "upload-server",
+      "entrypoint": "./upload-server",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "/upload/{dir}/{file}",
+            "/"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterBuildableServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.34.2/api_client.go:461"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterPresignServer",
+          "inject_env": "",
+          "provenance": "upload-server/server/s3.go:43"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:332"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:338"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/env_config.go:348"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve_credentials.go:340"
+        }
+      ]
+    }
+  },
+  "egress_rules": [
+    {
+      "source_service": "combined",
+      "target_host": "https://api.linkedin.com/v2/me",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "combined",
+      "target_host": "https://metrics.netbird.io/GetToken",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "combined",
+      "target_host": "https://api.linkedin.com/v2/emailAddress?q=members\u0026projection=(elements*(handle~))",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "management",
+      "target_host": "https://api.linkedin.com/v2/me",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "management",
+      "target_host": "https://metrics.netbird.io/GetToken",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "management",
+      "target_host": "https://api.linkedin.com/v2/emailAddress?q=members\u0026projection=(elements*(handle~))",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "idp-migrate",
+      "target_host": "https://api.linkedin.com/v2/me",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    },
+    {
+      "source_service": "idp-migrate",
+      "target_host": "https://api.linkedin.com/v2/emailAddress?q=members\u0026projection=(elements*(handle~))",
+      "port": 443,
+      "protocol": "https",
+      "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterMultiServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/network.go:37",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterSOAPServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:103",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterCryptoSetupServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterConnectServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "client/embed/embed.go:308",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterFlowServiceServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "flow/client/client.go:211",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/route53@v1.42.3/api_client.go:273",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPUServer\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:247",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"nblink\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDexServer\" in service \"combined\" has no matching server registration in this workspace",
+      "provenance": "management/server/idp/dex.go:93",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"combined\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/connector/openshift/openshift.go:71",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"combined\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"combined\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"combined\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/sso@v1.29.1/api_client.go:461",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterAPIServer\" in service \"combined\" has no matching server registration in this workspace",
+      "provenance": "management/server/idp/authentik.go:98",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterS2AServiceServer\" in service \"combined\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDexServer\" in service \"management\" has no matching server registration in this workspace",
+      "provenance": "management/server/idp/dex.go:93",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterS2AServiceServer\" in service \"management\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"management\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/dex@v0.244.1-0.20261021152327-0319b501f1a6/connector/gitlab/gitlab.go:60",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"management\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.34.2/api_client.go:461",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"management\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"management\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterAPIServer\" in service \"management\" has no matching server registration in this workspace",
+      "provenance": "management/server/idp/authentik.go:98",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/sso@v1.29.1/api_client.go:461",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"proxy\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterMultiServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/network.go:37",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterFlowServiceServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "flow/client/client.go:211",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterSOAPServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/device.go:179",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterConnectServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "client/embed/embed.go:308",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterLeaseServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "proxy/internal/acme/locker_k8s.go:33",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterCryptoSetupServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPUServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:247",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDefaultServer\" in service \"proxy\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/crowdsecurity/go-cs-bouncer@v0.0.21/client.go:84",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterCryptoSetupServer\" in service \"testec2\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"signal\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/config@v1.31.6/resolve.go:54",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"signal\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"ui\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/sso@v1.29.1/api_client.go:461",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"ui\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"relay\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/feature/ec2/imds@v1.18.6/api_client.go:283",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterS2AServiceServer\" in service \"idp-migrate\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/google/s2a-go@v0.1.9/internal/v2/s2av2.go:363",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDexServer\" in service \"idp-migrate\" has no matching server registration in this workspace",
+      "provenance": "management/server/idp/dex.go:93",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPServer\" in service \"idp-migrate\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp@v0.67.0/transport.go:76",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterAPIServer\" in service \"idp-migrate\" has no matching server registration in this workspace",
+      "provenance": "management/server/idp/authentik.go:98",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"idp-migrate\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"idp-migrate\" via env \"GCE_METADATA_HOST\" could not be matched to an internal service",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/cloud.google.com/go/compute/metadata@v0.9.0/metadata.go:530",
+      "suggestion": "If this targets an external third-party API, declare in anode.toml or verify route matching."
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"upload-server\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/service/ssooidc@v1.34.2/api_client.go:461",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterPresignServer\" in service \"upload-server\" has no matching server registration in this workspace",
+      "provenance": "upload-server/server/s3.go:43",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDaemonServiceServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "client/cmd/login.go:178",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterConnectServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "client/server/server.go:2838",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterBuildableServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go-v2/feature/ec2/imds@v1.18.6/api_client.go:283",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTP2Server\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/google.golang.org/grpc@v1.80.0/clientconn.go:1518",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHTTPUServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:247",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterCryptoSetupServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/quic-go/quic-go@v0.64.0/connection.go:496",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterSOAPServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/netbirdio/go-nat@v0.0.0-20260821095157-6b2c8c5c74e8/upnp.go:103",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterFlowServiceServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "flow/client/client.go:211",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterMultiServer\" in service \"client\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huin/goupnp@v1.2.0/network.go:37",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

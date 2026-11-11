@@ -1,0 +1,347 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-cloudreve": {
+      "kind": "mysql",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/ariga.io/atlas@v0.19.1-0.20240203083654-5948b60a8e43/sql/mysql/driver.go:94"
+    }
+  },
+  "services": {
+    "cloudreve": {
+      "name": "cloudreve",
+      "entrypoint": "./.",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT"
+        }
+      ],
+      "bindings": [
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDavAccountServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:194"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterDirectLinkServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:195"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterEntityServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:196"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterFileServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:197"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterFsEventServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:198"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterGroupServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:199"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterMetadataServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:200"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterNodeServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:201"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterOAuthClientServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:202"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterOAuthGrantServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:203"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterPasskeyServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:204"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterSettingServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:205"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterShareServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:206"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterStoragePolicyServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:207"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterTaskServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:208"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterUserServer",
+          "inject_env": "",
+          "provenance": "ent/client.go:209"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterHttpServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aliyun/alibabacloud-oss-go-sdk-v2@v1.3.0/oss/client.go:214"
+        },
+        {
+          "resource_ref": "db-cloudreve",
+          "protocol": "mysql",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/ariga.io/atlas@v0.19.1-0.20240203083654-5948b60a8e43/sql/mysql/driver.go:94"
+        },
+        {
+          "resource_ref": "db-cloudreve",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/ariga.io/atlas@v0.19.1-0.20240203083654-5948b60a8e43/sql/sqlclient/client.go:317"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterRawEntServer",
+          "inject_env": "",
+          "provenance": "application/migrator/migrator.go:145"
+        },
+        {
+          "resource_ref": "db-cloudreve",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/jinzhu/gorm@v1.9.11/main.go:76"
+        },
+        {
+          "resource_ref": "db-cloudreve",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/ariga.io/atlas@v0.19.1-0.20240203083654-5948b60a8e43/sql/postgres/driver.go:67"
+        },
+        {
+          "protocol": "grpc",
+          "interface": "RegisterProviderServer",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/defaults/defaults.go:188"
+        },
+        {
+          "resource_ref": "db-cloudreve",
+          "protocol": "postgres",
+          "inject_env": "",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/entgo.io/ent@v0.13.0/dialect/sql/driver.go:30"
+        }
+      ],
+      "secrets": [
+        {
+          "env_var": "AWS_ACCESS_KEY_ID",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/credentials/env_provider.go:44"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/credentials/env_provider.go:46"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/credentials/env_provider.go:49"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/credentials/env_provider.go:51"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/credentials/env_provider.go:66"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/defaults/defaults.go:191"
+        },
+        {
+          "env_var": "OBS_ACCESS_KEY_ID",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huaweicloud/huaweicloud-sdk-go-obs@v3.24.6+incompatible/obs/provider.go:78"
+        },
+        {
+          "env_var": "OBS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huaweicloud/huaweicloud-sdk-go-obs@v3.24.6+incompatible/obs/provider.go:79"
+        },
+        {
+          "env_var": "OBS_SECURITY_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/huaweicloud/huaweicloud-sdk-go-obs@v3.24.6+incompatible/obs/provider.go:80"
+        },
+        {
+          "env_var": "CR_ENCRYPT_MASTER_KEY",
+          "provenance": "pkg/filemanager/encrypt/masterkey.go:65"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY_ID",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/ks3sdklib/aws-sdk-go@v1.6.2/aws/credentials/env_provider.go:38"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/ks3sdklib/aws-sdk-go@v1.6.2/aws/credentials/env_provider.go:40"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/ks3sdklib/aws-sdk-go@v1.6.2/aws/credentials/env_provider.go:43"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/ks3sdklib/aws-sdk-go@v1.6.2/aws/credentials/env_provider.go:45"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/ks3sdklib/aws-sdk-go@v1.6.2/aws/credentials/env_provider.go:60"
+        }
+      ]
+    }
+  },
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDavAccountServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:194",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterDirectLinkServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:195",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterEntityServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:196",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterFileServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:197",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterFsEventServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:198",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterGroupServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:199",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterMetadataServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:200",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterNodeServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:201",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterOAuthClientServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:202",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterOAuthGrantServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:203",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterPasskeyServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:204",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterSettingServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:205",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterShareServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:206",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterStoragePolicyServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:207",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterTaskServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:208",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterUserServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "ent/client.go:209",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterHttpServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aliyun/alibabacloud-oss-go-sdk-v2@v1.3.0/oss/client.go:214",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterRawEntServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "application/migrator/migrator.go:145",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    },
+    {
+      "level": "warn",
+      "message": "gRPC client for \"RegisterProviderServer\" in service \"cloudreve\" has no matching server registration in this workspace",
+      "provenance": "../../../../../../../../Users/abhiuday/go/pkg/mod/github.com/aws/aws-sdk-go@v1.34.0/aws/defaults/defaults.go:188",
+      "suggestion": "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml"
+    }
+  ]
+}

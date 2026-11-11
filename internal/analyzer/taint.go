@@ -142,9 +142,15 @@ func TraceCompositeEnvVars(val ssa.Value) []string {
 
 // TraceToEnvVar traces an SSA value backwards to an os.Getenv("VAR") call or struct field
 func TraceToEnvVar(val ssa.Value) string {
-	if val == nil {
+	visited := make(map[ssa.Value]bool)
+	return traceToEnvVarWithDepth(val, visited, 0)
+}
+
+func traceToEnvVarWithDepth(val ssa.Value, visited map[ssa.Value]bool, depth int) string {
+	if val == nil || depth > 25 || visited[val] {
 		return ""
 	}
+	visited[val] = true
 
 	// 1. Direct call to os.Getenv("VAR") or os.LookupEnv("VAR")
 	if call, ok := val.(*ssa.Call); ok {
@@ -179,25 +185,25 @@ func TraceToEnvVar(val ssa.Value) string {
 
 	// 4. String concatenation (e.g. ":" + cfg.Port)
 	if binOp, ok := val.(*ssa.BinOp); ok && binOp.Op == token.ADD {
-		left := TraceToEnvVar(binOp.X)
+		left := traceToEnvVarWithDepth(binOp.X, visited, depth+1)
 		if left != "" {
 			return left
 		}
-		return TraceToEnvVar(binOp.Y)
+		return traceToEnvVarWithDepth(binOp.Y, visited, depth+1)
 	}
 
 	// 5. Type conversions or interface wrappers (ssa.ChangeType, ssa.MakeInterface)
 	if change, ok := val.(*ssa.ChangeType); ok {
-		return TraceToEnvVar(change.X)
+		return traceToEnvVarWithDepth(change.X, visited, depth+1)
 	}
 	if makeIface, ok := val.(*ssa.MakeInterface); ok {
-		return TraceToEnvVar(makeIface.X)
+		return traceToEnvVarWithDepth(makeIface.X, visited, depth+1)
 	}
 
 	// 6. Phi nodes across control-flow branches
 	if phi, ok := val.(*ssa.Phi); ok {
 		for _, edge := range phi.Edges {
-			if env := TraceToEnvVar(edge); env != "" {
+			if env := traceToEnvVarWithDepth(edge, visited, depth+1); env != "" {
 				return env
 			}
 		}

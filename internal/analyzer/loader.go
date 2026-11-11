@@ -43,7 +43,7 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 		return nil, fmt.Errorf("package loading had errors")
 	}
 
-	prog, ssaPkgs := ssautil.AllPackages(pkgs, ssa.SanityCheckFunctions|ssa.InstantiateGenerics)
+	prog, ssaPkgs := ssautil.AllPackages(pkgs, ssa.InstantiateGenerics)
 	prog.Build()
 
 	lockfile := &iag.LockFile{
