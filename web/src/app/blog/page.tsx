@@ -52,7 +52,7 @@ export default function BlogPage() {
   const posts: BlogPost[] = [
     {
       slug: "stress-testing-10-famous-go-backends",
-      title: "Stress-Testing Anode on 10 Famous 40K-Star Go Codebases & a 32-Microservice Mesh",
+      title: "Stress-Testing Anode on 10 Real-World Go Backends & a 32-Microservice Mesh",
       subtitle: "From croc, glance, and filebrowser to restic, ntfy, netbird, and a 32-service enterprise mesh: empirical SSA sweep benchmarks, cycle-safe taint tracking, and bare-metal deployment synthesis.",
       date: "Nov 11, 2026",
       readTime: "15 min read",
@@ -64,7 +64,7 @@ export default function BlogPage() {
           heading: "The Hypothesis: Does Proof-of-Topology Scale to Real-World Chaos?",
           paragraphs: [
             "Most developer tools look immaculate on 50-line Hello World demos. The real trial of fire is when you point static analysis at mature, production open-source Go repositories—codebases with hundreds of thousands of lines of code, cyclical control-flow loops, embedded binary assets, and complex third-party dependencies.",
-            "To prove that Anode's Proof-of-Topology engine scales beyond synthetic test cases, we selected 10 prominent Go backend applications with 20K to 41K GitHub stars (including croc, glance, 1Panel, restic, filebrowser, ntfy, netbird, wttr.in, cloudreve, and navidrome) alongside synthetic enterprise meshes up to 32 microservices.",
+            "To prove that Anode's Proof-of-Topology engine scales beyond synthetic test cases, we selected 10 prominent Go backend applications (including croc, glance, 1Panel, restic, filebrowser, ntfy, netbird, wttr.in, cloudreve, and navidrome) alongside enterprise meshes up to 32 microservices.",
             "We executed 'anode inspect' over each codebase without modifying a single line of their application code."
           ]
         },
@@ -115,14 +115,14 @@ hyper_mesh_12               12         7        615 ms       200 ms      268.8 m
 fintech_core_20             20         22       615 ms       213 ms      548.8 ms       2.20s
 health_mesh_25              25         26       680 ms       249 ms      642.6 ms       2.38s
 omni_mesh_32 (Hyper-Scale)  32         35       653 ms       205 ms      799.0 ms       2.45s
-glanceapp/glance (~38.1k⭐) 1          0        1,041 ms     410 ms      40.4 ms        2.51s
-filebrowser (~35.9k⭐)      1          1        1,103 ms     540 ms      66.7 ms        3.12s
-chubin/wttr.in (~30.7k⭐)   1          1        881 ms       290 ms      78.7 ms        2.06s
-navidrome (~24.6k⭐)        1          1        1,837 ms     633 ms      125.1 ms       4.90s
-schollz/croc (~40.9k⭐)     4          0        1,011 ms     412 ms      140.6 ms       2.86s
-restic (~37.1k⭐)           3          0        1,583 ms     624 ms      134.1 ms       8.55s
-binwiederhier/ntfy (~35.5k⭐) 7        2        1,531 ms     520 ms      346.1 ms       9.03s
-netbirdio/netbird (~30.8k⭐) 14        5        3,210 ms     1,842 ms    649.4 ms       19.54s`
+glanceapp/glance            1          0        1,041 ms     410 ms      40.4 ms        2.51s
+filebrowser/filebrowser     1          1        1,103 ms     540 ms      66.7 ms        3.12s
+chubin/wttr.in              1          1        881 ms       290 ms      78.7 ms        2.06s
+navidrome/navidrome         1          1        1,837 ms     633 ms      125.1 ms       4.90s
+schollz/croc                4          0        1,011 ms     412 ms      140.6 ms       2.86s
+restic/restic               3          0        1,583 ms     624 ms      134.1 ms       8.55s
+binwiederhier/ntfy          7          2        1,531 ms     520 ms      346.1 ms       9.03s
+netbirdio/netbird           14         5        3,210 ms     1,842 ms    649.4 ms       19.54s`
           },
           callout: {
             type: "tip",

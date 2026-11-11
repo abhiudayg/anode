@@ -720,13 +720,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "pharmacy_inventory",
-          "protocol": "http",
-          "interface": "/v1/pharmacy/check-stock",
-          "inject_env": "PHARMACY_INVENTORY_URL",
-          "provenance": "services/prescriptions/main.go:24"
-        },
-        {
           "resource_ref": "db-prescriptions-cockroach",
           "protocol": "cockroachdb",
           "inject_env": "PRESCRIPTIONS_COCKROACH_URL",
@@ -734,6 +727,13 @@
             "PRESCRIPTIONS_COCKROACH_URL"
           ],
           "provenance": "services/prescriptions/main.go:19"
+        },
+        {
+          "service_ref": "pharmacy_inventory",
+          "protocol": "http",
+          "interface": "/v1/pharmacy/check-stock",
+          "inject_env": "PHARMACY_INVENTORY_URL",
+          "provenance": "services/prescriptions/main.go:24"
         }
       ],
       "secrets": []

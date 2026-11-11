@@ -321,27 +321,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "media",
-          "protocol": "http",
-          "interface": "/v1/media",
-          "inject_env": "MEDIA_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:43"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:38"
-        },
-        {
-          "service_ref": "users",
-          "protocol": "http",
-          "interface": "/v1/users",
-          "inject_env": "USERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:28"
-        },
-        {
           "service_ref": "orders",
           "protocol": "http",
           "interface": "/v1/orders",
@@ -354,6 +333,27 @@
           "interface": "/v1/auth/token",
           "inject_env": "AUTH_SERVICE_URL",
           "provenance": "services/apigateway/main.go:23"
+        },
+        {
+          "service_ref": "users",
+          "protocol": "http",
+          "interface": "/v1/users",
+          "inject_env": "USERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:28"
+        },
+        {
+          "service_ref": "media",
+          "protocol": "http",
+          "interface": "/v1/media",
+          "inject_env": "MEDIA_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:43"
+        },
+        {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:38"
         }
       ],
       "secrets": []
@@ -397,17 +397,17 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-auth",
-          "protocol": "redis",
-          "inject_env": "AUTH_REDIS_ADDR",
-          "provenance": "services/auth/main.go:21"
-        },
-        {
           "service_ref": "users",
           "protocol": "http",
           "interface": "/v1/users/lookup",
           "inject_env": "USERS_SERVICE_URL",
           "provenance": "services/auth/main.go:27"
+        },
+        {
+          "resource_ref": "redis-auth",
+          "protocol": "redis",
+          "inject_env": "AUTH_REDIS_ADDR",
+          "provenance": "services/auth/main.go:21"
         }
       ],
       "secrets": [
@@ -431,6 +431,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search/sync",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/catalog/main.go:24"
+        },
+        {
           "resource_ref": "db-catalog-mongo",
           "protocol": "mongodb",
           "inject_env": "CATALOG_MONGO_URL",
@@ -438,13 +445,6 @@
             "CATALOG_MONGO_URL"
           ],
           "provenance": "services/catalog/main.go:17"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search/sync",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/catalog/main.go:24"
         }
       ],
       "secrets": []
@@ -843,6 +843,20 @@
       ],
       "bindings": [
         {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/charge",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:34"
+        },
+        {
+          "service_ref": "inventory",
+          "protocol": "http",
+          "interface": "/v1/inventory/reserve",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:37"
+        },
+        {
           "resource_ref": "db-orders",
           "protocol": "postgres",
           "inject_env": "",
@@ -861,20 +875,6 @@
           "interface": "RegisterLedgerServiceServer",
           "inject_env": "LEDGER_GRPC_ADDR",
           "provenance": "services/orders/main.go:28"
-        },
-        {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/charge",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:34"
-        },
-        {
-          "service_ref": "inventory",
-          "protocol": "http",
-          "interface": "/v1/inventory/reserve",
-          "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:37"
         }
       ],
       "secrets": []

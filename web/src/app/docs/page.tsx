@@ -964,7 +964,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   {/* Comprehensive Benchmark Table in Docs */}
                   <div className="mt-4 pt-3 border-t border-white/[0.06]">
                     <h4 className="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-2 font-mono-code">
-                      Empirical Profiling Matrix (Enterprise & 20k–41k⭐ Backends)
+                      Empirical Profiling Matrix (Enterprise & Open-Source Backends)
                     </h4>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse text-[11px] font-mono-code">
@@ -981,7 +981,7 @@ terraform -chdir=infra/terraform apply`}</code>
                         <tbody className="divide-y divide-white/[0.04] text-neutral-300">
                           <tr>
                             <td className="py-2 px-2.5 font-bold text-white">sample-shop</td>
-                            <td className="py-2 px-2.5 text-neutral-400">2 svcs / 2 stores</td>
+                            <td className="py-2 px-2.5 text-neutral-400">2 services / 2 stores</td>
                             <td className="py-2 px-2.5">460 ms</td>
                             <td className="py-2 px-2.5">182 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">62.2 ms</td>
@@ -989,7 +989,7 @@ terraform -chdir=infra/terraform apply`}</code>
                           </tr>
                           <tr>
                             <td className="py-2 px-2.5 font-bold text-white">hyper_mesh_12</td>
-                            <td className="py-2 px-2.5 text-neutral-400">12 svcs / 7 stores</td>
+                            <td className="py-2 px-2.5 text-neutral-400">12 services / 7 stores</td>
                             <td className="py-2 px-2.5">615 ms</td>
                             <td className="py-2 px-2.5">200 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">268.8 ms</td>
@@ -997,7 +997,7 @@ terraform -chdir=infra/terraform apply`}</code>
                           </tr>
                           <tr>
                             <td className="py-2 px-2.5 font-bold text-white">fintech_core_20</td>
-                            <td className="py-2 px-2.5 text-neutral-400">20 svcs / 22 stores</td>
+                            <td className="py-2 px-2.5 text-neutral-400">20 services / 22 stores</td>
                             <td className="py-2 px-2.5">615 ms</td>
                             <td className="py-2 px-2.5">213 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">548.8 ms</td>
@@ -1005,7 +1005,7 @@ terraform -chdir=infra/terraform apply`}</code>
                           </tr>
                           <tr>
                             <td className="py-2 px-2.5 font-bold text-white">health_mesh_25</td>
-                            <td className="py-2 px-2.5 text-neutral-400">25 svcs / 26 stores</td>
+                            <td className="py-2 px-2.5 text-neutral-400">25 services / 26 stores</td>
                             <td className="py-2 px-2.5">680 ms</td>
                             <td className="py-2 px-2.5">249 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">642.6 ms</td>
@@ -1013,63 +1013,63 @@ terraform -chdir=infra/terraform apply`}</code>
                           </tr>
                           <tr>
                             <td className="py-2 px-2.5 font-bold text-white">omni_mesh_32</td>
-                            <td className="py-2 px-2.5 text-neutral-400">32 svcs / 35 stores</td>
+                            <td className="py-2 px-2.5 text-neutral-400">32 services / 35 stores</td>
                             <td className="py-2 px-2.5">653 ms</td>
                             <td className="py-2 px-2.5">205 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">799.0 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">2.45s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">glance (38k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">1 svc (dashboard)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">glance</td>
+                            <td className="py-2 px-2.5 text-neutral-400">Dashboard Server</td>
                             <td className="py-2 px-2.5">1,041 ms</td>
                             <td className="py-2 px-2.5">410 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">40.4 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">2.51s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">filebrowser (36k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">1 svc (storage)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">filebrowser</td>
+                            <td className="py-2 px-2.5 text-neutral-400">File Storage Engine</td>
                             <td className="py-2 px-2.5">1,103 ms</td>
                             <td className="py-2 px-2.5">540 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">66.7 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">3.12s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">wttr.in (31k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">1 svc (weather)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">wttr.in</td>
+                            <td className="py-2 px-2.5 text-neutral-400">Terminal Forecast Service</td>
                             <td className="py-2 px-2.5">881 ms</td>
                             <td className="py-2 px-2.5">290 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">78.7 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">2.06s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">croc (41k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">4 svcs (p2p relay)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">croc</td>
+                            <td className="py-2 px-2.5 text-neutral-400">P2P Relay & Rendezvous</td>
                             <td className="py-2 px-2.5">1,011 ms</td>
                             <td className="py-2 px-2.5">412 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">140.6 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">2.86s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">restic (37k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">3 svcs (backup)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">restic</td>
+                            <td className="py-2 px-2.5 text-neutral-400">Encrypted Backup Engine</td>
                             <td className="py-2 px-2.5">1,583 ms</td>
                             <td className="py-2 px-2.5">624 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">134.1 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">8.55s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">ntfy (36k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">7 svcs (pubsub)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">ntfy</td>
+                            <td className="py-2 px-2.5 text-neutral-400">HTTP Pub-Sub Server</td>
                             <td className="py-2 px-2.5">1,531 ms</td>
                             <td className="py-2 px-2.5">520 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">346.1 ms</td>
                             <td className="py-2 px-2.5 text-right font-semibold">9.03s</td>
                           </tr>
                           <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">netbird (31k⭐)</td>
-                            <td className="py-2 px-2.5 text-neutral-400">14 svcs (mesh)</td>
+                            <td className="py-2 px-2.5 font-bold text-white">netbird</td>
+                            <td className="py-2 px-2.5 text-neutral-400">Zero-Trust VPN Mesh</td>
                             <td className="py-2 px-2.5">3,210 ms</td>
                             <td className="py-2 px-2.5">1,842 ms</td>
                             <td className="py-2 px-2.5 text-emerald-400 font-bold">649.4 ms</td>
