@@ -286,17 +286,17 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-staff",
-          "protocol": "redis",
-          "inject_env": "STAFF_REDIS_ADDR",
-          "provenance": "services/auth_sso/main.go:21"
-        },
-        {
           "service_ref": "patient_registry",
           "protocol": "http",
           "interface": "/v1/patients/query",
           "inject_env": "PATIENTS_SERVICE_URL",
           "provenance": "services/auth_sso/main.go:27"
+        },
+        {
+          "resource_ref": "redis-staff",
+          "protocol": "redis",
+          "inject_env": "STAFF_REDIS_ADDR",
+          "provenance": "services/auth_sso/main.go:21"
         }
       ],
       "secrets": [

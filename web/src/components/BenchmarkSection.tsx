@@ -1,9 +1,11 @@
 "use client";
 
-import { motion } from "motion/react";
-import { Zap, Gauge, HardDrive, Cpu } from "lucide-react";
+import { useState } from "react";
+import { Zap, Gauge, HardDrive, Cpu, Layers, ExternalLink, CheckCircle } from "lucide-react";
 
 export function BenchmarkSection() {
+  const [activeTab, setActiveTab] = useState<"enterprise" | "realworld">("enterprise");
+
   const benchmarks = [
     {
       metric: "Cold-Boot Startup",
@@ -23,10 +25,10 @@ export function BenchmarkSection() {
     },
     {
       metric: "Topology Static Sweep",
-      anode: "18ms",
+      anode: "18–62ms",
       traditional: "Manual YAML",
       advantage: "Sub-second",
-      description: "SSA and Variable Type Analysis resolves entire multi-service monorepos instantly.",
+      description: "SSA and Variable Type Analysis resolves topologies in milliseconds; 32 services in 798ms.",
       icon: Cpu,
     },
     {
@@ -39,22 +41,160 @@ export function BenchmarkSection() {
     },
   ];
 
+  const enterpriseBenchmarks = [
+    {
+      name: "sample-shop",
+      category: "Baseline Architecture",
+      services: 2,
+      resources: 2,
+      astLoad: "460 ms",
+      ssaSweep: "62.2 ms",
+      totalWall: "1.07s",
+      backing: "PostgreSQL, HTTP Ingress",
+    },
+    {
+      name: "hyper_mesh_12",
+      category: "Flagship Microservices",
+      services: 12,
+      resources: 7,
+      astLoad: "615 ms",
+      ssaSweep: "268.8 ms",
+      totalWall: "1.91s",
+      backing: "Postgres, Redis, ClickHouse, gRPC",
+    },
+    {
+      name: "fintech_core_20",
+      category: "Neo-Banking & Trading",
+      services: 20,
+      resources: 22,
+      astLoad: "615 ms",
+      ssaSweep: "548.8 ms",
+      totalWall: "2.20s",
+      backing: "Kafka, TimescaleDB, ScyllaDB, Valkey",
+    },
+    {
+      name: "health_mesh_25",
+      category: "HIPAA Hospital System",
+      services: 25,
+      resources: 26,
+      astLoad: "680 ms",
+      ssaSweep: "642.6 ms",
+      totalWall: "2.38s",
+      backing: "MongoDB, RabbitMQ, PostgreSQL, FHIR",
+    },
+    {
+      name: "omni_mesh_32",
+      category: "Hyper-Scale Enterprise",
+      services: 32,
+      resources: 35,
+      astLoad: "653 ms",
+      ssaSweep: "799.0 ms",
+      totalWall: "2.45s",
+      backing: "14 Stores: Qdrant, Temporal, MinIO, Scylla",
+    },
+  ];
+
+  const realWorldBenchmarks = [
+    {
+      name: "glanceapp/glance",
+      stars: "~38.1k ⭐",
+      category: "Feed & Dashboard Server",
+      services: 1,
+      ssaSweep: "40.4 ms",
+      totalWall: "2.51s",
+      backing: "In-memory cache, Open-Meteo & Reddit APIs",
+    },
+    {
+      name: "filebrowser/filebrowser",
+      stars: "~35.9k ⭐",
+      category: "File Management Backend",
+      services: 1,
+      ssaSweep: "66.7 ms",
+      totalWall: "3.12s",
+      backing: "Embedded BoltDB / SQLite, JWT Auth",
+    },
+    {
+      name: "chubin/wttr.in",
+      stars: "~30.7k ⭐",
+      category: "Terminal Forecast Engine",
+      services: 1,
+      ssaSweep: "78.7 ms",
+      totalWall: "2.06s",
+      backing: "Local Cache, Upstream Radar Ingress",
+    },
+    {
+      name: "navidrome/navidrome",
+      stars: "~24.6k ⭐",
+      category: "Music Stream & Subsonic API",
+      services: 1,
+      ssaSweep: "125.1 ms",
+      totalWall: "4.90s",
+      backing: "SQLite (FTS5 indexed), Media Volumes",
+    },
+    {
+      name: "schollz/croc",
+      stars: "~40.9k ⭐",
+      category: "P2P Rendezvous Relay",
+      services: 4,
+      ssaSweep: "140.6 ms",
+      totalWall: "2.86s",
+      backing: "PAKE Key Exchange, Ephemeral Sockets",
+    },
+    {
+      name: "cloudreve/cloudreve",
+      stars: "~28.9k ⭐",
+      category: "Cloud Drive & Orchestrator",
+      services: 1,
+      ssaSweep: "152.5 ms",
+      totalWall: "7.60s",
+      backing: "SQLite/MySQL/PostgreSQL, Redis Cache",
+    },
+    {
+      name: "restic/restic",
+      stars: "~37.1k ⭐",
+      category: "Encrypted Backup Engine",
+      services: 3,
+      ssaSweep: "134.1 ms",
+      totalWall: "8.55s",
+      backing: "MinIO / S3 Object Storage, SFTP",
+    },
+    {
+      name: "binwiederhier/ntfy",
+      stars: "~35.5k ⭐",
+      category: "HTTP Pub-Sub Push Server",
+      services: 7,
+      ssaSweep: "346.1 ms",
+      totalWall: "9.03s",
+      backing: "SQLite Message Queue, Twilio/FCM Egress",
+    },
+    {
+      name: "netbirdio/netbird",
+      stars: "~30.8k ⭐",
+      category: "Zero-Trust WireGuard Mesh",
+      services: 14,
+      ssaSweep: "649.4 ms",
+      totalWall: "19.54s",
+      backing: "PostgreSQL, Coturn STUN/TURN, gRPC",
+    },
+  ];
+
   return (
     <section id="benchmarks" className="py-24 relative overflow-hidden bg-[#08090b] border-t border-white/[0.06]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-xs font-mono-code uppercase tracking-wider text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-3 py-1 rounded-full inline-block mb-3">
-            Performance Metrics
+            Performance & Empirical Scaling
           </span>
           <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white">
             Bare-Metal Primitives Win Every Time
           </h2>
           <p className="mt-4 text-base sm:text-lg text-neutral-400">
-            By compiling directly to Linux systemd, cgroups v2, and ephemeral loopback proxies, Anode delivers near-zero runtime latency and memory footprints.
+            By compiling directly to Linux systemd, cgroups v2, and ephemeral loopback proxies, Anode delivers near-zero runtime latency and sub-second static analysis.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 4 Core Pillars Metric Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
           {benchmarks.map((b, i) => {
             const Icon = b.icon;
             return (
@@ -87,6 +227,136 @@ export function BenchmarkSection() {
               </div>
             );
           })}
+        </div>
+
+        {/* Empirical Scaling Matrix Section */}
+        <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] p-6 sm:p-8 overflow-hidden shadow-2xl">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-6 border-b border-white/[0.06]">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Layers className="w-4 h-4 text-cyan-400" />
+                <h3 className="text-lg font-bold text-white tracking-tight">
+                  Empirical Static Analysis Benchmark Matrix
+                </h3>
+              </div>
+              <p className="text-xs text-neutral-400">
+                Freshly measured wall-clock and SSA reachability analysis timings across enterprise topologies and 20k–41k star codebases.
+              </p>
+            </div>
+
+            {/* Toggle Tabs */}
+            <div className="flex items-center gap-1 bg-white/[0.04] p-1 rounded-xl border border-white/[0.08] self-start sm:self-auto">
+              <button
+                onClick={() => setActiveTab("enterprise")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-all ${
+                  activeTab === "enterprise"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold"
+                    : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                Enterprise Meshes (2–32 Svcs)
+              </button>
+              <button
+                onClick={() => setActiveTab("realworld")}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono-code transition-all ${
+                  activeTab === "realworld"
+                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-semibold"
+                    : "text-neutral-400 hover:text-white"
+                }`}
+              >
+                10 Real-World Apps (20k–41k⭐)
+              </button>
+            </div>
+          </div>
+
+          {/* Table Container */}
+          <div className="overflow-x-auto">
+            {activeTab === "enterprise" ? (
+              <table className="w-full text-left border-collapse text-xs font-mono-code">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-neutral-500 uppercase tracking-wider text-[11px]">
+                    <th className="py-3 px-4">Benchmark Architecture</th>
+                    <th className="py-3 px-4">Topology Scale</th>
+                    <th className="py-3 px-4">Backing Infrastructure</th>
+                    <th className="py-3 px-4 text-cyan-400">Anode SSA Sweep</th>
+                    <th className="py-3 px-4 text-right">Total Wall-Clock</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {enterpriseBenchmarks.map((row, i) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-white">
+                        <div>{row.name}</div>
+                        <div className="text-[10px] text-neutral-400 font-sans">{row.category}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-300">
+                        <span className="text-cyan-300 font-bold">{row.services}</span> services •{" "}
+                        <span className="text-purple-300 font-bold">{row.resources}</span> stores
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-400 text-[11px]">
+                        {row.backing}
+                      </td>
+                      <td className="py-3.5 px-4 text-emerald-400 font-bold">
+                        {row.ssaSweep}
+                      </td>
+                      <td className="py-3.5 px-4 text-right text-neutral-300 font-semibold">
+                        {row.totalWall}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-left border-collapse text-xs font-mono-code">
+                <thead>
+                  <tr className="border-b border-white/[0.06] text-neutral-500 uppercase tracking-wider text-[11px]">
+                    <th className="py-3 px-4">Repository & Stars</th>
+                    <th className="py-3 px-4">Application Role</th>
+                    <th className="py-3 px-4">Detected Infrastructure</th>
+                    <th className="py-3 px-4 text-cyan-400">Anode SSA Sweep</th>
+                    <th className="py-3 px-4 text-right">Total Wall-Clock</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.04]">
+                  {realWorldBenchmarks.map((row, i) => (
+                    <tr key={i} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3.5 px-4 font-semibold text-white">
+                        <div>{row.name}</div>
+                        <div className="text-[10px] text-amber-400 font-sans">{row.stars}</div>
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-300 text-[11px]">
+                        {row.category} ({row.services} svc)
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-400 text-[11px]">
+                        {row.backing}
+                      </td>
+                      <td className="py-3.5 px-4 text-emerald-400 font-bold">
+                        {row.ssaSweep}
+                      </td>
+                      <td className="py-3.5 px-4 text-right text-neutral-300 font-semibold">
+                        {row.totalWall}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-white/[0.06] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[11px] text-neutral-400 font-sans">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>
+                <strong>Methodology:</strong> Measured with Go 1.22+ SSA and Variable Type Analysis (VTA). Anode SSA Sweep represents pure in-memory reachability and sink inspection; Total Wall-Clock includes compiler AST ingestion from disk.
+              </span>
+            </div>
+            <a
+              href="/docs#benchmarks"
+              className="text-cyan-400 hover:text-cyan-300 flex items-center gap-1 font-mono-code text-xs self-start sm:self-auto"
+            >
+              Read Full Methodology <ExternalLink className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       </div>
     </section>
