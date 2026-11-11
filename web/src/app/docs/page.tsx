@@ -335,70 +335,133 @@ cd anode && go build -o /usr/local/bin/anode ./cmd/anode`}</code>
                   CLI Reference
                 </h1>
                 <p className="text-sm text-neutral-300">
-                  Anode provides three primary workflows: static inspection, local dynamic development, and bare-metal production deployment.
+                  The Anode CLI is engineered with intuitive, POSIX-compliant Docker-style commands, self-documenting syntax, and sub-command help trees.
                 </p>
+
+                {/* Docker-Style Global Synopsis */}
+                <div className="rounded-xl border border-white/[0.08] bg-[#07080a] p-5 space-y-3 font-mono-code text-xs">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] text-neutral-400">
+                    <span className="text-cyan-400 font-bold">$ anode --help</span>
+                    <span className="text-[11px] text-neutral-500">Docker-Style Syntax</span>
+                  </div>
+                  <pre className="text-neutral-300 leading-relaxed overflow-x-auto whitespace-pre">
+{`Usage:  anode [OPTIONS] COMMAND [ARG...]
+
+Proof-of-Topology Bare-Metal Orchestrator for Unmodified Go Backends
+
+Options:
+  -v, --version          Print version information and exit
+  -h, --help             Print usage information
+
+Management Commands:
+  cluster                Manage multi-node placement pools and zero-trust firewalls
+  catalog                Inspect pluggable stateful catalog drivers and image matrix
+
+Commands:
+  inspect [PATH]         Extract whole-program SSA topology and write anode.lock.json
+  dev [PATH]             Start local hot-reload daemon with dynamic loopback ports
+  deploy TARGET [PATH]   Deploy release to bare-metal Linux host via systemd & Caddy
+  run TARGET [PATH]      Alias for deploy (Docker CLI parity)
+  version                Show the Anode version information
+
+Run 'anode COMMAND --help' for more information on a command.`}
+                  </pre>
+                </div>
 
                 <div className="space-y-6">
                   {/* anode inspect */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-cyan-400 font-mono-code">anode inspect [path]</code>
-                      <span className="text-[11px] font-mono-code text-neutral-500">Static Pass</span>
+                      <code className="text-sm font-bold text-cyan-400 font-mono-code">anode inspect [PATH]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Static Compilation Pass</span>
                     </div>
-                    <p className="text-xs text-neutral-300">
-                      Parses Go source code with whole-program SSA and VTA call graphs rooted at <code className="text-neutral-200">func main()</code>. Extracts standard library choke points and writes <code className="text-neutral-200">anode.lock.json</code>.
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Compiles whole-program SSA and VTA call graphs rooted strictly at <code className="text-neutral-200">func main()</code>. Traces environment variable dataflow backwards to choke points (<code className="text-neutral-200">database/sql.Open</code>, <code className="text-neutral-200">net.Listen</code>, <code className="text-neutral-200">grpc.NewServer</code>), proves migration asset existence, and writes an immutable <code className="text-cyan-300">anode.lock.json</code>.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
-                      <div>Flags:</div>
-                      <div className="pl-4"><span className="text-cyan-300">--output, -o</span> : Output lockfile path (default: ./anode.lock.json)</div>
-                      <div className="pl-4"><span className="text-cyan-300">--strict</span> : Exit with non-zero code on any compiler diagnostic</div>
-                      <div className="pl-4"><span className="text-cyan-300">--verbose, -v</span> : Print SSA call-graph traversal debug tree</div>
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-cyan-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode inspect .</div>
+                      <div className="pl-4 text-emerald-400">anode inspect ./examples/omni_mesh_32</div>
+                      <div className="pl-4 text-emerald-400">anode inspect ./examples/realworld_benchmarks/glance</div>
                     </div>
                   </div>
 
                   {/* anode dev */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-emerald-400 font-mono-code">anode dev [flags]</code>
+                      <code className="text-sm font-bold text-emerald-400 font-mono-code">anode dev [PATH]</code>
                       <span className="text-[11px] font-mono-code text-neutral-500">Local Orchestrator</span>
                     </div>
-                    <p className="text-xs text-neutral-300">
-                      Executes strictly against <code className="text-neutral-200">anode.lock.json</code>. Spawns isolated ephemeral containers for stateful dependencies on dynamic kernel ports (<code className="text-neutral-200">127.0.0.1:0</code>), executes Goose migrations, injects environment variables, and runs the sub-second reload loop.
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Starts the zero-port-collision local development engine. Operates strictly against <code className="text-neutral-200">anode.lock.json</code> (or auto-compiles if missing), binds ephemeral loopback sockets (<code className="text-neutral-200">127.0.0.1:0</code>), provisions isolated database containers, applies pending Goose migrations, and supervises sub-second live recompilation.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
-                      <div>Flags:</div>
-                      <div className="pl-4"><span className="text-emerald-300">--no-reload</span> : Disable file watcher and live recompilation</div>
-                      <div className="pl-4"><span className="text-emerald-300">--port &lt;p&gt;</span> : Override the main ingress loopback port</div>
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-emerald-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode dev</div>
+                      <div className="pl-4 text-emerald-400">anode dev ./examples/fintech_core_20</div>
                     </div>
                   </div>
 
-                  {/* anode deploy */}
+                  {/* anode deploy / run */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-purple-400 font-mono-code">anode deploy &lt;user@host&gt; [flags]</code>
-                      <span className="text-[11px] font-mono-code text-neutral-500">Bare Metal VPS</span>
+                      <code className="text-sm font-bold text-purple-400 font-mono-code">anode deploy &lt;user@host&gt; [PATH] [OPTIONS]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Bare-Metal VPS Release</span>
                     </div>
-                    <p className="text-xs text-neutral-300">
-                      Cross-compiles self-contained static Linux executables (<code className="text-neutral-200">CGO_ENABLED=0 GOOS=linux</code>), establishes SSH deployment, generates hardened systemd unit files with cgroups v2 quotas, and synthesizes Caddy reverse-proxy rules.
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Cross-compiles statically linked Linux ELF executables (<code className="text-neutral-200">CGO_ENABLED=0</code>), SSHs to the remote target, bootstraps the unprivileged <code className="text-neutral-200">anode</code> user, executes pre-traffic database migrations, writes hardened systemd unit files with cgroups v2 quotas (<code className="text-neutral-200">CPUQuota=200%</code>, <code className="text-neutral-200">MemoryMax=1G</code>), and reloads Caddy with zero downtime.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
-                      <div>Flags:</div>
-                      <div className="pl-4"><span className="text-purple-300">--domain</span> : Public FQDN for automated Caddy HTTPS provisioning</div>
-                      <div className="pl-4"><span className="text-purple-300">--ssh-key</span> : Path to private SSH key for remote authentication</div>
-                      <div className="pl-4"><span className="text-purple-300">--memory-max</span> : Linux cgroups v2 memory limit (default: 1G)</div>
-                      <div className="pl-4"><span className="text-purple-300">--cpu-quota</span> : Linux cgroups v2 CPU quota (default: 200%)</div>
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-purple-300">--dry-run</span> : Synthesize and validate systemd units & Caddyfile without live SSH</div>
+                      <div className="pl-4"><span className="text-purple-300">--domain &lt;domain&gt;</span> : Custom FQDN for automated Let&apos;s Encrypt TLS reverse proxy</div>
+                      <div className="pl-4"><span className="text-purple-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com .</div>
+                      <div className="pl-4 text-emerald-400">anode deploy root@192.168.1.50 ./examples/complex_ecommerce --domain api.example.com</div>
+                      <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com --dry-run</div>
+                      <div className="pl-4 text-neutral-400"># Docker CLI Parity: &apos;anode run&apos; is a drop-in alias for deploy</div>
+                      <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/omni_mesh_32</div>
                     </div>
                   </div>
 
-                  {/* anode prune */}
+                  {/* anode catalog */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-amber-400 font-mono-code">anode prune --confirm</code>
-                      <span className="text-[11px] font-mono-code text-neutral-500">Soft-Orphan Cleanup</span>
+                      <code className="text-sm font-bold text-amber-400 font-mono-code">anode catalog [PATH]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Pluggable Stateful Catalog</span>
                     </div>
-                    <p className="text-xs text-neutral-300">
-                      Safely deletes stateful volumes marked as <code className="text-amber-300">lifecycle: orphaned</code>. Anode strictly refuses to delete database volumes automatically upon code changes, requiring an explicit confirmation flag.
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Lists all 26+ built-in pre-audited stateful infrastructure drivers (PostgreSQL, MySQL, Redis, Kafka, ScyllaDB, MinIO, Temporal, Qdrant, etc.) and merges repo-level overrides (<code className="text-neutral-200">anode.catalog.yaml</code>).
                     </p>
+                    <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-amber-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode catalog</div>
+                      <div className="pl-4 text-emerald-400">anode catalog ./my-custom-project</div>
+                    </div>
+                  </div>
+
+                  {/* anode cluster */}
+                  <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <code className="text-sm font-bold text-indigo-400 font-mono-code">anode cluster</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Multi-Node Placement</span>
+                    </div>
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Inspects multi-node VPS pools, calculates greedy bin-packing service placement based on RAM/CPU quotas, and outputs compiler-synthesized zero-trust Linux <code className="text-neutral-200">nftables</code> packet filter rules.
+                    </p>
+                    <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-indigo-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode cluster</div>
+                    </div>
                   </div>
                 </div>
               </div>

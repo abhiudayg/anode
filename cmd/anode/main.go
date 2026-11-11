@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/abhiudayg/anode/internal/analyzer"
+	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/cluster"
 	"github.com/abhiudayg/anode/internal/deployer"
 	"github.com/abhiudayg/anode/internal/devengine"
@@ -27,12 +28,19 @@ func main() {
 
 	cmd := os.Args[1]
 	switch cmd {
+	case "help", "-h", "--help":
+		printUsage()
+		return
 	case "version", "-v", "--version":
 		fmt.Printf("anode version %s\n", Version)
 		return
 	case "inspect":
 		targetDir := "."
 		if len(os.Args) > 2 {
+			if os.Args[2] == "--help" || os.Args[2] == "-h" {
+				printInspectUsage()
+				return
+			}
 			targetDir = os.Args[2]
 		}
 
@@ -68,6 +76,10 @@ func main() {
 	case "dev":
 		targetDir := "."
 		if len(os.Args) > 2 {
+			if os.Args[2] == "--help" || os.Args[2] == "-h" {
+				printDevUsage()
+				return
+			}
 			targetDir = os.Args[2]
 		}
 		fmt.Printf("🚀 Starting anode dev environment for %s...\n", targetDir)
@@ -116,10 +128,13 @@ func main() {
 
 		fmt.Println("\n✅ Anode dev environment running. Watching for changes...")
 
-	case "deploy":
-		if len(os.Args) < 3 {
-			fmt.Println("Usage: anode deploy <user@host> [dir] [--domain <domain>] [--dry-run]")
-			os.Exit(1)
+	case "deploy", "run":
+		if len(os.Args) < 3 || os.Args[2] == "--help" || os.Args[2] == "-h" {
+			printDeployUsage()
+			if len(os.Args) < 3 {
+				os.Exit(1)
+			}
+			return
 		}
 		host := os.Args[2]
 		targetDir := "."
@@ -177,6 +192,10 @@ func main() {
 		}
 
 	case "cluster":
+		if len(os.Args) > 2 && (os.Args[2] == "--help" || os.Args[2] == "-h") {
+			printClusterUsage()
+			return
+		}
 		fmt.Println("🌐 Anode Cluster Multi-Host Pool")
 		pool := cluster.NewClusterPool()
 		pool.RegisterNode("edge-1", "192.168.1.10", "edge", 8192)
@@ -184,6 +203,26 @@ func main() {
 		pool.RegisterNode("worker-2", "192.168.1.12", "worker", 16384)
 
 		fmt.Printf("  • Registered %d cluster nodes with automated bin-packing & zero-trust firewall.\n", len(pool.Nodes))
+
+	case "catalog":
+		targetDir := "."
+		if len(os.Args) > 2 {
+			if os.Args[2] == "--help" || os.Args[2] == "-h" {
+				printCatalogUsage()
+				return
+			}
+			targetDir = os.Args[2]
+		}
+		reg := catalog.NewRegistry()
+		reg.LoadProjectOverrides(targetDir)
+		kinds := reg.ListKinds()
+		fmt.Printf("📦 Anode Stateful Driver Catalog (%d drivers registered)\n\n", len(kinds))
+		fmt.Printf("%-18s | %-24s | %-16s | %-12s\n", "Kind", "Image Template", "Protocol", "Default Port")
+		fmt.Println("---------------------------------------------------------------------------------")
+		for _, k := range kinds {
+			d := reg.Resolve(k)
+			fmt.Printf("%-18s | %-24s | %-16s | %-12d\n", d.Kind, d.Runtime.ImageTemplate, d.Networking.Protocol, d.Networking.PrimaryPort)
+		}
 
 	default:
 		printUsage()
@@ -204,11 +243,56 @@ func loadOrInspect(targetDir string) (*iag.LockFile, error) {
 }
 
 func printUsage() {
-	fmt.Println("Usage: anode <command> [args...]")
-	fmt.Println("\nAvailable commands:")
-	fmt.Println("  inspect [dir]          Analyze Go repository and write anode.lock.json")
-	fmt.Println("  dev [dir]              Run local zero-config developer environment")
-	fmt.Println("  deploy <user@host>     Deploy production release via systemd & SSH")
-	fmt.Println("  cluster                Manage and view multi-node cluster placement")
-	fmt.Println("  version                Show Anode version")
+	fmt.Println("Usage:  anode [OPTIONS] COMMAND [ARG...]")
+	fmt.Println("\nProof-of-Topology Bare-Metal Orchestrator for Unmodified Go Backends")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -v, --version          Print version information and exit")
+	fmt.Println("  -h, --help             Print usage information")
+	fmt.Println("\nManagement Commands:")
+	fmt.Println("  cluster                Manage multi-node placement pools and zero-trust firewalls")
+	fmt.Println("  catalog                Inspect pluggable stateful catalog drivers and image matrix")
+	fmt.Println("\nCommands:")
+	fmt.Println("  inspect [PATH]         Extract whole-program SSA topology and write anode.lock.json")
+	fmt.Println("  dev [PATH]             Start local hot-reload daemon with dynamic loopback ports")
+	fmt.Println("  deploy TARGET [PATH]   Deploy release to bare-metal Linux host via systemd & Caddy")
+	fmt.Println("  run TARGET [PATH]      Alias for deploy (Docker CLI parity)")
+	fmt.Println("  version                Show the Anode version information")
+	fmt.Println("\nRun 'anode COMMAND --help' for more information on a command.")
+}
+
+func printInspectUsage() {
+	fmt.Println("Usage:  anode inspect [PATH]")
+	fmt.Println("\nExtract whole-program SSA topology from Go source code and write anode.lock.json")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -h, --help             Print usage information")
+}
+
+func printDevUsage() {
+	fmt.Println("Usage:  anode dev [PATH]")
+	fmt.Println("\nStart local zero-config developer environment with dynamic loopback proxying")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -h, --help             Print usage information")
+}
+
+func printDeployUsage() {
+	fmt.Println("Usage:  anode deploy <user@host> [PATH] [OPTIONS]")
+	fmt.Println("\nDeploy release to bare-metal Linux host via SSH, systemd, and Caddy")
+	fmt.Println("\nOptions:")
+	fmt.Println("  --dry-run              Synthesize and validate systemd units without live SSH")
+	fmt.Println("  --domain DOMAIN        Custom domain for automated Let's Encrypt TLS reverse proxy")
+	fmt.Println("  -h, --help             Print usage information")
+}
+
+func printCatalogUsage() {
+	fmt.Println("Usage:  anode catalog [PATH]")
+	fmt.Println("\nInspect pluggable stateful catalog drivers, image tags, and default ports")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -h, --help             Print usage information")
+}
+
+func printClusterUsage() {
+	fmt.Println("Usage:  anode cluster")
+	fmt.Println("\nInspect multi-node placement pools, memory bin-packing, and zero-trust firewalls")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -h, --help             Print usage information")
 }
