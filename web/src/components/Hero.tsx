@@ -1,18 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion } from "motion/react";
-import { Terminal, Copy, Check, ArrowRight, ShieldCheck, Zap, GitBranch, Sparkles } from "lucide-react";
+import { Terminal, Copy, Check, ArrowRight, ShieldCheck, Zap, GitBranch, Sparkles, Download, Cpu } from "lucide-react";
 import confetti from "canvas-confetti";
 import { InteractiveTerminal } from "./InteractiveTerminal";
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
-  const [installMethod, setInstallMethod] = useState<"brew" | "curl">("brew");
+  const [installMethod, setInstallMethod] = useState<"brew" | "curl" | "go">("brew");
 
   const installCmd = installMethod === "brew"
     ? "brew install abhiudayg/tap/anode"
-    : "curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash";
+    : installMethod === "curl"
+    ? "curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash"
+    : "go install github.com/abhiudayg/anode/cmd/anode@latest";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(installCmd);
@@ -41,17 +44,21 @@ export function Hero() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 backdrop-blur-md mb-8 group hover:border-cyan-400/60 transition-all cursor-default"
           >
-            <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-            <span className="text-xs font-mono-code text-cyan-300 font-medium">
-              Anode 1.0 — 4-Pillar Proof of Topology
-            </span>
-            <span className="text-neutral-500">•</span>
-            <span className="text-xs text-neutral-300 flex items-center gap-1 group-hover:text-white transition-colors">
-              <span>Zero SDK Lock-In</span>
-              <ArrowRight className="w-3 h-3 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
-            </span>
+            <Link
+              href="/#topology"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 backdrop-blur-md mb-8 group hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(0,173,216,0.25)] hover:scale-[1.02] transition-all cursor-pointer"
+            >
+              <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="text-xs font-mono-code text-cyan-300 font-medium">
+                Anode 1.0 — 4-Pillar Proof of Topology
+              </span>
+              <span className="text-neutral-500">•</span>
+              <span className="text-xs text-neutral-300 flex items-center gap-1 group-hover:text-white transition-colors">
+                <span>Zero SDK Lock-In</span>
+                <ArrowRight className="w-3 h-3 text-cyan-400 group-hover:translate-x-0.5 transition-transform" />
+              </span>
+            </Link>
           </motion.div>
 
           {/* Main Headline */}
@@ -114,6 +121,17 @@ export function Hero() {
                   }`}
                 >
                   curl
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInstallMethod("go")}
+                  className={`px-2 py-0.5 text-[11px] font-mono-code rounded transition-all ${
+                    installMethod === "go"
+                      ? "bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/40"
+                      : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  go
                 </button>
               </div>
               <code className="text-xs sm:text-sm font-mono-code text-neutral-300 group-hover:text-white transition-colors truncate">

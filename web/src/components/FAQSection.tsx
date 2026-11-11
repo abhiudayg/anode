@@ -4,7 +4,7 @@ import { useState } from "react";
 import { HelpCircle, ChevronRight } from "lucide-react";
 
 export function FAQSection() {
-  const [openIndices, setOpenIndices] = useState<number[]>([0]);
+  const [openIndices, setOpenIndices] = useState<number[]>([]);
 
   const faqs = [
     {

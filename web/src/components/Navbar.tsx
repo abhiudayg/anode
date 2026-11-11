@@ -169,6 +169,36 @@ export function Navbar() {
                       </div>
                     </Link>
 
+                    {/* Framework Sub-Links */}
+                    <div className="border-t border-white/[0.06] pt-2 px-1">
+                      <div className="text-[10px] font-mono-code uppercase text-neutral-400 font-semibold mb-1 px-1">
+                        Go Framework Deploy Guides
+                      </div>
+                      <div className="grid grid-cols-3 gap-1 text-[11px] font-mono-code">
+                        <Link
+                          href="/guides/deploy-gin-without-docker"
+                          onClick={() => setGuidesOpen(false)}
+                          className="px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-cyan-500/15 hover:text-cyan-300 text-neutral-300 transition-colors text-center"
+                        >
+                          Gin API
+                        </Link>
+                        <Link
+                          href="/guides/deploy-chi-without-docker"
+                          onClick={() => setGuidesOpen(false)}
+                          className="px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-cyan-500/15 hover:text-cyan-300 text-neutral-300 transition-colors text-center"
+                        >
+                          Chi Router
+                        </Link>
+                        <Link
+                          href="/guides/deploy-fiber-without-docker"
+                          onClick={() => setGuidesOpen(false)}
+                          className="px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-cyan-500/15 hover:text-cyan-300 text-neutral-300 transition-colors text-center"
+                        >
+                          Fiber
+                        </Link>
+                      </div>
+                    </div>
+
                     <div className="border-t border-white/[0.06] my-1 pt-1">
                       <Link
                         href="/vs/docker-compose"
@@ -378,6 +408,30 @@ export function Navbar() {
               >
                 <Database className="w-3.5 h-3.5 text-indigo-400" />
                 <span>Go + PostgreSQL on VPS</span>
+              </Link>
+              <Link
+                href="/guides/deploy-gin-without-docker"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-cyan-300 hover:bg-white/[0.04]"
+              >
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Deploy Gin Framework</span>
+              </Link>
+              <Link
+                href="/guides/deploy-chi-without-docker"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-cyan-300 hover:bg-white/[0.04]"
+              >
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Deploy Chi Router</span>
+              </Link>
+              <Link
+                href="/guides/deploy-fiber-without-docker"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-cyan-300 hover:bg-white/[0.04]"
+              >
+                <Zap className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Deploy Fiber (8ms Boot)</span>
               </Link>
               <Link
                 href="/deploy/hetzner-vps"

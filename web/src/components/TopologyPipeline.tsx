@@ -18,7 +18,7 @@ interface PipelineStep {
 }
 
 export function TopologyPipeline() {
-  const [activeStep, setActiveStep] = useState<string>("core");
+  const [activeStep, setActiveStep] = useState<string>("code");
 
   const steps: PipelineStep[] = [
     {

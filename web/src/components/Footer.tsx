@@ -7,9 +7,9 @@ export function Footer() {
     <footer className="border-t border-white/[0.08] bg-[#050608] pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Grid: 5 Clean Responsive Columns */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-6 pb-12 border-b border-white/[0.06]">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 lg:gap-6 pb-12 border-b border-white/[0.06]">
           {/* Col 1: Brand & Topology */}
-          <div className="col-span-2 sm:col-span-1 md:col-span-3 lg:col-span-1 space-y-3.5">
+          <div className="col-span-2 md:col-span-4 lg:col-span-1 space-y-3.5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                 <Layers className="w-4 h-4 text-cyan-400" />
@@ -37,13 +37,28 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/guides/deploy-gin-without-docker" className="hover:text-cyan-400 transition-colors">
+                  Deploy Gin API (Systemd)
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides/deploy-chi-without-docker" className="hover:text-cyan-400 transition-colors">
+                  Deploy Chi Router
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides/deploy-fiber-without-docker" className="hover:text-cyan-400 transition-colors">
+                  Deploy Fiber (8ms Boot)
+                </Link>
+              </li>
+              <li>
                 <Link href="/guides/deploy-go-postgres-vps" className="hover:text-cyan-400 transition-colors">
                   Go + PostgreSQL on VPS
                 </Link>
               </li>
               <li>
                 <Link href="/deploy/hetzner-vps" className="hover:text-cyan-400 transition-colors">
-                  Hetzner Cloud VPS Guide
+                  Hetzner VPS Guide
                 </Link>
               </li>
               <li>

@@ -26,7 +26,8 @@ import {
   GitBranch,
   ShieldAlert,
   HardDrive,
-  ExternalLink
+  ExternalLink,
+  HelpCircle
 } from "lucide-react";
 
 const SECTION_ALIASES: Record<string, string> = {
@@ -61,6 +62,10 @@ const SECTION_ALIASES: Record<string, string> = {
   vm: "infra-automation",
   tradeoff: "tradeoffs",
   limits: "tradeoffs",
+  troubleshooting: "troubleshooting",
+  error: "troubleshooting",
+  errors: "troubleshooting",
+  fix: "troubleshooting",
   start: "quickstart",
   guide: "quickstart",
 };
@@ -69,6 +74,10 @@ export default function DocsPage() {
   const [activeDoc, setActiveDoc] = useState<string>("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [cliHost, setCliHost] = useState("root@my-vps.com");
+  const [cliDryRun, setCliDryRun] = useState(false);
+  const [cliDomain, setCliDomain] = useState("");
+  const [cliArch, setCliArch] = useState<"amd64" | "arm64">("amd64");
 
   const docSections = [
     {
@@ -102,6 +111,7 @@ export default function DocsPage() {
       category: "Architecture & Limits",
       items: [
         { id: "tradeoffs", title: "Tradeoffs & Limits", icon: AlertTriangle },
+        { id: "troubleshooting", title: "Troubleshooting & Edge Cases", icon: HelpCircle },
       ],
     },
   ];
@@ -200,8 +210,7 @@ export default function DocsPage() {
           {/* Docs Content Area */}
           <article className="lg:col-span-9 bg-[#0c0e14]/90 rounded-2xl border border-white/[0.08] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
             {/* 1. OVERVIEW */}
-            {effectiveDoc === "overview" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "overview" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <div className="flex items-center gap-2">
                   <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                     Core Concepts
@@ -262,11 +271,9 @@ export default function DocsPage() {
                   </div>
                 </div>
               </div>
-            )}
 
             {/* 2. QUICKSTART */}
-            {effectiveDoc === "quickstart" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "quickstart" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Getting Started
                 </span>
@@ -326,11 +333,9 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                   </div>
                 </div>
               </div>
-            )}
 
             {/* 3. CLI REFERENCE */}
-            {effectiveDoc === "cli" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "cli" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Command Line Interface
                 </span>
@@ -369,6 +374,79 @@ Commands:
 
 Run 'anode COMMAND --help' for more information on a command.`}
                   </pre>
+                </div>
+
+                {/* Interactive CLI Flag Builder */}
+                <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-mono-code text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                      <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                      <span>Interactive Command Generator</span>
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono-code font-semibold">
+                      Live Builder
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                    <div>
+                      <label className="text-neutral-400 block mb-1 font-mono-code">SSH Target Server:</label>
+                      <input
+                        type="text"
+                        value={cliHost}
+                        onChange={(e) => setCliHost(e.target.value)}
+                        placeholder="user@your-vps.com"
+                        className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-neutral-400 block mb-1 font-mono-code">Custom Domain (TLS):</label>
+                      <input
+                        type="text"
+                        value={cliDomain}
+                        onChange={(e) => setCliDomain(e.target.value)}
+                        placeholder="api.example.com (optional)"
+                        className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1">
+                    <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                      <input
+                        type="checkbox"
+                        checked={cliDryRun}
+                        onChange={(e) => setCliDryRun(e.target.checked)}
+                        className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                      />
+                      <span>--dry-run (preview only)</span>
+                    </label>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <span className="text-neutral-400">Target Arch:</span>
+                      <button
+                        type="button"
+                        onClick={() => setCliArch(cliArch === "amd64" ? "arm64" : "amd64")}
+                        className="px-2 py-0.5 rounded bg-white/[0.08] hover:bg-white/[0.15] text-cyan-300 text-xs border border-white/[0.1]"
+                      >
+                        {cliArch}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-black/80 border border-cyan-500/30 flex items-center justify-between font-mono-code text-xs text-cyan-300">
+                    <span className="overflow-x-auto">
+                      $ anode deploy {cliHost} {cliDomain ? `--domain ${cliDomain} ` : ""}{cliArch !== "amd64" ? `--arch=${cliArch} ` : ""}{cliDryRun ? "--dry-run" : ""}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const cmd = `anode deploy ${cliHost} ${cliDomain ? `--domain ${cliDomain} ` : ""}${cliArch !== "amd64" ? `--arch=${cliArch} ` : ""}${cliDryRun ? "--dry-run" : ""}`.trim();
+                        navigator.clipboard.writeText(cmd);
+                        setCopiedCode("cli-builder");
+                        setTimeout(() => setCopiedCode(null), 2000);
+                      }}
+                      className="ml-3 p-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-neutral-300 hover:text-white shrink-0"
+                    >
+                      {copiedCode === "cli-builder" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -468,11 +546,9 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   </div>
                 </div>
               </div>
-            )}
 
             {/* 4. SSA & VTA */}
-            {effectiveDoc === "ssa-vta" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "ssa-vta" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Compiler Pipeline
                 </span>
@@ -506,11 +582,9 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   <p>3. Any helper function, test suite, or uncalled database driver is mathematically excluded from the final lockfile.</p>
                 </div>
               </div>
-            )}
 
             {/* 5. STDLIB CHOKE POINTS */}
-            {effectiveDoc === "choke-points" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "choke-points" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Static Analysis Sinks
                 </span>
@@ -562,11 +636,9 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   </div>
                 </div>
               </div>
-            )}
 
             {/* 6. LOCKFILE SPEC */}
-            {effectiveDoc === "lockfile-spec" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "lockfile-spec" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Contract Specification
                 </span>
@@ -632,11 +704,9 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   </pre>
                 </div>
               </div>
-            )}
 
             {/* 7. DEV ENGINE */}
-            {effectiveDoc === "dev-engine" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "dev-engine" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
                   Local Orchestration
                 </span>
@@ -674,11 +744,9 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   </div>
                 </div>
               </div>
-            )}
 
             {/* 8. SYSTEMD VPS */}
-            {effectiveDoc === "systemd-vps" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "systemd-vps" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Production VPS Deployer
                 </span>
@@ -729,11 +797,9 @@ WantedBy=multi-user.target`}</code>
                   <p>4. Gracefully stops Version 1 via <code className="text-neutral-200">systemctl stop</code> after draining connections.</p>
                 </div>
               </div>
-            )}
 
             {/* PLUGGABLE STATEFUL CATALOG */}
-            {effectiveDoc === "catalog-drivers" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "catalog-drivers" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40">
                   Infrastructure Catalog
                 </span>
@@ -799,11 +865,9 @@ WantedBy=multi-user.target`}</code>
       STORE_URL: "http://{{.Host}}:{{.Port}}"`}</code>
                 </pre>
               </div>
-            )}
 
             {/* LEAST-PRIVILEGE SECURITY BOUNDARY */}
-            {effectiveDoc === "security-hardening" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "security-hardening" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
                   Security Hardening
                 </span>
@@ -856,11 +920,9 @@ WantedBy=multi-user.target`}</code>
                   </div>
                 </div>
               </div>
-            )}
 
             {/* INFRASTRUCTURE AUTOMATION */}
-            {effectiveDoc === "infra-automation" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "infra-automation" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Infrastructure as Code
                 </span>
@@ -896,11 +958,9 @@ WantedBy=multi-user.target`}</code>
 terraform -chdir=infra/terraform apply`}</code>
                 </pre>
               </div>
-            )}
 
             {/* 9. BENCHMARKS ANALYSIS */}
-            {effectiveDoc === "benchmarks-analysis" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "benchmarks-analysis" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
                   Empirical Verification
                 </span>
@@ -1204,11 +1264,9 @@ terraform -chdir=infra/terraform apply`}</code>
                   </p>
                 </div>
               </div>
-            )}
 
             {/* 10. TRADEOFFS & LIMITS */}
-            {effectiveDoc === "tradeoffs" && (
-              <div className="space-y-6 leading-relaxed">
+            <div className={effectiveDoc === "tradeoffs" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
                   Architectural Honesty
                 </span>
@@ -1292,7 +1350,77 @@ terraform -chdir=infra/terraform apply`}</code>
                   </div>
                 </div>
               </div>
-            )}
+
+            {/* 14. TROUBLESHOOTING */}
+            <div className={effectiveDoc === "troubleshooting" ? "block space-y-6 leading-relaxed" : "hidden"}>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
+                  Operations &amp; Edge Cases
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                Troubleshooting &amp; Common Issues
+              </h1>
+              <p className="text-sm text-neutral-300">
+                Actionable solutions for common server configuration errors, port clashes, and compilation edge cases.
+              </p>
+
+              <div className="space-y-4">
+                {/* Issue 1 */}
+                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-2">
+                  <div className="flex items-center gap-2 text-red-400 text-xs font-mono-code font-bold">
+                    <ShieldAlert className="w-4 h-4" />
+                    <span>Error: Failed to bind to :80 or :443 (Address already in use)</span>
+                  </div>
+                  <p className="text-xs text-neutral-300 leading-relaxed">
+                    <strong>Cause:</strong> An existing HTTP web server (such as legacy Apache, Nginx, or an old Docker port-forward) is currently listening on ports 80/443 on the remote Linux host.
+                  </p>
+                  <div className="p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-cyan-300">
+                    # Disable conflicting legacy web servers on your VPS:
+
+                    sudo systemctl stop nginx apache2 2&gt;/dev/null
+
+                    sudo systemctl disable nginx apache2 2&gt;/dev/null
+
+                    # Re-run Anode deployment:
+
+                    anode deploy root@your-vps.com
+                  </div>
+                </div>
+
+                {/* Issue 2 */}
+                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-2">
+                  <div className="flex items-center gap-2 text-amber-400 text-xs font-mono-code font-bold">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Warning: /sys/fs/cgroup/cgroup.controllers not found (Legacy cgroups v1)</span>
+                  </div>
+                  <p className="text-xs text-neutral-300 leading-relaxed">
+                    <strong>Cause:</strong> Anode requires Linux cgroups v2 for fine-grained process isolation and memory pressure limits. Distributions older than Ubuntu 22.04 or Debian 11 default to v1.
+                  </p>
+                  <div className="p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-emerald-300">
+                    # Enable cgroups v2 on Debian/Ubuntu:
+
+                    sudo sed -i 's/GRUB_CMDLINE_LINUX="$/GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=1 /' /etc/default/grub
+
+                    sudo update-grub &amp;&amp; sudo reboot
+                  </div>
+                </div>
+
+                {/* Issue 3 */}
+                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-2">
+                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono-code font-bold">
+                    <Zap className="w-4 h-4" />
+                    <span>Diagnostics: 0 Ingress Interfaces Detected during 'anode inspect'</span>
+                  </div>
+                  <p className="text-xs text-neutral-300 leading-relaxed">
+                    <strong>Cause:</strong> If your HTTP handlers are dynamically registered through complex runtime reflection or untyped map lookups, static Single Static Assignment (SSA) cannot trace the path from `func main()`.
+                  </p>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    <strong>Solution:</strong> Ensure your router registration calls (`http.HandleFunc`, `r.Get` in Chi, `app.POST` in Gin, or `app.Listen` in Fiber) are directly accessible from package main or referenced initializers.
+                  </p>
+                </div>
+              </div>
+            </div>
           </article>
         </div>
       </main>

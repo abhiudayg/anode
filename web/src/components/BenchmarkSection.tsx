@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Zap, Gauge, HardDrive, Cpu, Layers, ExternalLink, CheckCircle } from "lucide-react";
+import { RamSavingsCalculator } from "./RamSavingsCalculator";
 
 export function BenchmarkSection() {
   const [activeTab, setActiveTab] = useState<"enterprise" | "realworld">("enterprise");
@@ -219,6 +220,11 @@ export function BenchmarkSection() {
               </div>
             );
           })}
+        </div>
+
+        {/* Interactive RAM & Cloud Savings Calculator */}
+        <div className="mb-12">
+          <RamSavingsCalculator />
         </div>
 
         {/* Empirical Scaling Matrix Section */}
