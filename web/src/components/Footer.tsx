@@ -1,22 +1,22 @@
 import Link from "next/link";
-import { Layers, BookOpen, Newspaper, ExternalLink, Terminal, FileCode2 } from "lucide-react";
+import { Layers, BookOpen, Newspaper, ExternalLink, Terminal, FileCode2, Sparkles, Server, GitCompare, Database } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Footer() {
   return (
     <footer className="border-t border-white/[0.08] bg-[#050608] pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Main Grid: 4 Clean Responsive Columns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8 pb-12 border-b border-white/[0.06]">
-          {/* Col 1: Brand & Verified Pill */}
-          <div className="space-y-4">
+        {/* Main Grid: 5 Clean Responsive Columns */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8 lg:gap-6 pb-12 border-b border-white/[0.06]">
+          {/* Col 1: Brand & Topology */}
+          <div className="col-span-2 sm:col-span-1 md:col-span-3 lg:col-span-1 space-y-3.5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
                 <Layers className="w-4 h-4 text-cyan-400" />
               </div>
               <span className="font-bold text-white text-base tracking-tight">Anode</span>
             </div>
-            <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed">
+            <p className="text-neutral-400 text-xs leading-relaxed">
               Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Zero Docker, zero Kubernetes.
             </p>
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono-code text-emerald-400">
@@ -25,22 +25,49 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Col 2: Documentation & Guides */}
+          {/* Col 2: Guides & Tutorials */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 font-mono-code mb-4">
-              Documentation
+              Guides
             </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-neutral-400">
+            <ul className="space-y-2.5 text-xs text-neutral-400">
               <li>
-                <Link href="/docs" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-                  <BookOpen className="w-3.5 h-3.5 text-cyan-500/70" />
-                  <span>Overview & CLI</span>
+                <Link href="/guides/deploy-go-without-docker" className="hover:text-cyan-400 transition-colors">
+                  Deploy Go Without Docker
                 </Link>
               </li>
               <li>
-                <Link href="/docs#quickstart" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-                  <Terminal className="w-3.5 h-3.5 text-cyan-500/70" />
-                  <span>Quickstart</span>
+                <Link href="/guides/deploy-go-postgres-vps" className="hover:text-cyan-400 transition-colors">
+                  Go + PostgreSQL on VPS
+                </Link>
+              </li>
+              <li>
+                <Link href="/deploy/hetzner-vps" className="hover:text-cyan-400 transition-colors">
+                  Hetzner Cloud VPS Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/deploy/digitalocean-droplet" className="hover:text-cyan-400 transition-colors">
+                  DigitalOcean Droplet Guide
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 3: Comparisons */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 font-mono-code mb-4">
+              Comparisons
+            </h3>
+            <ul className="space-y-2.5 text-xs text-neutral-400">
+              <li>
+                <Link href="/vs/docker-compose" className="hover:text-cyan-400 transition-colors">
+                  Docker Compose vs Anode
+                </Link>
+              </li>
+              <li>
+                <Link href="/vs/systemd" className="hover:text-cyan-400 transition-colors">
+                  Raw Systemd vs Anode
                 </Link>
               </li>
               <li>
@@ -50,43 +77,57 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/docs#tradeoffs" className="hover:text-cyan-400 transition-colors">
-                  Tradeoffs & Limits
-                </Link>
-              </li>
-              <li>
-                <Link href="/vs/docker-compose" className="hover:text-cyan-400 transition-colors">
-                  Docker Compose Alternative
-                </Link>
-              </li>
-              <li>
-                <Link href="/guides/deploy-go-without-docker" className="hover:text-cyan-400 transition-colors">
-                  Deploy Go Without Docker
-                </Link>
-              </li>
-              <li>
-                <Link href="/deploy/hetzner-vps" className="hover:text-cyan-400 transition-colors">
-                  Hetzner VPS Guide
-                </Link>
-              </li>
-              <li>
-                <Link href="/deploy/digitalocean-droplet" className="hover:text-cyan-400 transition-colors">
-                  DigitalOcean Droplet Guide
-                </Link>
-              </li>
-              <li>
-                <Link href="/tools/compose-to-systemd" className="hover:text-cyan-400 transition-colors">
-                  Compose to Systemd Tool
+                  Honest Tradeoffs &amp; Limits
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Col 3: Research & Code */}
+          {/* Col 4: Developer Tools */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 font-mono-code mb-4">
-              Research & Code
+              Developer Tools
             </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-neutral-400">
+            <ul className="space-y-2.5 text-xs text-neutral-400">
+              <li>
+                <Link href="/tools/compose-to-systemd" className="hover:text-amber-300 text-amber-400 font-medium transition-colors flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Compose to Systemd</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300 ml-auto">Free</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/docs" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  <BookOpen className="w-3.5 h-3.5 text-cyan-500/70" />
+                  <span>CLI &amp; API Reference</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/docs#quickstart" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  <Terminal className="w-3.5 h-3.5 text-cyan-500/70" />
+                  <span>Quickstart Tutorial</span>
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/abhiudayg/homebrew-tap"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+                >
+                  <span>Homebrew Tap</span>
+                  <ExternalLink className="w-3 h-3 text-neutral-500 ml-auto" />
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Col 5: Ecosystem & Context */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 font-mono-code mb-4">
+              Context &amp; Specs
+            </h3>
+            <ul className="space-y-2.5 text-xs text-neutral-400">
               <li>
                 <Link href="/blog" className="hover:text-purple-400 transition-colors flex items-center gap-1.5">
                   <Newspaper className="w-3.5 h-3.5 text-purple-400/70" />
@@ -107,42 +148,10 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/abhiudayg/homebrew-tap"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
-                >
-                  <Terminal className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>Homebrew Tap</span>
-                  <ExternalLink className="w-3 h-3 text-neutral-500 ml-auto" />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="https://github.com/abhiudayg/anode/releases"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
-                >
-                  <span>v1.0.0 Release Notes</span>
-                  <ExternalLink className="w-3 h-3 text-neutral-500 ml-auto" />
-                </a>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: For Agents & Launch Directory */}
-          <div className="space-y-4">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-neutral-300 font-mono-code mb-4">
-              Machine Context & Launch
-            </h3>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-neutral-400 font-mono-code">
-              <li>
-                <a
                   href="/llms.txt"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+                  className="hover:text-cyan-400 font-mono-code text-[11px] transition-colors flex items-center gap-1.5"
                 >
                   <FileCode2 className="w-3.5 h-3.5 text-cyan-400/80" />
                   <span>/llms.txt</span>
@@ -153,7 +162,7 @@ export function Footer() {
                   href="/llms-full.txt"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
+                  className="hover:text-cyan-400 font-mono-code text-[11px] transition-colors flex items-center gap-1.5"
                 >
                   <FileCode2 className="w-3.5 h-3.5 text-cyan-400/80" />
                   <span>/llms-full.txt</span>

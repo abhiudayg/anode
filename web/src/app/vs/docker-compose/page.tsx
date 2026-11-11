@@ -16,7 +16,8 @@ import {
   HelpCircle,
   FileCode2,
   ChevronRight,
-  GitCompare
+  GitCompare,
+  AlertTriangle
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -377,6 +378,54 @@ export default function DockerComposeVsAnodePage() {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Interactive Tool Callout */}
+          <div className="mt-16 max-w-4xl mx-auto p-6 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/20 to-[#0c0e14] flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-1 text-center sm:text-left">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-mono-code font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Free Migration Tool</span>
+              </div>
+              <h3 className="text-lg font-bold text-white">
+                Have an existing docker-compose.yml?
+              </h3>
+              <p className="text-xs sm:text-sm text-neutral-400">
+                Paste your YAML into our free client-side converter to generate hardened Linux systemd units in real-time.
+              </p>
+            </div>
+            <Link
+              href="/tools/compose-to-systemd"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono-code font-bold transition-all shrink-0 shadow-lg shadow-amber-500/20"
+            >
+              <span>Convert YAML to Systemd</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {/* Gap 1: When NOT to use Anode (Trust Multiplier) */}
+          <div className="mt-16 max-w-4xl mx-auto p-8 rounded-2xl border border-amber-500/30 bg-amber-950/10">
+            <div className="flex items-center gap-2 text-amber-400 text-xs font-mono-code uppercase tracking-wider font-bold mb-3">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Honest Tradeoffs: When NOT to Use Anode</span>
+            </div>
+            <h3 className="text-xl font-bold text-white mb-3">
+              Where You Should Stick with Docker Compose
+            </h3>
+            <ul className="space-y-2.5 text-sm text-neutral-300 leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Polyglot Monoliths:</strong> If your project mixes Python, Ruby, and Node.js into a single runtime environment, use Docker Compose. Anode is specialized for Go backends.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Dynamic String-Interpolated RPC Handlers:</strong> If your HTTP or gRPC routes are constructed dynamically via reflection at runtime, static SSA analysis cannot trace them without explicit type hints.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-amber-400 font-bold">•</span>
+                <span><strong>Non-Linux Production Targets:</strong> Anode targets standard Linux bare metal (Ubuntu, Debian, Fedora, Arch) utilizing kernel cgroups v2 and systemd. For Windows Server, use Docker.</span>
+              </li>
+            </ul>
           </div>
 
           {/* Frequently Asked Questions */}

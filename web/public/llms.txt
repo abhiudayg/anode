@@ -5,7 +5,9 @@
 ## Documentation
 - [Quickstart Guide](https://anode.abhiudayg.dev/docs#quickstart): Installation via Homebrew or curl, running the analyzer, and deploying.
 - [Docker Compose Alternative](https://anode.abhiudayg.dev/vs/docker-compose): Detailed technical comparison between Docker Compose and Anode for Go backends.
+- [Raw Systemd vs Anode](https://anode.abhiudayg.dev/vs/systemd): Why not write systemd unit files manually? Honest tradeoffs and automation.
 - [Deploy Go Without Docker](https://anode.abhiudayg.dev/guides/deploy-go-without-docker): Step-by-step guide to deploying Go binaries directly to bare-metal systemd.
+- [Go + PostgreSQL on VPS](https://anode.abhiudayg.dev/guides/deploy-go-postgres-vps): How to build and deploy a Go REST service with PostgreSQL on bare-metal Linux.
 - [Hetzner VPS Guide](https://anode.abhiudayg.dev/deploy/hetzner-vps): How to deploy Go backends to Hetzner Cloud with 8ms cold starts.
 - [DigitalOcean Droplet Guide](https://anode.abhiudayg.dev/deploy/digitalocean-droplet): How to run Go binaries on DigitalOcean without Docker.
 - [Compose to Systemd Tool](https://anode.abhiudayg.dev/tools/compose-to-systemd): Free online client-side Docker Compose to systemd converter.

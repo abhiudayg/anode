@@ -7,7 +7,9 @@ const KEY_LOCATION = `https://${HOST}/${INDEXNOW_KEY}.txt`;
 const URL_LIST = [
   `https://${HOST}/`,
   `https://${HOST}/vs/docker-compose`,
+  `https://${HOST}/vs/systemd`,
   `https://${HOST}/guides/deploy-go-without-docker`,
+  `https://${HOST}/guides/deploy-go-postgres-vps`,
   `https://${HOST}/deploy/hetzner-vps`,
   `https://${HOST}/deploy/digitalocean-droplet`,
   `https://${HOST}/tools/compose-to-systemd`,

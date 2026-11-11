@@ -2,14 +2,16 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap, Server } from "lucide-react";
+import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap, Server, Database, Wrench } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [guidesOpen, setGuidesOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [toolsOpen, setToolsOpen] = useState(false);
+  const guidesDropdownRef = useRef<HTMLDivElement>(null);
+  const toolsDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,8 +23,11 @@ export function Navbar() {
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+      if (guidesDropdownRef.current && !guidesDropdownRef.current.contains(e.target as Node)) {
         setGuidesOpen(false);
+      }
+      if (toolsDropdownRef.current && !toolsDropdownRef.current.contains(e.target as Node)) {
+        setToolsOpen(false);
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
@@ -55,7 +60,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-7">
+          <nav className="hidden lg:flex items-center gap-6">
             <Link
               href="/#topology"
               className="text-sm font-medium text-neutral-400 hover:text-white transition-colors"
@@ -71,7 +76,7 @@ export function Navbar() {
 
             {/* Guides Dropdown */}
             <div
-              ref={dropdownRef}
+              ref={guidesDropdownRef}
               className="relative"
               onMouseEnter={() => setGuidesOpen(true)}
               onMouseLeave={() => setGuidesOpen(false)}
@@ -93,24 +98,6 @@ export function Navbar() {
                 <div className="absolute top-full -left-4 w-72 pt-2 z-50">
                   <div className="rounded-2xl border border-white/[0.1] bg-[#0c0e14]/95 backdrop-blur-2xl p-2 shadow-2xl shadow-black/80 space-y-1">
                     <Link
-                      href="/vs/docker-compose"
-                      onClick={() => setGuidesOpen(false)}
-                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
-                    >
-                      <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                        <GitCompare className="w-3.5 h-3.5" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors">
-                          Docker Compose vs Anode
-                        </div>
-                        <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Bare-metal architecture &amp; migration
-                        </div>
-                      </div>
-                    </Link>
-
-                    <Link
                       href="/guides/deploy-go-without-docker"
                       onClick={() => setGuidesOpen(false)}
                       className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
@@ -124,6 +111,24 @@ export function Navbar() {
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
                           3-minute bare-metal systemd tutorial
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/guides/deploy-go-postgres-vps"
+                      onClick={() => setGuidesOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Database className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white group-hover:text-indigo-300 transition-colors">
+                          Go + PostgreSQL on VPS
+                        </div>
+                        <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                          Fullstack database binding &amp; systemd
                         </div>
                       </div>
                     </Link>
@@ -164,20 +169,109 @@ export function Navbar() {
                       </div>
                     </Link>
 
+                    <div className="border-t border-white/[0.06] my-1 pt-1">
+                      <Link
+                        href="/vs/docker-compose"
+                        onClick={() => setGuidesOpen(false)}
+                        className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                          <GitCompare className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                            Docker Compose vs Anode
+                          </div>
+                          <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                            Bare-metal architecture &amp; migration
+                          </div>
+                        </div>
+                      </Link>
+
+                      <Link
+                        href="/vs/systemd"
+                        onClick={() => setGuidesOpen(false)}
+                        className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                          <GitCompare className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-white group-hover:text-amber-300 transition-colors">
+                            Raw Systemd vs Anode
+                          </div>
+                          <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                            Why not write unit files manually?
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Free Tools Dropdown */}
+            <div
+              ref={toolsDropdownRef}
+              className="relative"
+              onMouseEnter={() => setToolsOpen(true)}
+              onMouseLeave={() => setToolsOpen(false)}
+            >
+              <button
+                type="button"
+                onClick={() => setToolsOpen(!toolsOpen)}
+                className={`text-sm font-medium transition-colors flex items-center gap-1.5 py-1 ${
+                  toolsOpen ? "text-amber-400" : "text-neutral-400 hover:text-white"
+                }`}
+                aria-expanded={toolsOpen}
+              >
+                <Wrench className="w-3.5 h-3.5 text-amber-400" />
+                <span>Tools</span>
+                <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded bg-amber-500/15 border border-amber-500/30 text-amber-300 font-semibold">
+                  Free
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${toolsOpen ? "rotate-180 text-amber-400" : "text-neutral-500"}`} />
+              </button>
+
+              {toolsOpen && (
+                <div className="absolute top-full -left-6 w-80 pt-2 z-50">
+                  <div className="rounded-2xl border border-white/[0.1] bg-[#0c0e14]/95 backdrop-blur-2xl p-2 shadow-2xl shadow-black/80 space-y-1">
                     <Link
                       href="/tools/compose-to-systemd"
-                      onClick={() => setGuidesOpen(false)}
-                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group border-t border-white/[0.06] pt-2"
+                      onClick={() => setToolsOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
                     >
                       <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
                         <Sparkles className="w-3.5 h-3.5" />
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-white group-hover:text-amber-300 transition-colors">
-                          Compose to Systemd Tool
+                        <div className="text-xs font-semibold text-white group-hover:text-amber-300 transition-colors flex items-center gap-1.5">
+                          <span>Compose to Systemd Tool</span>
+                          <span className="text-[9px] font-mono-code px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
+                            Instant
+                          </span>
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Free online YAML converter
+                          Convert docker-compose.yml to hardened Linux systemd units
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/docs#quickstart"
+                      onClick={() => setToolsOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Terminal className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white group-hover:text-cyan-300 transition-colors">
+                          CLI Analyzer &amp; Inspect
+                        </div>
+                        <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                          Run <code>anode inspect</code> on your Go repository
                         </div>
                       </div>
                     </Link>
@@ -270,20 +364,20 @@ export function Navbar() {
                 Guides & Comparisons
               </div>
               <Link
-                href="/vs/docker-compose"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-cyan-300 hover:bg-white/[0.04]"
-              >
-                <GitCompare className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Docker Compose vs Anode</span>
-              </Link>
-              <Link
                 href="/guides/deploy-go-without-docker"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-purple-300 hover:bg-white/[0.04]"
               >
                 <Terminal className="w-3.5 h-3.5 text-purple-400" />
                 <span>Deploy Go Without Docker</span>
+              </Link>
+              <Link
+                href="/guides/deploy-go-postgres-vps"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-indigo-300 hover:bg-white/[0.04]"
+              >
+                <Database className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Go + PostgreSQL on VPS</span>
               </Link>
               <Link
                 href="/deploy/hetzner-vps"
@@ -301,6 +395,29 @@ export function Navbar() {
                 <Server className="w-3.5 h-3.5 text-sky-400" />
                 <span>DigitalOcean Droplet Guide</span>
               </Link>
+              <Link
+                href="/vs/docker-compose"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-cyan-300 hover:bg-white/[0.04]"
+              >
+                <GitCompare className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Docker Compose vs Anode</span>
+              </Link>
+              <Link
+                href="/vs/systemd"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-amber-300 hover:bg-white/[0.04]"
+              >
+                <GitCompare className="w-3.5 h-3.5 text-amber-400" />
+                <span>Raw Systemd vs Anode</span>
+              </Link>
+            </div>
+
+            <div className="pt-2 pb-1 border-t border-white/[0.06]">
+              <div className="px-3 text-[11px] font-mono-code uppercase tracking-wider text-amber-400 font-semibold mb-1 flex items-center justify-between">
+                <span>Free Developer Tools</span>
+                <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/20 text-amber-300">Free</span>
+              </div>
               <Link
                 href="/tools/compose-to-systemd"
                 onClick={() => setMobileMenuOpen(false)}
