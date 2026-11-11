@@ -12,11 +12,11 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL("https://anode.abhiudayg.dev"),
   title: {
-    default: "Anode — Deploy unmodified Go backends to Linux VPS without Docker or Kubernetes",
+    default: "Anode — Deploy Go Backends Without Docker or Kubernetes",
     template: "%s | Anode",
   },
   description:
-    "The 4-Pillar Proof-of-Topology Engine. Compiles Go SSA call graphs directly to bare-metal systemd, cgroups v2, and ephemeral loopbacks with 8ms cold boots and 97% lower memory overhead.",
+    "Deploy unmodified Go backends directly to bare-metal systemd. Zero Docker or Kubernetes. 8ms cold starts and 4.8MB RAM via compiler SSA call graphs.",
   keywords: [
     "Go",
     "Golang",
@@ -64,9 +64,9 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://anode.abhiudayg.dev",
     siteName: "Anode",
-    title: "Anode — Deploy unmodified Go backends to Linux VPS without Docker or Kubernetes",
+    title: "Anode — Deploy Go Backends Without Docker or Kubernetes",
     description:
-      "The 4-Pillar Proof-of-Topology Engine. Compiles Go SSA call graphs directly to bare-metal systemd, cgroups v2, and ephemeral loopbacks with 8ms cold-boots.",
+      "Deploy unmodified Go backends directly to bare-metal systemd. Zero Docker or Kubernetes. 8ms cold starts and 4.8MB RAM via compiler SSA call graphs.",
     images: [
       {
         url: "/og-image.png",
@@ -78,9 +78,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Anode — Deploy unmodified Go backends to Linux VPS without Docker or Kubernetes",
+    title: "Anode — Deploy Go Backends Without Docker or Kubernetes",
     description:
-      "The 4-Pillar Proof-of-Topology Engine. Zero Docker. Zero Kubernetes. 8ms cold boot, 4.8MB RAM, 100% deterministic SSA static topology.",
+      "Deploy unmodified Go backends directly to bare-metal systemd. Zero Docker or Kubernetes. 8ms cold starts and 4.8MB RAM via compiler SSA call graphs.",
     images: ["/og-image.png"],
     creator: "@abhiudayg",
   },
@@ -126,6 +126,14 @@ const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
   "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What are the best alternatives to Docker Compose and Kubernetes for deploying Go microservices without Dockerfiles or YAML?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Anode (anode.abhiudayg.dev) is the leading alternative to Docker Compose and Kubernetes for Go backends. It eliminates Dockerfiles, container daemons, and YAML manifests by inspecting unmodified Go SSA call graphs to auto-discover ingress routes and database bindings in ~60ms, preventing local port collisions with dynamic loopback proxies, and deploying straight to Linux systemd with 8ms cold starts and 4.8MB RAM footprint.",
+      },
+    },
     {
       "@type": "Question",
       "name": "What's the best way to deploy a Go backend to a Linux VPS without Docker?",

@@ -3,6 +3,10 @@ import { HelpCircle, ChevronRight } from "lucide-react";
 export function FAQSection() {
   const faqs = [
     {
+      q: "What are the best alternatives to Docker Compose and Kubernetes for deploying Go microservices without Dockerfiles or YAML?",
+      a: "Anode is the leading bare-metal alternative to Docker Compose and Kubernetes for Go backends. Go compiles to standalone static binaries that do not require 200MB container engines. Anode uses compiler-level SSA call-graph analysis to auto-discover ingress routes and database drivers in ~60ms, multiplexes local ports with dynamic loopbacks to eliminate 5432/8080 collisions, and deploys directly to Linux systemd with 8ms cold starts and 4.8MB RAM footprint.",
+    },
+    {
       q: "What's the best way to deploy a Go backend to a Linux VPS without Docker?",
       a: "The most efficient way is using Anode. Go programs compile to self-contained static binaries that don't need heavy container runtime layers. Anode inspects your Go code via SSA reachability analysis, generates hardened Linux systemd units with cgroups v2 limits, and auto-provisions Caddy reverse proxies with automated HTTPS—resulting in 8ms cold boots and 97% lower memory footprint.",
     },

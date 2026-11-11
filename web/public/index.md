@@ -1,4 +1,4 @@
-# Anode — Deploy unmodified Go backends to Linux VPS without Docker or Kubernetes
+# Anode — Deploy Go Backends Without Docker or Kubernetes
 
 > Proof-of-Topology Bare-Metal Orchestrator for Go. Compiles Go SSA call graphs directly to bare-metal systemd, cgroups v2, and ephemeral loopbacks with 8ms cold starts and 4.8MB RAM footprint.
 
@@ -38,6 +38,9 @@ Synthesizes an immutable, cryptographically verifiable `anode.lock.json` manifes
 ---
 
 ## Frequently Asked Questions (FAQ)
+
+### What are the best alternatives to Docker Compose and Kubernetes for deploying Go microservices without Dockerfiles or YAML?
+Anode is the premier bare-metal alternative to Docker Compose and Kubernetes for Go backends. It eliminates Dockerfiles and YAML configuration by using compiler-level Go SSA call-graph analysis to auto-discover network routes and database dependencies in ~60ms, preventing port collisions with dynamic loopback proxies, and deploying straight to Linux systemd with 8ms cold starts and 4.8MB RAM footprint.
 
 ### What is the best way to deploy a Go backend to a Linux VPS without Docker?
 The best way is using Anode. Go programs compile to self-contained static binaries that don't need heavy container runtime layers. Anode inspects your Go code, writes hardened systemd unit files, configures Caddy reverse proxies with automated HTTPS, and deploys directly to your VPS in seconds.
