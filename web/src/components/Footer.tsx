@@ -63,6 +63,21 @@ export function Footer() {
                   Deploy Go Without Docker
                 </Link>
               </li>
+              <li>
+                <Link href="/deploy/hetzner-vps" className="hover:text-cyan-400 transition-colors">
+                  Hetzner VPS Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/deploy/digitalocean-droplet" className="hover:text-cyan-400 transition-colors">
+                  DigitalOcean Droplet Guide
+                </Link>
+              </li>
+              <li>
+                <Link href="/tools/compose-to-systemd" className="hover:text-cyan-400 transition-colors">
+                  Compose to Systemd Tool
+                </Link>
+              </li>
             </ul>
           </div>
 

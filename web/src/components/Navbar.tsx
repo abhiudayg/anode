@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap } from "lucide-react";
+import { Terminal, ArrowRight, Sparkles, Layers, Menu, X, BookOpen, Newspaper, ChevronDown, Compass, GitCompare, FileCode2, Zap, Server } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Navbar() {
@@ -129,19 +129,55 @@ export function Navbar() {
                     </Link>
 
                     <Link
-                      href="/docs#quickstart"
+                      href="/deploy/hetzner-vps"
                       onClick={() => setGuidesOpen(false)}
                       className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
                     >
                       <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
-                        <Zap className="w-3.5 h-3.5" />
+                        <Server className="w-3.5 h-3.5" />
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-white group-hover:text-emerald-300 transition-colors">
-                          CLI Quickstart Guide
+                          Hetzner Cloud VPS Guide
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Installation &amp; first deployment
+                          Run on €3.79/mo servers (8ms cold starts)
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/deploy/digitalocean-droplet"
+                      onClick={() => setGuidesOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Server className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white group-hover:text-sky-300 transition-colors">
+                          DigitalOcean Droplet Guide
+                        </div>
+                        <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                          Deploy Go APIs to $4/mo droplets
+                        </div>
+                      </div>
+                    </Link>
+
+                    <Link
+                      href="/tools/compose-to-systemd"
+                      onClick={() => setGuidesOpen(false)}
+                      className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group border-t border-white/[0.06] pt-2"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:scale-105 transition-transform">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-white group-hover:text-amber-300 transition-colors">
+                          Compose to Systemd Tool
+                        </div>
+                        <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
+                          Free online YAML converter
                         </div>
                       </div>
                     </Link>
@@ -248,6 +284,30 @@ export function Navbar() {
               >
                 <Terminal className="w-3.5 h-3.5 text-purple-400" />
                 <span>Deploy Go Without Docker</span>
+              </Link>
+              <Link
+                href="/deploy/hetzner-vps"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-emerald-300 hover:bg-white/[0.04]"
+              >
+                <Server className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Hetzner Cloud VPS Guide</span>
+              </Link>
+              <Link
+                href="/deploy/digitalocean-droplet"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-sky-300 hover:bg-white/[0.04]"
+              >
+                <Server className="w-3.5 h-3.5 text-sky-400" />
+                <span>DigitalOcean Droplet Guide</span>
+              </Link>
+              <Link
+                href="/tools/compose-to-systemd"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-amber-300 hover:bg-white/[0.04]"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <span>Compose to Systemd Tool</span>
               </Link>
             </div>
             <Link
