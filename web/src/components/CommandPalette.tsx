@@ -181,7 +181,7 @@ export function CommandPalette() {
     {
       id: "doc-changelog",
       title: "Changelog & Release Notes (v1.0.0 GA)",
-      description: "Timeline of releases: anode doctor, anode ps, systemd sandboxing, and edge routing",
+      description: "Timeline of releases, 4-pillar Proof-of-Topology engine, and systemd unit synthesis",
       category: "Documentation",
       href: "/changelog",
       icon: Sparkles,
