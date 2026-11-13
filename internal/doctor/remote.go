@@ -258,8 +258,10 @@ func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
 
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
 	_ = os.MkdirAll(filepath.Dir(knownHostsPath), 0700)
-	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_RDWR, 0600); err == nil {
-		_ = f.Close()
+	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+		if closeErr := f.Close(); closeErr != nil {
+			return nil, 0, fmt.Errorf("failed to close %s: %w", knownHostsPath, closeErr)
+		}
 	}
 
 	var hostKeyCallback ssh.HostKeyCallback
@@ -276,10 +278,16 @@ func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
 				}
 				// TOFU: record new host key
 				f, fErr := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY, 0600)
-				if fErr == nil {
-					defer f.Close()
-					line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
-					_, _ = f.WriteString(line + "\n")
+				if fErr != nil {
+					return fmt.Errorf("failed to open %s for appending: %w", knownHostsPath, fErr)
+				}
+				line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
+				if _, err := f.WriteString(line + "\n"); err != nil {
+					_ = f.Close()
+					return fmt.Errorf("failed to write host key to %s: %w", knownHostsPath, err)
+				}
+				if err := f.Close(); err != nil {
+					return fmt.Errorf("failed to flush host key to %s: %w", knownHostsPath, err)
 				}
 				return nil
 			}

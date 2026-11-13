@@ -66,8 +66,10 @@ func DialSSH(target string) (*SSHClient, error) {
 	// Host key verification: check ~/.ssh/known_hosts, enforce strict mismatch checks and TOFU
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
 	_ = os.MkdirAll(filepath.Dir(knownHostsPath), 0700)
-	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_RDWR, 0600); err == nil {
-		_ = f.Close()
+	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+		if closeErr := f.Close(); closeErr != nil {
+			return nil, fmt.Errorf("failed to close %s: %w", knownHostsPath, closeErr)
+		}
 	}
 
 	var hostKeyCallback ssh.HostKeyCallback
@@ -84,10 +86,16 @@ func DialSSH(target string) (*SSHClient, error) {
 				}
 				// Trust On First Use (TOFU): Record new host key into known_hosts
 				f, fErr := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY, 0600)
-				if fErr == nil {
-					defer f.Close()
-					line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
-					_, _ = f.WriteString(line + "\n")
+				if fErr != nil {
+					return fmt.Errorf("failed to open %s for appending: %w", knownHostsPath, fErr)
+				}
+				line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
+				if _, err := f.WriteString(line + "\n"); err != nil {
+					_ = f.Close()
+					return fmt.Errorf("failed to write host key to %s: %w", knownHostsPath, err)
+				}
+				if err := f.Close(); err != nil {
+					return fmt.Errorf("failed to flush host key to %s: %w", knownHostsPath, err)
 				}
 				return nil
 			}
