@@ -16,6 +16,7 @@ import (
 	"github.com/abhiudayg/anode/internal/cluster"
 	"github.com/abhiudayg/anode/internal/deployer"
 	"github.com/abhiudayg/anode/internal/devengine"
+	"github.com/abhiudayg/anode/internal/doctor"
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
@@ -319,6 +320,43 @@ func main() {
 
 		fmt.Printf("  • Registered %d cluster nodes with automated bin-packing & zero-trust firewall.\n", len(pool.Nodes))
 
+	case "doctor":
+		opts := doctor.Options{
+			TargetDir: ".",
+		}
+		for i := 2; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			if arg == "--help" || arg == "-h" {
+				printDoctorUsage()
+				return
+			}
+			if arg == "--strict" {
+				opts.Strict = true
+			} else if arg == "-v" || arg == "--verbose" {
+				opts.Verbose = true
+			} else if arg == "--target" && i+1 < len(os.Args) {
+				opts.RemoteTarget = os.Args[i+1]
+				i++
+			} else if strings.HasPrefix(arg, "--target=") {
+				opts.RemoteTarget = strings.TrimPrefix(arg, "--target=")
+			} else if !strings.HasPrefix(arg, "-") {
+				if strings.Contains(arg, "@") {
+					opts.RemoteTarget = arg
+				} else {
+					opts.TargetDir = arg
+				}
+			}
+		}
+
+		rep, err := doctor.Run(context.Background(), opts)
+		if err != nil {
+			log.Fatalf("Doctor run failed: %v", err)
+		}
+		doctor.PrintReport(rep, opts.RemoteTarget)
+		if rep.HasFailed() {
+			os.Exit(1)
+		}
+
 	case "catalog":
 		targetDir := "."
 		if len(os.Args) > 2 {
@@ -367,6 +405,7 @@ func printUsage() {
 	fmt.Println("\nManagement Commands:")
 	fmt.Println("  cluster                Manage multi-node placement pools and zero-trust firewalls")
 	fmt.Println("  catalog                Inspect pluggable stateful catalog drivers and image matrix")
+	fmt.Println("  doctor [TARGET] [PATH] Pre-flight verification of compiler, toolchain, loopback and VPS")
 	fmt.Println("\nCommands:")
 	fmt.Println("  inspect [PATH]         Extract whole-program SSA topology and write anode.lock.json")
 	fmt.Println("  dev [PATH]             Start local hot-reload daemon with dynamic loopback ports")
@@ -399,6 +438,21 @@ func printDeployUsage() {
 	fmt.Println("  --dry-run              Synthesize and validate systemd units without live SSH")
 	fmt.Println("  --domain DOMAIN        Custom domain for automated Let's Encrypt TLS reverse proxy")
 	fmt.Println("  -h, --help             Print usage information")
+}
+
+func printDoctorUsage() {
+	fmt.Println("Usage:  anode doctor [TARGET_OR_PATH] [PATH] [OPTIONS]")
+	fmt.Println("\nPre-flight diagnostics for toolchain, loopbacks, container engine, and remote host")
+	fmt.Println("\nOptions:")
+	fmt.Println("  --target TARGET        Remote VPS <user@host> to perform 3s pre-flight SSH diagnosis")
+	fmt.Println("  --strict               Fail on warnings as well as fatal errors")
+	fmt.Println("  -v, --verbose          Print verbose trace logs")
+	fmt.Println("  -h, --help             Print usage information")
+	fmt.Println("\nExamples:")
+	fmt.Println("  anode doctor                               # Check current workspace")
+	fmt.Println("  anode doctor ./examples/sample-shop        # Check specific path")
+	fmt.Println("  anode doctor root@192.168.1.10             # Check remote VPS connectivity")
+	fmt.Println("  anode doctor root@192.168.1.10 ./my-app    # Check both remote VPS and local app")
 }
 
 func printCatalogUsage() {
