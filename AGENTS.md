@@ -181,7 +181,8 @@ When assigned an issue, enhancement, or bugfix in this repository, follow this e
    - `web/src/app/docs/page.tsx` CLI reference chapter.
    - `README.md` command overview table.
 2. **Changelog & Release Synchronization**:
-   - Whenever `CHANGELOG.md` is updated for a new release or version milestone, the website changelog page (`web/src/app/changelog/page.tsx`) **MUST** be updated simultaneously.
+   - Whenever `CHANGELOG.md` is updated for a new release or version milestone, the website changelog data in `web/src/data/changelog.json` (rendered by `web/src/app/changelog/page.tsx`) **MUST** be updated simultaneously.
+   - **JSON Data Architecture**: All website changelog releases are stored in `web/src/data/changelog.json`. Do not hardcode releases in `web/src/app/changelog/page.tsx`; keep the page component lean and add new release objects directly to `web/src/data/changelog.json`.
    - **Strict Accuracy Rule**: The website changelog must remain strictly synchronized with and limited to what is documented in `CHANGELOG.md`. Never invent or hallucinate versions or attribute unreleased features (such as post-v1.0.0 commands like `anode doctor` or `anode ps`) to a release unless they are officially recorded under that version in `CHANGELOG.md`.
    - **High-Detail Standard**: The website changelog entries should be as detailed and comprehensive as possible, including code/terminal snippets, category tags (`CLI`, `Security`, `Runtime`, `Networking`), and exact architectural explanations matching the changelog specifications.
 
