@@ -364,6 +364,8 @@ Commands:
   dev [PATH]             Start local hot-reload daemon with dynamic loopback ports
   deploy TARGET [PATH]   Deploy release to bare-metal Linux host via systemd & Caddy
   run TARGET [PATH]      Alias for deploy (Docker CLI parity)
+  ps [TARGET] [PATH]     List running processes, cgroup v2 memory/CPU, and Caddy routes
+  status [TARGET] [PATH] Alias for ps (process and topology status)
   version                Show the Anode version information
 
 Run 'anode COMMAND --help' for more information on a command.`}
@@ -501,6 +503,32 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com --dry-run</div>
                       <div className="pl-4 text-neutral-400"># Docker CLI Parity: &apos;anode run&apos; is a drop-in alias for deploy</div>
                       <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/omni_mesh_32</div>
+                    </div>
+                  </div>
+
+                  {/* anode ps / status */}
+                  <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <code className="text-sm font-bold text-teal-400 font-mono-code">anode ps [OPTIONS] [TARGET_OR_PATH] [PATH]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Process &amp; Cgroups Monitoring</span>
+                    </div>
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Inspects running Go microservices, cgroups v2 memory consumption (<code className="text-neutral-200">memory.current / memory.max</code> with smaps PSS/RSS fallback), task thread counts, flapping/crashloop detection (<code className="text-neutral-200">NRestarts</code> and exit status codes), and Caddy reverse-proxy upstream route bindings over SSH or locally.
+                    </p>
+                    <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-teal-300">-a, --all</span> : Show all units (including inactive/stopped services)</div>
+                      <div className="pl-4"><span className="text-teal-300">--json</span> : Output complete process, cgroup, and edge metrics as structured JSON</div>
+                      <div className="pl-4"><span className="text-teal-300">--target &lt;user@host&gt;</span> : Remote VPS to inspect over SSH</div>
+                      <div className="pl-4"><span className="text-teal-300">-v, --verbose</span> : Print verbose trace logs</div>
+                      <div className="pl-4"><span className="text-teal-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode ps</div>
+                      <div className="pl-4 text-emerald-400">anode ps root@my-vps.com</div>
+                      <div className="pl-4 text-emerald-400">anode ps root@192.168.1.50 --all</div>
+                      <div className="pl-4 text-emerald-400">anode ps root@my-vps.com --json</div>
+                      <div className="pl-4 text-neutral-400"># Docker CLI Parity: &apos;anode status&apos; is a drop-in alias for ps</div>
+                      <div className="pl-4 text-emerald-400">anode status root@my-vps.com</div>
                     </div>
                   </div>
 
