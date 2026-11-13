@@ -145,7 +145,7 @@ func CheckRemoteTarget(ctx context.Context, target string) []CheckResult {
 	}
 
 	// 4. Cgroups v2 unified hierarchy
-	cgroupOut, err := runRemoteCmd(client, "test -f /sys/fs/cgroup/memory.current && echo 'v2' || test -f /sys/fs/cgroup/memory/memory.stat && echo 'v1' || echo 'none'")
+	cgroupOut, _ := runRemoteCmd(client, "test -f /sys/fs/cgroup/memory.current && echo 'v2' || test -f /sys/fs/cgroup/memory/memory.stat && echo 'v1' || echo 'none'")
 	cgroupVer := strings.TrimSpace(cgroupOut)
 	if strings.Contains(cgroupVer, "v2") {
 		results = append(results, CheckResult{
@@ -173,7 +173,7 @@ func CheckRemoteTarget(ctx context.Context, target string) []CheckResult {
 	}
 
 	// 5. Caddy Reverse Proxy & Edge Routing
-	caddyOut, err := runRemoteCmd(client, "caddy version 2>/dev/null || which caddy || echo 'missing'")
+	caddyOut, _ := runRemoteCmd(client, "caddy version 2>/dev/null || which caddy || echo 'missing'")
 	if strings.Contains(caddyOut, "missing") || strings.TrimSpace(caddyOut) == "" {
 		results = append(results, CheckResult{
 			Category:    CategoryRemote,
