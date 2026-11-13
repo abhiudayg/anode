@@ -38,10 +38,111 @@ interface Release {
 
 const RELEASES: Release[] = [
   {
+    version: "v1.1.0",
+    date: "November 13, 2026",
+    tag: "v1.1.0",
+    isLatest: true,
+    summary:
+      "Operational, diagnostic, and kernel security release introducing bare-metal process inspection (anode ps) with cgroups v2 resource accounting, decoupled 2-phase pre-flight network diagnostics (anode doctor), anti-jailbreak systemd confinement, and in-memory streaming SCP binary deployment.",
+    highlights: [
+      "Bare-Metal Process Inspection (anode ps): Direct systemd service inspection with zero container engine overhead.",
+      "Cgroups v2 Resource Accounting: Real-time memory.current vs MemoryMax=1G tracking with smaps PSS/RSS fallback.",
+      "Decoupled Pre-Flight Diagnostics (anode doctor): 2-phase verification isolating closed port 22/firewalls from SSH auth rejections.",
+      "Caddy Edge Route Mapping: Automatically resolves upstream loopback ports to public internet-facing domains.",
+      "Anti-Jailbreak Kernel Confinement: DynamicUser=yes, ProtectProc=invisible, ProcSubset=pid, and RestrictNamespaces=true.",
+      "In-Memory Streaming SCP: Replaces /tmp staging writes with direct encrypted in-memory byte streaming.",
+      "Website Changelog & System Evolution: Dedicated interactive release timeline page at /changelog.",
+    ],
+    updates: [
+      {
+        title: "anode ps: Bare-Metal Process Inspection & Cgroups v2",
+        category: "CLI",
+        badge: "New Command",
+        description:
+          "Inspect running Go services over SSH or locally with complete Docker/Kubernetes parity. Measures real-time memory usage directly from cgroups v2 (memory.current vs MemoryMax=1G) with automated fallback to /proc/<pid>/smaps_rollup (PSS/RSS) or /proc/<pid>/statm. Captures TasksCurrent thread counts, detects flapping and crashloops (NRestarts, SubState=auto-restart), maps Caddy reverse-proxy edge routes, and outputs both ANSI tables and scriptable JSON.",
+        codeSnippet: {
+          title: "Terminal Output — anode ps --target=prod",
+          code: `$ anode ps --target=prod
+TARGET: prod (198.51.100.24:22)
+SERVICE           STATUS       PID      CPU    MEMORY (PSS/MAX)     TASKS  REST   UPTIME  EDGE ROUTE
+api.service       active       142091   0.4%   18.4MB / 1.0GB (1%)  14     0      4d 12h  https://api.example.com -> 127.0.0.1:8080
+worker.service    active       142104   1.2%   42.1MB / 2.0GB (2%)  28     0      4d 12h  internal
+metrics.service   active       142118   0.1%   8.2MB / 512MB (1%)   8      0      4d 12h  https://metrics.example.com -> 127.0.0.1:9090
+
+3 services running (bare metal systemd + cgroups v2)`,
+        },
+      },
+      {
+        title: "anode doctor: Decoupled 2-Phase Pre-Flight Verification",
+        category: "CLI",
+        badge: "New Command",
+        description:
+          "Executes a sub-100ms sanity check prior to deployment. Decoupled into two distinct phases: Phase 1 executes a raw TCP dial (strict 3s deadline) to catch firewalls, closed port 22, or bad DNS; Phase 2 performs the SSH auth handshake to diagnose rejected keys. Validates Go static cross-compilation (CGO_ENABLED=0), local loopback address space (127.0.0.0/8), and container runtime availability.",
+        codeSnippet: {
+          title: "Terminal Output — anode doctor",
+          code: `$ anode doctor
+[1/5] Checking Go compiler toolchain...
+      go version go1.27.2 linux/amd64 (CGO_ENABLED=0 pure static)  [OK]
+[2/5] Validating local loopback range (127.0.0.0/8)...
+      Subnet binding capability verified (zero collisions)         [OK]
+[3/5] Inspecting container runtime (Docker / Podman)...
+      Docker daemon active (v27.3.1 rootless)                      [OK]
+[4/5] Verifying lockfile topology (anode.lock.json)...
+      Contract SHA256: 8e4b7a1... 4/4 Pillars satisfied            [OK]
+[5/5] Testing remote VPS connectivity (prod)...
+      Phase 1: Raw TCP dial 198.51.100.24:22 (deadline: 3s)        [OK]
+      Phase 2: SSH auth handshake (user: deploy, key: ed25519)     [OK]
+
+Result: 5/5 passed. Pre-flight healthy — ready for zero-downtime deployment.`,
+        },
+      },
+      {
+        title: "Anti-Jailbreak Systemd Kernel Confinement",
+        category: "Security",
+        badge: "Hardening",
+        description:
+          "Rigorous multi-tenant process confinement: DynamicUser=yes assigns transient unprivileged UIDs, ProtectSystem=strict mounts the filesystem read-only, ProtectProc=invisible and ProcSubset=pid conceal neighboring processes from /proc, and LockPersonality=true, MemoryDenyWriteExecute=true, and RestrictNamespaces=true block namespace escapes and runtime memory rewriting.",
+        codeSnippet: {
+          title: "Synthesized Systemd Confinement Directives",
+          code: `[Service]
+DynamicUser=yes
+ProtectSystem=strict
+ProtectHome=true
+ProtectProc=invisible
+ProcSubset=pid
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+RestrictNamespaces=true
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM`,
+        },
+      },
+      {
+        title: "In-Memory Streaming SCP Deployments (StreamBytes)",
+        category: "Runtime",
+        badge: "Transport",
+        description:
+          "Replaced temporary /tmp staging file writes during remote deployment with direct in-memory SCP streaming over encrypted SSH channels. Eliminates world-writable file race conditions, symlink traversal attacks, and multi-tenant disk probing on target VPS hosts.",
+      },
+      {
+        title: "Caddy Edge Route Reverse Resolution",
+        category: "Networking",
+        badge: "Edge",
+        description:
+          "Inspects active Caddy reverse-proxy configurations to map backend loopback ports (e.g. 127.0.0.1:8080) directly back to their internet-facing domain hostnames with automated Let's Encrypt TLS status reporting.",
+      },
+    ],
+  },
+  {
     version: "v1.0.0",
     date: "November 11, 2026",
     tag: "v1.0.0",
-    isLatest: true,
     summary:
       "Initial general availability release of Anode — the Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Eliminates Docker and Kubernetes by compiling unmodified Go AST and SSA call graphs directly into hardened Linux systemd unit files, dynamic loopback networks, and automated Caddy TLS reverse proxies.",
     highlights: [
@@ -94,31 +195,6 @@ const RELEASES: Release[] = [
         badge: "Production",
         description:
           "Builds pure static Go ELF binaries locally (CGO_ENABLED=0) with automatic target architecture detection (uname -m -> arm64/amd64). Deploys to Linux VPS hosts with hardened systemd units (NoNewPrivileges=true, ProtectSystem=strict, ProtectHome=true, PrivateTmp=true, PrivateDevices=true, ProtectKernelTunables=true, RestrictSUIDSGID=true), Linux cgroups v2 quotas (CPUQuota=200%, MemoryMax=1G), zero-downtime blue/green port swaps, and automated Caddy reverse proxy synthesis with Let's Encrypt TLS.",
-        codeSnippet: {
-          title: "Synthesized Systemd Service Unit",
-          code: `[Unit]
-Description=api (orchestrated by Anode)
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/opt/anode/api/current/bin/api
-Restart=on-failure
-RestartSec=5s
-NoNewPrivileges=true
-ProtectSystem=strict
-ProtectHome=true
-PrivateTmp=true
-PrivateDevices=true
-ProtectKernelTunables=true
-ProtectControlGroups=true
-RestrictSUIDSGID=true
-CPUQuota=200%
-MemoryMax=1G
-
-[Install]
-WantedBy=multi-user.target`,
-        },
       },
       {
         title: "Local Dev Orchestrator (anode dev)",
@@ -140,24 +216,6 @@ WantedBy=multi-user.target`,
         badge: "Zero-Trust",
         description:
           "Multi-node greedy least-loaded bin-packer for distributing services across registered VPS instances. Synthesizes Linux kernel nftables firewall policies directly from compiler topology: drops all undeclared lateral container traffic by default, permitting only explicitly declared egress routes.",
-        codeSnippet: {
-          title: "Synthesized nftables Zero-Trust Policy",
-          code: `table inet anode_filter {
-  chain forward {
-    type filter hook forward priority 0; policy drop;
-
-    # Allow established & related connections
-    ct state established,related accept
-
-    # Allow declared internal microservice egress only
-    ip saddr 127.18.0.2 ip daddr 127.18.0.5 tcp dport 5432 accept
-    ip saddr 127.18.0.3 ip daddr 127.18.0.6 tcp dport 6379 accept
-
-    # Drop lateral pivot traffic
-    drop
-  }
-}`,
-        },
       },
       {
         title: "Enterprise & Real-World Benchmark Verification",
@@ -222,7 +280,7 @@ export default function ChangelogPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="text-xs font-mono-code text-neutral-400">Current Release</div>
-              <div className="text-lg font-bold text-emerald-400 font-mono-code mt-0.5">v1.0.0</div>
+              <div className="text-lg font-bold text-emerald-400 font-mono-code mt-0.5">v1.1.0</div>
             </div>
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="text-xs font-mono-code text-neutral-400">Pillars Verified</div>
@@ -233,7 +291,7 @@ export default function ChangelogPage() {
               <div className="text-lg font-bold text-purple-400 font-mono-code mt-0.5">0 MB / 0 ms</div>
             </div>
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-              <div className="text-xs font-mono-code text-neutral-400">SSA Sweep Speed</div>
+              <div className="text-xs font-mono-code text-neutral-400">Pre-Flight Speed</div>
               <div className="text-lg font-bold text-amber-400 font-mono-code mt-0.5">&lt; 100 ms</div>
             </div>
           </div>
@@ -401,26 +459,26 @@ export default function ChangelogPage() {
         <div className="mt-20 p-8 rounded-2xl bg-gradient-to-br from-[#0c0f17] to-[#08090b] border border-cyan-500/30 space-y-4">
           <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono-code uppercase tracking-wider font-semibold">
             <Zap className="w-4 h-4 text-cyan-400" />
-            <span>Install &amp; Quickstart</span>
+            <span>Stay Up to Date</span>
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Get Started with Anode v1.0.0
+            Upgrade to Anode v1.1.0 in Seconds
           </h2>
 
           <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-2xl">
-            Install the official v1.0.0 release via Homebrew or standard Go tooling to start deploying unmodified Go backends without Docker.
+            Update your local toolchain using Homebrew or standard Go tooling to unlock bare-metal process inspection (anode ps) and pre-flight diagnostics (anode doctor).
           </p>
 
           <div className="pt-2 flex flex-wrap items-center gap-3">
             <button
               onClick={() =>
-                handleCopy("brew install abhiudayg/tap/anode", "cta-brew")
+                handleCopy("brew update && brew upgrade anode", "cta-brew")
               }
               className="px-4 py-2 rounded-lg bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.12] text-xs font-mono-code text-white flex items-center gap-2 transition-colors"
             >
               <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-              <span>brew install abhiudayg/tap/anode</span>
+              <span>brew upgrade anode</span>
               {copiedId === "cta-brew" ? (
                 <Check className="w-3 h-3 text-emerald-400 ml-1" />
               ) : (
