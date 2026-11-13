@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "How to Deploy Go to Linux Without Docker: Step-by-Step | Anode",
+  title: "Deploy Go to Linux Without Docker",
   description:
     "Step-by-step guide to deploying Go backends to a bare-metal Linux VPS with systemd, cgroups v2, and automated TLS without Docker or Kubernetes.",
   alternates: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/guides/deploy-go-without-docker",
-    title: "How to Deploy Go to Linux Without Docker: Step-by-Step | Anode",
+    title: "Deploy Go to Linux Without Docker",
     description:
       "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with 8ms cold starts and zero Docker daemons.",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "How to Deploy Go to Linux Without Docker: Step-by-Step | Anode",
+    title: "Deploy Go to Linux Without Docker",
     description:
       "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with 8ms cold starts and zero Docker daemons.",
     images: ["/og-image.png"],

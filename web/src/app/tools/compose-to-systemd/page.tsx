@@ -256,9 +256,9 @@ export default function ComposeToSystemdTool() {
                 <Sparkles className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-white">
+                <h2 className="text-base font-bold text-white">
                   Want to eliminate writing systemd files and Docker Compose entirely?
-                </h3>
+                </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mt-1">
                   <strong>Anode</strong> automatically traces your Go SSA call graphs to auto-discover network routes and database bindings in ~60ms, deploying straight to Linux systemd with 8ms cold starts.
                 </p>

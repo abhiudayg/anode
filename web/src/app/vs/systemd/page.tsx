@@ -9,16 +9,16 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Anode vs Raw Systemd: Why Not Write Units Manually? | Anode",
+  title: "Anode vs Raw Systemd: Units vs Automation",
   description:
-    "Systemd is the gold standard for Linux process management, but writing unit files manually doesn't solve local port collisions, environment drift, or TLS routing. See why Anode orchestrates systemd.",
+    "Systemd is the gold standard for Linux process management. See how Anode automates unit generation, cgroups v2, dynamic loopbacks, and zero-downtime Caddy TLS.",
   alternates: {
     canonical: "/vs/systemd",
   },
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/vs/systemd",
-    title: "Anode vs Raw Systemd: Why Not Write Units Manually? | Anode",
+    title: "Anode vs Raw Systemd: Units vs Automation",
     description:
       "Systemd is great, but manual unit management is brittle. See how Anode automates cgroups v2, dynamic loopbacks, and Caddy TLS.",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Anode vs Raw Systemd: Why Not Write Units Manually? | Anode",
+    title: "Anode vs Raw Systemd: Units vs Automation",
     description:
       "Systemd is great, but manual unit management is brittle. See how Anode automates cgroups v2, dynamic loopbacks, and Caddy TLS.",
     images: ["/og-image.png"],
@@ -176,7 +176,7 @@ export default function AnodeVsSystemdPage() {
               <div className="text-xs font-mono-code text-neutral-400 uppercase tracking-wider mb-2">
                 The Manual Approach
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Writing Systemd Units by Hand</h3>
+              <h2 className="text-xl font-bold text-white mb-3">Writing Systemd Units by Hand</h2>
               <ul className="space-y-3 text-sm text-neutral-400 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-amber-400 font-bold">⚠</span>
@@ -198,7 +198,7 @@ export default function AnodeVsSystemdPage() {
               <div className="text-xs font-mono-code text-cyan-400 uppercase tracking-wider mb-2">
                 The Compiler-Backed Approach
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">Anode Compiler Orchestration</h3>
+              <h2 className="text-xl font-bold text-white mb-3">Anode Compiler Orchestration</h2>
               <ul className="space-y-3 text-sm text-neutral-300 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 font-bold">✓</span>
@@ -244,9 +244,9 @@ export default function AnodeVsSystemdPage() {
               <AlertTriangle className="w-4 h-4" />
               <span>Honest Tradeoffs: When NOT to Use Anode</span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-white mb-3">
               Where You Should Stick with Traditional Tools
-            </h3>
+            </h2>
             <ul className="space-y-2.5 text-sm text-neutral-300 leading-relaxed">
               <li className="flex items-start gap-2">
                 <span className="text-amber-400 font-bold">•</span>
@@ -265,7 +265,7 @@ export default function AnodeVsSystemdPage() {
 
           {/* CTA */}
           <div className="p-8 rounded-2xl border border-white/[0.08] bg-[#0c0e14] text-center">
-            <h3 className="text-xl font-bold text-white mb-2">Automate Your Linux Systemd Services</h3>
+            <h2 className="text-xl font-bold text-white mb-2">Automate Your Linux Systemd Services</h2>
             <p className="text-sm text-neutral-400 mb-6">
               Install the Anode CLI and run your first bare-metal deployment in seconds.
             </p>

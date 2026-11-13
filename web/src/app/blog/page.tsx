@@ -284,15 +284,10 @@ export default function BlogPage() {
                 </div>
               ) : (
                 paginatedPosts.map((post) => (
-                  <div
+                  <Link
                     key={post.slug}
-                    onClick={() => {
-                      setSelectedSlug(post.slug);
-                      if (typeof window !== "undefined") {
-                        window.history.pushState(null, "", `#${post.slug}`);
-                      }
-                    }}
-                    className="rounded-2xl border border-white/[0.08] bg-[#0c0e14]/90 p-6 sm:p-8 hover:border-cyan-500/40 transition-all duration-300 cursor-pointer group shadow-xl hover:shadow-[0_0_30px_rgba(0,173,216,0.1)]"
+                    href={`/blog/${post.slug}`}
+                    className="block rounded-2xl border border-white/[0.08] bg-[#0c0e14]/90 p-6 sm:p-8 hover:border-cyan-500/40 transition-all duration-300 cursor-pointer group shadow-xl hover:shadow-[0_0_30px_rgba(0,173,216,0.1)]"
                   >
                     <div className="flex flex-wrap items-center justify-between gap-3 mb-3 text-xs text-neutral-400 font-mono-code">
                       <span className="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-800/40 font-semibold">
@@ -322,7 +317,7 @@ export default function BlogPage() {
                         <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
-                  </div>
+                  </Link>
                 ))
               )}
             </div>

@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Deploy Gin Framework to Linux VPS Without Docker | Anode",
+  title: "Deploy Gin to Linux VPS Without Docker",
   description:
     "Complete tutorial on deploying a high-performance Gin (gin-gonic) Go REST API directly to a Linux VPS with systemd, cgroups v2, and automated Caddy TLS.",
   alternates: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/guides/deploy-gin-without-docker",
-    title: "Deploy Gin Framework to Linux VPS Without Docker | Anode",
+    title: "Deploy Gin to Linux VPS Without Docker",
     description:
       "Run your Gin Go REST API natively on Linux bare metal with 8ms cold starts and zero Docker container daemons.",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deploy Gin Framework to Linux VPS Without Docker | Anode",
+    title: "Deploy Gin to Linux VPS Without Docker",
     description:
       "Run your Gin Go REST API natively on Linux bare metal with 8ms cold starts.",
     images: ["/og-image.png"],

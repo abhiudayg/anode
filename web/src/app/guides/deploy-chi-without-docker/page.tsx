@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Deploy Chi Router to Linux VPS Without Docker | Anode",
+  title: "Deploy Chi to Linux VPS Without Docker",
   description:
     "Step-by-step guide on deploying a lightweight Chi (go-chi/chi) Go HTTP router to a Linux VPS with systemd, automated TLS, and cgroups v2 resource limits.",
   alternates: {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/guides/deploy-chi-without-docker",
-    title: "Deploy Chi Router to Linux VPS Without Docker | Anode",
+    title: "Deploy Chi to Linux VPS Without Docker",
     description:
       "Run your Chi Go backend directly on Linux bare metal with 8ms cold starts and zero container overhead.",
     images: [
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deploy Chi Router to Linux VPS Without Docker | Anode",
+    title: "Deploy Chi to Linux VPS Without Docker",
     description:
       "Run your Chi Go backend directly on Linux bare metal with 8ms cold starts.",
     images: ["/og-image.png"],

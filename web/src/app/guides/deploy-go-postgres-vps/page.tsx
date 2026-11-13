@@ -8,16 +8,16 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Deploy Go + PostgreSQL to Linux VPS Without Docker | Anode",
+  title: "Deploy Go + PostgreSQL Without Docker",
   description:
-    "Complete tutorial on deploying a Go REST API with PostgreSQL to a bare-metal Linux VPS using Anode. Zero container overhead, automated systemd, and 8ms cold starts.",
+    "Deploy a Go REST API with PostgreSQL to a bare-metal Linux VPS using Anode. Zero container overhead, automated systemd isolation, and 8ms cold starts.",
   alternates: {
     canonical: "/guides/deploy-go-postgres-vps",
   },
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/guides/deploy-go-postgres-vps",
-    title: "Deploy Go + PostgreSQL to Linux VPS Without Docker | Anode",
+    title: "Deploy Go + PostgreSQL Without Docker",
     description:
       "Run your Go backend and PostgreSQL natively on bare metal with zero Docker container overhead and automated systemd management.",
     images: [
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deploy Go + PostgreSQL to Linux VPS Without Docker | Anode",
+    title: "Deploy Go + PostgreSQL Without Docker",
     description:
       "Run your Go backend and PostgreSQL natively on bare metal with zero Docker container overhead.",
     images: ["/og-image.png"],

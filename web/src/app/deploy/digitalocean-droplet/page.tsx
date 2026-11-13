@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Deploy Go Backends to DigitalOcean Droplets Without Docker | Anode",
+  title: "Deploy Go to DigitalOcean Without Docker",
   description:
     "Deploy Go microservices to DigitalOcean Droplets with bare-metal systemd execution, 4.8MB RAM footprint, and automated Let's Encrypt TLS.",
   alternates: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/deploy/digitalocean-droplet",
-    title: "Deploy Go Backends to DigitalOcean Droplets Without Docker | Anode",
+    title: "Deploy Go to DigitalOcean Without Docker",
     description:
       "Run unmodified Go backends on $4/mo DigitalOcean Droplets with 8ms cold starts and zero container daemons.",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deploy Go Backends to DigitalOcean Droplets Without Docker | Anode",
+    title: "Deploy Go to DigitalOcean Without Docker",
     description:
       "Run unmodified Go backends on $4/mo DigitalOcean Droplets with 8ms cold starts and zero container daemons.",
     images: ["/og-image.png"],

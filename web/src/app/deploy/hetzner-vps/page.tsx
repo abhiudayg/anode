@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Deploy Go Backends to Hetzner Cloud VPS (8ms Cold Boot) | Anode",
+  title: "Deploy Go to Hetzner Cloud Without Docker",
   description:
     "Complete guide to deploying Go microservices to Hetzner Cloud Linux VPS using bare-metal systemd and automated TLS. 10x cheaper and 56x faster than Kubernetes.",
   alternates: {
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/deploy/hetzner-vps",
-    title: "Deploy Go Backends to Hetzner Cloud VPS (8ms Cold Boot) | Anode",
+    title: "Deploy Go to Hetzner Cloud Without Docker",
     description:
       "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with 8ms cold starts and 4.8MB RAM footprint.",
     images: [
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deploy Go Backends to Hetzner Cloud VPS (8ms Cold Boot) | Anode",
+    title: "Deploy Go to Hetzner Cloud Without Docker",
     description:
       "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with 8ms cold starts and 4.8MB RAM footprint.",
     images: ["/og-image.png"],

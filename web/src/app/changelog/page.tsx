@@ -344,9 +344,9 @@ export default function ChangelogPage() {
                 {/* Release Header */}
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-2xl sm:text-3xl font-extrabold text-white font-mono-code tracking-tight">
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-white font-mono-code tracking-tight">
                       {release.version}
-                    </span>
+                    </h2>
                     {release.isLatest && (
                       <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-xs font-mono-code font-semibold">
                         Latest Stable (GA)

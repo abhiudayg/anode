@@ -854,7 +854,7 @@ export default function SsaVisualizerPage() {
                           <AlertTriangle className="w-4 h-4 text-rose-400" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-bold text-white">SSA Analysis Suspended</h3>
+                          <div className="text-sm font-bold text-white">SSA Analysis Suspended</div>
                           <p className="text-[11px] text-neutral-400">
                             Go compiler could not parse Abstract Syntax Tree
                           </p>
@@ -1113,9 +1113,9 @@ export default function SsaVisualizerPage() {
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
               1
             </div>
-            <h3 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-white">
               Zero Regex Parsing
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
               Unlike fragile heuristic linters, Anode constructs an SSA Variable Type Analysis graph that resolves dynamic wrappers, structs, and dependency injection patterns.
             </p>
@@ -1125,9 +1125,9 @@ export default function SsaVisualizerPage() {
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
               2
             </div>
-            <h3 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-white">
               Automated Dynamic Loopbacks
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
               Anode multiplexes across the 16.7M IPs in the 127.0.0.0/8 subnet. Multiple developers and microservices can bind to :8080 locally without port collisions.
             </p>
@@ -1137,9 +1137,9 @@ export default function SsaVisualizerPage() {
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
               3
             </div>
-            <h3 className="text-base font-bold text-white">
+            <h2 className="text-base font-bold text-white">
               Native Linux Hardening
-            </h3>
+            </h2>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
               Synthesized systemd units feature DynamicUser=yes, ProtectSystem=strict, and cgroups v2 memory limits—providing enterprise isolation without root Docker daemons.
             </p>
