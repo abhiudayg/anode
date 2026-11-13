@@ -209,12 +209,7 @@
           "provenance": "services/ambulance_dispatch/main.go:18"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "DISPATCH_VALKEY_ADDR",
-          "provenance": "services/ambulance_dispatch/main.go:17"
-        }
-      ]
+      "secrets": []
     },
     "appointments": {
       "name": "appointments",
@@ -679,7 +674,12 @@
           "provenance": "services/patient_registry/main.go:14"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "_DB_PASSWORD",
+          "provenance": "pkg/config/config.go:36"
+        }
+      ]
     },
     "pharmacy_inventory": {
       "name": "pharmacy_inventory",

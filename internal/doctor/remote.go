@@ -257,13 +257,36 @@ func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
 	}
 
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
+	_ = os.MkdirAll(filepath.Dir(knownHostsPath), 0700)
+	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_RDWR, 0600); err == nil {
+		_ = f.Close()
+	}
+
 	var hostKeyCallback ssh.HostKeyCallback
 	if cb, err := knownhosts.New(knownHostsPath); err == nil {
-		hostKeyCallback = cb
-	} else {
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
+			err := cb(hostname, remote, key)
+			if err == nil {
+				return nil
+			}
+			var keyErr *knownhosts.KeyError
+			if errors.As(err, &keyErr) {
+				if len(keyErr.Want) > 0 {
+					return fmt.Errorf("SECURITY ALERT: HOST KEY MISMATCH for %s (%w)", hostname, err)
+				}
+				// TOFU: record new host key
+				f, fErr := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY, 0600)
+				if fErr == nil {
+					defer f.Close()
+					line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
+					_, _ = f.WriteString(line + "\n")
+				}
+				return nil
+			}
+			return err
 		}
+	} else {
+		return nil, 0, fmt.Errorf("failed to initialize known_hosts verifier: %w", err)
 	}
 
 	cfg := &ssh.ClientConfig{

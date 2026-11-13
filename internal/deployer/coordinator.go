@@ -32,6 +32,21 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	bootstrapper := NewBootstrapper(d.ssh)
 	releaseID := fmt.Sprintf("%d", time.Now().Unix())
 
+	// Validate topology identifiers to prevent shell injection
+	for name, svc := range d.lockfile.Services {
+		if err := iag.ValidateIdentifier("service", name); err != nil {
+			return err
+		}
+		if err := iag.ValidateIdentifier("service", svc.Name); err != nil {
+			return err
+		}
+	}
+	for resID := range d.lockfile.Resources {
+		if err := iag.ValidateIdentifier("resource", resID); err != nil {
+			return err
+		}
+	}
+
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
 	if err := bootstrapper.BootstrapServer(d.lockfile); err != nil {
@@ -117,10 +132,25 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			}
 		}
 
-		// Inject secrets
+		// Inject and isolate secrets into a secured 0600 environment file
+		envFilePath := ""
 		for _, s := range svc.Secrets {
 			if _, exists := envVars[s.EnvVar]; !exists {
 				envVars[s.EnvVar] = "anode_secret_placeholder"
+			}
+		}
+
+		if len(svc.Secrets) > 0 {
+			var envFileContent strings.Builder
+			for _, s := range svc.Secrets {
+				val := envVars[s.EnvVar]
+				envFileContent.WriteString(fmt.Sprintf("%s=%s\n", s.EnvVar, val))
+				delete(envVars, s.EnvVar)
+			}
+			remoteEnvPath := fmt.Sprintf("%s/.env.%s", remoteReleaseDir, svc.Name)
+			if err := bootstrapper.WriteRemoteFile(envFileContent.String(), remoteEnvPath); err == nil {
+				_, _ = d.ssh.Run(fmt.Sprintf("chmod 0600 '%s' && chown anode:anode '%s'", remoteEnvPath, remoteEnvPath))
+				envFilePath = remoteEnvPath
 			}
 		}
 
@@ -130,6 +160,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			ExecStart:   remoteBin,
 			WorkingDir:  remoteReleaseDir,
 			EnvVars:     envVars,
+			EnvFile:     envFilePath,
 		})
 		if err != nil {
 			return err
@@ -141,7 +172,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 		}
 
 		// Reload and restart systemd unit
-		reloadCmd := fmt.Sprintf("systemctl daemon-reload && systemctl restart anode-%s.service", svc.Name)
+		reloadCmd := fmt.Sprintf("systemctl daemon-reload && systemctl restart 'anode-%s.service'", svc.Name)
 		if _, err := d.ssh.Run(reloadCmd); err != nil {
 			return fmt.Errorf("failed to start systemd service %s: %w", svc.Name, err)
 		}
@@ -187,8 +218,11 @@ func (d *DeployCoordinator) detectRemoteArch() string {
 }
 
 func (d *DeployCoordinator) crossCompileService(ctx context.Context, svc iag.Service, releaseID string) (string, error) {
-	entryDir, err := filepath.Abs(filepath.Join(d.rootDir, svc.Entrypoint))
+	entryDir, err := iag.SafeResolvePath(d.rootDir, svc.Entrypoint)
 	if err != nil {
+		return "", fmt.Errorf("invalid service entrypoint for %s: %w", svc.Name, err)
+	}
+	if err := iag.ValidateIdentifier("service", svc.Name); err != nil {
 		return "", err
 	}
 	outDir, err := filepath.Abs(filepath.Join(d.rootDir, ".verify", "releases", releaseID))
