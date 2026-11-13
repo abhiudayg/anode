@@ -136,6 +136,46 @@ func TestClassifySSHError(t *testing.T) {
 	}
 }
 
+func TestClassifyTCPError(t *testing.T) {
+	target := "root@vps.anode.dev"
+	host := "vps.anode.dev:22"
+
+	// 1. DNS error
+	resDNS := classifyTCPError(target, host, &net.DNSError{Err: "no such host", Name: "vps.anode.dev"})
+	if resDNS.Status != StatusFail || resDNS.Name != "Raw TCP Dial (DNS Failure)" {
+		t.Errorf("expected Raw TCP DNS failure, got %+v", resDNS)
+	}
+
+	// 2. Timeout error
+	resTimeout := classifyTCPError(target, host, errors.New("dial tcp: i/o timeout"))
+	if resTimeout.Status != StatusFail || resTimeout.Name != "Raw TCP Dial (Port 22 Timeout)" {
+		t.Errorf("expected Raw TCP Timeout failure, got %+v", resTimeout)
+	}
+
+	// 3. Connection refused
+	resRefused := classifyTCPError(target, host, errors.New("dial tcp: connection refused"))
+	if resRefused.Status != StatusFail || resRefused.Name != "Raw TCP Dial (Connection Refused)" {
+		t.Errorf("expected Raw TCP Refused failure, got %+v", resRefused)
+	}
+}
+
+func TestParseUserAndHost(t *testing.T) {
+	u1, h1 := parseUserAndHost("root@example.com")
+	if u1 != "root" || h1 != "example.com:22" {
+		t.Errorf("got %s, %s", u1, h1)
+	}
+
+	u2, h2 := parseUserAndHost("deploy@1.2.3.4:2222")
+	if u2 != "deploy" || h2 != "1.2.3.4:2222" {
+		t.Errorf("got %s, %s", u2, h2)
+	}
+
+	u3, h3 := parseUserAndHost("myvps.internal")
+	if u3 != "root" || h3 != "myvps.internal:22" {
+		t.Errorf("got %s, %s", u3, h3)
+	}
+}
+
 func TestDoctorRunOnExample(t *testing.T) {
 	// Find examples/sample-shop
 	cwd, err := os.Getwd()

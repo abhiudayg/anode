@@ -66,19 +66,38 @@ func CheckLocalSSHKeys() CheckResult {
 func CheckRemoteTarget(ctx context.Context, target string) []CheckResult {
 	var results []CheckResult
 
-	// 1. Dial SSH with a strict 3-second timeout
-	client, dialDuration, err := dialSSHWith3sTimeout(target)
-	if err != nil {
-		results = append(results, classifySSHError(target, err))
+	user, host := parseUserAndHost(target)
+
+	// Phase 1: Raw TCP Dial (with a strict 3-second timeout)
+	// Catches bad DNS, closed port 22, and firewall timeouts before touching SSH keys.
+	tcpConn, tcpDur, tcpErr := dialTCPWith3sTimeout(host)
+	if tcpErr != nil {
+		results = append(results, classifyTCPError(target, host, tcpErr))
+		return results
+	}
+
+	results = append(results, CheckResult{
+		Category: CategoryRemote,
+		Name:     "Raw TCP Dial (Port 22)",
+		Status:   StatusOK,
+		Message:  fmt.Sprintf("Port 22 reachable on %s in %dms", host, tcpDur.Milliseconds()),
+	})
+
+	// Phase 2: SSH Authentication & Handshake
+	// Uses the established TCP connection to authenticate via public keys and verify host identity.
+	client, sshDur, sshErr := authenticateSSHOnConn(tcpConn, user, host)
+	if sshErr != nil {
+		_ = tcpConn.Close()
+		results = append(results, classifySSHError(target, sshErr))
 		return results
 	}
 	defer client.Close()
 
 	results = append(results, CheckResult{
 		Category: CategoryRemote,
-		Name:     "SSH Connectivity",
+		Name:     "SSH Authentication",
 		Status:   StatusOK,
-		Message:  fmt.Sprintf("Connected to %s in %dms via public key", target, dialDuration.Milliseconds()),
+		Message:  fmt.Sprintf("Authenticated as %s on %s in %dms via public key", user, host, sshDur.Milliseconds()),
 	})
 
 	// 2. Kernel & Architecture
@@ -215,7 +234,7 @@ func CheckRemoteTarget(ctx context.Context, target string) []CheckResult {
 	return results
 }
 
-func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
+func parseUserAndHost(target string) (string, string) {
 	parts := strings.Split(target, "@")
 	user := "root"
 	host := target
@@ -227,7 +246,62 @@ func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
 	if !strings.Contains(host, ":") {
 		host = host + ":22"
 	}
+	return user, host
+}
 
+func dialTCPWith3sTimeout(host string) (net.Conn, time.Duration, error) {
+	start := time.Now()
+	conn, err := net.DialTimeout("tcp", host, 3*time.Second)
+	return conn, time.Since(start), err
+}
+
+func classifyTCPError(target, host string, err error) CheckResult {
+	errStr := err.Error()
+
+	// 1. DNS Failure
+	var dnsErr *net.DNSError
+	if errors.As(err, &dnsErr) || strings.Contains(errStr, "no such host") || strings.Contains(errStr, "lookup") {
+		return CheckResult{
+			Category:    CategoryRemote,
+			Name:        "Raw TCP Dial (DNS Failure)",
+			Status:      StatusFail,
+			Message:     fmt.Sprintf("Unable to resolve hostname for target '%s': %v", target, err),
+			Remediation: "Verify the remote domain or IP address in your DNS configuration or /etc/hosts.",
+		}
+	}
+
+	// 2. Timeout / Firewall drop
+	if strings.Contains(errStr, "i/o timeout") || strings.Contains(errStr, "connection timed out") {
+		return CheckResult{
+			Category:    CategoryRemote,
+			Name:        "Raw TCP Dial (Port 22 Timeout)",
+			Status:      StatusFail,
+			Message:     fmt.Sprintf("Connection to %s timed out after 3 seconds (port 22 unreachable / firewall drop)", host),
+			Remediation: "Check network connectivity, host firewall (ufw/iptables/nftables), or cloud security groups (allow inbound TCP 22).",
+		}
+	}
+
+	// 3. Connection refused
+	if strings.Contains(errStr, "connection refused") {
+		return CheckResult{
+			Category:    CategoryRemote,
+			Name:        "Raw TCP Dial (Connection Refused)",
+			Status:      StatusFail,
+			Message:     fmt.Sprintf("Connection refused by %s (port closed or sshd not running)", host),
+			Remediation: "Verify that sshd daemon is running on the target host: 'systemctl status ssh'.",
+		}
+	}
+
+	return CheckResult{
+		Category:    CategoryRemote,
+		Name:        "Raw TCP Dial",
+		Status:      StatusFail,
+		Message:     fmt.Sprintf("Failed to establish TCP connection to %s: %v", host, err),
+		Remediation: "Verify target address and network routing.",
+	}
+}
+
+func authenticateSSHOnConn(conn net.Conn, user, host string) (*ssh.Client, time.Duration, error) {
 	var authMethods []ssh.AuthMethod
 
 	// 1. Try SSH Agent socket
@@ -305,13 +379,27 @@ func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
 	}
 
 	start := time.Now()
-	client, err := ssh.Dial("tcp", host, cfg)
+	c, chans, reqs, err := ssh.NewClientConn(conn, host, cfg)
 	dur := time.Since(start)
 	if err != nil {
 		return nil, dur, err
 	}
 
-	return client, dur, nil
+	return ssh.NewClient(c, chans, reqs), dur, nil
+}
+
+func dialSSHWith3sTimeout(target string) (*ssh.Client, time.Duration, error) {
+	user, host := parseUserAndHost(target)
+	conn, d1, err := dialTCPWith3sTimeout(host)
+	if err != nil {
+		return nil, d1, err
+	}
+	client, d2, err := authenticateSSHOnConn(conn, user, host)
+	if err != nil {
+		_ = conn.Close()
+		return nil, d1 + d2, err
+	}
+	return client, d1 + d2, nil
 }
 
 func classifySSHError(target string, err error) CheckResult {
