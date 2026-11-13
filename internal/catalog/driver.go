@@ -157,18 +157,19 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 		mode = "0700" // Least privilege default
 	}
 
-	setupDirCmd := fmt.Sprintf("install -d -m %s -o %d -g %d %s", mode, uid, gid, dataDir)
+	setupDirCmd := fmt.Sprintf("install -d -m %s -o %d -g %d '%s'", mode, uid, gid, dataDir)
 
 	commandArgs := ""
 	if len(d.Runtime.Command) > 0 {
 		commandArgs = " " + strings.Join(d.Runtime.Command, " ")
 	}
 
-	runCmd := fmt.Sprintf(`(%s && docker ps -q -f name=%s | grep -q . || docker run -d \
-		--name %s \
+	runCmd := fmt.Sprintf(`(%s && docker ps -q -f 'name=^/%s$' | grep -q . || docker run -d \
+		--name '%s' \
 		--restart always \
 		-p %s:%d:%d \
-		-v %s:%s%s%s \
+		-v '%s:%s' \
+		%s%s \
 		%s%s)`,
 		setupDirCmd,
 		containerName,

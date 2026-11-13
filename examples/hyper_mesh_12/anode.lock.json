@@ -90,18 +90,18 @@
       ],
       "bindings": [
         {
-          "service_ref": "orders",
-          "protocol": "http",
-          "interface": "/v1/orders",
-          "inject_env": "ORDERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:26"
-        },
-        {
           "service_ref": "auth",
           "protocol": "http",
           "interface": "/v1/auth/token",
           "inject_env": "AUTH_SERVICE_URL",
           "provenance": "services/apigateway/main.go:20"
+        },
+        {
+          "service_ref": "orders",
+          "protocol": "http",
+          "interface": "/v1/orders",
+          "inject_env": "ORDERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:26"
         }
       ],
       "secrets": []
@@ -293,6 +293,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/charge",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:30"
+        },
+        {
           "resource_ref": "db-orders",
           "protocol": "postgres",
           "inject_env": "",
@@ -311,13 +318,6 @@
           "interface": "RegisterLedgerServiceServer",
           "inject_env": "LEDGER_GRPC_ADDR",
           "provenance": "services/orders/main.go:21"
-        },
-        {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/charge",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:30"
         }
       ],
       "secrets": [

@@ -321,11 +321,25 @@
       ],
       "bindings": [
         {
+          "service_ref": "orders",
+          "protocol": "http",
+          "interface": "/v1/orders",
+          "inject_env": "ORDERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:33"
+        },
+        {
           "service_ref": "users",
           "protocol": "http",
           "interface": "/v1/users",
           "inject_env": "USERS_SERVICE_URL",
           "provenance": "services/apigateway/main.go:28"
+        },
+        {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:38"
         },
         {
           "service_ref": "auth",
@@ -340,20 +354,6 @@
           "interface": "/v1/media",
           "inject_env": "MEDIA_SERVICE_URL",
           "provenance": "services/apigateway/main.go:43"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:38"
-        },
-        {
-          "service_ref": "orders",
-          "protocol": "http",
-          "interface": "/v1/orders",
-          "inject_env": "ORDERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:33"
         }
       ],
       "secrets": []
@@ -551,6 +551,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/refund",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/disputes/main.go:24"
+        },
+        {
           "resource_ref": "db-disputes-temporal",
           "protocol": "temporal",
           "inject_env": "DISPUTES_TEMPORAL_URL",
@@ -558,13 +565,6 @@
             "DISPUTES_TEMPORAL_URL"
           ],
           "provenance": "services/disputes/main.go:19"
-        },
-        {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/refund",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/disputes/main.go:24"
         }
       ],
       "secrets": []
@@ -843,20 +843,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/charge",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:34"
-        },
-        {
-          "service_ref": "inventory",
-          "protocol": "http",
-          "interface": "/v1/inventory/reserve",
-          "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:37"
-        },
-        {
           "resource_ref": "db-orders",
           "protocol": "postgres",
           "inject_env": "",
@@ -875,6 +861,20 @@
           "interface": "RegisterLedgerServiceServer",
           "inject_env": "LEDGER_GRPC_ADDR",
           "provenance": "services/orders/main.go:28"
+        },
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/charge",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:34"
+        },
+        {
+          "service_ref": "inventory",
+          "protocol": "http",
+          "interface": "/v1/inventory/reserve",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:37"
         }
       ],
       "secrets": [
@@ -1138,6 +1138,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "shipping",
+          "protocol": "http",
+          "interface": "/v1/shipments/create",
+          "inject_env": "SHIPPING_SERVICE_URL",
+          "provenance": "services/warehouse/main.go:24"
+        },
+        {
           "resource_ref": "db-warehouse-rabbitmq",
           "protocol": "rabbitmq",
           "inject_env": "WAREHOUSE_RABBITMQ_URL",
@@ -1145,13 +1152,6 @@
             "WAREHOUSE_RABBITMQ_URL"
           ],
           "provenance": "services/warehouse/main.go:17"
-        },
-        {
-          "service_ref": "shipping",
-          "protocol": "http",
-          "interface": "/v1/shipments/create",
-          "inject_env": "SHIPPING_SERVICE_URL",
-          "provenance": "services/warehouse/main.go:24"
         }
       ],
       "secrets": []

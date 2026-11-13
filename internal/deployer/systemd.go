@@ -28,6 +28,7 @@ After=network.target
 [Service]
 Type=simple
 User=anode
+DynamicUser=yes
 WorkingDirectory={{.WorkingDir}}
 ExecStart={{.ExecStart}}
 Restart=always
@@ -39,7 +40,7 @@ RestartSec={{.RestartSec}}
 CPUQuota=200%
 MemoryMax=1G
 
-# Least-Privilege Security Hardening
+# Least-Privilege Security Hardening & Anti-Jailbreak Confinement
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
@@ -47,7 +48,23 @@ PrivateTmp=true
 PrivateDevices=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
 RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+ProtectProc=invisible
+ProcSubset=pid
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @module @reboot @swap @raw-io
 ReadWritePaths={{if .ReadWritePaths}}{{.ReadWritePaths}}{{else}}{{.WorkingDir}}{{end}}
 
 [Install]

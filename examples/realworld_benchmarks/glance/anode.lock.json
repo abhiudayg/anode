@@ -31,7 +31,7 @@
   "egress_rules": [
     {
       "source_service": "glance",
-      "target_host": "https://www.reddit.com/api/v1/access_token",
+      "target_host": "https://api.open-meteo.com/v1/forecast?",
       "port": 443,
       "protocol": "https",
       "is_external": true
@@ -59,7 +59,7 @@
     },
     {
       "source_service": "glance",
-      "target_host": "https://api.open-meteo.com/v1/forecast?",
+      "target_host": "https://www.reddit.com/api/v1/access_token",
       "port": 443,
       "protocol": "https",
       "is_external": true
