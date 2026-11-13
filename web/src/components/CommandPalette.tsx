@@ -69,6 +69,24 @@ export function CommandPalette() {
       badge: "CLI",
       action: () => copyText("anode dev", "cmd-dev"),
     },
+    {
+      id: "cmd-doctor",
+      title: "anode doctor [target]",
+      description: "Pre-flight sanity check: static cross-compile flags, raw TCP port 22, and SSH key auth",
+      category: "Commands",
+      icon: Terminal,
+      badge: "v1.2",
+      action: () => copyText("anode doctor", "cmd-doctor"),
+    },
+    {
+      id: "cmd-ps",
+      title: "anode ps [target]",
+      description: "Bare-metal process inspection, cgroups v2 memory extraction, and Caddy edge route resolution",
+      category: "Commands",
+      icon: Terminal,
+      badge: "v1.2",
+      action: () => copyText("anode ps", "cmd-ps"),
+    },
 
     // Interactive Developer Tools
     {
@@ -159,6 +177,15 @@ export function CommandPalette() {
       category: "Documentation",
       href: "/docs#overview",
       icon: BookOpen,
+    },
+    {
+      id: "doc-changelog",
+      title: "Changelog & Release Notes (v1.2.0, v1.1.0, v1.0.0)",
+      description: "Timeline of releases: anode doctor, anode ps, systemd sandboxing, and edge routing",
+      category: "Documentation",
+      href: "/changelog",
+      icon: Sparkles,
+      badge: "Releases",
     },
     {
       id: "doc-quickstart",
