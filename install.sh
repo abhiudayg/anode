@@ -8,7 +8,7 @@
 set -e
 
 REPO="abhiudayg/anode"
-LATEST_VERSION="${ANODE_VERSION:-v1.0.0}"
+LATEST_VERSION="${ANODE_VERSION:-v1.1.0}"
 
 echo ""
 echo "  █████╗ ███╗   ██╗ ██████╗ ██████╗ ███████╗"

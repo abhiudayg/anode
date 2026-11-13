@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-11-13
+
+### 🚀 Added
+- **Bare-Metal Process Inspection (`anode ps` / `anode status`)**:
+  - Direct bare-metal systemd process inspection over SSH or locally with zero container daemon dependencies.
+  - Linux `cgroups v2` resource accounting measuring real-time `memory.current` against `MemoryMax=1G` limit with percentage utilization.
+  - Graceful fallback memory accounting reading `/proc/<pid>/smaps_rollup` (Proportional Set Size / PSS and RSS) or `/proc/<pid>/statm`.
+  - Accurate `TasksCurrent` metrics capturing multi-process worker forks and Go runtime OS threads.
+  - Flapping and crashloop detection: identifies `SubState=auto-restart` and `ActiveState=failed`, extracting exit codes, total restart counts (`NRestarts`), and time since last restart.
+  - Caddy edge reverse-proxy status: verifies Caddy active state and maps upstream loopback ports (e.g. `127.0.0.1:8080`) to public domain routes (e.g. `https://api.example.com`).
+  - Dual output modes: colorized human-readable ANSI table and machine-readable `--json` format.
+- **Decoupled Pre-Flight Diagnostics (`anode doctor`)**:
+  - Sub-100ms sanity check prior to deployment.
+  - Phase 1 (Raw TCP Dial): Strict 3-second deadline to catch firewalls, closed port 22, or bad DNS before auth attempts.
+  - Phase 2 (SSH Handshake): Verifies public key authentication and TOFU host key fingerprints, accurately isolating auth rejections from network drops.
+  - Compiler toolchain verification: ensures Go compiler produces pure static binaries (`CGO_ENABLED=0`).
+  - Local loopback range validation: confirms `127.0.0.0/8` subnet binding capability with 0% collisions.
+  - Container runtime verification: checks Docker / Podman availability for dev-time ephemeral datastores.
+- **Website Changelog & System Evolution (`/changelog`)**:
+  - Dedicated interactive release timeline page detailing architectural evolutions.
+  - Category filters (`All`, `CLI`, `Security`, `Runtime`, `Networking`), copyable release anchors, and terminal execution output snippets.
+  - Integrated into sitemap (`/sitemap.xml`), Footer, and Command Palette (`⌘K`).
+
+### 🛡 Security & Hardening
+- **Anti-Jailbreak Systemd Confinement**:
+  - Enforced `DynamicUser=yes` for transient unprivileged UIDs.
+  - Restricted kernel process visibility with `ProtectProc=invisible` and `ProcSubset=pid` to conceal neighboring processes.
+  - Hardened kernel isolation with `LockPersonality=true`, `MemoryDenyWriteExecute=true`, and `RestrictNamespaces=true`.
+- **In-Memory Streaming SCP (`StreamBytes`)**:
+  - Eliminated temporary world-writable `/tmp` staging writes during remote binary deployment.
+  - Direct encrypted in-memory byte streaming prevents disk probing, symlink traversal attacks, and multi-tenant race conditions.
+
+---
+
 ## [1.0.0] - 2026-11-11
 
 ### 🚀 Added
