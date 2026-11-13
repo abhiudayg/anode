@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Technical Journal — Architecture & Engineering Essays",
+  title: "Technical Journal & Engineering Essays",
   description:
     "Deep dives into compiler-backed infrastructure, static single assignment (SSA) for distributed systems, and bare-metal Linux isolation primitives.",
   alternates: {

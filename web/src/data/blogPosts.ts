@@ -2,6 +2,8 @@ export interface BlogPost {
   slug: string;
   title: string;
   subtitle: string;
+  metaTitle?: string;
+  metaDescription?: string;
   date: string;
   readTime: string;
   category: string;
@@ -27,6 +29,8 @@ export const BLOG_POSTS: BlogPost[] = [
     slug: "why-we-ditched-docker-for-go-backends",
     title: "Why We Ditched Docker for Go Backends: An Anatomy of 8ms Systemd Cold Starts",
     subtitle: "A deep dive into container daemon memory bloat, containerd shim overhead, and how compiled Go binaries run with 55x lower latency under Linux systemd and cgroups v2.",
+    metaTitle: "Why We Ditched Docker for Go Backends",
+    metaDescription: "Deep dive into container daemon memory bloat, containerd overhead, and how compiled Go binaries run with 55x lower latency under systemd & cgroups v2.",
     date: "Nov 11, 2026",
     readTime: "12 min read",
     category: "Systems Architecture",
@@ -126,6 +130,8 @@ WantedBy=multi-user.target`
     slug: "inside-the-ssa-compiler-core",
     title: "Inside the SSA Compiler Core: How Variable Type Analysis Extracts Infrastructure Topology",
     subtitle: "Why AST regex matching fails on real codebases, and how Anode uses golang.org/x/tools/go/ssa and Variable Type Analysis (VTA) to infer databases, routes, and ports in ~60ms.",
+    metaTitle: "Inside the SSA Compiler Core",
+    metaDescription: "Why AST regex matching fails on real codebases and how Anode uses Go SSA and Variable Type Analysis (VTA) to infer infrastructure topology in ~60ms.",
     date: "Nov 11, 2026",
     readTime: "14 min read",
     category: "Compiler Engineering",
@@ -201,6 +207,8 @@ func TraceToEnvVar(v ssa.Value, visited map[ssa.Value]bool, depth int) string {
     slug: "ephemeral-loopback-proxies-zero-port-collisions",
     title: "The End of Port 8080 Clashes: Building Ephemeral Linux Loopback Proxies for Go",
     subtitle: "How Anode leverages the 16.7-million-IP 127.0.0.0/8 loopback subnet and kernel socket splicing to run multiple Go microservices locally without port collisions.",
+    metaTitle: "The End of Port 8080 Clashes",
+    metaDescription: "How Anode leverages the 16.7M-IP 127.0.0.0/8 loopback subnet and kernel socket splicing to run multiple Go microservices locally without port collisions.",
     date: "Nov 11, 2026",
     readTime: "10 min read",
     category: "Networking & Linux Internals",
@@ -251,6 +259,8 @@ func AllocateLoopback(serviceIndex int) string {
     slug: "stress-testing-10-famous-go-backends",
     title: "Stress-Testing Anode on 10 Real-World Go Backends & a 32-Microservice Mesh",
     subtitle: "From croc, glance, and filebrowser to restic, ntfy, netbird, and a 32-service enterprise mesh: empirical SSA sweep benchmarks, cycle-safe taint tracking, and bare-metal deployment synthesis.",
+    metaTitle: "Stress-Testing 10 Famous Go Backends",
+    metaDescription: "Empirical SSA sweep benchmarks, cycle-safe taint tracking, and bare-metal deployment synthesis across 10 famous Go backends and a 32-service mesh.",
     date: "Nov 11, 2026",
     readTime: "15 min read",
     category: "Empirical Benchmarks",
@@ -322,6 +332,8 @@ chubin/wttr.in              1          1        881 ms       290 ms      78.7 ms
     slug: "zero-downtime-rolling-restarts-linux-sockets",
     title: "Zero-Downtime Rolling Restarts via Linux Socket Handover (SO_REUSEPORT)",
     subtitle: "How Anode transfers open client sockets and active HTTP connections between binary releases with zero dropped packets and no proxy reload downtime.",
+    metaTitle: "Zero-Downtime Restarts via Linux Sockets",
+    metaDescription: "How Anode transfers open client sockets and active HTTP connections between binary releases with zero dropped packets and no proxy reload downtime.",
     date: "Nov 11, 2026",
     readTime: "9 min read",
     category: "Systems Architecture",
@@ -366,6 +378,8 @@ func ListenSystemdOrPort(fallbackPort string) (net.Listener, error) {
     slug: "dynamicuser-sandboxing-without-root-daemons",
     title: "DynamicUser Sandboxing: Hardening Bare-Metal Go Backends without Root Daemons",
     subtitle: "Why container root escapes happen, and how Linux systemd DynamicUser=yes, ProtectSystem=strict, and NoNewPrivileges provide true unprivileged execution out of the box.",
+    metaTitle: "DynamicUser Sandboxing for Go Backends",
+    metaDescription: "Why container root escapes happen and how Linux systemd DynamicUser=yes, ProtectSystem=strict, and NoNewPrivileges provide true unprivileged execution.",
     date: "Nov 11, 2026",
     readTime: "10 min read",
     category: "Linux Security",

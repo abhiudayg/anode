@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Documentation — Proof-of-Topology Architecture & CLI Reference",
+  title: "Documentation — Architecture & CLI Reference",
   description:
     "Comprehensive guide to Anode's Go SSA call graph analysis, systemd unit generation, cgroups v2 resource quotas, and dynamic loopback proxying.",
   alternates: {

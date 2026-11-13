@@ -162,9 +162,9 @@ export default function DocsPage() {
               <div className="space-y-6">
                 {docSections.map((sec, idx) => (
                   <div key={idx} className="space-y-2">
-                    <h4 className="text-[11px] font-mono-code uppercase tracking-wider text-neutral-400 font-semibold px-2">
+                    <div className="text-[11px] font-mono-code uppercase tracking-wider text-neutral-400 font-semibold px-2">
                       {sec.category}
-                    </h4>
+                    </div>
                     <div className="space-y-1">
                       {sec.items
                         .filter((item) =>
@@ -202,6 +202,9 @@ export default function DocsPage() {
 
           {/* Docs Content Area */}
           <article className="lg:col-span-9 bg-[#0c0e14]/90 rounded-2xl border border-white/[0.08] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
+            {/* Accessible Main Page Heading */}
+            <h1 className="sr-only">Anode Technical Documentation &amp; CLI Reference</h1>
+
             {/* 1. OVERVIEW */}
             <div className={effectiveDoc === "overview" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <div className="flex items-center gap-2">
@@ -209,9 +212,9 @@ export default function DocsPage() {
                     Core Concepts
                   </span>
                 </div>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Anode Overview & The 4 Pillars
-                </h1>
+                </h2>
                 <p className="text-sm sm:text-base text-neutral-300">
                   Every time you build a Go backend, you declare your architecture twice: once in Go (invoking <code className="text-cyan-300 font-mono-code">sql.Open</code>, listening on ports, registering routes), and again in YAML (multi-stage Dockerfiles, 50-line compose files, port maps, env lists).
                 </p>
@@ -270,9 +273,9 @@ export default function DocsPage() {
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Getting Started
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Quickstart Guide
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Get up and running with Anode in under 2 minutes. Works with any standard Go repo.
                 </p>
@@ -332,9 +335,9 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Command Line Interface
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   CLI Reference
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   The Anode CLI is engineered with intuitive, POSIX-compliant Docker-style commands, self-documenting syntax, and sub-command help trees.
                 </p>
@@ -597,9 +600,9 @@ Run 'anode COMMAND --help' for more information on a command.`}
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Compiler Pipeline
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   SSA & Variable Type Analysis (VTA)
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   How Anode eliminates false positives and constructs a provably sound infrastructure topology in under 20ms.
                 </p>
@@ -633,16 +636,16 @@ Run 'anode COMMAND --help' for more information on a command.`}
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
                   Static Analysis Sinks
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Standard Library Choke Points
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Instead of tracking 500 third-party web frameworks, Anode hooks into Go standard library and foundational networking choke points.
                 </p>
 
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h4 className="text-xs font-bold text-cyan-400 font-mono-code">1. Ingress Network Listeners</h4>
+                    <h3 className="text-xs font-bold text-cyan-400 font-mono-code">1. Ingress Network Listeners</h3>
                     <p className="text-xs text-neutral-300">
                       Anode inspects calls to <code className="text-neutral-200">net/http.ListenAndServe</code>, <code className="text-neutral-200">net.Listen</code>, and popular routers (<code className="text-neutral-200">chi</code>, <code className="text-neutral-200">gin</code>, <code className="text-neutral-200">echo</code>, stdlib 1.27+ <code className="text-neutral-200">http.ServeMux</code>).
                     </p>
@@ -654,7 +657,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   </div>
 
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h4 className="text-xs font-bold text-emerald-400 font-mono-code">2. Database Drivers & Connection Pools</h4>
+                    <h3 className="text-xs font-bold text-emerald-400 font-mono-code">2. Database Drivers & Connection Pools</h3>
                     <p className="text-xs text-neutral-300">
                       Hooks into <code className="text-neutral-200">database/sql.Open(driverName, dsn)</code> and <code className="text-neutral-200">github.com/jackc/pgx/v5/pgxpool.New</code>.
                     </p>
@@ -664,14 +667,14 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   </div>
 
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h4 className="text-xs font-bold text-purple-400 font-mono-code">3. Typed gRPC Stubs & Route Linker</h4>
+                    <h3 className="text-xs font-bold text-purple-400 font-mono-code">3. Typed gRPC Stubs & Route Linker</h3>
                     <p className="text-xs text-neutral-300">
                       Matches generated Protobuf constructors (<code className="text-neutral-200">New&lt;Service&gt;Client</code>) with server registrations (<code className="text-neutral-200">Register&lt;Service&gt;Server</code>) 1:1, wiring cross-service addresses automatically.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h4 className="text-xs font-bold text-yellow-400 font-mono-code">4. Recursive Backward Taint Tracking</h4>
+                    <h3 className="text-xs font-bold text-yellow-400 font-mono-code">4. Recursive Backward Taint Tracking</h3>
                     <p className="text-xs text-neutral-300">
                       Real-world services construct connection strings dynamically via structs or <code className="text-neutral-200">fmt.Sprintf</code>.
                     </p>
@@ -687,9 +690,9 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Contract Specification
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   The anode.lock.json Specification
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   The lockfile is the definitive, reviewable representation of your application&apos;s infrastructure topology. It is committed directly to Git.
                 </p>
@@ -755,9 +758,9 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
                   Local Orchestration
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Dynamic Port Allocator & Local Engine
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   How Anode completely eliminates Docker Compose port collisions on developer workstations.
                 </p>
@@ -776,13 +779,13 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06]">
-                    <h4 className="text-xs font-bold text-white mb-1">Dual Credential Injection</h4>
+                    <h3 className="text-xs font-bold text-white mb-1">Dual Credential Injection</h3>
                     <p className="text-xs text-neutral-400">
                       Anode simultaneously injects both unified DSNs (<code className="text-cyan-300">DATABASE_URL</code>) and decomposed credentials (<code className="text-cyan-300">DB_HOST</code>, <code className="text-cyan-300">DB_PORT=54329</code>) based on the application&apos;s discovered <code className="text-neutral-300">expanded_env</code>.
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06]">
-                    <h4 className="text-xs font-bold text-white mb-1">Loopback Reverse Proxy</h4>
+                    <h3 className="text-xs font-bold text-white mb-1">Loopback Reverse Proxy</h3>
                     <p className="text-xs text-neutral-400">
                       Exposes user-friendly entrypoints (e.g. <code className="text-emerald-300">http://localhost:8080</code>) while transparently mapping behind the scenes to dynamic process IDs.
                     </p>
@@ -795,9 +798,9 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Production VPS Deployer
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Bare-Metal Systemd & Cgroups v2
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Anode turns standard Linux VPS instances (Hetzner, OVH, DigitalOcean) into production-grade orchestration nodes without Kubernetes or Docker daemon overhead.
                 </p>
@@ -848,9 +851,9 @@ WantedBy=multi-user.target`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-blue-950/60 text-blue-400 border border-blue-800/40">
                   Infrastructure Catalog
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Pluggable Stateful Infrastructure Catalog
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Anode decouples database and broker provisioning from the core orchestrator using a declarative driver catalog. This scales cleanly to 100+ services without modifying compiler or deployer Go code.
                 </p>
@@ -916,49 +919,49 @@ WantedBy=multi-user.target`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
                   Security Hardening
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Least-Privilege Security Boundary
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Anode enforces defense-in-depth security on bare-metal and VPS instances. No microservice ever runs as root, and stateful databases are protected from runaway application leaks.
                 </p>
 
                 <div className="space-y-3">
                   <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       1. Dedicated Unprivileged anode User
-                    </h4>
+                    </h3>
                     <p className="text-xs text-neutral-400">
                       Bootstrap creates the system user <code className="text-neutral-300">anode</code> with no interactive login (<code className="text-neutral-300">/bin/false</code>). All service binaries run under this isolated user.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       2. Deterministic POSIX 0700 File Permissions
-                    </h4>
+                    </h3>
                     <p className="text-xs text-neutral-400">
                       Data directories at <code className="text-neutral-300">/var/lib/anode/data/</code> are initialized with mode <code className="text-neutral-300">0700</code> mapped to database engine UIDs (e.g. 999 for Postgres), blocking host tampering.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       3. Kernel OOM Score Priority Tiering
-                    </h4>
+                    </h3>
                     <p className="text-xs text-neutral-400">
                       Stateful databases receive <code className="text-cyan-400">--oom-score-adj=-900</code>, ensuring the Linux kernel never terminates databases during application memory pressure. Stateless services run with <code className="text-amber-400">+500</code> and are sacrificed first.
                     </p>
                   </div>
 
                   <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-1.5">
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
                       <ShieldCheck className="w-4 h-4 text-emerald-400" />
                       4. Strict Loopback Binding (127.0.0.1)
-                    </h4>
+                    </h3>
                     <p className="text-xs text-neutral-400">
                       All stateful database and broker ports bind strictly to loopback (<code className="text-neutral-300">127.0.0.1</code>). Zero database ports are exposed to the public internet interface.
                     </p>
@@ -971,9 +974,9 @@ WantedBy=multi-user.target`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
                   Infrastructure as Code
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Ansible & Terraform VM Automation
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Provision and configure testing environments or production bare-metal VPS instances with a single command using Anode&apos;s included IaC modules.
                 </p>
@@ -1009,9 +1012,9 @@ terraform -chdir=infra/terraform apply`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
                   Empirical Verification
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Empirical Numbers & Verification Analysis
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Every performance claim in Anode is benchmarked and verified under Linux kernel 6.x and Go 1.27+. Here is the rigorous engineering methodology behind each number.
                 </p>
@@ -1070,9 +1073,9 @@ terraform -chdir=infra/terraform apply`}</code>
 
                   {/* Comprehensive Benchmark Table in Docs */}
                   <div className="mt-4 pt-3 border-t border-white/[0.06]">
-                    <h4 className="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-2 font-mono-code">
+                    <h3 className="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-2 font-mono-code">
                       Empirical Profiling Matrix (Enterprise & Open-Source Backends)
-                    </h4>
+                    </h3>
                     <div className="overflow-x-auto">
                       <table className="w-full text-left border-collapse text-[11px] font-mono-code">
                         <thead>
@@ -1315,9 +1318,9 @@ terraform -chdir=infra/terraform apply`}</code>
                 <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/40">
                   Architectural Honesty
                 </span>
-                <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                   Tradeoffs, Limits & Non-Goals
-                </h1>
+                </h2>
                 <p className="text-sm text-neutral-300">
                   Honest engineering requires being explicit about what a tool <strong>refuses to do</strong>, where it excels, and the fundamental tradeoffs inherent in its architecture.
                 </p>
@@ -1403,9 +1406,9 @@ terraform -chdir=infra/terraform apply`}</code>
                   Operations &amp; Edge Cases
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
                 Troubleshooting &amp; Common Issues
-              </h1>
+              </h2>
               <p className="text-sm text-neutral-300">
                 Actionable solutions for common server configuration errors, port clashes, and compilation edge cases.
               </p>

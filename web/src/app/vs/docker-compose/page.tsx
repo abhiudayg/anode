@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Docker Compose Alternative for Go: Why Bare-Metal Wins | Anode",
+  title: "Docker Compose Alternative for Go Backends",
   description:
     "Looking for a Docker Compose alternative for Go? See how Anode replaces Dockerfiles & YAML drift with compiler SSA call-graph analysis and 8ms systemd boot.",
   alternates: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/vs/docker-compose",
-    title: "Docker Compose Alternative for Go: Why Bare-Metal Wins | Anode",
+    title: "Docker Compose Alternative for Go Backends",
     description:
       "Go compiles to static binaries. Why wrap them in 200MB container engines? Compare Anode's Proof-of-Topology with Docker Compose for Go microservices.",
     images: [
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Docker Compose Alternative for Go: Why Bare-Metal Wins | Anode",
+    title: "Docker Compose Alternative for Go Backends",
     description:
       "Go compiles to static binaries. Why wrap them in 200MB container engines? Compare Anode with Docker Compose.",
     images: ["/og-image.png"],
@@ -225,7 +225,7 @@ export default function DockerComposeVsAnodePage() {
                 <X className="w-4 h-4 text-red-400" />
                 <span>The Traditional Docker Way</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">You Declare Architecture Twice</h3>
+              <h2 className="text-xl font-bold text-white mb-3">You Declare Architecture Twice</h2>
               <ul className="space-y-3 text-sm text-neutral-400 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-red-400 mt-1 font-bold">✕</span>
@@ -248,7 +248,7 @@ export default function DockerComposeVsAnodePage() {
                 <Check className="w-4 h-4 text-cyan-400" />
                 <span>The Anode Bare-Metal Way</span>
               </div>
-              <h3 className="text-xl font-bold text-white mb-3">The Compiler Is The Orchestrator</h3>
+              <h2 className="text-xl font-bold text-white mb-3">The Compiler Is The Orchestrator</h2>
               <ul className="space-y-3 text-sm text-neutral-300 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 mt-1 font-bold">✓</span>
@@ -382,9 +382,9 @@ export default function DockerComposeVsAnodePage() {
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
                 <span>Free Migration Tool</span>
               </div>
-              <h3 className="text-lg font-bold text-white">
+              <p className="text-lg font-bold text-white">
                 Have an existing docker-compose.yml?
-              </h3>
+              </p>
               <p className="text-xs sm:text-sm text-neutral-400">
                 Paste your YAML into our free client-side converter to generate hardened Linux systemd units in real-time.
               </p>
@@ -404,9 +404,9 @@ export default function DockerComposeVsAnodePage() {
               <AlertTriangle className="w-4 h-4" />
               <span>Honest Tradeoffs: When NOT to Use Anode</span>
             </div>
-            <h3 className="text-xl font-bold text-white mb-3">
+            <h2 className="text-xl font-bold text-white mb-3">
               Where You Should Stick with Docker Compose
-            </h3>
+            </h2>
             <ul className="space-y-2.5 text-sm text-neutral-300 leading-relaxed">
               <li className="flex items-start gap-2">
                 <span className="text-amber-400 font-bold">•</span>

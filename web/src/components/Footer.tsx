@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Layers, BookOpen, Newspaper, ExternalLink, Terminal, FileCode2, Sparkles } from "lucide-react";
+import { Layers, BookOpen, Newspaper, ExternalLink, Terminal, FileCode2, Sparkles, Gauge } from "lucide-react";
 import { GithubIcon } from "./Icons";
 
 export function Footer() {
@@ -154,13 +154,19 @@ export function Footer() {
                 <Link href="/changelog" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-emerald-400 font-medium">
                   <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Changelog &amp; Releases</span>
-                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 ml-auto font-mono-code">v1.0</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 ml-auto font-mono-code">v1.1</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/#benchmarks" className="hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  <Gauge className="w-3.5 h-3.5 text-cyan-400/70" />
+                  <span>Benchmark Matrix</span>
                 </Link>
               </li>
               <li>
                 <Link href="/blog" className="hover:text-purple-400 transition-colors flex items-center gap-1.5">
                   <Newspaper className="w-3.5 h-3.5 text-purple-400/70" />
-                  <span>Benchmark Matrix</span>
+                  <span>Engineering Blog</span>
                 </Link>
               </li>
               <li>

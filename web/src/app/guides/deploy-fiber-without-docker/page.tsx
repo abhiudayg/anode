@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Deploy Fiber Framework to Linux VPS Without Docker | Anode",
+  title: "Deploy Fiber to Linux VPS Without Docker",
   description:
     "Complete guide to deploying a high-throughput Go Fiber (gofiber/fiber) REST API directly to a Linux VPS with bare-metal systemd, cgroups v2, and automated TLS.",
   alternates: {
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "article",
     url: "https://anode.abhiudayg.dev/guides/deploy-fiber-without-docker",
-    title: "Deploy Fiber Framework to Linux VPS Without Docker | Anode",
+    title: "Deploy Fiber to Linux VPS Without Docker",
     description:
       "Run your Go Fiber backend directly on Linux bare metal with 8ms cold starts and zero container overhead.",
     images: [
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Deploy Fiber Framework to Linux VPS Without Docker | Anode",
+    title: "Deploy Fiber to Linux VPS Without Docker",
     description:
       "Run your Go Fiber backend directly on Linux bare metal with 8ms cold starts.",
     images: ["/og-image.png"],

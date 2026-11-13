@@ -27,15 +27,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const post = BLOG_POSTS.find((p) => p.slug === slug);
   if (!post) return {};
 
+  const title = post.metaTitle || post.title;
+  const description = post.metaDescription || post.subtitle;
+
   return {
-    title: `${post.title} | Anode Engineering Journal`,
-    description: post.subtitle,
+    title,
+    description,
     alternates: {
       canonical: `/blog/${post.slug}`,
     },
     openGraph: {
-      title: post.title,
-      description: post.subtitle,
+      title,
+      description,
       url: `https://anode.abhiudayg.dev/blog/${post.slug}`,
       type: "article",
       publishedTime: "2026-11-11T00:00:00.000Z",
@@ -51,8 +54,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     },
     twitter: {
       card: "summary_large_image",
-      title: post.title,
-      description: post.subtitle,
+      title,
+      description,
       images: ["/og-image.png"],
     },
   };
