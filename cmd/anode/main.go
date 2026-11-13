@@ -18,6 +18,7 @@ import (
 	"github.com/abhiudayg/anode/internal/devengine"
 	"github.com/abhiudayg/anode/internal/doctor"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/ps"
 )
 
 const LockFileName = "anode.lock.json"
@@ -377,6 +378,44 @@ func main() {
 			fmt.Printf("%-18s | %-24s | %-16s | %-12d\n", d.Kind, d.Runtime.ImageTemplate, d.Networking.Protocol, d.Networking.PrimaryPort)
 		}
 
+	case "ps", "status":
+		opts := ps.Options{
+			TargetDir: ".",
+		}
+		for i := 2; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			if arg == "--help" || arg == "-h" {
+				printPsUsage()
+				return
+			}
+			if arg == "-a" || arg == "--all" {
+				opts.All = true
+			} else if arg == "--json" {
+				opts.JSON = true
+			} else if arg == "-v" || arg == "--verbose" {
+				opts.Verbose = true
+			} else if arg == "--target" && i+1 < len(os.Args) {
+				opts.Target = os.Args[i+1]
+				i++
+			} else if strings.HasPrefix(arg, "--target=") {
+				opts.Target = strings.TrimPrefix(arg, "--target=")
+			} else if !strings.HasPrefix(arg, "-") {
+				if strings.Contains(arg, "@") {
+					opts.Target = arg
+				} else {
+					opts.TargetDir = arg
+				}
+			}
+		}
+
+		rep, err := ps.Run(context.Background(), opts)
+		if err != nil {
+			log.Fatalf("Process status failed: %v", err)
+		}
+		if err := ps.Output(rep, opts.JSON); err != nil {
+			log.Fatalf("Output formatting failed: %v", err)
+		}
+
 	default:
 		printUsage()
 		os.Exit(1)
@@ -411,6 +450,8 @@ func printUsage() {
 	fmt.Println("  dev [PATH]             Start local hot-reload daemon with dynamic loopback ports")
 	fmt.Println("  deploy TARGET [PATH]   Deploy release to bare-metal Linux host via systemd & Caddy")
 	fmt.Println("  run TARGET [PATH]      Alias for deploy (Docker CLI parity)")
+	fmt.Println("  ps [TARGET] [PATH]     List running processes, cgroup v2 memory/CPU, and Caddy routes")
+	fmt.Println("  status [TARGET] [PATH] Alias for ps (process and topology status)")
 	fmt.Println("  version                Show the Anode version information")
 	fmt.Println("\nRun 'anode COMMAND --help' for more information on a command.")
 }
@@ -453,6 +494,23 @@ func printDoctorUsage() {
 	fmt.Println("  anode doctor ./examples/sample-shop        # Check specific path")
 	fmt.Println("  anode doctor root@192.168.1.10             # Check remote VPS connectivity")
 	fmt.Println("  anode doctor root@192.168.1.10 ./my-app    # Check both remote VPS and local app")
+}
+
+func printPsUsage() {
+	fmt.Println("Usage:  anode ps [OPTIONS] [TARGET_OR_PATH] [PATH]")
+	fmt.Println("        anode status [OPTIONS] [TARGET_OR_PATH] [PATH]")
+	fmt.Println("\nInspect running Go processes, cgroups v2 resource ceilings, systemd units, and Caddy routes")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -a, --all              Show all units (including inactive/stopped services)")
+	fmt.Println("      --json             Output complete process and cgroup metrics as JSON")
+	fmt.Println("      --target TARGET    Remote VPS <user@host> to inspect over SSH")
+	fmt.Println("  -v, --verbose          Print verbose trace logs")
+	fmt.Println("  -h, --help             Print usage information")
+	fmt.Println("\nExamples:")
+	fmt.Println("  anode ps                                    # Inspect local processes and containers")
+	fmt.Println("  anode ps root@192.168.1.10                  # Inspect production microservices over SSH")
+	fmt.Println("  anode ps root@vps --all                     # Include stopped/inactive services")
+	fmt.Println("  anode ps root@vps --json                    # Machine-readable JSON output for monitoring")
 }
 
 func printCatalogUsage() {
