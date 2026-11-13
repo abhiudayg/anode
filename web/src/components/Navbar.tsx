@@ -55,13 +55,13 @@ export function Navbar() {
                 Anode
               </span>
               <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-medium">
-                v1.2
+                v1.0
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
             <Link
               href="/#topology"
               className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
@@ -346,15 +346,6 @@ export function Navbar() {
               <Newspaper className="w-3.5 h-3.5 text-purple-400 shrink-0" />
               <span>Blog</span>
             </Link>
-            <Link
-              href="/changelog"
-              className="text-sm font-medium text-neutral-400 hover:text-emerald-400 transition-colors flex items-center gap-1.5 whitespace-nowrap shrink-0"
-            >
-              <span>Changelog</span>
-              <span className="text-[10px] font-mono-code px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold">
-                v1.2
-              </span>
-            </Link>
           </nav>
 
           {/* Actions */}
@@ -556,7 +547,7 @@ export function Navbar() {
                 <span>Changelog &amp; Releases</span>
               </div>
               <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                v1.2.0
+                v1.0.0
               </span>
             </Link>
             <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between">

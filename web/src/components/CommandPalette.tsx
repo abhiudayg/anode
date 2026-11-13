@@ -75,7 +75,7 @@ export function CommandPalette() {
       description: "Pre-flight sanity check: static cross-compile flags, raw TCP port 22, and SSH key auth",
       category: "Commands",
       icon: Terminal,
-      badge: "v1.2",
+      badge: "CLI",
       action: () => copyText("anode doctor", "cmd-doctor"),
     },
     {
@@ -84,7 +84,7 @@ export function CommandPalette() {
       description: "Bare-metal process inspection, cgroups v2 memory extraction, and Caddy edge route resolution",
       category: "Commands",
       icon: Terminal,
-      badge: "v1.2",
+      badge: "CLI",
       action: () => copyText("anode ps", "cmd-ps"),
     },
 
@@ -180,7 +180,7 @@ export function CommandPalette() {
     },
     {
       id: "doc-changelog",
-      title: "Changelog & Release Notes (v1.2.0, v1.1.0, v1.0.0)",
+      title: "Changelog & Release Notes (v1.0.0 GA)",
       description: "Timeline of releases: anode doctor, anode ps, systemd sandboxing, and edge routing",
       category: "Documentation",
       href: "/changelog",
