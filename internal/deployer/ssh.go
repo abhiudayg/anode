@@ -1,6 +1,7 @@
 package deployer
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -62,16 +63,46 @@ func DialSSH(target string) (*SSHClient, error) {
 		return nil, fmt.Errorf("no SSH authentication methods found (check ssh-agent or ~/.ssh keys)")
 	}
 
-	// Host key verification: check ~/.ssh/known_hosts first, fallback to initial provisioning callback
+	// Host key verification: check ~/.ssh/known_hosts, enforce strict mismatch checks and TOFU
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
+	_ = os.MkdirAll(filepath.Dir(knownHostsPath), 0700)
+	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_WRONLY, 0600); err == nil {
+		if closeErr := f.Close(); closeErr != nil {
+			return nil, fmt.Errorf("failed to close %s: %w", knownHostsPath, closeErr)
+		}
+	}
+
 	var hostKeyCallback ssh.HostKeyCallback
 	if cb, err := knownhosts.New(knownHostsPath); err == nil {
-		hostKeyCallback = cb
-	} else {
-		// Fallback for bootstrap when known_hosts is not yet populated
 		hostKeyCallback = func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-			return nil
+			err := cb(hostname, remote, key)
+			if err == nil {
+				return nil
+			}
+			var keyErr *knownhosts.KeyError
+			if errors.As(err, &keyErr) {
+				if len(keyErr.Want) > 0 {
+					return fmt.Errorf("SECURITY ALERT: HOST KEY MISMATCH for %s. Remote key changed or MITM attack detected! (%w)", hostname, err)
+				}
+				// Trust On First Use (TOFU): Record new host key into known_hosts
+				f, fErr := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY, 0600)
+				if fErr != nil {
+					return fmt.Errorf("failed to open %s for appending: %w", knownHostsPath, fErr)
+				}
+				line := knownhosts.Line([]string{knownhosts.Normalize(hostname)}, key)
+				if _, err := f.WriteString(line + "\n"); err != nil {
+					_ = f.Close()
+					return fmt.Errorf("failed to write host key to %s: %w", knownHostsPath, err)
+				}
+				if err := f.Close(); err != nil {
+					return fmt.Errorf("failed to flush host key to %s: %w", knownHostsPath, err)
+				}
+				return nil
+			}
+			return err
 		}
+	} else {
+		return nil, fmt.Errorf("failed to initialize known_hosts verifier: %w", err)
 	}
 
 	cfg := &ssh.ClientConfig{
@@ -146,6 +177,37 @@ func (s *SSHClient) StreamFile(srcPath string, dstPath string, mode os.FileMode)
 	cmd := fmt.Sprintf("scp -t %s", targetDir)
 	if err := session.Run(cmd); err != nil {
 		return fmt.Errorf("SCP stream failed for %s: %w", dstPath, err)
+	}
+
+	return nil
+}
+
+// StreamBytes copies in-memory bytes directly to remote host via SCP protocol safely without shell interpolation
+func (s *SSHClient) StreamBytes(data []byte, dstPath string, mode os.FileMode) error {
+	session, err := s.client.NewSession()
+	if err != nil {
+		return fmt.Errorf("failed to create SSH session for upload: %w", err)
+	}
+	defer session.Close()
+
+	stdin, err := session.StdinPipe()
+	if err != nil {
+		return err
+	}
+
+	targetDir := filepath.Dir(dstPath)
+	targetBase := filepath.Base(dstPath)
+
+	go func() {
+		defer stdin.Close()
+		fmt.Fprintf(stdin, "C%04o %d %s\n", mode.Perm(), len(data), targetBase)
+		_, _ = stdin.Write(data)
+		fmt.Fprint(stdin, "\x00")
+	}()
+
+	cmd := fmt.Sprintf("scp -t %s", targetDir)
+	if err := session.Run(cmd); err != nil {
+		return fmt.Errorf("SCP stream bytes failed for %s: %w", dstPath, err)
 	}
 
 	return nil

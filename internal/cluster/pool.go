@@ -68,6 +68,7 @@ func GenerateZeroTrustNftables(svc iag.Service, allowedSubnets []string) string 
 	sb.WriteString("    type filter hook output priority 0; policy drop;\n")
 	sb.WriteString("    # Allow loopback & DNS\n")
 	sb.WriteString("    oif \"lo\" accept\n")
+	sb.WriteString("    ct state established,related accept\n")
 	sb.WriteString("    udp dport 53 accept\n")
 
 	for _, subnet := range allowedSubnets {

@@ -11,12 +11,14 @@ import (
 )
 
 type SystemdUnitConfig struct {
-	ServiceName string
-	Description string
-	ExecStart   string
-	WorkingDir  string
-	EnvVars     map[string]string
-	RestartSec  int
+	ServiceName    string
+	Description    string
+	ExecStart      string
+	WorkingDir     string
+	EnvVars        map[string]string
+	EnvFile        string
+	ReadWritePaths string
+	RestartSec     int
 }
 
 const systemdTemplate = `[Unit]
@@ -26,18 +28,19 @@ After=network.target
 [Service]
 Type=simple
 User=anode
+DynamicUser=yes
 WorkingDirectory={{.WorkingDir}}
 ExecStart={{.ExecStart}}
 Restart=always
 RestartSec={{.RestartSec}}
-{{range $k, $v := .EnvVars}}
-Environment="{{$k}}={{$v}}"
+{{if .EnvFile}}EnvironmentFile={{.EnvFile}}
+{{end}}{{range $k, $v := .EnvVars}}Environment="{{$k}}={{$v}}"
 {{end}}
 # Cgroups v2 Resource Limits
 CPUQuota=200%
 MemoryMax=1G
 
-# Least-Privilege Security Hardening
+# Least-Privilege Security Hardening & Anti-Jailbreak Confinement
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
@@ -45,8 +48,24 @@ PrivateTmp=true
 PrivateDevices=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
 RestrictSUIDSGID=true
-ReadWritePaths={{.WorkingDir}}
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+ProtectProc=invisible
+ProcSubset=pid
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @module @reboot @swap @raw-io
+ReadWritePaths={{if .ReadWritePaths}}{{.ReadWritePaths}}{{else}}{{.WorkingDir}}{{end}}
 
 [Install]
 WantedBy=multi-user.target
@@ -75,7 +94,15 @@ func cleanDomain(raw string) string {
 	if idx := strings.Index(raw, ":"); idx != -1 {
 		raw = raw[:idx]
 	}
-	return strings.TrimSpace(raw)
+	raw = strings.TrimSpace(raw)
+	// Sanitize against Caddy directive breakout injection
+	raw = strings.Map(func(r rune) rune {
+		if r == '\n' || r == '\r' || r == '{' || r == '}' || r == '"' || r == ';' {
+			return -1
+		}
+		return r
+	}, raw)
+	return raw
 }
 
 // GenerateCaddyfile creates reverse-proxy config with automatic Let's Encrypt TLS
@@ -102,7 +129,11 @@ func GenerateCaddyfile(domain string, lockfile *iag.LockFile, servicePortMap map
 				if len(parts) == 2 {
 					path = parts[1]
 				}
-				sb.WriteString(fmt.Sprintf("  handle %s* {\n", path))
+				cleanPath := strings.TrimSpace(path)
+				if strings.ContainsAny(cleanPath, "\r\n{}") {
+					continue
+				}
+				sb.WriteString(fmt.Sprintf("  handle %s* {\n", cleanPath))
 				sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d\n", port))
 				sb.WriteString("  }\n")
 			}

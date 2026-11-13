@@ -321,20 +321,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "media",
-          "protocol": "http",
-          "interface": "/v1/media",
-          "inject_env": "MEDIA_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:43"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:38"
-        },
-        {
           "service_ref": "orders",
           "protocol": "http",
           "interface": "/v1/orders",
@@ -349,11 +335,25 @@
           "provenance": "services/apigateway/main.go:28"
         },
         {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:38"
+        },
+        {
           "service_ref": "auth",
           "protocol": "http",
           "interface": "/v1/auth/token",
           "inject_env": "AUTH_SERVICE_URL",
           "provenance": "services/apigateway/main.go:23"
+        },
+        {
+          "service_ref": "media",
+          "protocol": "http",
+          "interface": "/v1/media",
+          "inject_env": "MEDIA_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:43"
         }
       ],
       "secrets": []
@@ -431,13 +431,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search/sync",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/catalog/main.go:24"
-        },
-        {
           "resource_ref": "db-catalog-mongo",
           "protocol": "mongodb",
           "inject_env": "CATALOG_MONGO_URL",
@@ -445,6 +438,13 @@
             "CATALOG_MONGO_URL"
           ],
           "provenance": "services/catalog/main.go:17"
+        },
+        {
+          "service_ref": "search",
+          "protocol": "http",
+          "interface": "/v1/search/sync",
+          "inject_env": "SEARCH_SERVICE_URL",
+          "provenance": "services/catalog/main.go:24"
         }
       ],
       "secrets": []
@@ -551,6 +551,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/payments/refund",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/disputes/main.go:24"
+        },
+        {
           "resource_ref": "db-disputes-temporal",
           "protocol": "temporal",
           "inject_env": "DISPUTES_TEMPORAL_URL",
@@ -558,13 +565,6 @@
             "DISPUTES_TEMPORAL_URL"
           ],
           "provenance": "services/disputes/main.go:19"
-        },
-        {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/refund",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/disputes/main.go:24"
         }
       ],
       "secrets": []
@@ -877,7 +877,12 @@
           "provenance": "services/orders/main.go:37"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "_DB_PASSWORD",
+          "provenance": "pkg/config/config.go:35"
+        }
+      ]
     },
     "payments": {
       "name": "payments",
@@ -930,12 +935,7 @@
           "provenance": "services/pricing/main.go:18"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "PRICING_VALKEY_ADDR",
-          "provenance": "services/pricing/main.go:17"
-        }
-      ]
+      "secrets": []
     },
     "recommendations": {
       "name": "recommendations",
@@ -1117,7 +1117,12 @@
           "provenance": "services/users/main.go:14"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "_DB_PASSWORD",
+          "provenance": "pkg/config/config.go:35"
+        }
+      ]
     },
     "warehouse": {
       "name": "warehouse",
@@ -1133,6 +1138,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "shipping",
+          "protocol": "http",
+          "interface": "/v1/shipments/create",
+          "inject_env": "SHIPPING_SERVICE_URL",
+          "provenance": "services/warehouse/main.go:24"
+        },
+        {
           "resource_ref": "db-warehouse-rabbitmq",
           "protocol": "rabbitmq",
           "inject_env": "WAREHOUSE_RABBITMQ_URL",
@@ -1140,13 +1152,6 @@
             "WAREHOUSE_RABBITMQ_URL"
           ],
           "provenance": "services/warehouse/main.go:17"
-        },
-        {
-          "service_ref": "shipping",
-          "protocol": "http",
-          "interface": "/v1/shipments/create",
-          "inject_env": "SHIPPING_SERVICE_URL",
-          "provenance": "services/warehouse/main.go:24"
         }
       ],
       "secrets": []

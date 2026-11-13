@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/abhiudayg/anode/internal/iag"
@@ -47,7 +48,13 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 	s.colorIdx++
 	s.mu.Unlock()
 
-	entryDir := filepath.Join(s.rootDir, svc.Entrypoint)
+	entryDir, err := iag.SafeResolvePath(s.rootDir, svc.Entrypoint)
+	if err != nil {
+		return fmt.Errorf("invalid service entrypoint for %s: %w", svc.Name, err)
+	}
+	if err := iag.ValidateIdentifier("service", svc.Name); err != nil {
+		return err
+	}
 	absRoot, _ := filepath.Abs(s.rootDir)
 	binDir := filepath.Join(absRoot, ".verify", "output")
 	_ = os.MkdirAll(binDir, 0755)
@@ -63,7 +70,19 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 	svcCtx, cancel := context.WithCancel(ctx)
 	cmd := exec.CommandContext(svcCtx, binPath)
 	cmd.Dir = entryDir
-	cmd.Env = os.Environ()
+
+	// Secure hermetic environment: filter host variables to prevent credential leakage
+	var safeEnv []string
+	allowedPrefixes := []string{"PATH=", "HOME=", "TMPDIR=", "USER=", "LANG=", "LC_", "TERM="}
+	for _, e := range os.Environ() {
+		for _, prefix := range allowedPrefixes {
+			if strings.HasPrefix(e, prefix) {
+				safeEnv = append(safeEnv, e)
+				break
+			}
+		}
+	}
+	cmd.Env = safeEnv
 	for k, v := range env {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
 	}

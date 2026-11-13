@@ -219,6 +219,7 @@ Anode provides automated provisioning scripts for spinning up and configuring te
 | `anode dev [PATH]` | Allocates free loopback ports, provisions local DBs, runs migrations, and supervises processes. |
 | `anode deploy TARGET [PATH]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
 | `anode run TARGET [PATH]` | Drop-in alias for `anode deploy` (Docker CLI parity). |
+| `anode doctor [TARGET] [PATH]` | Pre-flight verification of Go toolchain, dynamic loopbacks, container engine, and remote VPS. |
 | `anode catalog [PATH]` | Inspects 28+ built-in stateful drivers and merges repo-level overrides (`anode.catalog.yaml`). |
 | `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
 | `anode version` | Displays the current Anode release version. |

@@ -90,18 +90,18 @@
       ],
       "bindings": [
         {
-          "service_ref": "orders",
-          "protocol": "http",
-          "interface": "/v1/orders",
-          "inject_env": "ORDERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:26"
-        },
-        {
           "service_ref": "auth",
           "protocol": "http",
           "interface": "/v1/auth/token",
           "inject_env": "AUTH_SERVICE_URL",
           "provenance": "services/apigateway/main.go:20"
+        },
+        {
+          "service_ref": "orders",
+          "protocol": "http",
+          "interface": "/v1/orders",
+          "inject_env": "ORDERS_SERVICE_URL",
+          "provenance": "services/apigateway/main.go:26"
         }
       ],
       "secrets": []
@@ -197,6 +197,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "notifications",
+          "protocol": "http",
+          "interface": "/v1/notify/shipment",
+          "inject_env": "NOTIFICATIONS_SERVICE_URL",
+          "provenance": "services/fulfillment/main.go:22"
+        },
+        {
           "resource_ref": "db-fulfillment",
           "protocol": "postgres",
           "inject_env": "",
@@ -208,16 +215,14 @@
             "FULFILLMENT_SSLMODE"
           ],
           "provenance": "services/fulfillment/main.go:15"
-        },
-        {
-          "service_ref": "notifications",
-          "protocol": "http",
-          "interface": "/v1/notify/shipment",
-          "inject_env": "NOTIFICATIONS_SERVICE_URL",
-          "provenance": "services/fulfillment/main.go:22"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "_DB_PASSWORD",
+          "provenance": "pkg/config/loader.go:40"
+        }
+      ]
     },
     "inventory": {
       "name": "inventory",
@@ -315,7 +320,12 @@
           "provenance": "services/orders/main.go:21"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "_DB_PASSWORD",
+          "provenance": "pkg/config/loader.go:40"
+        }
+      ]
     },
     "payments": {
       "name": "payments",
@@ -364,7 +374,12 @@
           "provenance": "services/userprofile/main.go:14"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "_DB_PASSWORD",
+          "provenance": "pkg/config/loader.go:40"
+        }
+      ]
     }
   },
   "egress_rules": [

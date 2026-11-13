@@ -366,7 +366,20 @@ func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
 	if callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&
 		callee.Pkg.Pkg.Path() == "os" && callee.Name() == "Getenv" && len(call.Args) > 0 {
 		envName := ResolveConstantString(call.Args[0])
-		if strings.Contains(envName, "SECRET") || strings.Contains(envName, "KEY") || strings.Contains(envName, "TOKEN") {
+		upper := strings.ToUpper(envName)
+		// Exclude network address and URL endpoints
+		if strings.HasSuffix(upper, "_URL") || strings.HasSuffix(upper, "_ADDR") || strings.HasSuffix(upper, "_HOST") || strings.HasSuffix(upper, "_PORT") {
+			return
+		}
+		if strings.Contains(upper, "SECRET") ||
+			strings.Contains(upper, "TOKEN") ||
+			strings.Contains(upper, "PASSWORD") ||
+			strings.Contains(upper, "PASSWD") ||
+			strings.Contains(upper, "CREDENTIAL") ||
+			strings.Contains(upper, "PRIVATE_KEY") ||
+			strings.HasSuffix(upper, "_PASS") ||
+			strings.HasSuffix(upper, "_PWD") ||
+			strings.HasSuffix(upper, "_KEY") {
 			svc.Secrets = append(svc.Secrets, iag.SecretRef{
 				EnvVar:     envName,
 				Provenance: s.FormatPos(call.Pos()),

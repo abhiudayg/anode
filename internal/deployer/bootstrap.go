@@ -2,7 +2,7 @@ package deployer
 
 import (
 	"fmt"
-	"strings"
+	"path/filepath"
 
 	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
@@ -65,10 +65,11 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile) error {
 	return nil
 }
 
-// WriteRemoteFile writes content directly to a remote path over SSH
+// WriteRemoteFile securely writes content to a remote path via SCP binary streaming, eliminating here-doc shell injection
 func (b *Bootstrapper) WriteRemoteFile(content string, remotePath string) error {
-	escaped := strings.ReplaceAll(content, "'", "'\\''")
-	cmd := fmt.Sprintf("cat << 'EOF' > %s\n%s\nEOF", remotePath, escaped)
-	_, err := b.ssh.Run(cmd)
-	return err
+	dir := filepath.Dir(remotePath)
+	if _, err := b.ssh.Run(fmt.Sprintf("mkdir -p '%s'", dir)); err != nil {
+		return fmt.Errorf("failed to create remote directory %s: %w", dir, err)
+	}
+	return b.ssh.StreamBytes([]byte(content), remotePath, 0644)
 }

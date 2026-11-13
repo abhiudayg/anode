@@ -181,7 +181,12 @@
           "provenance": "services/accounts_service/repository/account_repo.go:24"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "ACCOUNTS_DB_PASSWORD",
+          "provenance": "services/accounts_service/config/config.go:36"
+        }
+      ]
     },
     "api_gateway": {
       "name": "api_gateway",
@@ -344,6 +349,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "payment_rails",
+          "protocol": "http",
+          "interface": "/v1/payments/execute",
+          "inject_env": "PAYMENT_RAILS_SERVICE_URL",
+          "provenance": "services/dispute_arbitration/main.go:28"
+        },
+        {
           "resource_ref": "db-disputes-temporal",
           "protocol": "temporal",
           "inject_env": "DISPUTES_TEMPORAL_URL",
@@ -351,13 +363,6 @@
             "DISPUTES_TEMPORAL_URL"
           ],
           "provenance": "services/dispute_arbitration/workflow/temporal.go:14"
-        },
-        {
-          "service_ref": "payment_rails",
-          "protocol": "http",
-          "interface": "/v1/payments/execute",
-          "inject_env": "PAYMENT_RAILS_SERVICE_URL",
-          "provenance": "services/dispute_arbitration/main.go:28"
         }
       ],
       "secrets": []
@@ -460,6 +465,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "api_gateway",
+          "protocol": "http",
+          "interface": "/v1/accounts/me",
+          "inject_env": "ACCOUNTS_SERVICE_URL",
+          "provenance": "services/loan_underwriting/main.go:28"
+        },
+        {
           "resource_ref": "db-loans-mongo",
           "protocol": "mongodb",
           "inject_env": "LOANS_MONGO_URL",
@@ -467,13 +479,6 @@
             "LOANS_MONGO_URL"
           ],
           "provenance": "services/loan_underwriting/store/mongo.go:14"
-        },
-        {
-          "service_ref": "api_gateway",
-          "protocol": "http",
-          "interface": "/v1/accounts/me",
-          "inject_env": "ACCOUNTS_SERVICE_URL",
-          "provenance": "services/loan_underwriting/main.go:28"
         }
       ],
       "secrets": []
@@ -569,15 +574,6 @@
       ],
       "bindings": [
         {
-          "resource_ref": "db-recon-kafka-brokers",
-          "protocol": "kafka",
-          "inject_env": "RECON_KAFKA_BROKERS",
-          "expanded_env": [
-            "RECON_KAFKA_BROKERS"
-          ],
-          "provenance": "services/reconciliation_job/engine/kafka.go:14"
-        },
-        {
           "resource_ref": "db-recon-clickhouse",
           "protocol": "clickhouse",
           "inject_env": "RECON_CLICKHOUSE_URL",
@@ -585,6 +581,15 @@
             "RECON_CLICKHOUSE_URL"
           ],
           "provenance": "services/reconciliation_job/olap/clickhouse.go:14"
+        },
+        {
+          "resource_ref": "db-recon-kafka-brokers",
+          "protocol": "kafka",
+          "inject_env": "RECON_KAFKA_BROKERS",
+          "expanded_env": [
+            "RECON_KAFKA_BROKERS"
+          ],
+          "provenance": "services/reconciliation_job/engine/kafka.go:14"
         }
       ],
       "secrets": []
@@ -632,15 +637,6 @@
       ],
       "bindings": [
         {
-          "resource_ref": "db-statements-rabbitmq",
-          "protocol": "rabbitmq",
-          "inject_env": "STATEMENTS_RABBITMQ_URL",
-          "expanded_env": [
-            "STATEMENTS_RABBITMQ_URL"
-          ],
-          "provenance": "services/statement_gen/queue/rabbit.go:14"
-        },
-        {
           "resource_ref": "db-statements-minio",
           "protocol": "minio",
           "inject_env": "STATEMENTS_MINIO_URL",
@@ -648,6 +644,15 @@
             "STATEMENTS_MINIO_URL"
           ],
           "provenance": "services/statement_gen/pdf/minio.go:14"
+        },
+        {
+          "resource_ref": "db-statements-rabbitmq",
+          "protocol": "rabbitmq",
+          "inject_env": "STATEMENTS_RABBITMQ_URL",
+          "expanded_env": [
+            "STATEMENTS_RABBITMQ_URL"
+          ],
+          "provenance": "services/statement_gen/queue/rabbit.go:14"
         }
       ],
       "secrets": []
@@ -707,12 +712,7 @@
           "provenance": "services/trading_engine/events/producer.go:14"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "TRADING_VALKEY_ADDR",
-          "provenance": "services/trading_engine/orderbook/cache.go:14"
-        }
-      ]
+      "secrets": []
     }
   },
   "egress_rules": [

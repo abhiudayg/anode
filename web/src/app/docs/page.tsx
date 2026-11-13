@@ -357,6 +357,7 @@ Options:
 Management Commands:
   cluster                Manage multi-node placement pools and zero-trust firewalls
   catalog                Inspect pluggable stateful catalog drivers and image matrix
+  doctor [TARGET] [PATH] Pre-flight verification of compiler, toolchain, loopback and VPS
 
 Commands:
   inspect [PATH]         Extract whole-program SSA topology and write anode.lock.json
@@ -500,6 +501,29 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com --dry-run</div>
                       <div className="pl-4 text-neutral-400"># Docker CLI Parity: &apos;anode run&apos; is a drop-in alias for deploy</div>
                       <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/omni_mesh_32</div>
+                    </div>
+                  </div>
+
+                  {/* anode doctor */}
+                  <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <code className="text-sm font-bold text-sky-400 font-mono-code">anode doctor [TARGET_OR_PATH] [PATH] [OPTIONS]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Pre-Flight &amp; Topology Linter</span>
+                    </div>
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Performs deep pre-flight sanity checks across 5 core pillars: Go toolchain (<code className="text-neutral-200">go &gt;= 1.27</code>), Linux cross-compilation capability (<code className="text-neutral-200">CGO_ENABLED=0</code>), dynamic loopback subnet allocation (<code className="text-neutral-200">127.0.0.0/8</code>), container daemon socket readiness for ephemeral DBs, migration asset verification, and hardened remote SSH/cgroups v2/systemd pre-flight with strict 3-second timeout root-cause triage.
+                    </p>
+                    <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-sky-300">--target &lt;user@host&gt;</span> : Remote VPS to perform 3s pre-flight SSH diagnosis</div>
+                      <div className="pl-4"><span className="text-sky-300">--strict</span> : Fail on warnings as well as fatal errors</div>
+                      <div className="pl-4"><span className="text-sky-300">-v, --verbose</span> : Print verbose trace logs</div>
+                      <div className="pl-4"><span className="text-sky-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode doctor</div>
+                      <div className="pl-4 text-emerald-400">anode doctor ./examples/sample-shop</div>
+                      <div className="pl-4 text-emerald-400">anode doctor root@my-vps.com</div>
+                      <div className="pl-4 text-emerald-400">anode doctor root@192.168.1.50 ./examples/omni_mesh_32 --strict</div>
                     </div>
                   </div>
 
