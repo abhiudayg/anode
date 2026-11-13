@@ -151,6 +151,13 @@ export function Footer() {
             </h3>
             <ul className="space-y-2.5 text-xs text-neutral-400">
               <li>
+                <Link href="/changelog" className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-emerald-400 font-medium">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Changelog &amp; Releases</span>
+                  <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-300 ml-auto font-mono-code">v1.0</span>
+                </Link>
+              </li>
+              <li>
                 <Link href="/blog" className="hover:text-purple-400 transition-colors flex items-center gap-1.5">
                   <Newspaper className="w-3.5 h-3.5 text-purple-400/70" />
                   <span>Benchmark Matrix</span>

@@ -15,9 +15,10 @@ export function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
+      setScrolled(window.scrollY > 10);
     };
-    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -38,8 +39,8 @@ export function Navbar() {
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-[#08090b]/85 backdrop-blur-xl border-b border-white/[0.08] shadow-2xl shadow-black/50 py-3.5"
-          : "bg-transparent py-5"
+          ? "bg-[#08090b]/95 backdrop-blur-2xl border-b border-white/[0.1] shadow-2xl shadow-black/80 py-3"
+          : "bg-[#08090b]/90 backdrop-blur-xl border-b border-white/[0.06] py-3.5 sm:py-4"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -60,7 +61,7 @@ export function Navbar() {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-5 xl:gap-7">
+          <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
             <Link
               href="/#topology"
               className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
@@ -535,6 +536,19 @@ export function Navbar() {
               className="block px-3 py-2 rounded-lg text-sm font-medium text-purple-400 bg-purple-950/30 border border-purple-800/40"
             >
               Engineering Blog
+            </Link>
+            <Link
+              href="/changelog"
+              onClick={() => setMobileMenuOpen(false)}
+              className="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium text-emerald-400 bg-emerald-950/30 border border-emerald-800/40"
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Changelog &amp; Releases</span>
+              </div>
+              <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+                v1.0.0
+              </span>
             </Link>
             <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between">
               <a
