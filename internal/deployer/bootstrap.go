@@ -6,6 +6,7 @@ import (
 
 	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
 type Bootstrapper struct {
@@ -17,7 +18,7 @@ func NewBootstrapper(sshClient Remote) *Bootstrapper {
 }
 
 // BootstrapServer idempotently sets up /var/lib/anode, Caddy, and stateful databases
-func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, secrets map[string]string) error {
+func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string) error {
 	fmt.Println("  ⚙ Verifying remote host directories...")
 	setupDirsCmd := `id -u anode &>/dev/null || useradd -r -s /bin/false anode && \
                      mkdir -p /var/lib/anode/bin \
@@ -49,24 +50,31 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, secrets map[strin
 	// 2. Provision Auto-Provisioned Stateful Dependencies via Pluggable Least-Privilege Catalog
 	reg := catalog.NewRegistry()
 	for resID, res := range lockfile.Resources {
-		if res.AutoProvision && res.Kind == "redis" {
-			port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
-			if err := b.provisionNativeRedis(resID, port, secrets[RedisPasswordKey()]); err != nil {
+		if !res.AutoProvision {
+			continue
+		}
+		store, ok := cfg.Stores[resID]
+		if !ok {
+			return fmt.Errorf("stores.%q is missing from anode.toml", resID)
+		}
+		driver := reg.Resolve(string(res.Kind))
+
+		if store.Runtime == projectconfig.RuntimeBinary {
+			port := driver.Networking.PrimaryPort
+			if err := b.provisionNativeRedis(resID, port, secrets[RedisPasswordKey()], store.Version); err != nil {
 				return err
 			}
 			continue
 		}
-		if !res.AutoProvision {
-			continue
-		}
 
-		driver := reg.Resolve(string(res.Kind))
-		version := driver.ResolveEffectiveVersion(res.EngineVersion)
-		image := driver.ResolveImage(version)
+		image := store.Image
+		if image == "" {
+			image = driver.ResolveImage(store.Version)
+		}
 		dataPath := fmt.Sprintf("/var/lib/anode/data/%s", resID)
 
-		fmt.Printf("  ⚙ Bootstrapping production stateful %s (%s, version: %s, image: %s)...\n", resID, res.Kind, version, image)
-		provisionCmd := driver.BuildProvisionCommand(resID, version, dataPath)
+		fmt.Printf("  ⚙ Bootstrapping production stateful %s (%s, version: %s, image: %s)...\n", resID, res.Kind, store.Version, image)
+		provisionCmd := driver.BuildProvisionCommand(resID, store.Version, dataPath)
 
 		if _, err := b.ssh.Run(provisionCmd); err != nil {
 			return fmt.Errorf("failed to provision stateful resource %s: %w", resID, err)

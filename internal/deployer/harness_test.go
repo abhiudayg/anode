@@ -8,8 +8,21 @@ import (
 	"testing"
 
 	"github.com/abhiudayg/anode/internal/analyzer"
+	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/deployer"
+	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/projectconfig"
 )
+
+func writeProjectConfig(t *testing.T, dir string, lock *iag.LockFile) {
+	t.Helper()
+	reg := catalog.NewRegistry()
+	if _, err := projectconfig.Ensure(dir, lock, func(kind string) string {
+		return reg.Resolve(kind).DefaultVersion
+	}); err != nil {
+		t.Fatalf("writing anode.toml: %v", err)
+	}
+}
 
 type fakeHost struct {
 	commands []string
@@ -83,6 +96,7 @@ func TestDeployCompletesAgainstFakeHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("analysis failed: %v", err)
 	}
+	writeProjectConfig(t, dir, lock)
 
 	host := newFakeHost()
 	coordinator := deployer.NewDeployCoordinator(dir, host, lock)
@@ -118,6 +132,7 @@ func TestDeployStopsWhenServiceDoesNotStart(t *testing.T) {
 	if err != nil {
 		t.Fatalf("analysis failed: %v", err)
 	}
+	writeProjectConfig(t, dir, lock)
 
 	host := newFakeHost()
 	host.failOn = "is-active"
@@ -137,6 +152,7 @@ func TestDeployRefusesMissingDatabaseValueBeforeTouchingHost(t *testing.T) {
 	if err != nil {
 		t.Fatalf("analysis failed: %v", err)
 	}
+	writeProjectConfig(t, dir, lock)
 
 	host := newFakeHost()
 	coordinator := deployer.NewDeployCoordinator(dir, host, lock)

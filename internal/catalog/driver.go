@@ -90,16 +90,6 @@ func (d *DriverSpec) ResolveImage(version string) string {
 	return fmt.Sprintf("%s:%s", d.Kind, targetVer)
 }
 
-// ResolveEffectiveVersion returns the chosen engine version.
-func (d *DriverSpec) ResolveEffectiveVersion(version string) string {
-	if version != "" {
-		return version
-	}
-	if d.DefaultVersion != "" {
-		return d.DefaultVersion
-	}
-	return "latest"
-}
 
 // BuildProvisionCommand synthesizes the Docker/Podman execution command enforcing least privilege.
 func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataDir string) string {

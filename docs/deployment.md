@@ -81,3 +81,7 @@ ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml
 ```
 
 The Ansible playbook and the Terraform cloud-init file ([`infra/terraform/cloud-init.yaml`](../infra/terraform/cloud-init.yaml)) install Caddy, create the `anode` user and directories, and check that cgroups v2 is enabled. They do not install Docker. Deploying still uses the steps in section 3.
+
+## Store versions and runtimes
+
+Deploy reads `anode.toml`, which `anode inspect` writes. See [`supported-profile.md`](supported-profile.md#versions-and-runtimes-anodetoml) for the rules. A missing or incomplete file stops the deploy before the host is changed.

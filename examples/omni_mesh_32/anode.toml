@@ -1,0 +1,155 @@
+# Anode project configuration.
+# Versions and runtimes are written by `anode inspect`. Edit them here, then redeploy.
+# runtime = "binary" installs a host binary; "docker" runs the store in a container.
+
+[stores."db-accounting-timescale"]
+runtime = "docker"
+version = "16"
+
+[stores."db-cms-postgres"]
+runtime = "docker"
+version = "16"
+
+[stores."db-coupons-postgres"]
+runtime = "docker"
+version = "16"
+
+[stores."db-inventory-mariadb"]
+runtime = "docker"
+version = "8.4"
+
+[stores."db-loyalty-postgres"]
+runtime = "docker"
+version = "16"
+
+[stores."db-orders-postgres"]
+runtime = "docker"
+version = "16"
+
+[stores."db-subscriptions-cockroach"]
+runtime = "docker"
+version = "16"
+
+[stores."db-users-postgres"]
+runtime = "docker"
+version = "16"
+
+[stores."redis-auth"]
+runtime = "binary"
+version = "7"
+
+[stores."redis-inventory-locks"]
+runtime = "binary"
+version = "7"
+
+[stores."redis-livechat"]
+runtime = "binary"
+version = "7"
+
+[stores."redis-loyalty"]
+runtime = "binary"
+version = "7"
+
+[stores."redis-pricing-valkey"]
+runtime = "docker"
+version = "7.2"
+
+[stores."redis-recs"]
+runtime = "binary"
+version = "7"
+
+[services."accounting"]
+runtime = "binary"
+
+[services."analytics"]
+runtime = "binary"
+
+[services."apigateway"]
+runtime = "binary"
+
+[services."auditlog"]
+runtime = "binary"
+
+[services."auth"]
+runtime = "binary"
+
+[services."catalog"]
+runtime = "binary"
+
+[services."cms"]
+runtime = "binary"
+
+[services."coupons"]
+runtime = "binary"
+
+[services."crm"]
+runtime = "binary"
+
+[services."disputes"]
+runtime = "binary"
+
+[services."documents"]
+runtime = "binary"
+
+[services."email"]
+runtime = "binary"
+
+[services."fraud"]
+runtime = "binary"
+
+[services."inventory"]
+runtime = "binary"
+
+[services."livechat"]
+runtime = "binary"
+
+[services."loyalty"]
+runtime = "binary"
+
+[services."media"]
+runtime = "binary"
+
+[services."metrics"]
+runtime = "binary"
+
+[services."notifications"]
+runtime = "binary"
+
+[services."orders"]
+runtime = "binary"
+
+[services."payments"]
+runtime = "binary"
+
+[services."pricing"]
+runtime = "binary"
+
+[services."recommendations"]
+runtime = "binary"
+
+[services."reviews"]
+runtime = "binary"
+
+[services."search"]
+runtime = "binary"
+
+[services."shipping"]
+runtime = "binary"
+
+[services."subscriptions"]
+runtime = "binary"
+
+[services."tax"]
+runtime = "binary"
+
+[services."users"]
+runtime = "binary"
+
+[services."warehouse"]
+runtime = "binary"
+
+[services."webhooks"]
+runtime = "binary"
+
+[services."workflows"]
+runtime = "binary"

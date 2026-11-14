@@ -263,7 +263,7 @@ drivers:
   keydb:
     kind: keydb
     category: cache
-    default_version: "latest"
+    default_version: ""
     runtime:
       image_template: "eqalpha/keydb:{{.Version}}"
       command: ["keydb-server", "/etc/keydb/keydb.conf", "--appendonly", "yes"]
@@ -288,7 +288,7 @@ drivers:
   dragonfly:
     kind: dragonfly
     category: cache
-    default_version: "latest"
+    default_version: "v1.27.1"
     runtime:
       image_template: "docker.dragonflydb.io/dragonflydb/dragonfly:{{.Version}}"
       data_mount: "/data"

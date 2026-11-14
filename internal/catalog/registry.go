@@ -104,7 +104,7 @@ func (r *Registry) Resolve(kind string) *DriverSpec {
 	return &DriverSpec{
 		Kind:           normalized,
 		Category:       "generic_stateful",
-		DefaultVersion: "latest",
+		DefaultVersion: "",
 		Runtime: RuntimeSpec{
 			ImageTemplate: fmt.Sprintf("%s:{{.Version}}", normalized),
 			DataMount:     fmt.Sprintf("/var/lib/%s/data", normalized),
