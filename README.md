@@ -300,7 +300,7 @@ MIT License. See [LICENSE](LICENSE) for details.
 - Run `anode inspect` only on code you own. The analysis loads packages with the Go toolchain, which can run code from the repository.
 - `anode dev` uses local Postgres containers with the credentials `postgres:postgres`, bound to `127.0.0.1` only.
 - Applications may print secrets to their own logs. Anode does not filter application output.
-- Deploys should use a dedicated account. Run `anode host-setup root@host` once to create one with passwordless sudo, then deploy as `account@host`. Passwordless sudo is root-equivalent; scoping it to a privileged helper is future work.
+- Deploys should use a dedicated account. Run `anode host-setup root@host` once to create one with passwordless sudo, then deploy as `account@host`. Passwordless sudo is root-equivalent and is an accepted risk for single-owner hosts; see docs/security-audit.md.
 - Keep `.env` at mode `600`. Deploys refuse a `.env` readable by other users.
 - Deploy to an IP address serves plain HTTP. Pass `--domain` for TLS, or `--plain-http` to accept plain HTTP.
 - See `docs/security-audit.md` for the audit record and open items.
