@@ -76,7 +76,7 @@ export default function DocsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Interactive Command Generator States
-  const [cmdType, setCmdType] = useState<"deploy" | "logs" | "ps" | "doctor" | "dev" | "inspect">("deploy");
+  const [cmdType, setCmdType] = useState<"deploy" | "logs" | "ps" | "doctor" | "dev" | "inspect" | "cluster" | "catalog">("deploy");
 
   // deploy
   const [cliHost, setCliHost] = useState("root@my-vps.com");
@@ -117,6 +117,17 @@ export default function DocsPage() {
 
   // inspect
   const [inspectPath, setInspectPath] = useState("");
+
+  // cluster
+  const [clusterMode, setClusterMode] = useState<"plan" | "firewall" | "init">("plan");
+  const [clusterPath, setClusterPath] = useState("");
+  const [clusterInventory, setClusterInventory] = useState("");
+  const [clusterJson, setClusterJson] = useState(false);
+
+  // catalog
+  const [catalogDriver, setCatalogDriver] = useState("");
+  const [catalogPath, setCatalogPath] = useState("");
+  const [catalogJson, setCatalogJson] = useState(false);
 
   const docSections = [
     {
@@ -494,6 +505,32 @@ Run 'anode COMMAND --help' for more information on a command.`}
                     if (inspectPath.trim()) parts.push(inspectPath.trim());
                     generatedCommand = parts.join(" ");
                     commandExplanation = "Compiles whole-program SSA and VTA call graphs, resolves HTTP/gRPC choke points, and generates anode.lock.json.";
+                  } else if (cmdType === "cluster") {
+                    if (clusterMode === "init") {
+                      const parts = ["anode cluster init"];
+                      if (clusterPath.trim()) parts.push(clusterPath.trim());
+                      generatedCommand = parts.join(" ");
+                      commandExplanation = "Scaffolds an annotated starter anode.cluster.yaml fleet inventory in the project root.";
+                    } else {
+                      const parts = ["anode cluster"];
+                      if (clusterPath.trim()) parts.push(clusterPath.trim());
+                      if (clusterInventory.trim()) parts.push(`--inventory=${clusterInventory.trim()}`);
+                      if (clusterMode === "firewall") parts.push("--firewall");
+                      if (clusterJson) parts.push("--json");
+                      generatedCommand = parts.join(" ");
+                      commandExplanation = clusterMode === "firewall"
+                        ? "Synthesizes atomic zero-trust Linux nftables packet filter rules for every node in the cluster fleet."
+                        : "Loads cluster fleet inventory, bin-packs microservices based on RAM/CPU limits, and calculates utilization.";
+                    }
+                  } else if (cmdType === "catalog") {
+                    const parts = ["anode catalog"];
+                    if (catalogDriver.trim()) parts.push(catalogDriver.trim());
+                    if (catalogPath.trim()) parts.push(catalogPath.trim());
+                    if (catalogJson) parts.push("--json");
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = catalogDriver.trim()
+                      ? `Inspects runtime container specs, injected connection variables, and readiness probes for ${catalogDriver.trim()}.`
+                      : "Lists all 26+ built-in pre-audited stateful drivers with image tags, ports, and override provenance.";
                   }
 
                   return (
@@ -517,6 +554,8 @@ Run 'anode COMMAND --help' for more information on a command.`}
                           { id: "doctor" as const, label: "doctor", badge: "Diagnostics" },
                           { id: "dev" as const, label: "dev", badge: "Local" },
                           { id: "inspect" as const, label: "inspect", badge: "SSA" },
+                          { id: "cluster" as const, label: "cluster", badge: "Fleet" },
+                          { id: "catalog" as const, label: "catalog", badge: "Drivers" },
                         ].map((tab) => {
                           const isActive = cmdType === tab.id;
                           return (
@@ -922,6 +961,115 @@ Run 'anode COMMAND --help' for more information on a command.`}
                         </div>
                       )}
 
+                      {cmdType === "cluster" && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-neutral-400 text-xs font-mono-code">Operation Mode:</span>
+                            <div className="inline-flex rounded-lg border border-white/[0.1] bg-black/60 p-0.5 text-xs font-mono-code">
+                              <button
+                                type="button"
+                                onClick={() => setClusterMode("plan")}
+                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "plan" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Placement Matrix
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setClusterMode("firewall")}
+                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "firewall" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                nftables Firewall
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setClusterMode("init")}
+                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "init" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Init Fleet Inventory
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Project Path (Optional):</label>
+                              <input
+                                type="text"
+                                value={clusterPath}
+                                onChange={(e) => setClusterPath(e.target.value)}
+                                placeholder=". or ./examples/sample-shop"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                            {clusterMode !== "init" && (
+                              <div>
+                                <label className="text-neutral-400 block mb-1 font-mono-code">Custom Inventory (Optional):</label>
+                                <input
+                                  type="text"
+                                  value={clusterInventory}
+                                  onChange={(e) => setClusterInventory(e.target.value)}
+                                  placeholder="anode.cluster.yaml"
+                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {clusterMode !== "init" && (
+                            <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1 border-t border-white/[0.04]">
+                              <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                                <input
+                                  type="checkbox"
+                                  checked={clusterJson}
+                                  onChange={(e) => setClusterJson(e.target.checked)}
+                                  className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                />
+                                <span>--json (structured placement &amp; firewall metrics)</span>
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {cmdType === "catalog" && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Driver Kind (Optional):</label>
+                              <input
+                                type="text"
+                                value={catalogDriver}
+                                onChange={(e) => setCatalogDriver(e.target.value)}
+                                placeholder="e.g. postgres, redis, kafka (empty for all)"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Project Path (Optional):</label>
+                              <input
+                                type="text"
+                                value={catalogPath}
+                                onChange={(e) => setCatalogPath(e.target.value)}
+                                placeholder=". or ./my-custom-project"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1 border-t border-white/[0.04]">
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={catalogJson}
+                                onChange={(e) => setCatalogJson(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>--json (structured driver specification)</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Generated Command Box */}
                       <div className="space-y-2 pt-1">
                         <div className="p-3.5 rounded-lg bg-black/90 border border-cyan-500/40 flex items-center justify-between font-mono-code text-xs text-cyan-300 shadow-inner">
@@ -1105,35 +1253,48 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   {/* anode catalog */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-amber-400 font-mono-code">anode catalog [PATH]</code>
+                      <code className="text-sm font-bold text-amber-400 font-mono-code">anode catalog [OPTIONS] [DRIVER] [PATH]</code>
                       <span className="text-[11px] font-mono-code text-neutral-500">Pluggable Stateful Catalog</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
-                      Lists all 26+ built-in pre-audited stateful infrastructure drivers (PostgreSQL, MySQL, Redis, Kafka, ScyllaDB, MinIO, Temporal, Qdrant, etc.) and merges repo-level overrides (<code className="text-neutral-200">anode.catalog.yaml</code>).
+                      Inspects the built-in catalog of 26+ pre-audited stateful infrastructure drivers (PostgreSQL, MySQL, Redis, Kafka, ScyllaDB, MinIO, Temporal, Qdrant, etc.) and audit override provenance from repo-level <code className="text-neutral-200">anode.catalog.yaml</code>. Supports deep inspection cards for individual drivers and structured JSON export.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-amber-300">--json</span> : Output catalog specification or individual driver spec as structured JSON</div>
                       <div className="pl-4"><span className="text-amber-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode catalog</div>
-                      <div className="pl-4 text-emerald-400">anode catalog ./my-custom-project</div>
+                      <div className="pl-4 text-emerald-400">anode catalog postgres</div>
+                      <div className="pl-4 text-emerald-400">anode catalog redis ./my-custom-project</div>
+                      <div className="pl-4 text-emerald-400">anode catalog postgres --json</div>
+                      <div className="pl-4 text-emerald-400">anode catalog --json</div>
                     </div>
                   </div>
 
                   {/* anode cluster */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-indigo-400 font-mono-code">anode cluster</code>
-                      <span className="text-[11px] font-mono-code text-neutral-500">Multi-Node Placement</span>
+                      <code className="text-sm font-bold text-indigo-400 font-mono-code">anode cluster [COMMAND / OPTIONS] [PATH]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Multi-Node Fleet Placement</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
-                      Inspects multi-node VPS pools, calculates greedy bin-packing service placement based on RAM/CPU quotas, and outputs compiler-synthesized zero-trust Linux <code className="text-neutral-200">nftables</code> packet filter rules.
+                      Orchestrates bare-metal and Linux VPS node pools defined in <code className="text-neutral-200">anode.cluster.yaml</code>. Performs greedy Best-Fit Decreasing (BFD) bin-packing against <code className="text-cyan-300">anode.lock.json</code> based on service ingress roles and cgroups v2 RAM limits, and synthesizes atomic zero-trust Linux <code className="text-neutral-200">nftables</code> packet filter rules.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
-                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="text-neutral-300 font-semibold mb-1">Commands:</div>
+                      <div className="pl-4"><span className="text-indigo-300">init</span> : Scaffold a starter annotated anode.cluster.yaml fleet inventory in the project root</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-indigo-300">--inventory &lt;PATH&gt;</span> : Custom path to cluster fleet inventory YAML</div>
+                      <div className="pl-4"><span className="text-indigo-300">--firewall</span> : Synthesize and display atomic Linux nftables packet filter rules for every node</div>
+                      <div className="pl-4"><span className="text-indigo-300">--json</span> : Output placement plan, node capacity, and firewall rules as JSON</div>
                       <div className="pl-4"><span className="text-indigo-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode cluster</div>
+                      <div className="pl-4 text-emerald-400">anode cluster init</div>
+                      <div className="pl-4 text-emerald-400">anode cluster --firewall</div>
+                      <div className="pl-4 text-emerald-400">anode cluster ./examples/sample-shop</div>
+                      <div className="pl-4 text-emerald-400">anode cluster --inventory=/etc/anode/prod-cluster.yaml --json</div>
                     </div>
                   </div>
 

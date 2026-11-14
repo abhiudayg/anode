@@ -20,11 +20,13 @@ type CatalogFile struct {
 
 type Registry struct {
 	drivers map[string]*DriverSpec
+	sources map[string]string
 }
 
 func NewRegistry() *Registry {
 	r := &Registry{
 		drivers: make(map[string]*DriverSpec),
+		sources: make(map[string]string),
 	}
 	r.loadEmbeddedDefaults()
 	return r
@@ -38,6 +40,7 @@ func (r *Registry) loadEmbeddedDefaults() {
 				v.Kind = k
 			}
 			r.drivers[k] = v
+			r.sources[k] = "embedded"
 		}
 	}
 }
@@ -68,6 +71,7 @@ func (r *Registry) loadFromPath(path string) {
 				v.Kind = k
 			}
 			r.drivers[k] = v
+			r.sources[k] = path
 		}
 	}
 }
@@ -137,4 +141,29 @@ func (r *Registry) ListKinds() []string {
 	}
 	sort.Strings(kinds)
 	return kinds
+}
+
+// Source returns the origin ("embedded" or filesystem path) of a registered driver.
+func (r *Registry) Source(kind string) string {
+	normalized := strings.ToLower(strings.TrimSpace(kind))
+	if src, ok := r.sources[normalized]; ok {
+		return src
+	}
+	return "dynamic_fallback"
+}
+
+// Get returns the registered driver spec and whether it was explicitly defined.
+func (r *Registry) Get(kind string) (*DriverSpec, bool) {
+	normalized := strings.ToLower(strings.TrimSpace(kind))
+	spec, ok := r.drivers[normalized]
+	return spec, ok
+}
+
+// All returns a copy of all registered drivers.
+func (r *Registry) All() map[string]*DriverSpec {
+	res := make(map[string]*DriverSpec, len(r.drivers))
+	for k, v := range r.drivers {
+		res[k] = v
+	}
+	return res
 }
