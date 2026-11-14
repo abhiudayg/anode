@@ -193,13 +193,13 @@ func (e *Engine) WaitForServices(ctx context.Context, timeout time.Duration) err
 			continue
 		}
 		port := e.allocatedPorts[name]
-		if !WaitForHealth(ctx, fmt.Sprintf("http://127.0.0.1:%d/", port), timeout) {
+		if !WaitForHealth(ctx, fmt.Sprintf("http://127.0.0.1:%d%s", port, healthPath), timeout) {
 			notReady = append(notReady, fmt.Sprintf("%s (port %d)", name, port))
 		}
 	}
 	if len(notReady) > 0 {
 		sort.Strings(notReady)
-		return fmt.Errorf("services did not answer HTTP within %v: %s", timeout, strings.Join(notReady, ", "))
+		return fmt.Errorf("services did not pass GET %s within %v: %s", healthPath, timeout, strings.Join(notReady, ", "))
 	}
 	return nil
 }
@@ -213,8 +213,11 @@ func hasHTTPIngress(svc iag.Service) bool {
 	return false
 }
 
-// WaitForHealth reports whether url answers with any HTTP response. A refused, reset, or dropped connection is not
-// an answer, so a port that accepts TCP but does not serve HTTP is not ready.
+// healthPath is the route every HTTP service must serve, with a status below 400, before dev reports it up.
+const healthPath = "/healthz"
+
+// WaitForHealth reports whether GET url returns a status below 400 within timeout. A refused, reset, or dropped
+// connection, and an error status such as 404 or 500, are not ready.
 func WaitForHealth(ctx context.Context, url string, timeout time.Duration) bool {
 	client := &http.Client{Timeout: time.Second, CheckRedirect: func(*http.Request, []*http.Request) error {
 		return http.ErrUseLastResponse
@@ -232,7 +235,9 @@ func WaitForHealth(ctx context.Context, url string, timeout time.Duration) bool 
 			resp, err := client.Do(req)
 			if err == nil {
 				_ = resp.Body.Close()
-				return true
+				if resp.StatusCode < http.StatusBadRequest {
+					return true
+				}
 			}
 			time.Sleep(200 * time.Millisecond)
 		}

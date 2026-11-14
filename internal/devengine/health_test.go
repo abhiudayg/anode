@@ -9,13 +9,28 @@ import (
 	"time"
 )
 
-func TestWaitForHealthAcceptsAnyHTTPResponse(t *testing.T) {
+func serverWithStatus(t *testing.T, status int) *httptest.Server {
+	t.Helper()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
+		w.WriteHeader(status)
 	}))
-	defer server.Close()
-	if !WaitForHealth(context.Background(), server.URL+"/", 2*time.Second) {
-		t.Fatalf("a service that answers HTTP, even with 404, is ready")
+	t.Cleanup(server.Close)
+	return server
+}
+
+func TestWaitForHealthAcceptsSuccessfulHealthRoute(t *testing.T) {
+	server := serverWithStatus(t, http.StatusOK)
+	if !WaitForHealth(context.Background(), server.URL+healthPath, 2*time.Second) {
+		t.Fatalf("a health route that returns 200 is ready")
+	}
+}
+
+func TestWaitForHealthRejectsErrorStatuses(t *testing.T) {
+	for _, status := range []int{http.StatusNotFound, http.StatusInternalServerError} {
+		server := serverWithStatus(t, status)
+		if WaitForHealth(context.Background(), server.URL+healthPath, time.Second) {
+			t.Errorf("a health route that returns %d is not ready", status)
+		}
 	}
 }
 
@@ -34,7 +49,7 @@ func TestWaitForHealthRejectsPortThatDropsConnections(t *testing.T) {
 			_ = conn.Close()
 		}
 	}()
-	url := "http://" + listener.Addr().String() + "/"
+	url := "http://" + listener.Addr().String() + healthPath
 	if WaitForHealth(context.Background(), url, time.Second) {
 		t.Fatalf("a port that accepts TCP and drops the connection is not a ready service")
 	}

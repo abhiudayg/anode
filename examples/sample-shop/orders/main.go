@@ -53,6 +53,9 @@ func main() {
 	defer db.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/orders", func(w http.ResponseWriter, r *http.Request) {
 		// Outbound service invocation to payments
 		req, _ := http.NewRequestWithContext(r.Context(), "POST", cfg.PaymentService+"/v1/charges", nil)

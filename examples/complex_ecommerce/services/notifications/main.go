@@ -29,6 +29,9 @@ func main() {
 	cfg := loadConfig()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/notifications/email", func(w http.ResponseWriter, r *http.Request) {
 		// External call to SendGrid
 		req, _ := http.NewRequestWithContext(r.Context(), "POST", "https://api.sendgrid.com/v3/mail/send", nil)
