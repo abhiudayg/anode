@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/abhiudayg/anode/internal/sshauth"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
@@ -226,8 +226,8 @@ func CheckRemoteTarget(ctx context.Context, target string) []CheckResult {
 			Category:    CategoryRemote,
 			Name:        "Privilege & User Sandboxing",
 			Status:      StatusWarn,
-			Message:     fmt.Sprintf("Connected as non-root UID %s; deploying system units may require sudo permissions", uid),
-			Remediation: "Ensure current user has passwordless sudo for systemctl and /var/lib/anode, or connect as root.",
+			Message:     fmt.Sprintf("Connected as non-root UID %s; deploys run system commands through sudo (not verified by this check)", uid),
+			Remediation: "Run 'anode host-setup root@host' once to configure a deploy account with passwordless sudo.",
 		})
 	}
 
@@ -302,34 +302,12 @@ func classifyTCPError(target, host string, err error) CheckResult {
 }
 
 func authenticateSSHOnConn(conn net.Conn, user, host string) (*ssh.Client, time.Duration, error) {
-	var authMethods []ssh.AuthMethod
-
-	// 1. Try SSH Agent socket
-	if sock := os.Getenv("SSH_AUTH_SOCK"); sock != "" {
-		if agentConn, err := net.Dial("unix", sock); err == nil {
-			authMethods = append(authMethods, ssh.PublicKeysCallback(agent.NewClient(agentConn).Signers))
-		}
-	}
-
-	// 2. Try default key files
-	home, _ := os.UserHomeDir()
-	keyFiles := []string{
-		filepath.Join(home, ".ssh", "id_ed25519"),
-		filepath.Join(home, ".ssh", "id_rsa"),
-	}
-
-	for _, keyPath := range keyFiles {
-		if keyData, err := os.ReadFile(keyPath); err == nil {
-			if signer, err := ssh.ParsePrivateKey(keyData); err == nil {
-				authMethods = append(authMethods, ssh.PublicKeys(signer))
-			}
-		}
-	}
-
-	if len(authMethods) == 0 {
+	authMethods, err := sshauth.AuthMethods()
+	if err != nil {
 		return nil, 0, fmt.Errorf("no_ssh_keys_found")
 	}
 
+	home, _ := os.UserHomeDir()
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
 	_ = os.MkdirAll(filepath.Dir(knownHostsPath), 0700)
 	if f, err := os.OpenFile(knownHostsPath, os.O_CREATE|os.O_WRONLY, 0600); err == nil {

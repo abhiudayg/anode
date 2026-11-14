@@ -1,0 +1,1 @@
+{"database":{"dsn":"postgres://app@127.0.0.1/app"},"redis":{"addr":"127.0.0.1:6379"}}

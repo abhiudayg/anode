@@ -1,25 +1,31 @@
-# Real-World Open-Source Go Backend Benchmarks
+# Real-World Go Projects as Analysis Inputs
 
-This benchmark suite demonstrates **Anode's** capability to analyze, lock, and plan production deployments for **10 unmodified, world-class Go backend applications**.
+These are 10 unmodified open-source Go projects used as inputs for Anode's inspection. Their results are not recorded in this folder, so run `anode inspect` to see what Anode finds today.
 
-Without modifying a single line of business logic or creating manual Dockerfiles / Helm charts, Anode's SSA compiler automatically extracts full service topologies, backing stateful primitives, ingress HTTP/gRPC interfaces, environment secrets, and egress boundaries.
+Anode reads the code and reports what it can resolve, and reports what it cannot.
 
 ---
 
-## 📊 Comparative Benchmark Matrix
+## Real-world example projects
 
-| # | Project | Domain | Detected Backing Primitives | Ingress Protocols | External Egress / Third-Party APIs | Architecture & Deployment Analysis |
-| :- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **1** | [**croc**](./croc) | P2P Encrypted File Relay | None (Stateless PAKE relay) | HTTP, TCP, WebSocket | Bootstrap DNS, DERP latency probes | [croc Deployment Analysis](./croc/DEPLOYMENT_ANALYSIS.md) |
-| **2** | [**glance**](./glance) | Dashboard & Feed Aggregator | None (Stateless YAML engine) | HTTP (`PORT`) | Twitch GQL, Reddit API, Open-Meteo | [glance Deployment Analysis](./glance/DEPLOYMENT_ANALYSIS.md) |
-| **3** | [**1Panel**](./1Panel) | Linux Server Management Panel | SQLite / PostgreSQL | HTTP (`PORT`), Gin | 1Panel App Hub (`1panel.cn`) | [1Panel Deployment Analysis](./1Panel/DEPLOYMENT_ANALYSIS.md) |
-| **4** | [**restic**](./restic) | Encrypted Backup Engine | Azure Blob, AWS S3, MinIO | HTTP (`PORT`) | Azure Identity, Google Cloud Monitoring | [restic Deployment Analysis](./restic/DEPLOYMENT_ANALYSIS.md) |
-| **5** | [**filebrowser**](./filebrowser) | Web File Manager & Streaming | Redis (Upload cache) | HTTP (`PORT`) | None (Self-contained) | [filebrowser Deployment Analysis](./filebrowser/DEPLOYMENT_ANALYSIS.md) |
-| **6** | [**ntfy**](./ntfy) | HTTP Pub-Sub Push Notifications | SQLite (Cache & webpush store) | HTTP, WebSockets | Firebase Cloud Messaging, GCE Metadata | [ntfy Deployment Analysis](./ntfy/DEPLOYMENT_ANALYSIS.md) |
-| **7** | [**netbird**](./netbird) | WireGuard Zero-Trust Mesh | PostgreSQL, Redis, SQLite | HTTP, gRPC, QUIC | AWS Route53, STUN, OIDC IdP Providers | [netbird Deployment Analysis](./netbird/DEPLOYMENT_ANALYSIS.md) |
-| **8** | [**wttr.in**](./wttr.in) | Weather Forecast Server Backend | SQLite / PostgreSQL (GeoIP cache) | HTTP (`PORT`) | Upstream meteorological feeds | [wttr.in Deployment Analysis](./wttr.in/DEPLOYMENT_ANALYSIS.md) |
-| **9** | [**cloudreve**](./cloudreve) | Multi-Cloud Storage & File Sharing | MySQL / PostgreSQL (Atlas Ent ORM) | HTTP (`PORT`) | AWS S3, Aliyun OSS, OneDrive | [cloudreve Deployment Analysis](./cloudreve/DEPLOYMENT_ANALYSIS.md) |
-| **10** | [**navidrome**](./navidrome) | Music Streaming & Subsonic API | SQLite / PostgreSQL | HTTP (`PORT`), Chi | Deezer, Last.fm, ListenBrainz | [navidrome Deployment Analysis](./navidrome/DEPLOYMENT_ANALYSIS.md) |
+These are third-party Go projects copied here as analysis inputs. This folder does not record their analysis results, because those results change as the analyzer changes. To see what Anode finds in a project today, run `anode inspect` on it:
+
+```bash
+anode inspect ./examples/realworld_benchmarks/<project>
+```
+
+| # | Project | Domain |
+|---|---|---|
+| 1 | [croc](./croc) | P2P encrypted file relay |
+| 2 | [glance](./glance) | Dashboard and feed aggregator |
+| 3 | [1Panel](./1Panel) | Linux server management panel |
+| 4 | [restic](./restic) | Encrypted backup engine |
+| 5 | [filebrowser](./filebrowser) | Web file manager |
+| 6 | [ntfy](./ntfy) | HTTP pub-sub push notifications |
+| 7 | [netbird](./netbird) | WireGuard zero-trust mesh |
+| 8 | [wttr.in](./wttr.in) | Weather forecast server backend |
+| 9 | [cloudreve](./cloudreve) | Multi-cloud storage and file sharing |
+| 10 | [navidrome](./navidrome) | Music streaming and Subsonic API |
 
 ---
 
@@ -43,18 +49,18 @@ Real-world codebases feature complex recursive control-flow graphs (Phi nodes in
 - **Cycle-Protected Backward Taint Tracing**: Recursion depth limiting and visited-set tracking to handle deeply nested ASTs without stack overflows.
 - **Transitive Callgraph Reachability**: Connects `os.Getenv` sources through application layers (`config` ➔ `store` ➔ `handler` ➔ `mux.HandleFunc`).
 
-### 4. Zero-Downtime Systemd & Caddy Synthesis
-Each benchmark includes a comprehensive deployment specification detailing:
-- Conflict-free high-port allocations (`21040+`).
+### 4. Systemd and Caddy Synthesis
+A deploy generates, for each service:
+- Ports from `21040` upward, recorded per host so services do not collide.
 - Localhost loopback isolation (`127.0.0.1`).
-- Least-privilege systemd units (`ProtectSystem=strict`, `NoNewPrivileges=true`, `User=anode`).
-- Zero-downtime reverse-proxy cutovers via Caddy.
+- A systemd unit with `DynamicUser=yes`, `ProtectSystem=strict`, and `NoNewPrivileges=true`.
+- A Caddy reverse-proxy route to the service.
 
 ---
 
-## 🚀 Running Verification on Any Benchmark
+## 🚀 Running Verification on Any Project
 
-To re-run Anode's compiler inspection and regenerate lockfiles for any benchmark:
+To re-run Anode's compiler inspection and regenerate lockfiles for any project:
 
 ```bash
 # Example: Inspect Navidrome

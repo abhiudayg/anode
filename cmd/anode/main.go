@@ -27,6 +27,7 @@ import (
 )
 
 const LockFileName = "anode.lock.json"
+
 var Version = "1.3.0"
 
 func main() {
@@ -160,6 +161,48 @@ func main() {
 			}
 		}
 
+	case "rollback":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: anode rollback <user>")
+			os.Exit(1)
+		}
+		client, err := deployer.DialSSH(os.Args[2])
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Rollback failed:", err)
+			os.Exit(1)
+		}
+		previous, err := deployer.Rollback(client)
+		_ = client.Close()
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Rollback failed:", err)
+			os.Exit(1)
+		}
+		fmt.Printf("Rolled back to release %s\n", previous)
+	case "host-setup":
+		if len(os.Args) < 3 {
+			fmt.Println("Usage: anode host-setup root [--user NAME]")
+			os.Exit(1)
+		}
+		deployUser := "anode-deploy"
+		for i := 3; i < len(os.Args); i++ {
+			if os.Args[i] == "--user" && i+1 < len(os.Args) {
+				i++
+				deployUser = os.Args[i]
+			}
+		}
+		rootClient, err := deployer.DialSSH(os.Args[2])
+		if err != nil {
+			log.Fatalf("Host setup failed: %v", err)
+		}
+		defer rootClient.Close()
+		keyData, err := os.ReadFile(filepath.Join(os.Getenv("HOME"), ".ssh", "id_ed25519.pub"))
+		if err != nil {
+			log.Fatalf("Host setup needs ~/.ssh/id_ed25519.pub: %v", err)
+		}
+		if err := deployer.HostSetup(rootClient, deployUser, string(keyData)); err != nil {
+			log.Fatalf("Host setup failed: %v", err)
+		}
+		fmt.Printf("Deploy user %s is ready. Deploy with: anode deploy %s@<host>\n", deployUser, deployUser)
 	case "dev":
 		targetDir := "."
 		verbose := false
@@ -181,13 +224,14 @@ func main() {
 			log.Fatalf("Initialization failed: %v", err)
 		}
 
-		fmt.Println("Starting Local Orchestrator (Zero Port Collisions)")
+		fmt.Println("Starting local dev environment")
 		engine := devengine.NewEngine(targetDir, lockfile)
-		ctx := context.Background()
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
 
 		// Prepare isolated containers & run schema migrations
-		if err := engine.PrepareInfrastructure(ctx); err != nil && verbose {
-			fmt.Printf("ℹ Local container notice: %v\n", err)
+		if err := engine.PrepareInfrastructure(ctx); err != nil {
+			log.Fatalf("Dev environment failed: %v", err)
 		}
 
 		plan, err := engine.PlanEnvVariables()
@@ -195,41 +239,7 @@ func main() {
 			log.Fatalf("Failed to plan dev environment: %v", err)
 		}
 
-		if len(lockfile.Resources) > 0 {
-			fmt.Println("  📦 Allocating isolated ephemeral resources:")
-			for _, res := range lockfile.Resources {
-				defaultPort := 5432
-				if res.Kind == "redis" {
-					defaultPort = 6379
-				} else if res.Kind == "mysql" {
-					defaultPort = 3306
-				}
-				port := defaultPort + 48897
-				fmt.Printf("     • %s:latest ──> 127.0.0.1:%d (host:%d free)\n", res.Kind, port, defaultPort)
-			}
-		}
-
-		fmt.Println("  💉 Injected decomposed environment variables:")
-		for _, envs := range plan {
-			for k, v := range envs {
-				if verbose || k == "PORT" || strings.Contains(k, "DATABASE") || strings.Contains(k, "DB") || strings.Contains(k, "REDIS") {
-					fmt.Printf("     %s = \"%s\"\n", k, v)
-				}
-			}
-		}
-
-		hasMigrations := false
-		for _, res := range lockfile.Resources {
-			if res.Migrations != nil && res.Migrations.Path != "" {
-				hasMigrations = true
-				fmt.Println("  ⚡ Running migration job:")
-				fmt.Printf("     ✓ Applied SQL schema migrations from %s in 3.4ms\n", res.Migrations.Path)
-			}
-		}
-		if !hasMigrations {
-			fmt.Println("  ⚡ Running migration job:")
-			fmt.Println("     ✓ Verified database contracts (zero pending migrations)")
-		}
+		engine.Report(plan)
 
 		primaryPort := "8080"
 		for _, envs := range plan {
@@ -238,17 +248,17 @@ func main() {
 				break
 			}
 		}
-		fmt.Println("  📡 Loopback reverse-proxy active:")
-		fmt.Printf("     ↳ Ready at http://localhost:%s\n", primaryPort)
-		fmt.Println("  Watching Go source changes (sub-second hot-reload)...")
+		fmt.Printf("  App listening on http://localhost:%s\n", primaryPort)
 
 		if verbose {
 			fmt.Println("\n[VERBOSE] Supervisor process pool initialized.")
 		}
 
+		defer engine.StopAll()
 		if err := engine.StartAll(ctx, plan); err != nil {
 			log.Fatalf("Failed to start services: %v", err)
 		}
+		<-ctx.Done()
 
 	case "deploy", "run":
 		if len(os.Args) < 3 || os.Args[2] == "--help" || os.Args[2] == "-h" {
@@ -260,15 +270,31 @@ func main() {
 		}
 		host := os.Args[2]
 		targetDir := "."
-		domain := host
+		domain := ""
 		dryRun := false
+		plainHTTP := false
 
 		for i := 3; i < len(os.Args); i++ {
-			if os.Args[i] == "--dry-run" {
+			switch arg := os.Args[i]; {
+			case arg == "--dry-run":
 				dryRun = true
-			} else if !strings.HasPrefix(os.Args[i], "--") {
-				targetDir = os.Args[i]
+			case arg == "--plain-http":
+				plainHTTP = true
+			case arg == "--domain":
+				if i+1 >= len(os.Args) {
+					log.Fatalf("--domain needs a value")
+				}
+				i++
+				domain = os.Args[i]
+			case !strings.HasPrefix(arg, "--"):
+				targetDir = arg
 			}
+		}
+		if domain == "" {
+			if !plainHTTP && deployer.IsIPTarget(host) {
+				log.Fatalf("%s is an IP address, so TLS cannot be issued. Pass --domain for TLS, or --plain-http to accept unencrypted HTTP.", host)
+			}
+			domain = host
 		}
 
 		fmt.Printf("⚡ Anode Production Deployer\nTarget: %s\n", host)
@@ -289,7 +315,7 @@ func main() {
 					ServiceName: svc.Name,
 					Description: fmt.Sprintf("Anode Managed %s Service", svc.Name),
 					ExecStart:   fmt.Sprintf("/var/lib/anode/releases/latest/%s", svc.Name),
-					WorkingDir:  "/var/lib/anode/app",
+					StateDir:    svc.Name,
 					EnvVars:     map[string]string{"PORT": fmt.Sprintf("%d", port)},
 				})
 				fmt.Printf("  ✓ Synthesized systemd unit: anode-%s.service (port %d)\n", svc.Name, port)

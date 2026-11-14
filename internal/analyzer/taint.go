@@ -4,10 +4,59 @@ import (
 	"go/constant"
 	"go/token"
 	"go/types"
+	"reflect"
 	"strings"
 
 	"golang.org/x/tools/go/ssa"
 )
+
+var configTagNames = []string{"json", "yaml", "mapstructure", "ini"}
+
+func TraceConfigKey(val ssa.Value) string {
+	load, ok := val.(*ssa.UnOp)
+	if !ok || load.Op != token.MUL {
+		return ""
+	}
+	fa, ok := load.X.(*ssa.FieldAddr)
+	if !ok {
+		return ""
+	}
+	return configPath(fa)
+}
+
+func configPath(fa *ssa.FieldAddr) string {
+	key := fieldConfigKey(fa)
+	if key == "" {
+		return ""
+	}
+	parent, ok := fa.X.(*ssa.FieldAddr)
+	if !ok {
+		return key
+	}
+	parentPath := configPath(parent)
+	if parentPath == "" {
+		return ""
+	}
+	return parentPath + "." + key
+}
+
+func fieldConfigKey(fa *ssa.FieldAddr) string {
+	t := fa.X.Type()
+	if p, ok := t.(*types.Pointer); ok {
+		t = p.Elem()
+	}
+	st, ok := t.Underlying().(*types.Struct)
+	if !ok || fa.Field >= st.NumFields() {
+		return ""
+	}
+	tag := reflect.StructTag(st.Tag(fa.Field))
+	for _, name := range configTagNames {
+		if key := strings.Split(tag.Get(name), ",")[0]; key != "" && key != "-" {
+			return key
+		}
+	}
+	return ""
+}
 
 // TraceURL inspects URL values (e.g. cfg.PaymentService + "/v1/charges")
 func TraceURL(val ssa.Value) (envVar string, routeSuffix string) {

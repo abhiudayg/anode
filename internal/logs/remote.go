@@ -112,6 +112,12 @@ func resolveRemoteUnits(ssh *deployer.SSHClient, opts Options) ([]string, error)
 		if !strings.HasSuffix(unitName, ".service") {
 			unitName = unitName + ".service"
 		}
+		if !serviceNamePattern.MatchString(svc) {
+			return nil, fmt.Errorf("invalid service name %q", svc)
+		}
+		if _, err := ssh.Run("systemctl cat " + shellQuote(unitName) + " >/dev/null 2>&1"); err != nil {
+			return nil, fmt.Errorf("no service named %q is deployed on the target", svc)
+		}
 		return []string{unitName}, nil
 	}
 
@@ -171,11 +177,11 @@ func buildJournalctlCommand(units []string, opts Options) string {
 	}
 
 	if opts.Since != "" {
-		parts = append(parts, fmt.Sprintf("--since=%q", opts.Since))
+		parts = append(parts, "--since="+shellQuote(opts.Since))
 	}
 
 	if opts.Until != "" {
-		parts = append(parts, fmt.Sprintf("--until=%q", opts.Until))
+		parts = append(parts, "--until="+shellQuote(opts.Until))
 	}
 
 	parts = append(parts, "--no-pager", "-o", "json")

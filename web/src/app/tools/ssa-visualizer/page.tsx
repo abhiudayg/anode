@@ -69,13 +69,13 @@ func main() {
 		c.String(http.StatusOK, "healthy")
 	})
 
-	// Dynamic loopback binding via PORT
+	// Ephemeral port via PORT
 	r.Run(":" + os.Getenv("PORT"))
 }`,
   },
   {
     id: "chi-redis",
-    name: "Chi + Redis Cache + Ephemeral Loopback",
+    name: "Chi + Redis Cache + Ephemeral Local Ports",
     badge: "In-Memory",
     code: `package main
 
@@ -749,7 +749,7 @@ export default function SsaVisualizerPage() {
               )}
               <div className="text-[11px] font-mono-code">
                 {validation.isValid ? (
-                  <span className="text-cyan-400">SSA Sweep Latency: ~18ms</span>
+                  <span className="text-cyan-400">SSA Sweep Latency: varies by project</span>
                 ) : (
                   <span className="text-rose-400/80">Compilation Suspended</span>
                 )}
@@ -1126,7 +1126,7 @@ export default function SsaVisualizerPage() {
               2
             </div>
             <h2 className="text-base font-bold text-white">
-              Automated Dynamic Loopbacks
+              Automated ephemeral local ports
             </h2>
             <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
               Anode multiplexes across the 16.7M IPs in the 127.0.0.0/8 subnet. Multiple developers and microservices can bind to :8080 locally without port collisions.

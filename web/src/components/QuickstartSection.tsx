@@ -24,7 +24,7 @@ export function QuickstartSection() {
     },
     {
       num: "03",
-      title: "Run Collision-Free Dev",
+      title: "Run Local Dev Without Fixed Ports",
       desc: "Spin up isolated DBs on dynamic ephemeral ports with sub-second reload.",
       cmd: "anode dev",
     },

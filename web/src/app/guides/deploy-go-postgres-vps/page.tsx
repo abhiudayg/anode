@@ -10,7 +10,7 @@ import {
 export const metadata: Metadata = {
   title: "Deploy Go + PostgreSQL Without Docker",
   description:
-    "Deploy a Go REST API with PostgreSQL to a bare-metal Linux VPS using Anode. Zero container overhead, automated systemd isolation, and 8ms cold starts.",
+    "Deploy a Go REST API with PostgreSQL to a bare-metal Linux VPS using Anode. Zero container overhead, automated systemd isolation, and fast cold starts.",
   alternates: {
     canonical: "/guides/deploy-go-postgres-vps",
   },
@@ -79,7 +79,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       "name": "Run Anode Inspection",
-      "text": "Run 'anode inspect' locally to detect database handles and infer service topology automatically in ~60ms.",
+      "text": "Run 'anode inspect' locally to detect database handles and infer service topology automatically.",
       "url": "https://anode.abhiudayg.dev/guides/deploy-go-postgres-vps#step-2"
     },
     {
@@ -175,15 +175,15 @@ export default function DeployGoPostgresPage() {
                 2
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
-                Inspect SSA Topology (Zero Port Clashes)
+                Inspect SSA Topology (Free local ports)
               </h2>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode dev</code> to start local development. Anode allocates an ephemeral dynamic loopback proxy for PostgreSQL so port 5432 is never blocked by other projects:
+              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode dev</code> to start local development. Anode allocates an ephemeral ephemeral local port proxy for PostgreSQL so port 5432 is never blocked by other projects:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode dev<br />
-              <span className="text-emerald-400">✔ SSA AST Resolved in 48ms</span><br />
+              <span className="text-emerald-400">✔ SSA AST Resolved</span><br />
               <span className="text-cyan-400">✔ Detected Database Driver: PostgreSQL (pgx/v5)</span><br />
               <span className="text-purple-400">✔ Dynamic Loopback Assigned: 127.0.0.1:5432 (isolated virtual socket)</span><br />
               <span className="text-emerald-400">✔ Listening: http://localhost:8080 (0% conflict)</span>

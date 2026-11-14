@@ -21,11 +21,11 @@ type DriverSpec struct {
 }
 
 type VersionSpec struct {
-	Image       string            `yaml:"image" json:"image"`
-	Command     []string          `yaml:"command,omitempty" json:"command,omitempty"`
-	ExtraEnv    map[string]string `yaml:"extra_env,omitempty" json:"extra_env,omitempty"`
-	EndOfLife   bool              `yaml:"end_of_life,omitempty" json:"end_of_life,omitempty"`
-	Notes       string            `yaml:"notes,omitempty" json:"notes,omitempty"`
+	Image     string            `yaml:"image" json:"image"`
+	Command   []string          `yaml:"command,omitempty" json:"command,omitempty"`
+	ExtraEnv  map[string]string `yaml:"extra_env,omitempty" json:"extra_env,omitempty"`
+	EndOfLife bool              `yaml:"end_of_life,omitempty" json:"end_of_life,omitempty"`
+	Notes     string            `yaml:"notes,omitempty" json:"notes,omitempty"`
 }
 
 type RuntimeSpec struct {

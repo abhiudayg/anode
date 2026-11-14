@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/guides/deploy-chi-without-docker",
     title: "Deploy Chi to Linux VPS Without Docker",
     description:
-      "Run your Chi Go backend directly on Linux bare metal with 8ms cold starts and zero container overhead.",
+      "Run your Chi Go backend directly on Linux bare metal with fast cold starts and zero container overhead.",
     images: [
       {
         url: "/og-image.png",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Chi to Linux VPS Without Docker",
     description:
-      "Run your Chi Go backend directly on Linux bare metal with 8ms cold starts.",
+      "Run your Chi Go backend directly on Linux bare metal with fast cold starts.",
     images: ["/og-image.png"],
   },
 };
@@ -131,7 +131,7 @@ export default function DeployChiGuide() {
               Deploy Chi (Go) to a Linux VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Chi is beloved for its 100% compatibility with standard <code className="text-neutral-300">net/http</code>. Anode compiles your Chi application directly into hardened Linux systemd units with 8ms cold starts and 4.8MB RAM footprint.
+              Chi is beloved for its 100% compatibility with standard <code className="text-neutral-300">net/http</code>. Anode compiles your Chi application directly into hardened Linux systemd units with fast cold starts and small RAM footprint.
             </p>
           </header>
 

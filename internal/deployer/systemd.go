@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"regexp"
 	"strings"
 	"text/template"
 
@@ -11,14 +12,20 @@ import (
 )
 
 type SystemdUnitConfig struct {
-	ServiceName    string
-	Description    string
-	ExecStart      string
-	WorkingDir     string
-	EnvVars        map[string]string
-	EnvFile        string
-	ReadWritePaths string
-	RestartSec     int
+	ServiceName string
+	Description string
+	ExecStart   string
+	StateDir    string
+	EnvVars     map[string]string
+	EnvFile     string
+	PreStart    []string
+	RestartSec  int
+}
+
+var stateDirPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
+
+func envName(serviceName string) string {
+	return strings.ToUpper(strings.ReplaceAll(serviceName, "-", "_"))
 }
 
 const systemdTemplate = `[Unit]
@@ -27,10 +34,11 @@ After=network.target
 
 [Service]
 Type=simple
-User=anode
 DynamicUser=yes
-WorkingDirectory={{.WorkingDir}}
-ExecStart={{.ExecStart}}
+StateDirectory={{.StateDir}}
+WorkingDirectory=/var/lib/{{.StateDir}}
+{{range .PreStart}}ExecStartPre=+{{.}}
+{{end}}ExecStart={{.ExecStart}}
 Restart=always
 RestartSec={{.RestartSec}}
 {{if .EnvFile}}EnvironmentFile={{.EnvFile}}
@@ -65,7 +73,6 @@ ProcSubset=pid
 SystemCallArchitectures=native
 SystemCallFilter=@system-service
 SystemCallFilter=~@privileged @resources @obsolete @module @reboot @swap @raw-io
-ReadWritePaths={{if .ReadWritePaths}}{{.ReadWritePaths}}{{else}}{{.WorkingDir}}{{end}}
 
 [Install]
 WantedBy=multi-user.target
@@ -73,6 +80,12 @@ WantedBy=multi-user.target
 
 // GenerateSystemdUnit creates an atomic systemd service unit string
 func GenerateSystemdUnit(cfg SystemdUnitConfig) (string, error) {
+	if err := validateUnitConfig(cfg); err != nil {
+		return "", err
+	}
+	if !stateDirPattern.MatchString(cfg.StateDir) {
+		return "", fmt.Errorf("invalid state directory name %q: use lowercase letters, digits, and hyphens", cfg.StateDir)
+	}
 	if cfg.RestartSec == 0 {
 		cfg.RestartSec = 3
 	}

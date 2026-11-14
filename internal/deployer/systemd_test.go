@@ -13,7 +13,7 @@ func TestGenerateSystemdUnit(t *testing.T) {
 		ServiceName: "orders",
 		Description: "Orders Microservice",
 		ExecStart:   "/var/lib/anode/bin/orders",
-		WorkingDir:  "/var/lib/anode/app",
+		StateDir:    "orders",
 		EnvVars: map[string]string{
 			"PORT":         "8080",
 			"DATABASE_URL": "postgres://localhost/orders",
@@ -28,6 +28,41 @@ func TestGenerateSystemdUnit(t *testing.T) {
 	}
 	if !strings.Contains(unit, "MemoryMax=1G") {
 		t.Errorf("expected MemoryMax cgroups v2 directive")
+	}
+}
+
+func TestSystemdUnitUsesDynamicUserWithoutStaticUser(t *testing.T) {
+	unit, err := deployer.GenerateSystemdUnit(deployer.SystemdUnitConfig{
+		ServiceName: "filebrowser-example",
+		Description: "Filebrowser",
+		ExecStart:   "/var/lib/anode/releases/1/filebrowser-example",
+		StateDir:    "filebrowser-example",
+	})
+	if err != nil {
+		t.Fatalf("GenerateSystemdUnit failed: %v", err)
+	}
+	for _, line := range strings.Split(unit, "\n") {
+		if strings.HasPrefix(line, "User=") {
+			t.Errorf("unit must not pin a static user, found %q", line)
+		}
+	}
+	if !strings.Contains(unit, "StateDirectory=filebrowser-example") {
+		t.Errorf("expected StateDirectory for writable state, got:\n%s", unit)
+	}
+	if strings.Contains(unit, "ReadWritePaths=") {
+		t.Errorf("release folder must stay read-only; unexpected ReadWritePaths")
+	}
+}
+
+func TestSystemdUnitRejectsUnsafeStateDir(t *testing.T) {
+	for _, bad := range []string{"", "../etc", "a\nExecStartPre=/bin/sh", "Upper"} {
+		_, err := deployer.GenerateSystemdUnit(deployer.SystemdUnitConfig{
+			ExecStart: "/bin/true",
+			StateDir:  bad,
+		})
+		if err == nil {
+			t.Errorf("expected error for state directory %q", bad)
+		}
 	}
 }
 

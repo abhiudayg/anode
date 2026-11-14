@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "Deploy Go to Hetzner Cloud Without Docker",
   description:
-    "Complete guide to deploying Go microservices to Hetzner Cloud Linux VPS using bare-metal systemd and automated TLS. 10x cheaper and 56x faster than Kubernetes.",
+    "Complete guide to deploying Go microservices to Hetzner Cloud Linux VPS using bare-metal systemd and automated TLS. 10x cheaper and faster than Kubernetes.",
   alternates: {
     canonical: "/deploy/hetzner-vps",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/deploy/hetzner-vps",
     title: "Deploy Go to Hetzner Cloud Without Docker",
     description:
-      "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with 8ms cold starts and 4.8MB RAM footprint.",
+      "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with fast cold starts and small RAM footprint.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Go to Hetzner Cloud Without Docker",
     description:
-      "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with 8ms cold starts and 4.8MB RAM footprint.",
+      "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with fast cold starts and small RAM footprint.",
     images: ["/og-image.png"],
   },
 };
@@ -132,7 +132,7 @@ export default function HetznerDeployPage() {
               Deploy Go Backends to Hetzner VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Why pay $70+/month for managed Kubernetes when a €3.79/month Hetzner CX22 server can run your Go backend with 8ms cold starts and 4.8MB RAM footprint? Here is how to deploy in under 4 minutes.
+              Why pay $70+/month for managed Kubernetes when a €3.79/month Hetzner CX22 server can run your Go backend with fast cold starts and small RAM footprint? Here is how to deploy in under 4 minutes.
             </p>
           </header>
 
@@ -200,7 +200,7 @@ export default function HetznerDeployPage() {
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect<br />
-              <span className="text-neutral-500">→ SSA static sweep: 62ms</span><br />
+              <span className="text-neutral-500">→ SSA static sweep: done</span><br />
               <span className="text-emerald-400">✓ Ingress: POST /orders (:8080)</span><br />
               <span className="text-purple-400">✓ Inferred Drivers: pgx/v5 (Postgres)</span>
             </div>
@@ -223,7 +223,7 @@ export default function HetznerDeployPage() {
               $ anode deploy root@&lt;YOUR_HETZNER_IP&gt;
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mt-4">
-              Anode automatically compiles your Go binary, establishes a hardened systemd unit with cgroups v2 resource limits, configures Caddy reverse proxying with automatic SSL, and starts the service in 8ms.
+              Anode automatically compiles your Go binary, establishes a hardened systemd unit with cgroups v2 resource limits, configures Caddy reverse proxying with automatic SSL, and starts the service.
             </p>
           </section>
 

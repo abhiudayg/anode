@@ -48,7 +48,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/guides/deploy-fiber-without-docker" className="hover:text-cyan-400 transition-colors">
-                  Deploy Fiber (8ms Boot)
+                  Deploy Fiber
                 </Link>
               </li>
               <li>

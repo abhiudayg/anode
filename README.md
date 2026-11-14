@@ -66,7 +66,7 @@ It extracts an immutable, human-readable **`anode.lock.json`** directly from you
                     │     Local Dev (`anode dev`)   │                                 │   Production (`anode deploy`) │
                     │ • Dynamic Ephemeral Ports     │                                 │ • Cross-compiled Linux binary │
                     │ • Decomposed Env Injection    │                                 │ • Hardened systemd + cgroups  │
-                    │ • Native Goose Migrations     │                                 │ • Zero-downtime Blue/Green    │
+                    │ • Catalog-driven provisioning  │                                 │ • Systemd restart deploys       │
                     │ • Sub-second 300ms reload     │                                 │ • Automated Caddy HTTPS       │
                     └───────────────────────────────┘                                 └───────────────────────────────┘
 ```
@@ -143,7 +143,7 @@ Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and 
 anode dev ./examples/complex_ecommerce
 ```
 
-Anode assigns ephemeral loopback ports, auto-provisions isolated Postgres containers (moving to dynamic ports if `5432` is occupied), applies Goose migrations, and streams color-coded service logs with sub-second hot-reloading.
+Anode assigns ephemeral loopback ports, provisions the stateful services your code uses (Redis runs natively under systemd; other catalog kinds run in Docker), and streams color-coded service logs with a 300ms-debounced hot reload.
 
 ### 4. Deploy Live to Any Linux VPS
 
@@ -151,11 +151,9 @@ Anode assigns ephemeral loopback ports, auto-provisions isolated Postgres contai
 anode deploy root@my-box.com ./examples/complex_ecommerce
 ```
 
-In under 30 seconds:
 * **Architecture Detection**: Queries `uname -m` over SSH and cross-compiles matching Linux binaries (`arm64` or `amd64`).
 * **Unprivileged Bootstrapping**: Initializes the dedicated system user `anode` and secures persistent directories at `/var/lib/anode/`.
-* **Stateful Resolution**: Auto-provisions required stateful databases using the built-in driver catalog.
-* **Pre-Traffic Migrations**: Executes database schema migrations *before* traffic hits new service instances.
+* **Stateful Resolution**: Provisions Redis natively under systemd (password read from `.env`). Other catalog kinds are provisioned with Docker, and that path is not yet tested end to end.
 * **Systemd Cgroups v2 Hardening**: Generates service units with `CPUQuota=200%`, `MemoryMax=1G`, and process isolation.
 * **Edge Routing**: Reloads Caddy with automated Let's Encrypt TLS and path-based reverse proxying.
 
@@ -165,7 +163,7 @@ In under 30 seconds:
 
 Anode decouples stateful provisioning from core orchestrator code using a **Pluggable Declarative Driver Catalog** (`internal/catalog/`):
 
-* **25+ Built-in Pre-Audited Drivers**:
+* **26 built-in catalog kinds** (only Redis and the Postgres demo path are tested end to end):
   * **Relational Databases**: PostgreSQL (14, 15, 16, 17), MySQL (8.0, 8.4), MariaDB, CockroachDB, TimescaleDB.
   * **In-Memory & Caches**: Redis (6, 7, 7.2), Valkey, KeyDB, Dragonfly, Memcached.
   * **Event Streaming & Queues**: Kafka (Redpanda engine), RabbitMQ, NATS.
@@ -295,3 +293,14 @@ Anode is engineered under strict **`agstack`** verification policies:
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
+
+## Scope and security notes
+
+- Anode targets developer-owned Go HTTP services with Postgres or Redis, deployed to one Linux host. See `docs/supported-profile.md`.
+- Run `anode inspect` only on code you own. The analysis loads packages with the Go toolchain, which can run code from the repository.
+- `anode dev` uses local Postgres containers with the credentials `postgres:postgres`, bound to `127.0.0.1` only.
+- Applications may print secrets to their own logs. Anode does not filter application output.
+- Deploys should use a dedicated account. Run `anode host-setup root@host` once to create one with passwordless sudo, then deploy as `account@host`. Passwordless sudo is root-equivalent; scoping it to a privileged helper is future work.
+- Keep `.env` at mode `600`. Deploys refuse a `.env` readable by other users.
+- Deploy to an IP address serves plain HTTP. Pass `--domain` for TLS, or `--plain-http` to accept plain HTTP.
+- See `docs/security-audit.md` for the audit record and open items.

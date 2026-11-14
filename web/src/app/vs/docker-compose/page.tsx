@@ -18,7 +18,7 @@ import {
 export const metadata: Metadata = {
   title: "Docker Compose Alternative for Go Backends",
   description:
-    "Looking for a Docker Compose alternative for Go? See how Anode replaces Dockerfiles & YAML drift with compiler SSA call-graph analysis and 8ms systemd boot.",
+    "Looking for a Docker Compose alternative for Go? See how Anode replaces Dockerfiles & YAML drift with compiler SSA call-graph analysis and fast systemd boot.",
   alternates: {
     canonical: "/vs/docker-compose",
   },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/vs/docker-compose",
     title: "Docker Compose Alternative for Go Backends",
     description:
-      "Go compiles to static binaries. Why wrap them in 200MB container engines? Compare Anode's Proof-of-Topology with Docker Compose for Go microservices.",
+      "Go compiles to static binaries. Why wrap them in container engines? Compare Anode's Proof-of-Topology with Docker Compose for Go microservices.",
     images: [
       {
         url: "/og-image.png",
@@ -41,7 +41,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Docker Compose Alternative for Go Backends",
     description:
-      "Go compiles to static binaries. Why wrap them in 200MB container engines? Compare Anode with Docker Compose.",
+      "Go compiles to static binaries. Why wrap them in container engines? Compare Anode with Docker Compose.",
     images: ["/og-image.png"],
   },
 };
@@ -80,7 +80,7 @@ const faqJsonLd = {
       "name": "Why use Anode instead of Docker Compose for Go backends?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Go compiles to self-contained, statically linked machine code. Running it inside Docker Compose introduces container daemon overhead, slow image builds, and fragile YAML manifests that drift from code. Anode inspects your Go SSA call graph directly to infer service topology, eliminates port collisions via dynamic loopbacks, and executes natively on Linux systemd with 8ms cold starts and 4.8MB RAM footprint."
+        "text": "Go compiles to self-contained, statically linked machine code. Running it inside Docker Compose introduces container daemon overhead, slow image builds, and fragile YAML manifests that drift from code. Anode inspects your Go SSA call graph directly to infer service topology, eliminates port collisions via ephemeral local ports, and executes natively on Linux systemd with fast cold starts and small RAM footprint."
       }
     },
     {
@@ -88,7 +88,7 @@ const faqJsonLd = {
       "name": "How does Anode prevent local port collisions without Docker?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Docker Compose binds containers to fixed host ports (e.g. 5432 or 8080), leading to clashes when multiple projects run concurrently. Anode uses dynamic loopback multiplexing (127.0.0.1:0) and ephemeral socket proxies to ensure every service and database binding has an isolated, conflict-free virtual address."
+        "text": "Docker Compose binds containers to fixed host ports (e.g. 5432 or 8080), leading to clashes when multiple projects run concurrently. Anode uses ephemeral local port multiplexing (127.0.0.1:0) and ephemeral socket proxies to ensure every service and database binding has an isolated, conflict-free virtual address."
       }
     },
     {
@@ -112,7 +112,7 @@ export default function DockerComposeVsAnodePage() {
     },
     {
       feature: "Memory Overhead (Idle)",
-      anode: "4.8 MB (Pure Go runtime)",
+      anode: "Small (Pure Go runtime)",
       docker: "210 MB (dockerd, containerd, shim-v2)",
       winner: "anode",
     },
@@ -124,7 +124,7 @@ export default function DockerComposeVsAnodePage() {
     },
     {
       feature: "Local Port Collisions",
-      anode: "Zero (Dynamic loopback multiplexing)",
+      anode: "Ephemeral local ports",
       docker: "Frequent clashes on 5432, 6379, 8080",
       winner: "anode",
     },
@@ -198,21 +198,21 @@ export default function DockerComposeVsAnodePage() {
             </h1>
 
             <p className="mt-6 text-lg sm:text-xl text-neutral-400 max-w-3xl mx-auto leading-relaxed">
-              Go compiles to self-contained static machine code. Anode replaces heavy container daemons and drifted YAML files with compiler-backed SSA call-graph analysis and 8ms bare-metal Linux execution.
+              Go compiles to self-contained static machine code. Anode replaces heavy container daemons and drifted YAML files with compiler-backed SSA call-graph analysis and bare-metal Linux execution.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-mono-code">
               <div className="px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-cyan-400" />
-                <span>56x Faster Cold Boot</span>
+                <span>Faster Cold Boot</span>
               </div>
               <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-purple-400" />
-                <span>97% Less Memory Overhead</span>
+                <span>Less Memory Overhead</span>
               </div>
               <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Zero Port Collisions</span>
+                <span>Free local ports</span>
               </div>
             </div>
           </div>
@@ -237,7 +237,7 @@ export default function DockerComposeVsAnodePage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-red-400 mt-1 font-bold">✕</span>
-                  <span><strong>Resource Tax:</strong> 200MB+ consumed by Docker desktop or containerd shims before serving a single HTTP request.</span>
+                  <span><strong>Resource Tax:</strong> large consumed by Docker desktop or containerd shims before serving a single HTTP request.</span>
                 </li>
               </ul>
             </div>
@@ -252,15 +252,15 @@ export default function DockerComposeVsAnodePage() {
               <ul className="space-y-3 text-sm text-neutral-300 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 mt-1 font-bold">✓</span>
-                  <span><strong>Zero YAML:</strong> Anode extracts routes and database drivers directly from Go AST using SSA call graphs in ~60ms.</span>
+                  <span><strong>Zero YAML:</strong> Anode extracts routes and database drivers directly from Go AST using SSA call graphs.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 mt-1 font-bold">✓</span>
-                  <span><strong>Loopback Isolation:</strong> Every service gets a collision-free dynamic loopback proxy (<code>127.0.0.1:0</code>). Run 10 copies safely.</span>
+                  <span><strong>Local ports:</strong> Backing services get ephemeral local port proxy (<code>127.0.0.1:0</code>). Run 10 copies safely.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 mt-1 font-bold">✓</span>
-                  <span><strong>8ms Bare-Metal:</strong> Native Linux systemd units with cgroups v2 quotas and automated Caddy reverse proxying.</span>
+                  <span><strong>Bare-Metal:</strong> Native Linux systemd units with cgroups v2 quotas and automated Caddy reverse proxying.</span>
                 </li>
               </ul>
             </div>
@@ -345,13 +345,13 @@ export default function DockerComposeVsAnodePage() {
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white mb-1">
-                    Run local development with zero port clashes
+                    Run local development without fixed port numbers
                   </h3>
                   <div className="mt-2 p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-cyan-300">
                     $ anode dev
                   </div>
                   <p className="mt-2 text-sm text-neutral-400 leading-relaxed">
-                    Anode inspects the SSA call graph in ~48ms, provisions backing databases via dynamic loopbacks, and starts your backend with hot-reload.
+                    Anode inspects the SSA call graph, provisions backing databases via ephemeral local ports, and starts your backend with hot-reload.
                   </p>
                 </div>
               </div>
@@ -438,7 +438,7 @@ export default function DockerComposeVsAnodePage() {
                   <span>Why use Anode instead of Docker Compose for Go backends?</span>
                 </h3>
                 <p className="text-sm text-neutral-400 pl-6 leading-relaxed">
-                  Go compiles to self-contained, statically linked machine code. Running it inside Docker Compose introduces container daemon overhead, slow image builds, and fragile YAML manifests that drift from code. Anode inspects your Go SSA call graph directly to infer service topology, eliminates port collisions via dynamic loopbacks, and executes natively on Linux systemd with 8ms cold starts and 4.8MB RAM footprint.
+                  Go compiles to self-contained, statically linked machine code. Running it inside Docker Compose introduces container daemon overhead, slow image builds, and fragile YAML manifests that drift from code. Anode inspects your Go SSA call graph directly to infer service topology, eliminates port collisions via ephemeral local ports, and executes natively on Linux systemd with fast cold starts and small RAM footprint.
                 </p>
               </div>
 
@@ -448,7 +448,7 @@ export default function DockerComposeVsAnodePage() {
                   <span>How does Anode prevent local port collisions without Docker?</span>
                 </h3>
                 <p className="text-sm text-neutral-400 pl-6 leading-relaxed">
-                  Docker Compose binds containers to fixed host ports (e.g. 5432 or 8080), leading to clashes when multiple projects run concurrently. Anode uses dynamic loopback multiplexing (127.0.0.1:0) and ephemeral socket proxies to ensure every service and database binding has an isolated, conflict-free virtual address.
+                  Docker Compose binds containers to fixed host ports (e.g. 5432 or 8080), leading to clashes when multiple projects run concurrently. Anode uses ephemeral local port multiplexing (127.0.0.1:0) and ephemeral socket proxies to ensure every service and database binding has an isolated, conflict-free virtual address.
                 </p>
               </div>
 

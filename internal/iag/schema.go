@@ -6,12 +6,12 @@ const V1 SchemaVersion = "1.0"
 
 // LockFile represents the human-readable, commit-backed contract written to anode.lock.json.
 type LockFile struct {
-	SchemaVersion SchemaVersion            `json:"schema_version"`
-	CommitSHA     string                   `json:"commit_sha,omitempty"`
-	Resources     map[string]Resource      `json:"resources"`
-	Services      map[string]Service       `json:"services"`
-	EgressRules   []EgressRule             `json:"egress_rules,omitempty"`
-	Diagnostics   []Diagnostic             `json:"diagnostics,omitempty"`
+	SchemaVersion SchemaVersion       `json:"schema_version"`
+	CommitSHA     string              `json:"commit_sha,omitempty"`
+	Resources     map[string]Resource `json:"resources"`
+	Services      map[string]Service  `json:"services"`
+	EgressRules   []EgressRule        `json:"egress_rules,omitempty"`
+	Diagnostics   []Diagnostic        `json:"diagnostics,omitempty"`
 }
 
 type ResourceKind string
@@ -42,8 +42,8 @@ type Resource struct {
 
 // MigrationSpec details schema migrations attached to a resource.
 type MigrationSpec struct {
-	Tool      string `json:"tool"`      // "goose", "sql", "custom"
-	Path      string `json:"path"`      // relative folder path
+	Tool      string `json:"tool"` // "goose", "sql", "custom"
+	Path      string `json:"path"` // relative folder path
 	Command   string `json:"command,omitempty"`
 	Execution string `json:"execution"` // "pre_traffic_job"
 }
@@ -55,14 +55,15 @@ type Service struct {
 	Ingress    []Ingress   `json:"ingress"`
 	Bindings   []Binding   `json:"bindings"`
 	Secrets    []SecretRef `json:"secrets"`
+	ConfigFile string      `json:"config_file,omitempty"` // e.g. "config.json" read from the working directory
 }
 
 // Ingress defines inbound protocols, routes, and required port env.
 type Ingress struct {
-	Protocol string   `json:"protocol"`             // "http" | "grpc"
-	PortEnv  string   `json:"port_env"`             // e.g. "PORT"
-	Routes   []string `json:"routes,omitempty"`     // e.g. ["POST /v1/orders"]
-	Service  string   `json:"service,omitempty"`    // e.g. "payment.v1.PaymentService"
+	Protocol string   `json:"protocol"`          // "http" | "grpc"
+	PortEnv  string   `json:"port_env"`          // e.g. "PORT"
+	Routes   []string `json:"routes,omitempty"`  // e.g. ["POST /v1/orders"]
+	Service  string   `json:"service,omitempty"` // e.g. "payment.v1.PaymentService"
 }
 
 // Binding links a service to a required resource or another service.
@@ -72,6 +73,7 @@ type Binding struct {
 	Protocol    string   `json:"protocol"`               // "postgres" | "redis" | "grpc" | "http"
 	Interface   string   `json:"interface,omitempty"`    // e.g. "payment.v1.PaymentService"
 	InjectEnv   string   `json:"inject_env"`             // e.g. "DATABASE_URL"
+	ConfigKey   string   `json:"config_key,omitempty"`   // e.g. "database.dsn" when read from a config file
 	ExpandedEnv []string `json:"expanded_env,omitempty"` // e.g. ["DB_HOST", "DB_PORT"]
 	Provenance  string   `json:"provenance"`
 }
@@ -93,7 +95,7 @@ type EgressRule struct {
 
 // Diagnostic reports actionable warnings or errors with exact file and line references.
 type Diagnostic struct {
-	Level      string `json:"level"`      // "error" | "warn" | "info"
+	Level      string `json:"level"` // "error" | "warn" | "info"
 	Message    string `json:"message"`
 	Provenance string `json:"provenance"` // file:line
 	Suggestion string `json:"suggestion,omitempty"`
