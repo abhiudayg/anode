@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -374,5 +377,292 @@ func TestPrintReportVerboseMemoryBreakdown(t *testing.T) {
 	}
 	if !strings.Contains(out, "Kernel Data (Slab / Sockets):  3.0 MB") {
 		t.Errorf("expected Kernel line with slab, got:\n%s", out)
+	}
+}
+
+func TestRemoteUnitSystemdAndCgroupRegression(t *testing.T) {
+	// Synthetic SSH response simulating:
+	// systemctl show anode-api.service ... ; echo '---CGROUP_STAT---'; cat /sys/fs/cgroup/.../memory.stat
+	rawCombined := `Id=anode-api.service
+ActiveState=active
+SubState=running
+MainPID=51820
+TasksCurrent=16
+CPUUsageNSec=950000000
+MemoryCurrent=52428800
+NRestarts=0
+ExecMainStatus=0
+Environment=PORT=8080 DATABASE_URL=postgres://anode:secret@127.0.0.1:5432/db
+---CGROUP_STAT---
+anon 36700160
+file 12582912
+kernel 3145728
+slab 2097152
+sock 524288
+shmem 0
+pgfault 2410
+`
+	parts := strings.SplitN(rawCombined, "---CGROUP_STAT---", 2)
+	props := parseSystemdProperties(parts[0])
+	statPart := strings.TrimSpace(parts[1])
+
+	if props["Id"] != "anode-api.service" {
+		t.Fatalf("expected Id anode-api.service, got %q", props["Id"])
+	}
+	if props["MainPID"] != "51820" {
+		t.Fatalf("expected MainPID 51820, got %q", props["MainPID"])
+	}
+
+	bd := ParseMemoryStat(statPart)
+	if bd == nil {
+		t.Fatal("expected parsed memory breakdown")
+	}
+
+	// 36700160 bytes = 35 MB
+	if bd.AnonBytes != 36700160 {
+		t.Errorf("expected AnonBytes=36700160, got %d", bd.AnonBytes)
+	}
+	// 12582912 bytes = 12 MB
+	if bd.FileBytes != 12582912 {
+		t.Errorf("expected FileBytes=12582912, got %d", bd.FileBytes)
+	}
+	// 3145728 bytes = 3 MB
+	if bd.KernelBytes != 3145728 {
+		t.Errorf("expected KernelBytes=3145728, got %d", bd.KernelBytes)
+	}
+	if bd.SlabBytes != 2097152 {
+		t.Errorf("expected SlabBytes=2097152, got %d", bd.SlabBytes)
+	}
+
+	svc := &ServiceStatus{
+		Name:            "api",
+		UnitName:        "anode-api.service",
+		State:           StateRunning,
+		PID:             51820,
+		TasksCurrent:    16,
+		MemoryBytes:     52428800,
+		MemoryMaxBytes:  1073741824, // 1GB limit
+		MemoryBreakdown: bd,
+	}
+	svc.MemoryHuman = FormatServiceMemoryHuman(svc)
+
+	// Verify formatted string
+	if !strings.Contains(svc.MemoryHuman, "50.0 MB / 1.0 GB (4%)") {
+		t.Errorf("unexpected formatted memory: %q", svc.MemoryHuman)
+	}
+	if !strings.Contains(svc.MemoryHuman, "anon:35.0 MB file:12.0 MB k:3.0 MB") {
+		t.Errorf("expected breakdown in formatted memory: %q", svc.MemoryHuman)
+	}
+
+	// Verify JSON output round-trip
+	rep := &ProcessReport{
+		IsRemote:    true,
+		Target:      "prod.anode.internal",
+		CgroupsMode: "v2 (unified)",
+		Services:    []ServiceStatus{*svc},
+	}
+	var buf bytes.Buffer
+	if err := PrintJSON(&buf, rep); err != nil {
+		t.Fatalf("PrintJSON error: %v", err)
+	}
+
+	var parsed ProcessReport
+	if err := json.Unmarshal(buf.Bytes(), &parsed); err != nil {
+		t.Fatalf("Unmarshal error: %v", err)
+	}
+
+	if len(parsed.Services) != 1 {
+		t.Fatalf("expected 1 service, got %d", len(parsed.Services))
+	}
+	parsedSvc := parsed.Services[0]
+	if parsedSvc.MemoryBreakdown == nil {
+		t.Fatal("expected MemoryBreakdown in JSON")
+	}
+	if parsedSvc.MemoryBreakdown.AnonBytes != 36700160 {
+		t.Errorf("JSON round-trip mismatch: got %d, want 36700160", parsedSvc.MemoryBreakdown.AnonBytes)
+	}
+	if parsedSvc.MemoryBreakdown.FileBytes != 12582912 {
+		t.Errorf("JSON round-trip mismatch: got %d, want 12582912", parsedSvc.MemoryBreakdown.FileBytes)
+	}
+	if parsedSvc.MemoryBreakdown.KernelBytes != 3145728 {
+		t.Errorf("JSON round-trip mismatch: got %d, want 3145728", parsedSvc.MemoryBreakdown.KernelBytes)
+	}
+	if parsedSvc.MemoryBreakdown.SlabBytes != 2097152 {
+		t.Errorf("JSON round-trip mismatch: got %d, want 2097152", parsedSvc.MemoryBreakdown.SlabBytes)
+	}
+}
+
+func TestDynamicTableAlignmentZeroDrift(t *testing.T) {
+	// Test that differing memory string lengths never cause table column misalignment
+	rep := &ProcessReport{
+		IsRemote:    true,
+		Target:      "prod",
+		CgroupsMode: "v2 (unified)",
+		Services: []ServiceStatus{
+			{
+				Name:        "short-svc",
+				State:       StateRunning,
+				PID:         100,
+				MemoryHuman: "10.0 MB",
+				UptimeHuman: "1h",
+			},
+			{
+				Name:        "long-breakdown-svc",
+				State:       StateRunning,
+				PID:         200,
+				MemoryHuman: "128.5 MB / 1.0 GB (12%) [anon:100.0 MB file:25.0 MB k:3.5 MB]",
+				UptimeHuman: "2d",
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	PrintReport(&buf, rep)
+	lines := strings.Split(buf.String(), "\n")
+
+	// Verify header line exists and separator matches length
+	headerIdx := -1
+	for i, line := range lines {
+		if strings.Contains(line, "SERVICE") && strings.Contains(line, "MEMORY") {
+			headerIdx = i
+			break
+		}
+	}
+	if headerIdx == -1 {
+		t.Fatalf("Header row not found in table output:\n%s", buf.String())
+	}
+
+	// Verify row 1 and row 2 columns align with UPTIME and PORT/EDGE
+	row1 := lines[headerIdx+2]
+	row2 := lines[headerIdx+3]
+
+	if !strings.Contains(row1, "short-svc") || !strings.Contains(row2, "long-breakdown-svc") {
+		t.Fatalf("Expected service rows, got:\n%s\n%s", row1, row2)
+	}
+}
+
+func TestGetLocalProcessMemoryLive(t *testing.T) {
+	pid := os.Getpid()
+	mem, bd := getLocalProcessMemory(pid)
+	t.Logf("Live test on PID %d: MemoryBytes=%d (%s), breakdown=%+v", pid, mem, FormatBytes(mem), bd)
+	if mem == 0 {
+		t.Errorf("expected non-zero memory for current live process (PID %d)", pid)
+	}
+}
+
+func TestInspectLocalWithSimulatedActiveService(t *testing.T) {
+	// Create a temp workspace with anode.lock.json containing a service
+	dir := t.TempDir()
+	lockContent := `{
+  "schema_version": "1.0",
+  "project": "test-active-shop",
+  "services": {
+    "web-api": {
+      "name": "web-api",
+      "entrypoint": "./cmd/api",
+      "ingress": [
+        { "routes": ["GET /healthz"] }
+      ]
+    }
+  }
+}`
+	if err := os.WriteFile(filepath.Join(dir, "anode.lock.json"), []byte(lockContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. When inactive (no process running)
+	repInactive, err := InspectLocal(context.Background(), Options{TargetDir: dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repInactive.Services) != 1 {
+		t.Fatalf("expected 1 service, got %d", len(repInactive.Services))
+	}
+	sInactive := repInactive.Services[0]
+	if sInactive.State != StateInactive {
+		t.Errorf("expected StateInactive when process not running, got %s", sInactive.State)
+	}
+	if sInactive.PID != 0 {
+		t.Errorf("expected PID=0 when inactive, got %d", sInactive.PID)
+	}
+	if sInactive.MemoryHuman != "" {
+		t.Errorf("expected empty MemoryHuman when inactive, got %q", sInactive.MemoryHuman)
+	}
+
+	// 2. Now simulate the active process:
+	livePID := os.Getpid()
+	sActive := ServiceStatus{
+		Name:           "web-api",
+		UnitName:       "local:web-api",
+		State:          StateRunning,
+		ActiveState:    "active",
+		SubState:       "running",
+		UptimeHuman:    "active",
+		PID:            livePID,
+		MemoryMaxBytes: 1024 * 1024 * 1024,
+	}
+
+	memBytes, bd := getLocalProcessMemory(livePID)
+	if memBytes > 0 {
+		sActive.MemoryBytes = memBytes
+		sActive.MemoryBreakdown = bd
+		sActive.MemoryHuman = FormatServiceMemoryHuman(&sActive)
+	}
+
+	if sActive.MemoryBytes == 0 {
+		t.Errorf("expected active process to have non-zero MemoryBytes")
+	}
+	if sActive.MemoryHuman == "" || sActive.MemoryHuman == "-" {
+		t.Errorf("expected active process to have formatted MemoryHuman, got %q", sActive.MemoryHuman)
+	}
+
+	repActive := &ProcessReport{
+		IsRemote:    false,
+		Timestamp:   time.Now(),
+		CgroupsMode: "local-process",
+		Services:    []ServiceStatus{sActive},
+	}
+
+	var buf bytes.Buffer
+	PrintReport(&buf, repActive)
+	tableOutput := buf.String()
+	t.Logf("Active Table Output:\n%s", tableOutput)
+
+	if !strings.Contains(tableOutput, "active") {
+		t.Errorf("expected 'active' status in table, got:\n%s", tableOutput)
+	}
+	if !strings.Contains(tableOutput, strconv.Itoa(livePID)) {
+		t.Errorf("expected PID %d in table, got:\n%s", livePID, tableOutput)
+	}
+	if !strings.Contains(tableOutput, FormatBytes(sActive.MemoryBytes)) {
+		t.Errorf("expected memory %s in table, got:\n%s", FormatBytes(sActive.MemoryBytes), tableOutput)
+	}
+
+	// 3. Now simulate active process with anon/file breakdown (e.g. Linux cgroups v2 / smaps)
+	sActive.MemoryBreakdown = &MemoryBreakdown{
+		AnonBytes:   10 * 1024 * 1024,
+		FileBytes:   2800 * 1024,
+		KernelBytes: 512 * 1024,
+		AnonHuman:   "10.0 MB",
+		FileHuman:   "2.7 MB",
+		KernelHuman: "512.0 KB",
+	}
+	sActive.MemoryHuman = FormatServiceMemoryHuman(&sActive)
+	repActive.Services = []ServiceStatus{sActive}
+
+	var bufBreakdown bytes.Buffer
+	repActive.Verbose = true
+	PrintReport(&bufBreakdown, repActive)
+	breakdownTableOutput := bufBreakdown.String()
+	t.Logf("Active Table Output with Breakdown & Verbose Tree:\n%s", breakdownTableOutput)
+
+	if !strings.Contains(breakdownTableOutput, "[anon:10.0 MB file:2.7 MB k:512.0 KB]") {
+		t.Errorf("expected inline breakdown tags in table, got:\n%s", breakdownTableOutput)
+	}
+	if !strings.Contains(breakdownTableOutput, "Anonymous (Heap / Goroutines): 10.0 MB") {
+		t.Errorf("expected verbose heap line in tree, got:\n%s", breakdownTableOutput)
+	}
+	if !strings.Contains(breakdownTableOutput, "File-backed (Page Cache / SO): 2.7 MB") {
+		t.Errorf("expected verbose page cache line in tree, got:\n%s", breakdownTableOutput)
 	}
 }
