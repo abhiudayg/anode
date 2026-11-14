@@ -38,12 +38,12 @@ Method: agstack `security-audit` and `jailbreak-defense` checklists, `govulnchec
 - **Remediation:** they now go into the `0600` env file under `/etc/anode/env/`.
 - **Verification:** live check: the env file holds `ORDERS_DB_URL`, the unit does not contain it or the password.
 
-### [PARTIAL] [CWE-250] Deployment ran as root (high)
-- **Status update:** direct root login is now disabled by `anode host-setup --disable-root-login`, which checks the deploy account before touching sshd and removes its own setting if sshd rejects it. Verified live: root login is refused, the deploy account deploys. The privileged helper below is still open.
+### [ACCEPTED] [CWE-250] Deployment ran as root (high)
+- **Status update:** direct root login is now disabled by `anode host-setup --disable-root-login`, which checks the deploy account before touching sshd and removes its own setting if sshd rejects it. Verified live: root login is refused, the deploy account deploys. The privileged helper was evaluated and deliberately not built; see the accepted residual risk below.
 - **What this is:** Deploys connect as `root`. A compromised deploy host or stolen key gives root on the server (excessive agency).
 - **Remediation:** `anode host-setup root@host` creates a dedicated deploy account with a validated sudoers rule. Deploys run as that account, and every privileged command goes through `sudo -n`.
-- **Residual risk:** the sudoers rule is NOPASSWD ALL, which is root-equivalent. A compromised key still gives root. Scoping sudo to a privileged helper binary is the next step, and it requires changing how commands are sent to the host.
-- **Also:** disable direct root SSH login once the deploy account works.
+- **Accepted residual risk:** the sudoers rule is NOPASSWD ALL, which is root-equivalent. A compromised deploy key still gives root on the host. This is accepted for the supported profile (single-owner hosts that the developer controls). A privileged helper would replace about 49 remote call sites with roughly a dozen fixed operations and change the deploy contract; it is not planned unless the supported profile widens to shared or multi-tenant hosts.
+- **Done:** direct root SSH login is disabled by `host-setup --disable-root-login`.
 
 ### [FIXED] [CWE-319] Plaintext HTTP when the target is an IP address (medium)
 - **What this is:** without `--domain`, Caddy serves HTTP only, so app traffic and any secrets it carries are unencrypted.
@@ -85,5 +85,5 @@ Method: agstack `security-audit` and `jailbreak-defense` checklists, `govulnchec
 
 ## Remaining work
 
-1. Scope sudo to a privileged helper binary (the root-equivalent residual risk). Sizing from the code: the deployer issues 49 remote commands, which reduce to about a dozen privileged operations (install a file, write a unit, systemctl, caddy validate and reload, apt install, iptables rule, port registry, prune releases, rollback unit copy, sshd drop-in). The helper requires refactoring every call site, and it changes the deploy contract. It is not implemented yet.
+1. None for the supported profile. The root-equivalent deploy account is an accepted residual risk (see the CWE-250 finding). Revisit if the profile widens to shared hosts.
 2. Application logs can contain secrets. This is application behavior that Anode cannot filter reliably. Accepted, and documented in the README.
