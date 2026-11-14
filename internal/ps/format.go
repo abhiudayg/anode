@@ -217,15 +217,26 @@ func PrintReport(w io.Writer, report *ProcessReport) {
 				}
 				fmt.Fprintf(w, "  • %s%-16s%s Total: %s\n", colorBold, svc.Name, colorReset, FormatBytes(svc.MemoryBytes))
 				fmt.Fprintf(w, "      ├─ Anonymous mappings:            %-10s (%d%%)\n", bd.AnonHuman, anonPct)
-				fmt.Fprintf(w, "      ├─ File-backed (Page Cache / SO): %-10s (%d%%) [Evictable under pressure]\n", bd.FileHuman, filePct)
+				shmemInfo := ""
+				if bd.ShmemBytes > 0 {
+					shmemInfo = fmt.Sprintf(" (shmem: %s)", FormatBytes(bd.ShmemBytes))
+				}
+				fmt.Fprintf(w, "      ├─ File-backed (Page Cache):      %-10s (%d%%)%s\n", bd.FileHuman, filePct, shmemInfo)
 				if bd.KernelBytes > 0 {
-					slabInfo := ""
+					var kDetails []string
 					if bd.SlabBytes > 0 {
-						slabInfo = fmt.Sprintf(" (slab: %s)", FormatBytes(bd.SlabBytes))
+						kDetails = append(kDetails, fmt.Sprintf("slab: %s", FormatBytes(bd.SlabBytes)))
 					}
-					fmt.Fprintf(w, "      └─ Kernel Data (Slab / Sockets):  %-10s (%d%%)%s\n", bd.KernelHuman, kernelPct, slabInfo)
+					if bd.SockBytes > 0 {
+						kDetails = append(kDetails, fmt.Sprintf("sock: %s", FormatBytes(bd.SockBytes)))
+					}
+					kInfo := ""
+					if len(kDetails) > 0 {
+						kInfo = fmt.Sprintf(" (%s)", strings.Join(kDetails, ", "))
+					}
+					fmt.Fprintf(w, "      └─ Kernel allocations:            %-10s (%d%%)%s\n", bd.KernelHuman, kernelPct, kInfo)
 				} else {
-					fmt.Fprintf(w, "      └─ Kernel Data:                  -\n")
+					fmt.Fprintf(w, "      └─ Kernel allocations:            -\n")
 				}
 			}
 		}

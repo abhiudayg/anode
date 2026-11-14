@@ -372,11 +372,11 @@ func TestPrintReportVerboseMemoryBreakdown(t *testing.T) {
 	if !strings.Contains(out, "Anonymous mappings:            35.0 MB") {
 		t.Errorf("expected Anonymous mappings line, got:\n%s", out)
 	}
-	if !strings.Contains(out, "File-backed (Page Cache / SO): 12.0 MB") {
+	if !strings.Contains(out, "File-backed (Page Cache):      12.0 MB") {
 		t.Errorf("expected File-backed page cache line, got:\n%s", out)
 	}
-	if !strings.Contains(out, "Kernel Data (Slab / Sockets):  3.0 MB") {
-		t.Errorf("expected Kernel line with slab, got:\n%s", out)
+	if !strings.Contains(out, "Kernel allocations:            3.0 MB") {
+		t.Errorf("expected Kernel allocations line with slab, got:\n%s", out)
 	}
 }
 
@@ -389,7 +389,9 @@ SubState=running
 MainPID=51820
 TasksCurrent=16
 CPUUsageNSec=950000000
+CPUQuotaPerSecUSec=1500000us
 MemoryCurrent=52428800
+MemoryMax=536870912
 NRestarts=0
 ExecMainStatus=0
 Environment=PORT=8080 DATABASE_URL=postgres://anode:secret@127.0.0.1:5432/db
@@ -441,13 +443,13 @@ pgfault 2410
 		PID:             51820,
 		TasksCurrent:    16,
 		MemoryBytes:     52428800,
-		MemoryMaxBytes:  1073741824, // 1GB limit
+		MemoryMaxBytes:  536870912, // 512MB limit from MemoryMax
 		MemoryBreakdown: bd,
 	}
 	svc.MemoryHuman = FormatServiceMemoryHuman(svc)
 
 	// Verify formatted string
-	if !strings.Contains(svc.MemoryHuman, "50.0 MB / 1.0 GB (4%)") {
+	if !strings.Contains(svc.MemoryHuman, "50.0 MB / 512.0 MB (9%)") {
 		t.Errorf("unexpected formatted memory: %q", svc.MemoryHuman)
 	}
 	if !strings.Contains(svc.MemoryHuman, "anon:35.0 MB file:12.0 MB k:3.0 MB") {
@@ -664,7 +666,7 @@ func TestInspectLocalWithSimulatedActiveService(t *testing.T) {
 	if !strings.Contains(breakdownTableOutput, "Anonymous mappings:            10.0 MB") {
 		t.Errorf("expected verbose anonymous mappings line in tree, got:\n%s", breakdownTableOutput)
 	}
-	if !strings.Contains(breakdownTableOutput, "File-backed (Page Cache / SO): 2.7 MB") {
+	if !strings.Contains(breakdownTableOutput, "File-backed (Page Cache):      2.7 MB") {
 		t.Errorf("expected verbose page cache line in tree, got:\n%s", breakdownTableOutput)
 	}
 }

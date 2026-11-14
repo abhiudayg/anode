@@ -504,7 +504,7 @@ func printPsUsage() {
 	fmt.Println("  -a, --all              Show all units (including inactive/stopped services)")
 	fmt.Println("      --json             Output complete process and cgroup metrics as JSON")
 	fmt.Println("      --target TARGET    Remote VPS <user@host> to inspect over SSH")
-	fmt.Println("  -v, --verbose          Print verbose trace logs")
+	fmt.Println("  -v, --verbose          Show detailed memory breakdown tree (anon mappings, file cache, kernel allocations)")
 	fmt.Println("  -h, --help             Print usage information")
 	fmt.Println("\nExamples:")
 	fmt.Println("  anode ps                                    # Inspect local processes and containers")
