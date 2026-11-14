@@ -28,7 +28,7 @@ func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFi
 	}
 }
 
-// Deploy executes the complete zero-downtime Blue/Green deployment to the remote VPS
+// Deploy uploads a release, restarts each service in place with a health check, and reloads the Caddy edge on the remote VPS
 func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	bootstrapper := NewBootstrapper(d.ssh)
 	releaseID := fmt.Sprintf("%d", time.Now().Unix())

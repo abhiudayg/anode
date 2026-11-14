@@ -1,6 +1,6 @@
 name: "Anode CodeQL Configuration"
 
-# Exclude third-party realworld benchmarks, test fixtures, and build artifacts from scanning
+# Exclude examples, test fixtures, and build artifacts from scanning
 paths-ignore:
   - 'examples/**'
   - '**/testdata/**'
