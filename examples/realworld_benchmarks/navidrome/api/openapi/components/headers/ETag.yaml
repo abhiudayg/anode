@@ -1,3 +1,0 @@
-description: Entity tag for `If-None-Match` revalidation.
-schema:
-  type: string

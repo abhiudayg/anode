@@ -71,7 +71,7 @@ Method: agstack `security-audit` and `jailbreak-defense` checklists, `govulnchec
 ## Dependency and secret scans
 
 - `govulncheck ./...`: no vulnerabilities (`.verify/artifacts/audit/govulncheck.txt`).
-- `gitleaks`: 94 findings. Every finding in the Anode code is an example, a test fixture, or a third-party file under `examples/realworld_benchmarks/`. Outside those, the only finding is the IndexNow key above (`.verify/artifacts/audit/gitleaks.json`).
+- `gitleaks`: 94 findings. Every finding in the Anode code is an example, a test fixture, or a third-party file under `examples/realworld_benchmarks/`, which was removed in v1.4.0. Outside those, the only finding is the IndexNow key above (`.verify/artifacts/audit/gitleaks.json`).
 
 ## Jailbreak-defense mapping
 

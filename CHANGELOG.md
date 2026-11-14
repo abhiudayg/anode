@@ -37,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `docs/supported-profile.md`, the in-scope and out-of-scope list and the `.env` contract.
 - Added `docs/security-audit.md`, with each finding's status and the accepted residual risks.
 - Removed unverified figures and claims from the website, and removed unmaintained analysis snapshots from the examples.
+- Removed example suites that no test or CLI command used, and the vendored third-party repositories under `examples/realworld_benchmarks/`. They remain in git history.
+- Corrected the deployment, architecture, and security docs to match the code: services run under `DynamicUser`, deploys restart services in place, migrations are not run by the deploy, and the cluster firewall does not restrict outbound traffic.
 - Updated the version shown in the navigation, the hero banner, and the changelog page.
 
 ---

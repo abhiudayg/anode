@@ -78,7 +78,7 @@ The static extraction pipeline lives in `internal/analyzer/` and consists of 5 d
 ```
 
 ### Phase 1: Whole-Program SSA Construction
-Using `golang.org/x/tools/go/packages` and `go/ssa/ssautil`, Anode loads all workspace packages under the mode flags `ssa.SanityCheckFunctions | ssa.InstantiateGenerics`. 
+Using `golang.org/x/tools/go/packages` and `go/ssa/ssautil`, Anode loads all workspace packages with `ssa.InstantiateGenerics`. 
 
 In SSA form, complex expressions, nested function calls, and control-flow branches are broken down into explicit static instructions (`ssa.Call`, `ssa.Alloc`, `ssa.FieldAddr`, `ssa.Store`, `ssa.BinOp`).
 
@@ -192,8 +192,8 @@ The lockfile lives in `internal/iag/schema.go`:
 
 ### Local Engine (`anode dev`)
 Implemented in `internal/devengine/engine.go`:
-* **Zero Port Collisions:** Calls `net.ListenTCP("tcp", "127.0.0.1:0")` to allocate guaranteed free ephemeral loopback ports for each service.
-* **Dual Credential Injection:** Injects both unified DSNs (`DATABASE_URL=postgres://...`) and decomposed components (`DB_HOST=127.0.0.1`, `DB_PORT=5432`) based on the service's `expanded_env` requirements.
+* **Free Port Allocation:** Asks the OS for a free loopback port (`127.0.0.1:0`) for each service and each database container. The port is free when it is checked; nothing reserves it afterwards. Redis is the exception: dev injects the fixed address `127.0.0.1:6379`.
+* **Database Credential Injection:** Injects a DSN with the fixed local credentials `postgres:postgres`, plus the components listed in the service's `expanded_env` (`DB_HOST=127.0.0.1`, and `DB_PORT` set to the container's host port).
 * **Service Interconnection:** Injects the dynamically assigned loopback URL of Service B directly into Service A's binding environment variable.
 
 ### Production VPS Deployer (`anode deploy`)
@@ -202,17 +202,17 @@ Implemented in `internal/deployer/systemd.go`:
 * **Hardened Systemd Units:** Generates `/etc/systemd/system/anode-<svc>.service` with:
   - `Restart=always` and `RestartSec=3`
   - Linux **cgroups v2** quotas: `CPUQuota=200%`, `MemoryMax=1G`
-  - Dedicated unprivileged system user (`anode`)
-* **Edge Proxy Synthesis:** Synthesizes a Caddy reverse proxy configuration mapping external domain routes directly to internal service loopback ports with automatic Let's Encrypt TLS.
-* **Zero-Downtime Swaps:** Boots version 2 on an alternate loopback port, verifies health, flips the Caddy proxy route, and gracefully stops version 1.
+  - Unprivileged transient user per service (`DynamicUser=yes`)
+* **Edge Proxy Synthesis:** Writes a Caddy reverse proxy configuration mapping routes to internal service loopback ports. With `--domain`, Caddy obtains a Let's Encrypt certificate. An IP target gets plain HTTP only with `--plain-http`.
+* **Restart in Place:** Each service unit is restarted with the new binary, then checked on its loopback port. Old and new versions do not run side by side, so requests in flight during a restart can fail.
 
 ### Multi-Node Bin-Packing & Zero-Trust Firewall (`anode cluster`)
 Implemented in `internal/cluster/pool.go`:
 * **Greedy Least-Loaded Bin-Packer:** Assigns services across registered cluster nodes according to allocated load and memory limits.
 * **Compiler-Generated `nftables` Rules:** Emits Linux kernel firewall tables with a default drop policy:
   - Permits loopback (`lo`) and DNS (`udp dport 53`).
-  - Permits outbound external HTTPS (`tcp dport 443`) for declared `EgressRule` entries.
-  - Drops all undeclared east-west lateral container traffic.
+  - Input and forward chains default to drop. The output chain accepts traffic; the generated rules do not restrict outbound connections or enforce `EgressRule` entries.
+  - Allows the declared ingress ports, and service ports from the cluster's private subnets.
 
 ---
 
@@ -220,8 +220,6 @@ Implemented in `internal/cluster/pool.go`:
 
 One of the fatal flaws of traditional declarative infrastructure is that deleting a resource from code causes the orchestrator to issue a `DROP DATABASE` or delete persistent volumes.
 
-Anode strictly enforces **Soft-Orphan Protection**:
-* Stateful resources (`postgres`, `redis`, persistent storage) are tagged with `lifecycle: stateful_retain`.
-* If a service removes a database connection in a feature branch, Anode marks the resource as `lifecycle: orphaned`.
-* The service's network binding is severed, but **the underlying database volume is never deleted**.
-* Data can only be permanently destroyed through an explicit, manual CLI invocation: `anode prune --confirm`.
+* Stateful resources (`postgres`, `redis`, persistent storage) are tagged with `lifecycle: stateful_retain` in the lockfile.
+* The deploy never drops a database or deletes a data directory. Pruning removes old releases, their env and config files, and units of services that are no longer deployed.
+* The `orphaned` lifecycle value exists in the schema, but no code sets it, and there is no `anode prune` command.

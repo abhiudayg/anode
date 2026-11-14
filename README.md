@@ -209,16 +209,12 @@ Examples live in [`examples/`](examples/). Service counts are the number of `mai
 
 | Example | Services | What it covers |
 | :--- | :---: | :--- |
-| [`sample-shop`](examples/sample-shop/README.md) | 2 | Baseline two-service app with Postgres |
+| [`sample-shop`](examples/sample-shop/README.md) | 2 | Two-service app with Postgres |
 | [`complex_ecommerce`](examples/complex_ecommerce/README.md) | 3 | Composite DSN unpacking, pre-traffic migrations, SendGrid egress |
-| [`benchmark_app`](examples/benchmark_app/README.md) | 2 | Dead-code reachability pruning |
-| [`hyper_mesh_12`](examples/hyper_mesh_12/README.md) | 12 | Mixed REST and gRPC, Redis caching, struct pointer indirection |
-| [`fintech_core_20`](examples/fintech_core_20/README.md) | 20 | Kafka, TimescaleDB, ScyllaDB |
-| [`health_mesh_25`](examples/health_mesh_25/README.md) | 25 | Document stores, WebRTC signalling, gRPC |
-| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | 14 backing stores, gRPC contracts, egress rules |
-| [`realworld_benchmarks`](examples/realworld_benchmarks/README.md) | 10 repos | Open-source Go applications: `1Panel`, `cloudreve`, `croc`, `filebrowser`, `glance`, `navidrome`, `netbird`, `ntfy`, `restic`, `wttr.in` |
+| [`hyper_mesh_12`](examples/hyper_mesh_12/README.md) | 12 | Config indirection, composite DSNs, gRPC and REST links; analyzer test fixture |
+| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | Many backing stores, gRPC and REST links; used by the `anode cluster` example |
 
-Analysis timings are not published here. An earlier version of this README had a timing table with no reproducible source in the repository; it has been removed.
+Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
 
 ---
 

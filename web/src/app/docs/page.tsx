@@ -933,7 +933,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               type="text"
                               value={devPath}
                               onChange={(e) => setDevPath(e.target.value)}
-                              placeholder=". (current repo) or ./examples/fintech_core_20"
+                              placeholder=". (current repo) or ./examples/complex_ecommerce"
                               className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
                             />
                           </div>
@@ -1143,7 +1143,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-emerald-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode dev</div>
-                      <div className="pl-4 text-emerald-400">anode dev ./examples/fintech_core_20</div>
+                      <div className="pl-4 text-emerald-400">anode dev ./examples/complex_ecommerce</div>
                     </div>
                   </div>
 

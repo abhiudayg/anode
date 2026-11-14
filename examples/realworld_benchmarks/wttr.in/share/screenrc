@@ -1,2 +1,0 @@
-screen -t srv.py bash -c "cd ~/wttr.in; ve/bin/python bin/srv.py; bash -i"
-screen -t proxy.py bash -c "cd ~/wttr.in; ve/bin/python bin/proxy.py; bash -i"

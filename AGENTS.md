@@ -60,7 +60,7 @@ anode/
 │   ├── src/app/                # Routes (docs, blog, tools/ssa-visualizer, vs/docker-compose)
 │   ├── src/components/         # Interactive UI widgets (Cmd+K palette, savings calculator)
 │   └── src/data/blogPosts.ts   # Engineering essays & deep-dive technical benchmarks
-├── examples/                   # Stress-test benchmarks (12, 20, 25, 32 microservices)
+├── examples/                   # Sample apps: sample-shop, complex_ecommerce, omni_mesh_32, hyper_mesh_12 (test fixture)
 └── .github/
     ├── workflows/              # CI test suite, CodeQL analysis, release workflows
     ├── codeql/                 # CodeQL path filters (excludes third-party benchmarks)
@@ -160,7 +160,7 @@ When assigned an issue, enhancement, or bugfix in this repository, follow this e
 
 ### Step 3: Security & Code Scanning Compliance
 1. CodeQL runs automatically on PRs. Ensure no direct calls to insecure primitives (e.g. `ssh.InsecureIgnoreHostKey` without fallback).
-2. Third-party benchmark targets in `examples/` are excluded via `.github/codeql/codeql-config.yml`. Never add vendored third-party code to `internal/` or `cmd/`.
+2. Keep third-party code out of the repository. Do not add vendored third-party code under `examples/`, `internal/`, or `cmd/`.
 
 ### Step 4: Documentation & Feature Map Updates
 1. When a new binary command or CLI flag is added, update:
