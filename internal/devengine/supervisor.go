@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/abhiudayg/anode/internal/iag"
 )
@@ -103,8 +104,13 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 		return fmt.Errorf("failed to start %s: %w", svc.Name, err)
 	}
 
-	go s.streamLogs(stdout, svc.Name, color)
-	go s.streamLogs(stderr, svc.Name, color)
+	logDir := filepath.Join(absRoot, ".verify", "logs")
+	_ = os.MkdirAll(logDir, 0755)
+	stdoutLog, _ := os.OpenFile(filepath.Join(logDir, svc.Name+".log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	stderrLog, _ := os.OpenFile(filepath.Join(logDir, svc.Name+".log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+
+	go s.streamLogs(stdout, svc.Name, color, stdoutLog)
+	go s.streamLogs(stderr, svc.Name, color, stderrLog)
 
 	inst := &ServiceInstance{
 		Name:       svc.Name,
@@ -119,11 +125,19 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 	return nil
 }
 
-func (s *Supervisor) streamLogs(r io.Reader, serviceName string, color string) {
+func (s *Supervisor) streamLogs(r io.Reader, serviceName string, color string, logFile *os.File) {
+	if logFile != nil {
+		defer logFile.Close()
+	}
 	scanner := bufio.NewScanner(r)
 	prefix := fmt.Sprintf("%s[%s]%s ", color, serviceName, colorReset)
 	for scanner.Scan() {
-		fmt.Printf("%s%s\n", prefix, scanner.Text())
+		line := scanner.Text()
+		fmt.Printf("%s%s\n", prefix, line)
+		if logFile != nil {
+			ts := time.Now().UTC().Format(time.RFC3339Nano)
+			_, _ = fmt.Fprintf(logFile, "%s %s\n", ts, line)
+		}
 	}
 }
 

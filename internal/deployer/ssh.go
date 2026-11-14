@@ -139,6 +139,34 @@ func (s *SSHClient) Run(cmd string) (string, error) {
 	return string(out), nil
 }
 
+// Client returns the underlying *ssh.Client
+func (s *SSHClient) Client() *ssh.Client {
+	return s.client
+}
+
+// Stream initiates a command on the remote host with streaming stdout/stderr reader pipes
+func (s *SSHClient) Stream(cmd string) (io.Reader, io.Reader, *ssh.Session, error) {
+	session, err := s.client.NewSession()
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("failed to create SSH session: %w", err)
+	}
+	stdout, err := session.StdoutPipe()
+	if err != nil {
+		_ = session.Close()
+		return nil, nil, nil, fmt.Errorf("failed to get stdout pipe: %w", err)
+	}
+	stderr, err := session.StderrPipe()
+	if err != nil {
+		_ = session.Close()
+		return nil, nil, nil, fmt.Errorf("failed to get stderr pipe: %w", err)
+	}
+	if err := session.Start(cmd); err != nil {
+		_ = session.Close()
+		return nil, nil, nil, fmt.Errorf("failed to start remote command: %w", err)
+	}
+	return stdout, stderr, session, nil
+}
+
 // StreamFile copies a local file to remote host with specified permissions
 func (s *SSHClient) StreamFile(srcPath string, dstPath string, mode os.FileMode) error {
 	session, err := s.client.NewSession()
