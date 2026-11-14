@@ -38,7 +38,7 @@ func TestDependencyOwnedSinkIsDiagnosedNotBound(t *testing.T) {
 }
 
 func TestDriverWrapperInsideDependencyIsNotDiagnosed(t *testing.T) {
-	dir, err := filepath.Abs("../../examples/omni_mesh_32")
+	dir, err := filepath.Abs("testdata/pgxwrapper")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,19 +48,16 @@ func TestDriverWrapperInsideDependencyIsNotDiagnosed(t *testing.T) {
 	}
 	for _, d := range lock.Diagnostics {
 		if strings.Contains(d.Message, "inside a dependency") {
-			t.Errorf("pgx's own wrapper must not be reported as a dependency-owned connection: %+v", d)
+			t.Errorf("a dependency's own wrapper must not be reported as a dependency-owned connection: %+v", d)
 		}
 	}
-	if _, ok := lock.Services["orders"]; !ok {
-		t.Fatalf("expected the orders service in the omni mesh lockfile")
-	}
-	var orderBindings int
-	for _, b := range lock.Services["orders"].Bindings {
+	var postgresBindings int
+	for _, b := range lock.Services["pgxwrapper"].Bindings {
 		if b.Protocol == string(iag.KindPostgres) {
-			orderBindings++
+			postgresBindings++
 		}
 	}
-	if orderBindings != 1 {
-		t.Errorf("expected one postgres binding for orders, got %d", orderBindings)
+	if postgresBindings != 1 {
+		t.Errorf("expected the project's own pgxpool.New call to bind one postgres resource, got %d", postgresBindings)
 	}
 }
