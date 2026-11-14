@@ -87,6 +87,15 @@ export function CommandPalette() {
       badge: "CLI",
       action: () => copyText("anode ps", "cmd-ps"),
     },
+    {
+      id: "cmd-logs",
+      title: "anode logs [target] [service]",
+      description: "Color-multiplexed log streaming across microservices, systemd journald, and Caddy edge",
+      category: "Commands",
+      icon: Terminal,
+      badge: "CLI",
+      action: () => copyText("anode logs -f", "cmd-logs"),
+    },
 
     // Interactive Developer Tools
     {

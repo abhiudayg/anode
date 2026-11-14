@@ -61,16 +61,62 @@ const SECTION_ALIASES: Record<string, string> = {
   fix: "troubleshooting",
   start: "quickstart",
   guide: "quickstart",
+  logs: "cli",
+  log: "cli",
+  ps: "cli",
+  status: "cli",
+  doctor: "cli",
+  deploy: "cli",
+  inspect: "cli",
 };
 
 export default function DocsPage() {
   const [activeDoc, setActiveDoc] = useState<string>("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  // Interactive Command Generator States
+  const [cmdType, setCmdType] = useState<"deploy" | "logs" | "ps" | "doctor" | "dev" | "inspect">("deploy");
+
+  // deploy
   const [cliHost, setCliHost] = useState("root@my-vps.com");
-  const [cliDryRun, setCliDryRun] = useState(false);
   const [cliDomain, setCliDomain] = useState("");
+  const [cliDryRun, setCliDryRun] = useState(false);
   const [cliArch, setCliArch] = useState<"amd64" | "arm64">("amd64");
+  const [cliDeployPath, setCliDeployPath] = useState("");
+  const [cliDeployAlias, setCliDeployAlias] = useState(false);
+
+  // logs
+  const [logsTargetMode, setLogsTargetMode] = useState<"remote" | "local">("remote");
+  const [logsTarget, setLogsTarget] = useState("root@my-vps.com");
+  const [logsService, setLogsService] = useState("");
+  const [logsFollow, setLogsFollow] = useState(true);
+  const [logsLines, setLogsLines] = useState("100");
+  const [logsTimestamps, setLogsTimestamps] = useState(false);
+  const [logsSince, setLogsSince] = useState("");
+  const [logsEdge, setLogsEdge] = useState(false);
+  const [logsJson, setLogsJson] = useState(false);
+
+  // ps
+  const [psTargetMode, setPsTargetMode] = useState<"remote" | "local">("remote");
+  const [psTarget, setPsTarget] = useState("root@my-vps.com");
+  const [psAll, setPsAll] = useState(false);
+  const [psJson, setPsJson] = useState(false);
+  const [psVerbose, setPsVerbose] = useState(false);
+  const [psAlias, setPsAlias] = useState(false);
+
+  // doctor
+  const [doctorTargetMode, setDoctorTargetMode] = useState<"remote" | "local">("remote");
+  const [doctorTarget, setDoctorTarget] = useState("root@my-vps.com");
+  const [doctorPath, setDoctorPath] = useState("");
+  const [doctorStrict, setDoctorStrict] = useState(false);
+  const [doctorVerbose, setDoctorVerbose] = useState(false);
+
+  // dev
+  const [devPath, setDevPath] = useState("");
+
+  // inspect
+  const [inspectPath, setInspectPath] = useState("");
 
   const docSections = [
     {
@@ -354,7 +400,8 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
 Proof-of-Topology Bare-Metal Orchestrator for Unmodified Go Backends
 
 Options:
-  -v, --version          Print version information and exit
+  -v, --verbose          Print verbose trace logs and contract JSON
+      --version          Print version information and exit
   -h, --help             Print usage information
 
 Management Commands:
@@ -369,84 +416,550 @@ Commands:
   run TARGET [PATH]      Alias for deploy (Docker CLI parity)
   ps [TARGET] [PATH]     List running processes, cgroup v2 memory/CPU, and Caddy routes
   status [TARGET] [PATH] Alias for ps (process and topology status)
+  logs [TARGET] [SVC]    Stream aggregated journald and local supervisor logs
   version                Show the Anode version information
 
 Run 'anode COMMAND --help' for more information on a command.`}
                   </pre>
                 </div>
 
-                {/* Interactive CLI Flag Builder */}
-                <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-mono-code text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                      <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Interactive Command Generator</span>
-                    </span>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono-code font-semibold">
-                      Live Builder
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                    <div>
-                      <label className="text-neutral-400 block mb-1 font-mono-code">SSH Target Server:</label>
-                      <input
-                        type="text"
-                        value={cliHost}
-                        onChange={(e) => setCliHost(e.target.value)}
-                        placeholder="user@your-vps.com"
-                        className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
-                      />
+                {/* Enhanced Interactive CLI Command Generator */}
+                {(() => {
+                  let generatedCommand = "";
+                  let commandExplanation = "";
+
+                  if (cmdType === "deploy") {
+                    const base = cliDeployAlias ? "anode run" : "anode deploy";
+                    const parts = [base, cliHost.trim() || "root@my-vps.com"];
+                    if (cliDeployPath.trim()) parts.push(cliDeployPath.trim());
+                    if (cliDomain.trim()) parts.push(`--domain ${cliDomain.trim()}`);
+                    if (cliArch !== "amd64") parts.push(`--arch=${cliArch}`);
+                    if (cliDryRun) parts.push("--dry-run");
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = cliDryRun
+                      ? "Synthesizes systemd unit files and Caddyfile in dry-run preview mode without live SSH deployment."
+                      : `Cross-compiles Linux static ELF binaries, enforces cgroups v2 quotas, and deploys to ${cliHost.trim() || "remote VPS"}.`;
+                  } else if (cmdType === "logs") {
+                    const parts = ["anode logs"];
+                    if (logsFollow) parts.push("-f");
+                    if (logsLines && logsLines !== "100") parts.push(`-n ${logsLines}`);
+                    if (logsTimestamps) parts.push("-t");
+                    if (logsSince.trim()) parts.push(`--since ${logsSince.trim()}`);
+                    if (logsEdge) parts.push("--edge");
+                    if (logsJson) parts.push("--json");
+                    if (logsTargetMode === "remote") {
+                      parts.push(logsTarget.trim() || "root@my-vps.com");
+                    }
+                    if (logsService.trim()) parts.push(logsService.trim());
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = logsTargetMode === "remote"
+                      ? (logsFollow
+                          ? `Streams real-time journald logs from ${logsTarget.trim() || "remote VPS"} over SSH multiplexed across services.`
+                          : `Fetches recent journald log snapshot from ${logsTarget.trim() || "remote VPS"} over SSH.`)
+                      : (logsFollow
+                          ? "Follows real-time local supervisor logs (.verify/logs/) with color-coded service prefixes."
+                          : "Inspects static snapshot of recent local supervisor logs across services.");
+                  } else if (cmdType === "ps") {
+                    const base = psAlias ? "anode status" : "anode ps";
+                    const parts = [base];
+                    if (psTargetMode === "remote") {
+                      parts.push(psTarget.trim() || "root@my-vps.com");
+                    }
+                    if (psAll) parts.push("-a");
+                    if (psJson) parts.push("--json");
+                    if (psVerbose) parts.push("-v");
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = psTargetMode === "remote"
+                      ? `Queries systemd D-Bus and cgroup v2 controller on ${psTarget.trim() || "remote VPS"} for process health, CPU/RAM, and Caddy routing.`
+                      : "Queries local dev supervisor status, active dynamic loopback port allocations, and service uptimes.";
+                  } else if (cmdType === "doctor") {
+                    const parts = ["anode doctor"];
+                    if (doctorTargetMode === "remote") {
+                      parts.push(doctorTarget.trim() || "root@my-vps.com");
+                    }
+                    if (doctorPath.trim()) parts.push(doctorPath.trim());
+                    if (doctorStrict) parts.push("--strict");
+                    if (doctorVerbose) parts.push("-v");
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = doctorTargetMode === "remote"
+                      ? `Performs pre-flight diagnosis of Go toolchain, loopbacks, and executes 3s TCP/SSH handshake with ${doctorTarget.trim() || "remote VPS"}.`
+                      : "Runs 5-pillar local pre-flight checks (Go compiler, cross-compile CGO_ENABLED=0, dynamic loopbacks, and container engine).";
+                  } else if (cmdType === "dev") {
+                    const parts = ["anode dev"];
+                    if (devPath.trim()) parts.push(devPath.trim());
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = "Starts local zero-port-collision dev supervisor with ephemeral loopback sockets (127.0.0.1:0) and sub-second hot reload.";
+                  } else if (cmdType === "inspect") {
+                    const parts = ["anode inspect"];
+                    if (inspectPath.trim()) parts.push(inspectPath.trim());
+                    generatedCommand = parts.join(" ");
+                    commandExplanation = "Compiles whole-program SSA and VTA call graphs, resolves HTTP/gRPC choke points, and generates anode.lock.json.";
+                  }
+
+                  return (
+                    <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-5 space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <span className="text-xs font-mono-code text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                          <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>Interactive Command Generator</span>
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono-code font-semibold self-start sm:self-auto">
+                          Live Builder &amp; Flag Configurator
+                        </span>
+                      </div>
+
+                      {/* Command Selector Tabs */}
+                      <div className="flex flex-wrap gap-1.5 border-b border-white/[0.08] pb-3">
+                        {[
+                          { id: "deploy" as const, label: "deploy", badge: "VPS" },
+                          { id: "logs" as const, label: "logs", badge: "Stream" },
+                          { id: "ps" as const, label: "ps", badge: "Metrics" },
+                          { id: "doctor" as const, label: "doctor", badge: "Diagnostics" },
+                          { id: "dev" as const, label: "dev", badge: "Local" },
+                          { id: "inspect" as const, label: "inspect", badge: "SSA" },
+                        ].map((tab) => {
+                          const isActive = cmdType === tab.id;
+                          return (
+                            <button
+                              key={tab.id}
+                              type="button"
+                              onClick={() => setCmdType(tab.id)}
+                              className={`px-2.5 py-1.5 rounded-lg text-xs font-mono-code font-semibold transition-all flex items-center gap-1.5 ${
+                                isActive
+                                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/10"
+                                  : "bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-transparent"
+                              }`}
+                            >
+                              <span>anode {tab.label}</span>
+                              <span className={`text-[9px] px-1 py-0.5 rounded font-mono-code ${
+                                isActive ? "bg-cyan-400/20 text-cyan-200" : "bg-white/[0.06] text-neutral-500"
+                              }`}>
+                                {tab.badge}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Tab Specific Controls */}
+                      {cmdType === "deploy" && (
+                        <div className="space-y-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">SSH Target Server:</label>
+                              <input
+                                type="text"
+                                value={cliHost}
+                                onChange={(e) => setCliHost(e.target.value)}
+                                placeholder="user@your-vps.com"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Custom Domain (TLS):</label>
+                              <input
+                                type="text"
+                                value={cliDomain}
+                                onChange={(e) => setCliDomain(e.target.value)}
+                                placeholder="api.example.com (optional)"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Project Path (Optional):</label>
+                              <input
+                                type="text"
+                                value={cliDeployPath}
+                                onChange={(e) => setCliDeployPath(e.target.value)}
+                                placeholder=". or ./examples/sample-shop"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                            <div className="flex items-end">
+                              <div className="flex items-center gap-2">
+                                <span className="text-neutral-400 text-xs font-mono-code">Target Arch:</span>
+                                <button
+                                  type="button"
+                                  onClick={() => setCliArch(cliArch === "amd64" ? "arm64" : "amd64")}
+                                  className="px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-cyan-300 text-xs font-mono-code border border-white/[0.1]"
+                                >
+                                  linux/{cliArch}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1 border-t border-white/[0.04]">
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={cliDryRun}
+                                onChange={(e) => setCliDryRun(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>--dry-run (preview only)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={cliDeployAlias}
+                                onChange={(e) => setCliDeployAlias(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>Docker alias (&apos;anode run&apos;)</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {cmdType === "logs" && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-neutral-400 text-xs font-mono-code">Target Mode:</span>
+                            <div className="inline-flex rounded-lg border border-white/[0.1] bg-black/60 p-0.5 text-xs font-mono-code">
+                              <button
+                                type="button"
+                                onClick={() => setLogsTargetMode("remote")}
+                                className={`px-2.5 py-0.5 rounded-md ${logsTargetMode === "remote" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Remote VPS (SSH)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setLogsTargetMode("local")}
+                                className={`px-2.5 py-0.5 rounded-md ${logsTargetMode === "local" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Local Dev Engine
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            {logsTargetMode === "remote" && (
+                              <div>
+                                <label className="text-neutral-400 block mb-1 font-mono-code">SSH Target Server:</label>
+                                <input
+                                  type="text"
+                                  value={logsTarget}
+                                  onChange={(e) => setLogsTarget(e.target.value)}
+                                  placeholder="root@my-vps.com"
+                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                />
+                              </div>
+                            )}
+                            <div className={logsTargetMode === "local" ? "sm:col-span-2" : ""}>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Service Filter (Optional):</label>
+                              <input
+                                type="text"
+                                value={logsService}
+                                onChange={(e) => setLogsService(e.target.value)}
+                                placeholder="e.g. orders, payments, caddy (empty for all)"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">History Lines (-n):</label>
+                              <div className="flex items-center gap-1.5">
+                                {["50", "100", "500"].map((lines) => (
+                                  <button
+                                    key={lines}
+                                    type="button"
+                                    onClick={() => setLogsLines(lines)}
+                                    className={`px-2 py-1 rounded text-xs font-mono-code border ${
+                                      logsLines === lines
+                                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                                        : "bg-white/[0.04] text-neutral-400 border-white/[0.08] hover:text-white"
+                                    }`}
+                                  >
+                                    {lines}
+                                  </button>
+                                ))}
+                                <input
+                                  type="text"
+                                  value={logsLines}
+                                  onChange={(e) => setLogsLines(e.target.value)}
+                                  placeholder="custom"
+                                  className="w-20 px-2 py-1 rounded bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Since Window (--since):</label>
+                              <input
+                                type="text"
+                                value={logsSince}
+                                onChange={(e) => setLogsSince(e.target.value)}
+                                placeholder="e.g. 15m, 1h, 2026-11-14"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1 border-t border-white/[0.04]">
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={logsFollow}
+                                onChange={(e) => setLogsFollow(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>-f, --follow (live streaming)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={logsTimestamps}
+                                onChange={(e) => setLogsTimestamps(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>-t, --timestamps (RFC3339)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={logsEdge}
+                                onChange={(e) => setLogsEdge(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>--edge (include Caddy logs)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={logsJson}
+                                onChange={(e) => setLogsJson(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>--json (ndjson)</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {cmdType === "ps" && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-neutral-400 text-xs font-mono-code">Target Mode:</span>
+                            <div className="inline-flex rounded-lg border border-white/[0.1] bg-black/60 p-0.5 text-xs font-mono-code">
+                              <button
+                                type="button"
+                                onClick={() => setPsTargetMode("remote")}
+                                className={`px-2.5 py-0.5 rounded-md ${psTargetMode === "remote" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Remote VPS (SSH)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setPsTargetMode("local")}
+                                className={`px-2.5 py-0.5 rounded-md ${psTargetMode === "local" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Local Dev Engine
+                              </button>
+                            </div>
+                          </div>
+
+                          {psTargetMode === "remote" && (
+                            <div className="text-xs">
+                              <label className="text-neutral-400 block mb-1 font-mono-code">SSH Target Server:</label>
+                              <input
+                                type="text"
+                                value={psTarget}
+                                onChange={(e) => setPsTarget(e.target.value)}
+                                placeholder="root@my-vps.com"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                          )}
+
+                          <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1 border-t border-white/[0.04]">
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={psAll}
+                                onChange={(e) => setPsAll(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>-a, --all (show stopped units)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={psJson}
+                                onChange={(e) => setPsJson(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>--json (raw cgroups v2 telemetry)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={psVerbose}
+                                onChange={(e) => setPsVerbose(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>-v, --verbose</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={psAlias}
+                                onChange={(e) => setPsAlias(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>Docker alias (&apos;anode status&apos;)</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {cmdType === "doctor" && (
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-neutral-400 text-xs font-mono-code">Target Mode:</span>
+                            <div className="inline-flex rounded-lg border border-white/[0.1] bg-black/60 p-0.5 text-xs font-mono-code">
+                              <button
+                                type="button"
+                                onClick={() => setDoctorTargetMode("remote")}
+                                className={`px-2.5 py-0.5 rounded-md ${doctorTargetMode === "remote" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Remote VPS (SSH)
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setDoctorTargetMode("local")}
+                                className={`px-2.5 py-0.5 rounded-md ${doctorTargetMode === "local" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                              >
+                                Local Workspace
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                            {doctorTargetMode === "remote" && (
+                              <div>
+                                <label className="text-neutral-400 block mb-1 font-mono-code">SSH Target Server:</label>
+                                <input
+                                  type="text"
+                                  value={doctorTarget}
+                                  onChange={(e) => setDoctorTarget(e.target.value)}
+                                  placeholder="root@my-vps.com"
+                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                />
+                              </div>
+                            )}
+                            <div className={doctorTargetMode === "local" ? "sm:col-span-2" : ""}>
+                              <label className="text-neutral-400 block mb-1 font-mono-code">Project Path (Optional):</label>
+                              <input
+                                type="text"
+                                value={doctorPath}
+                                onChange={(e) => setDoctorPath(e.target.value)}
+                                placeholder=". or ./examples/sample-shop"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1 border-t border-white/[0.04]">
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={doctorStrict}
+                                onChange={(e) => setDoctorStrict(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>--strict (treat warnings as errors)</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
+                              <input
+                                type="checkbox"
+                                checked={doctorVerbose}
+                                onChange={(e) => setDoctorVerbose(e.target.checked)}
+                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                              />
+                              <span>-v, --verbose</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {cmdType === "dev" && (
+                        <div className="space-y-3">
+                          <div className="text-xs">
+                            <label className="text-neutral-400 block mb-1 font-mono-code">Project Path (Optional):</label>
+                            <input
+                              type="text"
+                              value={devPath}
+                              onChange={(e) => setDevPath(e.target.value)}
+                              placeholder=". (current repo) or ./examples/fintech_core_20"
+                              className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                            />
+                          </div>
+                          <p className="text-neutral-400 text-xs font-mono-code">
+                            Allocates dynamic loopback sockets on 127.0.0.1:0 for 0% port collisions, spins up ephemeral databases, and hot reloads in &lt;15ms.
+                          </p>
+                        </div>
+                      )}
+
+                      {cmdType === "inspect" && (
+                        <div className="space-y-3">
+                          <div className="text-xs">
+                            <label className="text-neutral-400 block mb-1 font-mono-code">Project Path (Optional):</label>
+                            <input
+                              type="text"
+                              value={inspectPath}
+                              onChange={(e) => setInspectPath(e.target.value)}
+                              placeholder=". (current repo) or ./examples/omni_mesh_32"
+                              className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                            />
+                          </div>
+                          <p className="text-neutral-400 text-xs font-mono-code">
+                            Runs SSA and Variable Type Analysis (VTA) call graph sweep, resolves HTTP/gRPC choke points, and outputs immutable <code className="text-cyan-300">anode.lock.json</code>.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Generated Command Box */}
+                      <div className="space-y-2 pt-1">
+                        <div className="p-3.5 rounded-lg bg-black/90 border border-cyan-500/40 flex items-center justify-between font-mono-code text-xs text-cyan-300 shadow-inner">
+                          <div className="flex items-center gap-2 overflow-x-auto py-0.5">
+                            <span className="text-cyan-500 select-none font-bold">$</span>
+                            <span className="text-white font-medium whitespace-nowrap">{generatedCommand}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(generatedCommand);
+                              setCopiedCode("cli-builder");
+                              setTimeout(() => setCopiedCode(null), 2000);
+                            }}
+                            className="ml-3 px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-neutral-300 hover:text-white shrink-0 flex items-center gap-1.5 text-[11px] transition-colors"
+                            title="Copy command to clipboard"
+                          >
+                            {copiedCode === "cli-builder" ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-400 font-sans text-[11px]">Copied!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span className="font-sans text-[11px]">Copy</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 font-mono-code px-1">
+                          <span className="text-cyan-400 font-bold">ℹ</span>
+                          <span>{commandExplanation}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="text-neutral-400 block mb-1 font-mono-code">Custom Domain (TLS):</label>
-                      <input
-                        type="text"
-                        value={cliDomain}
-                        onChange={(e) => setCliDomain(e.target.value)}
-                        placeholder="api.example.com (optional)"
-                        className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-xs font-mono-code pt-1">
-                    <label className="flex items-center gap-2 cursor-pointer text-neutral-300">
-                      <input
-                        type="checkbox"
-                        checked={cliDryRun}
-                        onChange={(e) => setCliDryRun(e.target.checked)}
-                        className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
-                      />
-                      <span>--dry-run (preview only)</span>
-                    </label>
-                    <div className="flex items-center gap-2 ml-auto">
-                      <span className="text-neutral-400">Target Arch:</span>
-                      <button
-                        type="button"
-                        onClick={() => setCliArch(cliArch === "amd64" ? "arm64" : "amd64")}
-                        className="px-2 py-0.5 rounded bg-white/[0.08] hover:bg-white/[0.15] text-cyan-300 text-xs border border-white/[0.1]"
-                      >
-                        {cliArch}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-3 rounded-lg bg-black/80 border border-cyan-500/30 flex items-center justify-between font-mono-code text-xs text-cyan-300">
-                    <span className="overflow-x-auto">
-                      $ anode deploy {cliHost} {cliDomain ? `--domain ${cliDomain} ` : ""}{cliArch !== "amd64" ? `--arch=${cliArch} ` : ""}{cliDryRun ? "--dry-run" : ""}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const cmd = `anode deploy ${cliHost} ${cliDomain ? `--domain ${cliDomain} ` : ""}${cliArch !== "amd64" ? `--arch=${cliArch} ` : ""}${cliDryRun ? "--dry-run" : ""}`.trim();
-                        navigator.clipboard.writeText(cmd);
-                        setCopiedCode("cli-builder");
-                        setTimeout(() => setCopiedCode(null), 2000);
-                      }}
-                      className="ml-3 p-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-neutral-300 hover:text-white shrink-0"
-                    >
-                      {copiedCode === "cli-builder" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
-                  </div>
-                </div>
+                  );
+                })()}
 
                 <div className="space-y-6">
                   {/* anode inspect */}
@@ -535,6 +1048,37 @@ Run 'anode COMMAND --help' for more information on a command.`}
                     </div>
                   </div>
 
+                  {/* anode logs */}
+                  <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <code className="text-sm font-bold text-orange-400 font-mono-code">anode logs [OPTIONS] [TARGET] [SERVICE]</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Log Streaming &amp; Multiplexing</span>
+                    </div>
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Aggregates and multiplexes real-time logs across microservices with deterministic color-coded prefixes (<code className="text-neutral-200">[orders]</code>, <code className="text-neutral-200">[payments]</code>). Seamlessly streams from local dev engine log files (<code className="text-neutral-200">.verify/logs/&lt;svc&gt;.log</code>) or remote VPS instances via <code className="text-neutral-200">journalctl -u anode-*.service -o json</code> over SSH, with optional Caddy edge reverse-proxy streaming and line-delimited JSON for log forwarders.
+                    </p>
+                    <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
+                      <div className="text-neutral-300 font-semibold mb-1">Options:</div>
+                      <div className="pl-4"><span className="text-orange-300">-f, --follow</span> : Follow log output (stream live updates in real time)</div>
+                      <div className="pl-4"><span className="text-orange-300">-n, --lines, --tail &lt;N&gt;</span> : Number of lines to show from history (default: 100)</div>
+                      <div className="pl-4"><span className="text-orange-300">-t, --timestamps</span> : Show RFC3339 timestamps for each log entry</div>
+                      <div className="pl-4"><span className="text-orange-300">--since &lt;TIME&gt;</span> : Show logs more recent than a relative duration (e.g. 10m, 1h) or ISO date</div>
+                      <div className="pl-4"><span className="text-orange-300">--until &lt;TIME&gt;</span> : Show logs older than a specific date or relative time</div>
+                      <div className="pl-4"><span className="text-orange-300">--edge</span> : Include Caddy reverse-proxy access and edge logs in the stream</div>
+                      <div className="pl-4"><span className="text-orange-300">--json</span> : Output structured log records as line-delimited JSON (for Vector, Datadog, Fluentbit)</div>
+                      <div className="pl-4"><span className="text-orange-300">--target &lt;user@host&gt;</span> : Remote VPS to stream over SSH</div>
+                      <div className="pl-4"><span className="text-orange-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode logs</div>
+                      <div className="pl-4 text-emerald-400">anode logs -f</div>
+                      <div className="pl-4 text-emerald-400">anode logs orders -f</div>
+                      <div className="pl-4 text-emerald-400">anode logs root@my-vps.com -f</div>
+                      <div className="pl-4 text-emerald-400">anode logs root@my-vps.com api -n 50 --timestamps</div>
+                      <div className="pl-4 text-emerald-400">anode logs root@my-vps.com --edge -f</div>
+                      <div className="pl-4 text-emerald-400">anode logs root@my-vps.com --since 1h --json</div>
+                    </div>
+                  </div>
+
                   {/* anode doctor */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
@@ -590,6 +1134,22 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-indigo-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode cluster</div>
+                    </div>
+                  </div>
+
+                  {/* anode version */}
+                  <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
+                    <div className="flex items-center justify-between">
+                      <code className="text-sm font-bold text-neutral-300 font-mono-code">anode version</code>
+                      <span className="text-[11px] font-mono-code text-neutral-500">Release &amp; Metadata</span>
+                    </div>
+                    <p className="text-xs text-neutral-300 leading-relaxed">
+                      Displays the current Anode release version, Git commit SHA, compiler build tag, and supported Go toolchain target.
+                    </p>
+                    <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
+                      <div className="text-neutral-300 font-semibold mb-1">Examples:</div>
+                      <div className="pl-4 text-emerald-400">anode version</div>
+                      <div className="pl-4 text-emerald-400">anode --version</div>
                     </div>
                   </div>
                 </div>

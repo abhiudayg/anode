@@ -37,20 +37,33 @@ Containers introduce substantial runtime overhead: `dockerd` (65MB RSS) + `conta
 
 Usage: `anode [OPTIONS] COMMAND [ARG...]`
 
+### Global Options:
+- `-v, --verbose`: Print verbose trace logs and contract JSON
+- `--version`: Print version information and exit
+- `-h, --help`: Print usage information
+
 ### Commands:
 - `anode inspect [PATH]`
   Executes SSA reachability analysis on the target Go codebase and generates `anode.lock.json`.
 - `anode dev [PATH]`
   Starts the local development supervisor with dynamic loopback proxies, automated database containers (if required), and live hot-reloading.
-- `anode deploy TARGET [PATH]`
+- `anode deploy TARGET [PATH] [OPTIONS]`
   Deploys the application directly to a bare-metal Linux host over SSH (e.g., `anode deploy deploy@vps.example.com`).
   Compiles binaries, rsyncs release tarball, writes hardened systemd unit files, reloads systemd daemon, and configures Caddy reverse proxy.
-- `anode run TARGET [PATH]`
+- `anode run TARGET [PATH] [OPTIONS]`
   Alias for `anode deploy`, providing Docker CLI command parity.
-- `anode cluster`
-  Inspects multi-node placement pools, memory bin-packing, and zero-trust iptables/nftables firewall rules across edge and worker nodes.
+- `anode ps [OPTIONS] [TARGET] [PATH]`
+  Inspects running processes, cgroups v2 memory/CPU metrics, flapping detection, and Caddy reverse-proxy route bindings over SSH or locally.
+- `anode status [TARGET] [PATH]`
+  Alias for `anode ps` (process and topology status).
+- `anode logs [OPTIONS] [TARGET] [SERVICE]`
+  Streams aggregated and color-multiplexed logs across microservices and Caddy edge proxies. Supports live follow (`-f`), tail history (`-n`), timestamps (`-t`), time windows (`--since`, `--until`), and structured JSON output (`--json`).
+- `anode doctor [OPTIONS] [TARGET] [PATH]`
+  Pre-flight verification across Go compiler, Linux cross-compilation, dynamic loopbacks, container engine, and remote SSH/cgroups v2/systemd reachability.
 - `anode catalog [PATH]`
   Inspects the pluggable stateful catalog drivers (PostgreSQL, Redis, ClickHouse, MySQL, MongoDB, RabbitMQ, MinIO, ScyllaDB, Temporal, Qdrant).
+- `anode cluster`
+  Inspects multi-node placement pools, memory bin-packing, and zero-trust iptables/nftables firewall rules across edge and worker nodes.
 - `anode version`
   Displays the current Anode release version and build metadata.
 
