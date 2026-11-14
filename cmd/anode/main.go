@@ -5,11 +5,15 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/abhiudayg/anode/internal/analyzer"
 	"github.com/abhiudayg/anode/internal/catalog"
@@ -18,6 +22,7 @@ import (
 	"github.com/abhiudayg/anode/internal/devengine"
 	"github.com/abhiudayg/anode/internal/doctor"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/logs"
 	"github.com/abhiudayg/anode/internal/ps"
 )
 
@@ -416,6 +421,75 @@ func main() {
 			log.Fatalf("Output formatting failed: %v", err)
 		}
 
+	case "logs":
+		opts := logs.Options{
+			TargetDir: ".",
+			Lines:     100,
+		}
+		for i := 2; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			if arg == "--help" || arg == "-h" {
+				printLogsUsage()
+				return
+			}
+			if arg == "-f" || arg == "--follow" {
+				opts.Follow = true
+			} else if arg == "-t" || arg == "--timestamps" {
+				opts.Timestamps = true
+			} else if arg == "--json" {
+				opts.JSON = true
+			} else if arg == "--edge" {
+				opts.IncludeEdge = true
+			} else if (arg == "-n" || arg == "--lines" || arg == "--tail") && i+1 < len(os.Args) {
+				if n, err := strconv.Atoi(os.Args[i+1]); err == nil && n > 0 {
+					opts.Lines = n
+				}
+				i++
+			} else if strings.HasPrefix(arg, "-n=") {
+				if n, err := strconv.Atoi(strings.TrimPrefix(arg, "-n=")); err == nil && n > 0 {
+					opts.Lines = n
+				}
+			} else if strings.HasPrefix(arg, "--lines=") {
+				if n, err := strconv.Atoi(strings.TrimPrefix(arg, "--lines=")); err == nil && n > 0 {
+					opts.Lines = n
+				}
+			} else if strings.HasPrefix(arg, "--tail=") {
+				if n, err := strconv.Atoi(strings.TrimPrefix(arg, "--tail=")); err == nil && n > 0 {
+					opts.Lines = n
+				}
+			} else if strings.HasPrefix(arg, "--since=") {
+				opts.Since = strings.TrimPrefix(arg, "--since=")
+			} else if arg == "--since" && i+1 < len(os.Args) {
+				opts.Since = os.Args[i+1]
+				i++
+			} else if strings.HasPrefix(arg, "--until=") {
+				opts.Until = strings.TrimPrefix(arg, "--until=")
+			} else if arg == "--until" && i+1 < len(os.Args) {
+				opts.Until = os.Args[i+1]
+				i++
+			} else if strings.HasPrefix(arg, "--target=") {
+				opts.Target = strings.TrimPrefix(arg, "--target=")
+			} else if arg == "--target" && i+1 < len(os.Args) {
+				opts.Target = os.Args[i+1]
+				i++
+			} else if !strings.HasPrefix(arg, "-") {
+				if strings.Contains(arg, "@") {
+					opts.Target = arg
+				} else if opts.Service == "" {
+					opts.Service = arg
+				} else {
+					opts.TargetDir = arg
+				}
+			}
+		}
+
+		ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer cancel()
+
+		if err := logs.Run(ctx, opts); err != nil && !errors.Is(err, context.Canceled) {
+			log.Fatalf("Logs failed: %v", err)
+		}
+
 	default:
 		printUsage()
 		os.Exit(1)
@@ -452,6 +526,7 @@ func printUsage() {
 	fmt.Println("  run TARGET [PATH]      Alias for deploy (Docker CLI parity)")
 	fmt.Println("  ps [TARGET] [PATH]     List running processes, cgroup v2 memory/CPU, and Caddy routes")
 	fmt.Println("  status [TARGET] [PATH] Alias for ps (process and topology status)")
+	fmt.Println("  logs [TARGET] [SVC]    Stream aggregated journald and local supervisor logs")
 	fmt.Println("  version                Show the Anode version information")
 	fmt.Println("\nRun 'anode COMMAND --help' for more information on a command.")
 }
@@ -525,4 +600,26 @@ func printClusterUsage() {
 	fmt.Println("\nInspect multi-node placement pools, memory bin-packing, and zero-trust firewalls")
 	fmt.Println("\nOptions:")
 	fmt.Println("  -h, --help             Print usage information")
+}
+
+func printLogsUsage() {
+	fmt.Println("Usage:  anode logs [OPTIONS] [TARGET] [SERVICE]")
+	fmt.Println("\nStream aggregated and color-multiplexed logs across microservices and edge proxies")
+	fmt.Println("\nOptions:")
+	fmt.Println("  -f, --follow           Follow log output (stream live updates)")
+	fmt.Println("  -n, --lines, --tail N  Number of lines to show (default: 100)")
+	fmt.Println("  -t, --timestamps       Show RFC3339 timestamps for each log entry")
+	fmt.Println("      --since TIME       Show logs more recent than a specific date or relative time (e.g. 10m, 1h)")
+	fmt.Println("      --until TIME       Show logs older than a specific date or relative time")
+	fmt.Println("      --edge             Include Caddy edge reverse-proxy logs in the multiplexed stream")
+	fmt.Println("      --json             Output structured log entries as line-delimited JSON")
+	fmt.Println("      --target TARGET    Remote VPS <user@host> to stream over SSH")
+	fmt.Println("  -h, --help             Print usage information")
+	fmt.Println("\nExamples:")
+	fmt.Println("  anode logs                                  # View snapshot of local dev services")
+	fmt.Println("  anode logs -f                               # Follow all local services live")
+	fmt.Println("  anode logs orders -f                        # Follow specific local service")
+	fmt.Println("  anode logs root@192.168.1.10 -f             # Stream all production microservices over SSH")
+	fmt.Println("  anode logs root@vps api -n 50 --timestamps  # View last 50 lines of api with timestamps")
+	fmt.Println("  anode logs root@vps --edge -f               # Stream app services and Caddy edge logs")
 }

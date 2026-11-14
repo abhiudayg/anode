@@ -221,6 +221,7 @@ Anode provides automated provisioning scripts for spinning up and configuring te
 | `anode run TARGET [PATH]` | Drop-in alias for `anode deploy` (Docker CLI parity). |
 | `anode ps [TARGET] [PATH]` | Inspects running processes, cgroups v2 memory/CPU, and Caddy reverse-proxy routes. |
 | `anode status [TARGET] [PATH]` | Drop-in alias for `anode ps` (Docker/systemd parity). |
+| `anode logs [TARGET] [SVC]` | Streams aggregated, color-multiplexed logs across microservices and edge proxies. |
 | `anode doctor [TARGET] [PATH]` | Pre-flight verification of Go toolchain, dynamic loopbacks, container engine, and remote VPS. |
 | `anode catalog [PATH]` | Inspects 28+ built-in stateful drivers and merges repo-level overrides (`anode.catalog.yaml`). |
 | `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
