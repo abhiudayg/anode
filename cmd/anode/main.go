@@ -28,7 +28,7 @@ import (
 
 const LockFileName = "anode.lock.json"
 
-var Version = "1.3.0"
+var Version = "1.4.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -180,7 +180,7 @@ func main() {
 		fmt.Printf("Rolled back to release %s\n", previous)
 	case "host-setup":
 		if len(os.Args) < 3 {
-			fmt.Println("Usage: anode host-setup root [--user NAME]")
+			fmt.Println("Usage: anode host-setup root@host [--user NAME] [--disable-root-login]")
 			os.Exit(1)
 		}
 		deployUser := "anode-deploy"
@@ -759,6 +759,7 @@ func printDeployUsage() {
 	fmt.Println("\nOptions:")
 	fmt.Println("  --dry-run              Synthesize and validate systemd units without live SSH")
 	fmt.Println("  --domain DOMAIN        Custom domain for automated Let's Encrypt TLS reverse proxy")
+		fmt.Println("  --plain-http           Accept unencrypted HTTP when deploying to an IP address")
 	fmt.Println("  -h, --help             Print usage information")
 }
 
