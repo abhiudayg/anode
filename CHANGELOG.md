@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.2] - 2026-11-14
+
+### 🚀 Changed & Fixed
+- **`anode ps` Kernel Specification Alignment**:
+  - Re-labeled anonymous memory from "Non-reclaimable heap" to **“Anonymous mappings”**, strictly matching Linux cgroup v2 kernel specifications (`cgroup-v2.rst` / `memory.stat`).
+  - Formatted file-backed memory as **“File-backed (Page Cache)”** with optional `(shmem: ...)` tracking when shared memory or tmpfs is allocated.
+  - Formatted kernel memory as **“Kernel allocations”** with dynamic `(slab: ..., sock: ...)` accounting.
+  - Dynamically query and parse systemd `MemoryMax`, `MemoryLimit`, and `CPUQuotaPerSecUSec` properties rather than assuming static template defaults, displaying accurate percentages for custom limits or unlimited services.
+  - Added fallback total memory calculation when `status.MemoryBytes == 0` but breakdown metrics exist.
+  - Made local process tests sandbox-safe under macOS security restrictions and container environments.
+
+---
+
 ## [1.1.1] - 2026-11-14
 
 ### 🚀 Added
