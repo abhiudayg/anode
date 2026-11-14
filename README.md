@@ -6,12 +6,11 @@
 
 # Anode
 
-### The Docker Compose & Kubernetes Alternative for Go Backends. Deploy unmodified Go to any Linux VPS without Dockerfiles, container daemons, or YAML drift.
+### Deploy unmodified Go services to a Linux VPS with systemd and Caddy, without Dockerfiles, container daemons, or hand-maintained YAML.
 
 [![Website: anode.abhiudayg.dev](https://img.shields.io/badge/website-anode.abhiudayg.dev-00ADD8.svg?style=flat&logo=safari)](https://anode.abhiudayg.dev)
 [![Go Version](https://img.shields.io/badge/go-1.27+-00ADD8.svg?style=flat&logo=go)](https://golang.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Verification: agstack](https://img.shields.io/badge/verified-agstack%20passed-success.svg)](#verification--quality-guarantees)
 [![Architecture: Proof--of--Topology](https://img.shields.io/badge/architecture-4--Pillar%20Topology-purple.svg)](https://anode.abhiudayg.dev/docs#overview)
 
 <p align="center">
@@ -22,37 +21,42 @@
   <a href="#how-it-works">How It Works</a> •
   <a href="#quick-start">Quick Start</a> •
   <a href="#pluggable-infrastructure-catalog">Stateful Catalog</a> •
-  <a href="#least-privilege-security-boundary">Security Model</a> •
+  <a href="#security-model">Security Model</a> •
   <a href="#cli-reference">CLI Reference</a> •
-  <a href="https://anode.abhiudayg.dev/docs">Documentation</a>
+  <a href="#documentation">Documentation</a>
 </p>
 
 </div>
 
 ---
 
-## The Problem: You Write Your Architecture Twice
+## Scope
 
-Every time you build a Go backend, you declare your architecture twice:
-
-1. **In Go:** You call `sql.Open("postgres", cfg.DBURL)`, listen on `cfg.Port`, and make calls to internal microservices.
-2. **In YAML / Docker:** You write a multi-stage `Dockerfile`, a 50-line `docker-compose.yml`, mount volumes, map host ports (and pray `5432` isn't taken by another project), and manually wire environment variables.
-
-When you add a service or refactor an env var, your code and your configuration immediately drift.
-
-Previous "Infrastructure-from-Code" tools attempted to solve this, but made fatal mistakes:
-* **The SDK Lock-In Trap (Encore, Winglang, Nitric):** They forced you to import non-standard SDKs or rewrite code in a new DSL.
-* **The Regex Guessing Trap (Klotho):** They used syntax pattern-matching that broke on real-world config structs and dynamic wrappers.
+Anode is built for one developer's Go HTTP services with Postgres or Redis, deployed to one Linux host. It is not a general-purpose platform. The supported profile and its limits are in [`docs/supported-profile.md`](docs/supported-profile.md) and [`docs/tradeoffs.md`](docs/tradeoffs.md).
 
 ---
 
-## The Solution: Graph-Driven Orchestration
+## The Problem
 
-**Anode** takes a different bet: **The 4-Pillar Proof-of-Topology Engine.**
+Every Go backend declares its architecture twice:
 
-Instead of guessing or forcing an SDK, Anode analyzes your Go source code using compiler-backed **Static Single Assignment (SSA)** and **Variable Type Analysis (VTA)** call graphs rooted at `func main()`.
+1. **In Go:** `sql.Open("postgres", cfg.DBURL)`, a listen port, and calls to other services.
+2. **In YAML or Docker:** a Dockerfile, a `docker-compose.yml`, volume mounts, host port mappings, and environment wiring.
 
-It extracts an immutable, human-readable **`anode.lock.json`** directly from your code, stands up local dependencies with zero port collisions, and deploys directly to Linux VPS boxes using bare-metal primitives: **`systemd`**, **cgroups v2**, **loopback proxies**, and **automated Let's Encrypt TLS**.
+When a service is added or an env var is renamed, the code and the configuration drift apart.
+
+Earlier tools that inferred infrastructure from code either required an SDK or a new DSL (Encore), or matched syntax patterns that broke on real config structs (Klotho). See [`docs/tradeoffs.md`](docs/tradeoffs.md) for the comparison.
+
+---
+
+## How It Works
+
+Anode analyzes Go source with the Go toolchain's SSA and Variable Type Analysis (VTA) call graph, starting from `func main()`. It writes the result to `anode.lock.json`, a file you can review and commit. From that file it:
+
+- runs local dependencies on free loopback ports (`anode dev`), and
+- cross-compiles a Linux binary, writes systemd units and a Caddy config, and deploys over SSH (`anode deploy`).
+
+See [`docs/architecture.md`](docs/architecture.md) for the four pillars: migration-driven database provenance, typed interface linking, the commit-backed lockfile, and build-time diagnostics.
 
 ```
 ┌─────────────────┐       ┌────────────────────────┐       ┌────────────────────┐
@@ -63,11 +67,11 @@ It extracts an immutable, human-readable **`anode.lock.json`** directly from you
                                     ┌────────────────────────────────┴────────────────────────────────┐
                                     ▼                                                                 ▼
                     ┌───────────────────────────────┐                                 ┌───────────────────────────────┐
-                    │     Local Dev (`anode dev`)   │                                 │   Production (`anode deploy`) │
-                    │ • Dynamic Ephemeral Ports     │                                 │ • Cross-compiled Linux binary │
-                    │ • Decomposed Env Injection    │                                 │ • Hardened systemd + cgroups  │
-                    │ • Catalog-driven provisioning  │                                 │ • Systemd restart deploys       │
-                    │ • Sub-second 300ms reload     │                                 │ • Automated Caddy HTTPS       │
+                    │     Local Dev (`anode dev`)   │                                 │   Deploy (`anode deploy`)     │
+                    │ • Free loopback ports         │                                 │ • Cross-compiled Linux binary │
+                    │ • Env injection from .env     │                                 │ • systemd units, cgroups v2   │
+                    │ • Containers for catalog kinds│                                 │ • Caddy reverse proxy         │
+                    │ • 300ms debounced reload      │                                 │ • Health checks, rollback     │
                     └───────────────────────────────┘                                 └───────────────────────────────┘
 ```
 
@@ -75,24 +79,21 @@ It extracts an immutable, human-readable **`anode.lock.json`** directly from you
 
 ## Quick Start
 
-### 1. Install Anode
+### 1. Build Anode
 
 ```bash
-# Clone and build single static binary
 git clone https://github.com/abhiudayg/anode.git
 cd anode
 go build -o /usr/local/bin/anode ./cmd/anode
 ```
 
-### 2. Inspect Any Go Repository
-
-Point Anode at any Go multi-service repo or monorepo:
+### 2. Inspect a Go Repository
 
 ```bash
 anode inspect ./examples/complex_ecommerce
 ```
 
-Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and writes the verified architecture to `anode.lock.json`:
+This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
 
 ```json
 {
@@ -100,7 +101,6 @@ Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and 
   "resources": {
     "db-orders": {
       "kind": "postgres",
-      "engine_version": "16",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
       "provenance": "services/orders/main.go:42",
@@ -115,7 +115,9 @@ Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and 
     "orders": {
       "name": "orders",
       "entrypoint": "./services/orders",
-      "ingress": [{ "protocol": "http", "port_env": "PORT", "routes": ["POST /v1/orders"] }],
+      "ingress": [
+        { "protocol": "http", "port_env": "PORT", "routes": ["POST /v1/orders"] }
+      ],
       "bindings": [
         {
           "resource_ref": "db-orders",
@@ -124,88 +126,105 @@ Anode inspects the call graph, prunes dead code, decomposes composite DSNs, and 
         }
       ]
     }
-  },
-  "egress_rules": [
-    {
-      "source_service": "orders",
-      "target_host": "https://api.stripe.com/v1/charges",
-      "port": 443,
-      "protocol": "https",
-      "is_external": true
-    }
-  ]
+  }
 }
 ```
 
-### 3. Run Locally with Zero Port Collisions
+### 3. Run Locally
 
 ```bash
 anode dev ./examples/complex_ecommerce
 ```
 
-Anode assigns ephemeral loopback ports, provisions the stateful services your code uses (Redis runs natively under systemd; other catalog kinds run in Docker), and streams color-coded service logs with a 300ms-debounced hot reload.
+`anode dev` allocates free loopback ports, starts the stateful services your code uses in Docker or Podman containers, reads external database values from `.env`, and streams service logs. It reloads after a 300ms debounce when files change.
 
-### 4. Deploy Live to Any Linux VPS
+### 4. Deploy to a Linux Host
 
 ```bash
-anode deploy root@my-box.com ./examples/complex_ecommerce
+anode deploy root@my-box.example.com ./examples/complex_ecommerce
 ```
 
-* **Architecture Detection**: Queries `uname -m` over SSH and cross-compiles matching Linux binaries (`arm64` or `amd64`).
-* **Unprivileged Bootstrapping**: Initializes the dedicated system user `anode` and secures persistent directories at `/var/lib/anode/`.
-* **Stateful Resolution**: Provisions Redis natively under systemd (password read from `.env`). Other catalog kinds are provisioned with Docker, and that path is not yet tested end to end.
-* **Systemd Cgroups v2 Hardening**: Generates service units with `CPUQuota=200%`, `MemoryMax=1G`, and process isolation.
-* **Edge Routing**: Reloads Caddy with automated Let's Encrypt TLS and path-based reverse proxying.
+Deploying as root works. For day-to-day use, create a deploy account first:
+
+```bash
+anode host-setup root@my-box.example.com --disable-root-login
+anode deploy anode-deploy@my-box.example.com ./examples/complex_ecommerce
+```
+
+What a deploy does:
+
+- **Architecture:** reads `uname -m` over SSH and cross-compiles `amd64` or `arm64`.
+- **Units:** writes one systemd unit per service, with `DynamicUser=yes`, `CPUQuota=200%`, `MemoryMax=1G`, and the hardening listed under [Security Model](#security-model).
+- **Redis:** when a service uses Redis, runs it natively under systemd, bound to `127.0.0.1`, with its password read from `.env`. Other catalog kinds run in containers on the host; that path is not yet tested end to end.
+- **Caddy:** validates the Caddyfile with `caddy validate` before reloading. With `--domain`, Caddy issues a Let's Encrypt certificate. With an IP address, the site is served over plain HTTP, and you must pass `--plain-http` to accept that.
+- **Health:** checks each HTTP service over the network after it starts. A failed check stops the deploy.
+- **Firewall:** an iptables rule drops external traffic to application ports `21040`–`21999`. The rule is saved with `netfilter-persistent`.
+- **Retention:** keeps the newest three releases. `anode rollback <user@host>` restores the previous release's recorded units.
 
 ---
 
 ## Pluggable Infrastructure Catalog
 
-Anode decouples stateful provisioning from core orchestrator code using a **Pluggable Declarative Driver Catalog** (`internal/catalog/`):
+The catalog (`internal/catalog/defaults.yaml`) defines 26 built-in kinds:
 
-* **26 built-in catalog kinds** (only Redis and the Postgres demo path are tested end to end):
-  * **Relational Databases**: PostgreSQL (14, 15, 16, 17), MySQL (8.0, 8.4), MariaDB, CockroachDB, TimescaleDB.
-  * **In-Memory & Caches**: Redis (6, 7, 7.2), Valkey, KeyDB, Dragonfly, Memcached.
-  * **Event Streaming & Queues**: Kafka (Redpanda engine), RabbitMQ, NATS.
-  * **Document & Analytics**: ClickHouse, MongoDB, ScyllaDB, Cassandra.
-  * **Search Engines**: Elasticsearch, OpenSearch, Meilisearch.
-  * **Vector Databases**: Qdrant, Chroma, Milvus, Weaviate.
-  * **Object Storage & Workflow**: MinIO, Temporal.
-* **Extensible via YAML (`.anode/catalog/`)**: Add kind #101 or internal company stores with **zero Go code changes** by placing an `anode.catalog.yaml` in your repository.
-* **Granular Version Pinning**: Versioning is handled across 4 tiers (Lockfile `engine_version` contract $\rightarrow$ Driver image map $\rightarrow$ Dynamic semver templating $\rightarrow$ Audited LTS fallback).
+* **Relational:** PostgreSQL, MySQL, MariaDB, CockroachDB, TimescaleDB.
+* **Caches:** Redis, Valkey, KeyDB, Dragonfly, Memcached.
+* **Streaming and queues:** Kafka, RabbitMQ, NATS.
+* **Document and analytics:** ClickHouse, MongoDB, ScyllaDB, Cassandra.
+* **Search:** Elasticsearch, OpenSearch, Meilisearch.
+* **Vector:** Qdrant, Chroma, Milvus, Weaviate.
+* **Object storage and workflow:** MinIO, Temporal.
 
----
+Only Redis and the Postgres path have been exercised end to end. The rest are declared but not tested.
 
-## Least-Privilege Security Boundary
-
-Anode enforces strict defense-in-depth isolation across all targets:
-
-| Hardening Layer | Implementation | Security Benefit |
-| :--- | :--- | :--- |
-| **POSIX Boundary** | `install -d -m 0700 -o <uid> -g <gid>` | Stateful database directories (`/var/lib/anode/data/`) are isolated to container engine UIDs. |
-| **Non-Root Execution** | `User=anode` (`useradd -r -s /bin/false`) | Microservices never run as root on the target host. |
-| **Privilege Escalation** | `NoNewPrivileges=true`, `--security-opt no-new-privileges` | Blocks `setuid` binaries from gaining elevated root credentials. |
-| **Systemd Sandboxing** | `ProtectSystem=strict`, `ProtectHome=true`, `PrivateTmp=true` | Restricts microservices from reading/writing system files or user directories. |
-| **Kernel OOM Score** | `--oom-score-adj=-900` (DBs), `+500` (Apps) | Protects databases from being killed during application memory spikes. |
-| **Network Isolation** | Bind exclusively to `127.0.0.1` | Stateful ports (`5432`, `6379`, `9092`) are never exposed to public internet interfaces. |
+Repository overrides in `anode.catalog.yaml` or `.anode/catalog/` add or change kinds without Go changes. Image versions are resolved in four tiers, from the lockfile's `engine_version` down to a certified LTS default. See [`docs/catalog.md`](docs/catalog.md).
 
 ---
 
-## Automated VM Setup & Infrastructure as Code
+## Security Model
 
-Anode provides automated provisioning scripts for spinning up and configuring test/production environments:
+| Layer | What Anode does |
+| :--- | :--- |
+| **Service user** | Each service runs under systemd `DynamicUser=yes`, an unprivileged transient user. The bootstrap also creates a system user `anode` that owns `/var/lib/anode`. |
+| **Privilege** | `NoNewPrivileges=true` on services. Containers for catalog kinds use `--security-opt no-new-privileges`. |
+| **Filesystem and sandbox** | `ProtectSystem=strict`, `ProtectHome=true`, `PrivateTmp=true`, `PrivateDevices=true`, `ProtectKernelTunables`, `ProtectKernelModules`, `ProtectKernelLogs`, `ProtectControlGroups`, `RestrictSUIDSGID`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and an empty `CapabilityBoundingSet`. |
+| **Data directories** | Catalog data directories are created with `install -d`, using the mode and the UID/GID the driver requires. |
+| **OOM priority** | Database kinds set `oom_score_adj` to `-900`, `-800`, `-700`, or `-600`; caches and brokers to `-500` or `-400`. Application services do not set an OOM score. |
+| **Network** | Redis binds to `127.0.0.1`. Catalog containers bind to `127.0.0.1` by default. The iptables rule blocks external traffic to application ports. |
+| **Secrets** | Values come from `.env`, which must be mode `600`; deploys refuse a `.env` readable by other users. Secret env files are written to `/etc/anode/env` with mode `0600`, not into unit files. |
+| **Edge** | Caddy terminates TLS when `--domain` is set. Without a domain, the site is plain HTTP and must be accepted with `--plain-http`. |
 
-* **One-Click Local VM Setup:**
-  ```bash
-  ./scripts/setup-test-vm.sh [vm-name]
-  ```
-  Automatically initializes an Ubuntu VM in OrbStack, installs OpenSSH, configures public keys, and tests live deployments.
-* **Ansible Automation (`infra/ansible/`):**
-  ```bash
-  ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml
-  ```
-* **Terraform Cloud-Init (`infra/terraform/`):**
-  Prepares cloud VPS instances (AWS, Hetzner, DigitalOcean) with Caddy, Docker, cgroups v2, and the `anode` user.
+Limits to know before deploying:
+
+- Passwordless sudo for the deploy account (`anode host-setup`) is root-equivalent. It is an accepted risk for single-owner hosts; see [`docs/security-audit.md`](docs/security-audit.md).
+- `anode inspect` loads packages with the Go toolchain, which can run code from the repository. Run it only on code you own.
+- `anode dev` uses local Postgres containers with the credentials `postgres:postgres`, bound to `127.0.0.1`.
+- Applications can print secrets to their own logs. Anode does not filter application output.
+
+---
+
+## Example Architectures
+
+Examples live in [`examples/`](examples/). Service counts are the number of `main.go` files in each example.
+
+| Example | Services | What it covers |
+| :--- | :---: | :--- |
+| [`sample-shop`](examples/sample-shop/README.md) | 2 | Two-service app with Postgres |
+| [`complex_ecommerce`](examples/complex_ecommerce/README.md) | 3 | Composite DSN unpacking, pre-traffic migrations, SendGrid egress |
+| [`hyper_mesh_12`](examples/hyper_mesh_12/README.md) | 12 | Config indirection, composite DSNs, gRPC and REST links; analyzer test fixture |
+| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | Many backing stores, gRPC and REST links; used by the `anode cluster` example |
+
+Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
+
+---
+
+## Infrastructure Provisioning
+
+* **Local test VM:** `./scripts/setup-test-vm.sh [vm-name]` creates an Ubuntu VM in OrbStack and installs OpenSSH with your public key.
+* **Ansible:** `ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml` prepares a host with Caddy and checks that cgroups v2 is enabled.
+* **Terraform cloud-init:** `infra/terraform/` prepares a VPS with Caddy, the `anode` user and directories, and a cgroups v2 check.
+
+Docker is not installed by these scripts.
 
 ---
 
@@ -213,94 +232,40 @@ Anode provides automated provisioning scripts for spinning up and configuring te
 
 | Command | Description |
 | :--- | :--- |
-| `anode inspect [PATH]` | Compiles workspace SSA, executes reachability pruning, and writes `anode.lock.json`. |
-| `anode dev [PATH]` | Allocates free loopback ports, provisions local DBs, runs migrations, and supervises processes. |
-| `anode deploy TARGET [PATH]` | Cross-compiles Linux binaries and deploys to remote server via SSH and systemd. |
-| `anode run TARGET [PATH]` | Drop-in alias for `anode deploy` (Docker CLI parity). |
-| `anode ps [TARGET] [PATH]` | Inspects running processes, cgroups v2 memory/CPU, and Caddy reverse-proxy routes. |
-| `anode status [TARGET] [PATH]` | Drop-in alias for `anode ps` (Docker/systemd parity). |
-| `anode logs [TARGET] [SVC]` | Streams aggregated, color-multiplexed logs across microservices and edge proxies. |
-| `anode doctor [TARGET] [PATH]` | Pre-flight verification of Go toolchain, dynamic loopbacks, container engine, and remote VPS. |
-| `anode catalog [PATH]` | Inspects 28+ built-in stateful drivers and merges repo-level overrides (`anode.catalog.yaml`). |
-| `anode cluster` | Inspects multi-node cluster pool, bin-packs services, and emits zero-trust `nftables` rules. |
-| `anode version` | Displays the current Anode release version. |
-
----
-
-## Enterprise Test Benchmarks
-
-Real-world architectures used to stress-test Anode are maintained in [`examples/`](examples/):
-
-* [**`examples/sample-shop`**](examples/sample-shop/README.md) — 2-tier baseline microservice architecture with Go 1.27+ routing and Postgres.
-* [**`examples/complex_ecommerce`**](examples/complex_ecommerce/README.md) — 3 services with composite DSN unpacking, pre-traffic migrations, and Stripe/SendGrid egress.
-* [**`examples/benchmark_app`**](examples/benchmark_app/README.md) — Rapid Type Analysis (RTA) dead-code reachability pruning and sub-150ms throughput.
-* [**`examples/hyper_mesh_12`**](examples/hyper_mesh_12/README.md) — **12-microservice flagship stress test** with mixed REST, gRPC stubs, Redis caching, and 3-hop struct pointer indirections.
-* [**`examples/fintech_core_20`**](examples/fintech_core_20/README.md) — **20-microservice neo-banking & trading engine** with modular package separation (`config` -> `repo` -> `handler`), Kafka order book matching, TimescaleDB double-entry ledger, and ScyllaDB payments.
-* [**`examples/health_mesh_25`**](examples/health_mesh_25/README.md) — **25-microservice HIPAA hospital & telehealth ecosystem** with FHIR document stores, WebRTC signaling, gRPC, and medical billing claims.
-* [**`examples/omni_mesh_32`**](examples/omni_mesh_32/README.md) — **32-microservice hyper-scale enterprise benchmark** combining 14 infrastructure backing stores (`postgres`, `clickhouse`, `scylladb`, `mongodb`, `mariadb`, `timescaledb`, `cockroachdb`, `rabbitmq`, `kafka`, `minio`, `temporal`, `qdrant`, `valkey`, `memcached`), gRPC contracts, and zero-trust egress policies.
-* [**`examples/realworld_benchmarks`**](examples/realworld_benchmarks/README.md) — **10 Open-Source Go Backend Applications**: Real-world evaluation across `croc`, `glance`, `1Panel`, `restic`, `filebrowser`, `ntfy`, `netbird`, `wttr.in`, `cloudreve`, and `navidrome`. Demonstrates zero-code-change architecture discovery, multi-dialect DB mapping, and automated deployment synthesis.
-
----
-
-## Compiler Performance & Benchmark Timings
-
-Anode compiles architecture directly from source without heuristics or runtime instrumentation. The static analysis is divided into two phases:
-1. **Toolchain Ingestion (`packages.Load` & `ssautil.AllPackages`)**: Go's AST parser and SSA IR constructor read packages and dependencies from disk.
-2. **Anode SSA Reachability & Topology Sweep**: Variable Type Analysis (VTA) computes whole-program reachability in $O(N)$ linear time, extracts HTTP/gRPC ingress routes, resolves backing databases/queues, and performs backward taint tracking on environment variables.
-
-### Measured Empirical Scaling Profile
-
-Below are the empirically measured timings across synthetic enterprise topologies and 10 production open-source Go backend applications:
-
-| Benchmark Target | Services | DBs / Stores | `go list` AST Load | SSA Build | VTA CallGraph | **Anode SSA Sweep** |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| [**`sample-shop`**](examples/sample-shop/) *(Baseline)* | 2 | 2 | 460 ms | 182 ms | 367 ms | **62.2 ms** |
-| [**`hyper_mesh_12`**](examples/hyper_mesh_12/) | 12 | 7 | 615 ms | 200 ms | 825 ms | **268.8 ms** |
-| [**`fintech_core_20`**](examples/fintech_core_20/) | 20 | 22 | 615 ms | 213 ms | 820 ms | **548.8 ms** |
-| [**`health_mesh_25`**](examples/health_mesh_25/) | 25 | 26 | 680 ms | 249 ms | 804 ms | **642.6 ms** |
-| [**`omni_mesh_32`**](examples/omni_mesh_32/) | 32 | 35 | 653 ms | 205 ms | 795 ms | **799.0 ms** |
-| [**`glance`**](https://github.com/glanceapp/glance) | 1 | 0 | 1,041 ms | 410 ms | 1,017 ms | **40.4 ms** |
-| [**`filebrowser`**](https://github.com/filebrowser/filebrowser) | 1 | 1 | 1,103 ms | 540 ms | 1,412 ms | **66.7 ms** |
-| [**`wttr.in`**](https://github.com/chubin/wttr.in) | 1 | 1 | 881 ms | 290 ms | 814 ms | **78.7 ms** |
-| [**`navidrome`**](https://github.com/navidrome/navidrome) | 1 | 1 | 1,837 ms | 633 ms | 2,306 ms | **125.1 ms** |
-| [**`croc`**](https://github.com/schollz/croc) | 4 | 0 | 1,011 ms | 412 ms | 1,293 ms | **140.6 ms** |
-| [**`cloudreve`**](https://github.com/cloudreve/cloudreve) | 1 | 1 | 2,473 ms | 1,233 ms | 3,745 ms | **152.5 ms** |
-| [**`restic`**](https://github.com/restic/restic) | 3 | 0 | 1,583 ms | 624 ms | 6,210 ms | **134.1 ms** |
-| [**`ntfy`**](https://github.com/binwiederhier/ntfy) | 7 | 2 | 1,531 ms | 520 ms | 6,638 ms | **346.1 ms** |
-| [**`netbird`**](https://github.com/netbirdio/netbird) | 14 | 5 | 3,210 ms | 1,842 ms | 13,840 ms | **649.4 ms** |
-
-> **Key Takeaway:** Anode's actual topology sweep executes in **sub-100ms** on standard backends and under **800ms** on large 32-service enterprise monorepos.
+| `anode inspect [PATH]` | Analyzes the workspace and writes `anode.lock.json`. |
+| `anode dev [PATH]` | Runs local dependencies on free loopback ports and supervises the services. |
+| `anode deploy TARGET [PATH]` | Cross-compiles and deploys over SSH with systemd and Caddy. Flags: `--domain`, `--plain-http`, `--dry-run`. |
+| `anode run TARGET [PATH]` | Alias for `anode deploy`. |
+| `anode host-setup root@host [--user NAME] [--disable-root-login]` | Creates a deploy account with passwordless sudo, and optionally disables direct root SSH login. |
+| `anode rollback user@host` | Restores the previous release's recorded units. |
+| `anode ps [TARGET] [PATH]` | Shows running processes, cgroup memory and CPU, and Caddy routes. |
+| `anode status [TARGET] [PATH]` | Alias for `anode ps`. |
+| `anode logs [TARGET] [SERVICE]` | Streams logs from several services at once. |
+| `anode doctor [TARGET] [PATH]` | Checks the toolchain, loopback ports, container engine, and remote host, including deploy inputs and the firewall rule. |
+| `anode catalog [PATH]` | Lists the 26 built-in kinds and any repository overrides. |
+| `anode cluster` | Plans placement across a multi-node inventory and can print nftables rules. |
+| `anode version` | Prints the Anode version. |
 
 ---
 
 ## Documentation
 
-* 📖 **[Architecture Deep-Dive](docs/architecture.md)** — Whole-program SSA, Variable Type Analysis (VTA), and backward taint tracking.
-* ⚖️ **[Tradeoffs & Known Limits](docs/tradeoffs.md)** — Architectural principles, intentional non-goals, and comparison with Kubernetes/Encore.
-* 🛡️ **[Security Architecture](docs/security.md)** — Cgroups v2 isolation, systemd sandboxing, and POSIX permissions.
+* [Architecture](docs/architecture.md): the four pillars, SSA and VTA analysis, and taint tracking.
+* [Tradeoffs](docs/tradeoffs.md): non-goals and comparison with Kubernetes, Docker Compose, and Encore.
+* [Security](docs/security.md): the hardening layers.
+* [Security audit](docs/security-audit.md): findings, their status, and accepted risks.
+* [Supported profile](docs/supported-profile.md): what is in and out of scope, and the `.env` contract.
+* [Deployment](docs/deployment.md) and [Catalog](docs/catalog.md).
 
 ---
 
-## Verification & Quality Guarantees
+## Verification
 
-Anode is engineered under strict **`agstack`** verification policies:
-* **Harness:** Run `.verify/run.sh` or `agent-brain verify run`.
-* **Zero AI Comment Slop:** Self-documenting code with zero narration comments.
-* **Hermetic Isolation:** All runtime test artifacts, compiled test binaries, and extracted lockfiles are strictly isolated under `.verify/`.
+* Unit and integration tests: `go vet ./...` and `go test ./...`. The integration tests in `internal/deployer` run the deploy coordinator against a fake host.
+* Live checks were run against test VMs for the deploy, firewall, and rollback paths. They are not part of CI.
 
 ---
 
 ## License
 
 MIT License. See [LICENSE](LICENSE) for details.
-
-## Scope and security notes
-
-- Anode targets developer-owned Go HTTP services with Postgres or Redis, deployed to one Linux host. See `docs/supported-profile.md`.
-- Run `anode inspect` only on code you own. The analysis loads packages with the Go toolchain, which can run code from the repository.
-- `anode dev` uses local Postgres containers with the credentials `postgres:postgres`, bound to `127.0.0.1` only.
-- Applications may print secrets to their own logs. Anode does not filter application output.
-- Deploys should use a dedicated account. Run `anode host-setup root@host` once to create one with passwordless sudo, then deploy as `account@host`. Passwordless sudo is root-equivalent and is an accepted risk for single-owner hosts; see docs/security-audit.md.
-- Keep `.env` at mode `600`. Deploys refuse a `.env` readable by other users.
-- Deploy to an IP address serves plain HTTP. Pass `--domain` for TLS, or `--plain-http` to accept plain HTTP.
-- See `docs/security-audit.md` for the audit record and open items.

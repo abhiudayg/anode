@@ -1,91 +1,83 @@
 # Production Deployment Guide
 
-Anode deploys unmodified Go backends to bare-metal servers or cloud VPS instances using native SSH and systemd.
+Anode deploys Go services to a Linux host over SSH, using systemd units and a Caddy reverse proxy. For which projects are supported, see [`supported-profile.md`](supported-profile.md).
 
 ---
 
 ## 1. Prerequisites
 
-### Local Machine:
-- The `anode` binary (`go install github.com/abhiudayg/anode/cmd/anode@latest` or pre-built binary).
-- An active SSH key (`~/.ssh/id_ed25519` or `~/.ssh/id_rsa`) loaded into `ssh-agent`.
+### Local Machine
+- The `anode` binary: build it from source (`go build ./cmd/anode`), or install it with `go install github.com/abhiudayg/anode/cmd/anode@latest`.
+- An SSH key (`~/.ssh/id_ed25519` or `~/.ssh/id_rsa`), loaded into `ssh-agent`.
+- A `.env` file in the project folder, mode `600`, with every secret the code reads.
 
-### Target Server:
-- Any Linux distribution with `systemd` (Ubuntu 22.04+, Debian 12+, Rocky Linux 9+, Fedora).
-- Root or passwordless sudo SSH access.
+### Target Host
+- A Linux host with systemd. Tested on Ubuntu VMs only; other distributions are not verified.
+- Root SSH access for the first run, or a deploy account created with `anode host-setup` (see below).
 
 ---
 
-## 2. Deploying an Application
+## 2. Setting Up a Deploy Account
 
-### Step 1: Generate or Inspect Lockfile
+Deploying as root works, but a dedicated account is the recommended setup:
+
+```bash
+anode host-setup root@my-vps.com --disable-root-login
+anode deploy anode-deploy@my-vps.com ./my-backend
+```
+
+`host-setup` creates the `anode-deploy` account, installs `~/.ssh/id_ed25519.pub` for it, and grants passwordless sudo through `/etc/sudoers.d/anode-deploy`. The sudo rule is root-equivalent; see [`security-audit.md`](security-audit.md). With `--disable-root-login`, direct root SSH login is turned off after the deploy account is checked, and the change is removed if `sshd` rejects it.
+
+---
+
+## 3. Deploying an Application
+
+### Step 1: Inspect
 ```bash
 anode inspect ./my-backend
 ```
-Verifies that all ingress routes, database bindings, secrets, and outbound egress rules are mathematically proven and committed to `anode.lock.json`.
+Writes `anode.lock.json`: the routes, database and Redis bindings, secrets, and outbound hosts found in the code. Review it before deploying.
 
-### Step 2: Validate Deployment Plan (Dry-Run)
+### Step 2: Dry-Run
 ```bash
 anode deploy root@my-vps.com ./my-backend --dry-run
 ```
-Synthesizes the systemd service units, high-port allocations (`21040+`), and Caddy reverse-proxy configuration without modifying the remote host.
+Prints the systemd units, port allocations (from `21040`), and Caddy configuration. The dry-run does not open an SSH connection.
 
-### Step 3: Execute Production Deployment
+### Step 3: Deploy
 ```bash
-anode deploy root@my-vps.com ./my-backend --domain api.mycompany.com
+anode deploy root@my-vps.com ./my-backend --domain api.example.com
 ```
+Without `--domain`, an IP-address target is refused unless you pass `--plain-http`, which serves the site over unencrypted HTTP.
+
+### Step 4: Rollback (if needed)
+```bash
+anode rollback root@my-vps.com
+```
+Switches each recorded service unit back to the previous release.
 
 ---
 
-## 3. The 6-Stage Autonomous Provisioning Lifecycle
+## 4. What a Deploy Does
 
-```
-[anode deploy root@my-vps.com ./my-backend]
-  │
-  ├── 1. Host Discovery & Bootstrap
-  │      • Connects via DialSSH (golang.org/x/crypto/ssh).
-  │      • Queries `uname -m` (arm64 or amd64 auto-detection).
-  │      • Creates unprivileged `anode` system user.
-  │      • Prepares `/var/lib/anode/{bin,releases,data,caddy}`.
-  │      • Installs/verifies Caddy edge reverse proxy.
-  │
-  ├── 2. Stateful Infrastructure Provisioning
-  │      • Inspects `anode.lock.json` resources with `auto_provision: true`.
-  │      • Resolves matching driver from the catalog.
-  │      • Mounts persistent storage at `/var/lib/anode/data/<resource>`.
-  │      • Enforces cgroups v2 limits and loopback binding (`127.0.0.1`).
-  │
-  ├── 3. Pre-Traffic Schema Migrations
-  │      • Discovers Goose or SQL migrations (e.g. `migrations/orders`).
-  │      • Runs database migrations *before* starting new service binaries.
-  │      • Aborts deployment cleanly if migrations fail.
-  │
-  ├── 4. Static Linux Cross-Compilation & Streaming
-  │      • Compiles static binaries (`CGO_ENABLED=0 GOOS=linux GOARCH=<arch>`).
-  │      • Streams binaries over SSH to `/var/lib/anode/releases/<release_id>/`.
-  │
-  ├── 5. Blue/Green Systemd Unit Activation
-  │      • Allocates conflict-free loopback ports (`21040`, `21041`).
-  │      • Injects inter-service discovery URLs (e.g. `PAYMENTS_SERVICE_URL`).
-  │      • Activates units under `User=anode` with systemd sandboxing.
-  │      • Verifies loopback `/healthz` endpoints.
-  │
-  └── 6. Zero-Downtime Edge Proxy Cutover
-         • Writes `/etc/caddy/Caddyfile` with path-based routing.
-         • Issues `systemctl reload caddy`.
-         • Traffic shifts instantly with zero dropped connections.
-```
+1. **Host check.** Connects over SSH and reads `uname -m` to choose `amd64` or `arm64`. Creates the `anode` system user and the `/var/lib/anode` directories, and installs or verifies Caddy.
+2. **Stateful resources.** For each resource in the lockfile with `auto_provision: true`, runs the matching catalog driver. Redis runs as a native systemd service bound to `127.0.0.1`. Other catalog kinds run in containers. Each data directory is created with the mode and owner the driver needs.
+3. **Migrations are not run.** The deploy does not apply database migrations. Run them yourself before deploying. See [`supported-profile.md`](supported-profile.md).
+4. **Build and upload.** Builds a static binary with `CGO_ENABLED=0 GOOS=linux`, uploads it to `/var/lib/anode/releases/<release_id>/`, and stages config files and secret env files with restricted modes.
+5. **Units.** Allocates ports from `21040`, writes one systemd unit per service with `DynamicUser=yes`, `CPUQuota=200%`, `MemoryMax=1G`, and the sandboxing listed in [`security.md`](security.md). Services receive `<NAME>_SERVICE_URL` for each service they call. Each HTTP service is checked on its loopback port after it starts, and the deploy fails if the check does not pass.
+6. **Edge.** Writes `/etc/caddy/Caddyfile`, checks it with `caddy validate`, and reloads Caddy. With `--domain`, Caddy obtains a Let's Encrypt certificate.
+7. **Retention.** Keeps the newest three releases, and removes older releases, their env files, and units of services that are no longer deployed.
+
+Services are restarted in place. The deploy does not run the new version alongside the old one, so requests in flight during the restart can fail.
 
 ---
 
-## 4. Automated Host Provisioning (Ansible & Terraform)
+## 5. Automated Host Provisioning (Ansible & Terraform)
 
-For setting up a fleet of bare-metal servers or cloud instances:
+For preparing new hosts:
 
-### With Ansible:
 ```bash
 ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml
 ```
 
-### With Terraform & Cloud-Init:
-Deploy the cloud-init configuration from [`infra/terraform/cloud-init.yaml`](../infra/terraform/cloud-init.yaml) to automatically initialize cloud VPS instances.
+The Ansible playbook and the Terraform cloud-init file ([`infra/terraform/cloud-init.yaml`](../infra/terraform/cloud-init.yaml)) install Caddy, create the `anode` user and directories, and check that cgroups v2 is enabled. They do not install Docker. Deploying still uses the steps in section 3.

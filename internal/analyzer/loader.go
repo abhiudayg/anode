@@ -256,7 +256,7 @@ func (l *Loader) linkServices(graph *iag.LockFile) {
 						Level:      "warn",
 						Message:    fmt.Sprintf("gRPC client for %q in service %q has no matching server registration in this workspace", protoInterface, svcName),
 						Provenance: binding.Provenance,
-						Suggestion: "Verify that the target service registers this gRPC server interface or declare an external host in anode.toml",
+						Suggestion: "Verify that the target service registers this gRPC server interface in this workspace, or that the client targets a service outside it",
 					})
 				}
 			}
@@ -297,7 +297,7 @@ func (l *Loader) linkServices(graph *iag.LockFile) {
 						Level:      "warn",
 						Message:    fmt.Sprintf("Outbound HTTP call in service %q via env %q could not be matched to an internal service", svcName, targetEnv),
 						Provenance: binding.Provenance,
-						Suggestion: "If this targets an external third-party API, declare in anode.toml or verify route matching.",
+						Suggestion: "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call.",
 					})
 				}
 			}

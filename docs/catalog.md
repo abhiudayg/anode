@@ -2,7 +2,7 @@
 
 Anode decouples stateful dependency provisioning from its core Go orchestrator by utilizing a **Pluggable Declarative Driver Catalog**.
 
-This architecture allows Anode to scale across 100+ stateful services (databases, caches, message brokers, vector engines, search clusters, object stores) without modifying compiler or orchestrator Go source code.
+The catalog has 26 built-in stateful kinds (databases, caches, message brokers, vector engines, search clusters, object stores, and workflow engines). Other kinds can be added through repository overrides without changing Go source code.
 
 ---
 
@@ -12,10 +12,10 @@ When Anode inspects or deploys a service requiring a stateful resource (e.g. `po
 
 1. **Repository Overrides (`.anode/catalog/` or `anode.catalog.yaml`)**:
    Allows a team to define custom internal databases, proprietary Docker images, or specialized memory/CPU limits for their repository.
-2. **User Overrides (`~/.anode/catalog/`)**:
+2. **User Overrides (`~/.anode/catalog.yaml` or `~/.anode/catalog/*.yaml`)**:
    Global developer machine overrides.
 3. **Embedded Pre-Audited Defaults (`internal/catalog/defaults.yaml`)**:
-   Shipped inside the compiled `anode` binary via Go `embed.FS`, containing audited production configurations for 25+ industry standard primitives.
+   Shipped inside the compiled `anode` binary via Go `embed.FS`, containing the built-in configurations for 26 stateful kinds.
 4. **Dynamic Fallback**:
    If an unknown or proprietary kind is declared (e.g. `scylladb` or `internal-kv`), Anode automatically synthesizes a safe, least-privilege driver with loopback binding and cgroups v2 memory limits.
 

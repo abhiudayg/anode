@@ -16,8 +16,6 @@ web/src/** linguist-detectable=false
 # 2. Third-Party Benchmarks & Test Fixtures (Exclude legacy/vendored source)
 examples/** linguist-vendored
 examples/** linguist-detectable=false
-examples/realworld_benchmarks/** linguist-vendored
-examples/realworld_benchmarks/** linguist-detectable=false
 testdata/** linguist-vendored
 testdata/** linguist-detectable=false
 

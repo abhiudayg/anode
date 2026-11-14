@@ -1,9 +1,62 @@
 [
   {
+    "version": "v1.4.0",
+    "date": "November 15, 2026",
+    "tag": "v1.4.0",
+    "isLatest": true,
+    "summary": "Security and reliability release for the bare-metal deploy path: validated systemd units, a firewall for application ports, a dedicated deploy account, one-command rollback, and fail-loud deploys.",
+    "highlights": [
+      "Hardened deploy path: unit fields validated, application ports blocked from external interfaces and the rule saved across reboots.",
+      "anode host-setup: dedicated deploy account with a validated sudo rule, and optional disabling of direct root SSH login.",
+      "anode rollback: restores the previous release's recorded units.",
+      "Fail-loud deploys: Caddy validation and per-service HTTP health checks stop a bad release.",
+      "External database values are read from .env; a missing value stops the run instead of inventing a URL.",
+      "anode doctor checks deploy inputs and the application-port firewall rule on the remote host."
+    ],
+    "updates": [
+      {
+        "title": "Hardened Deploy Path",
+        "category": "Security",
+        "badge": "Security",
+        "description": "Systemd unit fields, environment names, and values are validated before a unit is written. Pre-start config file names are restricted to plain .json names. Deploys to an IP address require --plain-http, and a .env readable by other users stops the deploy. A new SSH host key requires ANODE_TRUST_NEW_HOST=1 after its fingerprint is checked."
+      },
+      {
+        "title": "Application Port Firewall",
+        "category": "Security",
+        "badge": "Security",
+        "description": "An iptables rule drops external traffic to application ports 21040–21999 while allowing loopback, so the Caddy reverse proxy remains the only public route. The rule is saved with netfilter-persistent and reported by anode doctor."
+      },
+      {
+        "title": "anode host-setup and Root Login",
+        "category": "CLI",
+        "badge": "Security",
+        "description": "Creates a dedicated deploy account with a validated sudo rule. --disable-root-login turns off direct root SSH login after confirming the deploy account can run commands, and removes its own change if sshd rejects it. Passwordless sudo for the deploy account is an accepted risk on single-owner hosts."
+      },
+      {
+        "title": "anode rollback and Release Retention",
+        "category": "CLI",
+        "badge": "Feature",
+        "description": "anode rollback <user@host> restores the previous release's recorded units. The newest three releases are kept; older releases, their secret env files, and stale anode-* units are removed on deploy."
+      },
+      {
+        "title": "Fail-Loud Deploys",
+        "category": "CLI",
+        "badge": "Reliability",
+        "description": "A Caddy install error, a failed caddy validate, or a failed HTTP health check stops the deploy with an error instead of reporting success."
+      },
+      {
+        "title": "anode dev Reports Real State",
+        "category": "CLI",
+        "badge": "Reliability",
+        "description": "anode dev prints the engine's plan with database URLs masked, fails on a missing external database value, and stops its services when it exits."
+      }
+    ]
+  },
+  {
     "version": "v1.3.0",
     "date": "November 14, 2026",
     "tag": "v1.3.0",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Major release introducing multi-node bare-metal fleet placement and zero-trust nftables firewall compilation via anode cluster, alongside deep stateful driver inspection and provenance tracking in anode catalog.",
     "highlights": [
       "anode cluster: Greedy bin-packing service placement engine across multi-node VPS fleets based on memory quotas and role affinity.",

@@ -30,10 +30,10 @@ Anode targets one class of project first. Everything else is outside the current
 
 ## What `deploy` does for a supported app
 
-- **Secrets and connection strings come from `.env`** in the project folder. Anode does not generate them, except the Redis password below.
+- **Secrets and connection strings come from `.env`** in the project folder. Anode does not generate them.
   - Each secret the code reads (`STRIPE_SECRET_KEY`, for example) must be present. Missing values stop the deploy before any server change.
-  - A Postgres connection that comes from a config file needs `<RESOURCE>_DSN`, for example `DB_CONFIG_FIXTURE_DSN`.
-  - A Redis password is read from `REDIS_<RESOURCE>_PASSWORD`, for example `REDIS_FILEBROWSER_EXAMPLE_PASSWORD`.
+  - A connection string read from a config file needs a `.env` entry named after its `config_key`: dots become underscores and the name is uppercased. For example, `database.dsn` needs `DATABASE_DSN`.
+  - A Redis password is read from `REDIS_PASSWORD`. Each project can provision one native Redis, and the preflight check validates this value before any server change.
 - **Redis** runs as a native systemd service bound to `127.0.0.1`, with a password, as a dynamic user. The distribution's default Redis service is disabled.
 - **Environment variables** for connections read from env are written to a `0600` env file, not the systemd unit.
 - **Config files** are built from the `config_key` values, written to a root-only location, and handed to the app's dynamic user with `ExecStartPre=+`. The app reads its file from its working directory.
@@ -55,8 +55,8 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 ## Operator steps added by the audit
 
 - **First connection to a host:** the deploy stops and prints the host key fingerprint. Confirm it on the server, then run again with `ANODE_TRUST_NEW_HOST=1`.
-- **Application ports** (21040 and up) are dropped on external interfaces by an iptables rule installed during bootstrap. The rule is not yet persisted across reboots.
+- **Application ports** (21040 and up) are dropped on external interfaces by an iptables rule installed during bootstrap. The rule is saved with `netfilter-persistent`, and `anode doctor` checks that it is active and saved.
 - **Releases:** the newest three releases are kept, along with their env and config files. Older releases and units of removed services are deleted after a successful deploy.
 - **Rollback:** `anode rollback user@host` switches each recorded app unit back to the previous release. It stops and reports if any step fails.
 - **Deploy input checks** also run in `anode doctor`, which reports missing `.env` values before any deploy.
-- **Security:** see `docs/security-audit.md` for open findings, including the root deploy user.
+- **Security:** see `docs/security-audit.md`. The deploy account's passwordless sudo is an accepted risk for single-owner hosts.

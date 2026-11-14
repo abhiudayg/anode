@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] - 2026-11-15
+
+### 🔒 Security
+- **Hardened deploy path** (audit findings are in `docs/security-audit.md`):
+  - Systemd unit fields, environment names, and values are validated before a unit is written, closing a path where a lock-file value could inject a root-level command.
+  - Pre-start config file names are restricted to plain `.json` names.
+  - An iptables rule drops external traffic to application ports (`21040`–`21999`), saved with `netfilter-persistent` so it survives reboots.
+  - A new SSH host key requires `ANODE_TRUST_NEW_HOST=1` after its fingerprint is checked.
+  - An IP address target requires `--plain-http`; deploys without it are refused. `--domain` is now parsed correctly.
+  - A `.env` readable by other users stops the deploy.
+  - Log filters (`--since`, `--until`) are validated and shell-quoted.
+- **`anode host-setup`**: creates a dedicated deploy account with a validated sudo rule. `--disable-root-login` turns off direct root SSH login after checking that the deploy account works, and removes its own change if `sshd` rejects it. Passwordless sudo for the deploy account is an accepted risk on single-owner hosts; see `docs/security-audit.md`.
+
+### 🚀 Added
+- **`anode rollback <user@host>`**: restores the previous release's recorded units.
+- **Release retention**: the newest three releases are kept on the host; older releases, their secret env files, and stale `anode-*` units are removed.
+- **Per-host port registry**: allocations avoid ports already listening on the host and are recorded in `/etc/anode/ports`.
+- **`anode doctor` remote checks**: verifies the deploy inputs and that the application-port firewall rule is active and saved.
+
+### 🛠 Changed
+- **Fail-loud deploys**: a Caddy install error, a failed `caddy validate`, or a failed HTTP health check stops the deploy.
+- **External databases come from `.env`**: `anode dev` and `anode deploy` read each external database value from `.env`. A missing value stops the run; no default URL is invented.
+- **`anode dev` reports real state**: it prints the engine's plan with secrets masked, and stops its services when it exits.
+- **Shared SSH authentication**: agent and key-file signers are offered in one authentication method.
+- **Usage text**: `host-setup` and `deploy` help now show the current arguments and `--plain-http`.
+
+### 🎨 Documentation & Web UI
+- Added `docs/supported-profile.md`, the in-scope and out-of-scope list and the `.env` contract.
+- Added `docs/security-audit.md`, with each finding's status and the accepted residual risks.
+- Removed unverified figures and claims from the website, and removed unmaintained analysis snapshots from the examples.
+- Removed example suites that no test or CLI command used, and the vendored third-party repositories under `examples/realworld_benchmarks/`. They remain in git history.
+- Corrected the deployment, architecture, and security docs to match the code: services run under `DynamicUser`, deploys restart services in place, migrations are not run by the deploy, and the cluster firewall does not restrict outbound traffic.
+- Updated the version shown in the navigation, the hero banner, and the changelog page.
+
+---
+
 ## [1.3.0] - 2026-11-14
 
 ### 🚀 Added
