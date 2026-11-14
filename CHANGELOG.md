@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] - 2026-11-14
+
+### 🚀 Added
+- **`anode cluster` Multi-Node Fleet Placement & Zero-Trust Firewall Synthesis**:
+  - **Fleet Inventory Parser (`anode.cluster.yaml`)**: Supports node roles (`edge`, `worker`, `storage`), SSH endpoints, private cluster CIDRs (VPC/WireGuard), and memory allocations.
+  - **Scaffolding (`anode cluster init`)**: Generates an annotated starter `anode.cluster.yaml` inventory template.
+  - **Greedy Bin-Packing Engine**: Implements Best-Fit Decreasing (BFD) algorithm allocating services from `anode.lock.json` (or dynamic AST analysis) across fleet nodes based on memory quotas and role affinity (ingress to `edge`, backend microservices to `worker`).
+  - **Memory Overcommit Headroom**: Configurable RAM overcommit ratio (default 15% headroom) preventing cgroups OOM while maximizing server density.
+  - **Deterministic Port Allocator**: Assigns collision-free host ports across internal cluster nodes.
+  - **Zero-Trust Linux `nftables` Synthesis (`--firewall`)**: Compiles atomic, copy-pasteable Linux packet filtering rules (`table inet filter`) enforcing default drop, loopback, SSH, public edge ingress (80/443), and inter-node private subnet communication.
+  - **ASCII Fleet & Placement Matrix**: Aligned terminal tables displaying node capacity, assigned services, port maps, and RAM usage.
+  - **Machine Output (`--json`)**: Emits complete cluster placement state and node capacity statistics for CI/CD pipelines.
+
+- **`anode catalog` Deep Driver Inspection & Provenance Tracking**:
+  - **Source Attribution**: Tracks driver provenance, clearly distinguishing built-in embedded drivers (`[embedded]`) from repo-level overrides (`anode.catalog.yaml`).
+  - **Driver Overview Table**: Aligned ASCII table displaying driver kind, category (database, cache, message-broker, vector, storage, orchestrator), wire protocol, default port, image template, and source.
+  - **Deep Inspection Card (`anode catalog <driver>`)**: Detailed terminal card printing runtime specs, injected environment variables (`DATABASE_URL`, host, port, credentials), readiness checks, volume mounts, and security/cgroup constraints.
+  - **JSON Output (`anode catalog --json`)**: Emits structured catalog registry schemas for IDE extensions and tooling.
+
+### 🎨 Documentation & Web UI
+- **Interactive Command Generator on `/docs`**:
+  - Added dedicated live interactive tabs for `cluster` and `catalog`.
+  - Supports live toggling between Placement Matrix, `nftables` Firewall synthesis, and starter fleet inventory initialization.
+  - Added deep-dive CLI reference cards for `anode catalog` and `anode cluster`.
+- **Updated Hero & Navigation Badges**:
+  - Reflected `v1.3.0` release across navigation and landing page hero banner.
+
+---
+
 ## [1.2.0] - 2026-11-14
 
 ### 🚀 Added

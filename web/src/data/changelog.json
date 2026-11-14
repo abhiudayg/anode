@@ -1,9 +1,47 @@
 [
   {
+    "version": "v1.3.0",
+    "date": "November 14, 2026",
+    "tag": "v1.3.0",
+    "isLatest": true,
+    "summary": "Major release introducing multi-node bare-metal fleet placement and zero-trust nftables firewall compilation via anode cluster, alongside deep stateful driver inspection and provenance tracking in anode catalog.",
+    "highlights": [
+      "anode cluster: Greedy bin-packing service placement engine across multi-node VPS fleets based on memory quotas and role affinity.",
+      "Zero-Trust Linux nftables Synthesis: Compiles atomic, copy-pasteable Linux packet filtering rules with private cluster CIDR filtering.",
+      "Fleet Inventory Scaffolding: Parse and scaffold anode.cluster.yaml with anode cluster init.",
+      "anode catalog Inspection: Deep driver detail cards (anode catalog <driver>) displaying connection templates, readiness probes, and cgroups limits.",
+      "Driver Provenance Tracking: Clearly attribute driver specs to built-in embedded defaults or local repository overrides.",
+      "Machine-Readable JSON Mode: Full JSON schema serialization for both anode cluster --json and anode catalog --json.",
+      "Interactive Documentation: Live interactive cluster and catalog configurator tabs on /docs with instant copy."
+    ],
+    "updates": [
+      {
+        "title": "anode cluster: Multi-Node Fleet Placement & nftables Firewall",
+        "category": "CLI",
+        "badge": "Feature",
+        "description": "Calculates greedy bin-packing service allocation across multi-node VPS pools respecting role affinities (ingress services mapped to edge nodes, backend microservices to worker nodes) with configurable RAM overcommit headroom. Synthesizes atomic, zero-trust Linux nftables packet filter rules locking down inter-node communication.",
+        "codeSnippet": {
+          "title": "Terminal Output — anode cluster --firewall",
+          "code": "$ anode cluster --firewall\n# Linux nftables Zero-Trust Firewall Configuration\n# Node: worker-1 (10.0.0.2)\ntable inet filter {\n  chain input {\n    type filter hook input priority 0; policy drop;\n    iifname \"lo\" accept\n    tcp dport 22 accept\n    ip saddr 10.0.0.0/24 tcp dport { 21040, 21041 } accept\n  }\n}"
+        }
+      },
+      {
+        "title": "anode catalog: Deep Inspection Cards & Provenance Tracking",
+        "category": "CLI",
+        "badge": "Feature",
+        "description": "Inspect all 26+ stateful drivers or drill down into individual drivers (e.g. anode catalog postgres) for complete connection templates (DATABASE_URL), health probes, volume mounts, and cgroups limits. Emits structured JSON with --json and tracks provenance across embedded defaults and repository overrides.",
+        "codeSnippet": {
+          "title": "Terminal Output — anode catalog postgres",
+          "code": "$ anode catalog postgres\n╭──────────────────────────────────────────────────────────╮\n│ DRIVER: postgres [embedded]                             │\n├──────────────────────────────────────────────────────────┤\n│ Category:    database                                    │\n│ Protocol:    postgres (port 5432)                        │\n│ Image:       postgres:16-alpine                          │\n│ Ready Probe: pg_isready -U postgres                      │\n│ Memory Max:  512MB (swap: 0MB)                           │\n╰──────────────────────────────────────────────────────────╯"
+        }
+      }
+    ]
+  },
+  {
     "version": "v1.2.0",
     "date": "November 14, 2026",
     "tag": "v1.2.0",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Major release introducing anode logs for multi-service log streaming and aggregation across bare-metal journald and local dev supervisors, along with an enhanced interactive command generator and modernized documentation.",
     "highlights": [
       "anode logs: Multi-service color-coded log multiplexing across local dev and remote VPS journald over SSH.",
