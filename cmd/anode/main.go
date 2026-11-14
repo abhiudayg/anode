@@ -314,17 +314,123 @@ func main() {
 		}
 
 	case "cluster":
-		if len(os.Args) > 2 && (os.Args[2] == "--help" || os.Args[2] == "-h") {
-			printClusterUsage()
+		targetDir := "."
+		inventoryPath := ""
+		emitFirewall := false
+		jsonOutput := false
+		isInit := false
+
+		for i := 2; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			if arg == "--help" || arg == "-h" {
+				printClusterUsage()
+				return
+			}
+			if arg == "init" {
+				isInit = true
+			} else if arg == "--firewall" {
+				emitFirewall = true
+			} else if arg == "--json" {
+				jsonOutput = true
+			} else if strings.HasPrefix(arg, "--inventory=") {
+				inventoryPath = strings.TrimPrefix(arg, "--inventory=")
+			} else if arg == "--inventory" && i+1 < len(os.Args) {
+				inventoryPath = os.Args[i+1]
+				i++
+			} else if !strings.HasPrefix(arg, "-") {
+				targetDir = arg
+			}
+		}
+
+		if isInit {
+			initPath := filepath.Join(targetDir, "anode.cluster.yaml")
+			if _, err := os.Stat(initPath); err == nil {
+				log.Fatalf("Cluster inventory already exists at %s", initPath)
+			}
+			if err := os.WriteFile(initPath, []byte(cluster.DefaultInventoryTemplate()), 0644); err != nil {
+				log.Fatalf("Failed to write cluster inventory template: %v", err)
+			}
+			fmt.Printf("✓ Created starter cluster inventory at %s\n", initPath)
+			fmt.Println("Edit node hostnames, private IPs, and roles to match your bare-metal fleet.")
 			return
 		}
-		fmt.Println("🌐 Anode Cluster Multi-Host Pool")
-		pool := cluster.NewClusterPool()
-		pool.RegisterNode("edge-1", "192.168.1.10", "edge", 8192)
-		pool.RegisterNode("worker-1", "192.168.1.11", "worker", 16384)
-		pool.RegisterNode("worker-2", "192.168.1.12", "worker", 16384)
 
-		fmt.Printf("  • Registered %d cluster nodes with automated bin-packing & zero-trust firewall.\n", len(pool.Nodes))
+		if inventoryPath == "" {
+			found, err := cluster.FindInventory(targetDir)
+			if err != nil {
+				fmt.Printf("⚠️  No cluster inventory found in %s\n\n", targetDir)
+				fmt.Println("To scaffold a multi-node fleet inventory, run:")
+				fmt.Println("  anode cluster init")
+				fmt.Println("\nOr specify an inventory file with:")
+				fmt.Println("  anode cluster --inventory=<path>")
+				return
+			}
+			inventoryPath = found
+		}
+
+		inv, err := cluster.LoadInventory(inventoryPath)
+		if err != nil {
+			log.Fatalf("Failed to load cluster inventory: %v", err)
+		}
+
+		lockfilePath := filepath.Join(targetDir, LockFileName)
+		var lockfile *iag.LockFile
+		if data, err := os.ReadFile(lockfilePath); err == nil {
+			var parsed iag.LockFile
+			if err := json.Unmarshal(data, &parsed); err == nil {
+				lockfile = &parsed
+			}
+		}
+
+		if lockfile == nil {
+			loader := analyzer.NewLoader(targetDir)
+			inspected, err := loader.LoadAndAnalyze(targetDir)
+			if err != nil {
+				log.Fatalf("No anode.lock.json found and static analysis failed: %v", err)
+			}
+			lockfile = inspected
+		}
+
+		pool := cluster.NewClusterPoolFromInventory(inv)
+		placements, err := pool.BinPackLockfile(lockfile)
+		if err != nil {
+			log.Fatalf("Cluster bin-packing failed: %v", err)
+		}
+
+		rules, err := cluster.GenerateAllFirewalls(pool, placements, lockfile)
+		if err != nil {
+			log.Fatalf("Firewall rule generation failed: %v", err)
+		}
+
+		if jsonOutput {
+			type clusterJSON struct {
+				Cluster    cluster.ClusterMeta      `json:"cluster"`
+				Nodes      map[string]*cluster.Node `json:"nodes"`
+				Placements []cluster.Placement      `json:"placements"`
+				Firewall   map[string]string        `json:"firewall,omitempty"`
+			}
+			payload := clusterJSON{
+				Cluster:    inv.Cluster,
+				Nodes:      pool.Nodes,
+				Placements: placements,
+			}
+			if emitFirewall {
+				payload.Firewall = rules
+			}
+			out, err := cluster.FormatJSON(payload)
+			if err != nil {
+				log.Fatalf("JSON serialization failed: %v", err)
+			}
+			fmt.Println(out)
+			return
+		}
+
+		if emitFirewall {
+			fmt.Print(cluster.FormatFirewallSummary(rules))
+			return
+		}
+
+		fmt.Print(cluster.FormatPlacementTable(inv, placements, pool))
 
 	case "doctor":
 		opts := doctor.Options{
@@ -365,23 +471,78 @@ func main() {
 
 	case "catalog":
 		targetDir := "."
-		if len(os.Args) > 2 {
-			if os.Args[2] == "--help" || os.Args[2] == "-h" {
+		var driverKind string
+		jsonOutput := false
+
+		for i := 2; i < len(os.Args); i++ {
+			arg := os.Args[i]
+			if arg == "--help" || arg == "-h" {
 				printCatalogUsage()
 				return
 			}
-			targetDir = os.Args[2]
+			if arg == "--json" {
+				jsonOutput = true
+			} else if !strings.HasPrefix(arg, "-") {
+				if fi, err := os.Stat(arg); err == nil && fi.IsDir() {
+					targetDir = arg
+				} else if driverKind == "" {
+					driverKind = arg
+				} else {
+					targetDir = arg
+				}
+			}
 		}
+
 		reg := catalog.NewRegistry()
 		reg.LoadProjectOverrides(targetDir)
-		kinds := reg.ListKinds()
-		fmt.Printf("📦 Anode Stateful Driver Catalog (%d drivers registered)\n\n", len(kinds))
-		fmt.Printf("%-18s | %-24s | %-16s | %-12s\n", "Kind", "Image Template", "Protocol", "Default Port")
-		fmt.Println("---------------------------------------------------------------------------------")
-		for _, k := range kinds {
-			d := reg.Resolve(k)
-			fmt.Printf("%-18s | %-24s | %-16s | %-12d\n", d.Kind, d.Runtime.ImageTemplate, d.Networking.Protocol, d.Networking.PrimaryPort)
+
+		if driverKind != "" {
+			spec, _ := reg.Get(driverKind)
+			if spec == nil {
+				spec = reg.Resolve(driverKind)
+			}
+			src := reg.Source(driverKind)
+
+			if jsonOutput {
+				type driverJSON struct {
+					*catalog.DriverSpec
+					Source string `json:"source"`
+				}
+				out, err := catalog.FormatJSON(driverJSON{DriverSpec: spec, Source: src})
+				if err != nil {
+					log.Fatalf("JSON serialization failed: %v", err)
+				}
+				fmt.Println(out)
+				return
+			}
+
+			fmt.Print(catalog.FormatDriverDetail(spec, src))
+			return
 		}
+
+		if jsonOutput {
+			type catalogJSON struct {
+				Count   int                            `json:"count"`
+				Drivers map[string]*catalog.DriverSpec `json:"drivers"`
+				Sources map[string]string              `json:"sources"`
+			}
+			sources := make(map[string]string)
+			for _, k := range reg.ListKinds() {
+				sources[k] = reg.Source(k)
+			}
+			out, err := catalog.FormatJSON(catalogJSON{
+				Count:   len(reg.ListKinds()),
+				Drivers: reg.All(),
+				Sources: sources,
+			})
+			if err != nil {
+				log.Fatalf("JSON serialization failed: %v", err)
+			}
+			fmt.Println(out)
+			return
+		}
+
+		fmt.Print(catalog.FormatCatalogTable(reg, targetDir))
 
 	case "ps", "status":
 		opts := ps.Options{
@@ -589,17 +750,34 @@ func printPsUsage() {
 }
 
 func printCatalogUsage() {
-	fmt.Println("Usage:  anode catalog [PATH]")
-	fmt.Println("\nInspect pluggable stateful catalog drivers, image tags, and default ports")
+	fmt.Println("Usage:  anode catalog [OPTIONS] [DRIVER] [PATH]")
+	fmt.Println("\nInspect pluggable stateful catalog drivers, container specs, connection templates, and overrides")
 	fmt.Println("\nOptions:")
+	fmt.Println("      --json             Output catalog specification as structured JSON")
 	fmt.Println("  -h, --help             Print usage information")
+	fmt.Println("\nExamples:")
+	fmt.Println("  anode catalog                               # List all 26+ registered stateful drivers")
+	fmt.Println("  anode catalog postgres                      # Inspect PostgreSQL connection templates and container spec")
+	fmt.Println("  anode catalog redis ./my-project            # Inspect Redis with repo-level overrides")
+	fmt.Println("  anode catalog postgres --json               # Output PostgreSQL specification as JSON")
 }
 
 func printClusterUsage() {
-	fmt.Println("Usage:  anode cluster")
+	fmt.Println("Usage:  anode cluster [COMMAND / OPTIONS] [PATH]")
 	fmt.Println("\nInspect multi-node placement pools, memory bin-packing, and zero-trust firewalls")
+	fmt.Println("\nCommands:")
+	fmt.Println("  init                   Scaffold a starter anode.cluster.yaml fleet inventory")
 	fmt.Println("\nOptions:")
+	fmt.Println("      --inventory PATH   Custom path to cluster inventory YAML (default: anode.cluster.yaml)")
+	fmt.Println("      --firewall         Synthesize and display atomic Linux nftables packet filter rules")
+	fmt.Println("      --json             Output placement plan, node capacity, and firewall rules as JSON")
 	fmt.Println("  -h, --help             Print usage information")
+	fmt.Println("\nExamples:")
+	fmt.Println("  anode cluster                               # Inspect cluster nodes and service placement")
+	fmt.Println("  anode cluster init                          # Generate starter anode.cluster.yaml template")
+	fmt.Println("  anode cluster --firewall                    # View synthesized zero-trust nftables rules")
+	fmt.Println("  anode cluster ./examples/omni_mesh_32       # Plan placement for a 32-service mesh")
+	fmt.Println("  anode cluster --json                        # Machine-readable output for CI/CD pipelines")
 }
 
 func printLogsUsage() {

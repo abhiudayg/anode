@@ -104,4 +104,43 @@ drivers:
 	if pg.Networking.PrimaryPort != 5433 {
 		t.Errorf("expected overridden port 5433, got %d", pg.Networking.PrimaryPort)
 	}
+
+	// Verify source tracking
+	if reg.Source("redis") != "embedded" {
+		t.Errorf("expected redis source to be embedded, got %s", reg.Source("redis"))
+	}
+	expectedPath := filepath.Join(tmpDir, "anode.catalog.yaml")
+	if reg.Source("postgres") != expectedPath {
+		t.Errorf("expected postgres source to be %s, got %s", expectedPath, reg.Source("postgres"))
+	}
+}
+
+func TestCatalogFormatting(t *testing.T) {
+	reg := NewRegistry()
+	table := FormatCatalogTable(reg, "")
+	if !strings.Contains(table, "postgres") || !strings.Contains(table, "redis") {
+		t.Errorf("expected table to contain postgres and redis, got: %s", table)
+	}
+	if !strings.Contains(table, "[embedded]") {
+		t.Errorf("expected table to show [embedded] source label")
+	}
+
+	detail := FormatDriverDetail(reg.Resolve("postgres"), reg.Source("postgres"))
+	if !strings.Contains(detail, "⚡ Anode Driver Specification: postgres") {
+		t.Errorf("expected detail header, got: %s", detail)
+	}
+	if !strings.Contains(detail, "URL:") {
+		t.Errorf("expected URL connection template in detail")
+	}
+	if !strings.Contains(detail, "pg_isready") {
+		t.Errorf("expected readiness probe in detail")
+	}
+
+	jsonOut, err := FormatJSON(reg.Resolve("redis"))
+	if err != nil {
+		t.Fatalf("FormatJSON failed: %v", err)
+	}
+	if !strings.Contains(jsonOut, `"kind": "redis"`) {
+		t.Errorf("expected json output to contain kind redis, got: %s", jsonOut)
+	}
 }
