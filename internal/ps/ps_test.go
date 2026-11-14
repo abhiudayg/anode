@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -535,5 +538,131 @@ func TestDynamicTableAlignmentZeroDrift(t *testing.T) {
 
 	if !strings.Contains(row1, "short-svc") || !strings.Contains(row2, "long-breakdown-svc") {
 		t.Fatalf("Expected service rows, got:\n%s\n%s", row1, row2)
+	}
+}
+
+func TestGetLocalProcessMemoryLive(t *testing.T) {
+	pid := os.Getpid()
+	mem, bd := getLocalProcessMemory(pid)
+	t.Logf("Live test on PID %d: MemoryBytes=%d (%s), breakdown=%+v", pid, mem, FormatBytes(mem), bd)
+	if mem == 0 {
+		t.Errorf("expected non-zero memory for current live process (PID %d)", pid)
+	}
+}
+
+func TestInspectLocalWithSimulatedActiveService(t *testing.T) {
+	// Create a temp workspace with anode.lock.json containing a service
+	dir := t.TempDir()
+	lockContent := `{
+  "schema_version": "1.0",
+  "project": "test-active-shop",
+  "services": {
+    "web-api": {
+      "name": "web-api",
+      "entrypoint": "./cmd/api",
+      "ingress": [
+        { "routes": ["GET /healthz"] }
+      ]
+    }
+  }
+}`
+	if err := os.WriteFile(filepath.Join(dir, "anode.lock.json"), []byte(lockContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. When inactive (no process running)
+	repInactive, err := InspectLocal(context.Background(), Options{TargetDir: dir})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(repInactive.Services) != 1 {
+		t.Fatalf("expected 1 service, got %d", len(repInactive.Services))
+	}
+	sInactive := repInactive.Services[0]
+	if sInactive.State != StateInactive {
+		t.Errorf("expected StateInactive when process not running, got %s", sInactive.State)
+	}
+	if sInactive.PID != 0 {
+		t.Errorf("expected PID=0 when inactive, got %d", sInactive.PID)
+	}
+	if sInactive.MemoryHuman != "" {
+		t.Errorf("expected empty MemoryHuman when inactive, got %q", sInactive.MemoryHuman)
+	}
+
+	// 2. Now simulate the active process:
+	livePID := os.Getpid()
+	sActive := ServiceStatus{
+		Name:           "web-api",
+		UnitName:       "local:web-api",
+		State:          StateRunning,
+		ActiveState:    "active",
+		SubState:       "running",
+		UptimeHuman:    "active",
+		PID:            livePID,
+		MemoryMaxBytes: 1024 * 1024 * 1024,
+	}
+
+	memBytes, bd := getLocalProcessMemory(livePID)
+	if memBytes > 0 {
+		sActive.MemoryBytes = memBytes
+		sActive.MemoryBreakdown = bd
+		sActive.MemoryHuman = FormatServiceMemoryHuman(&sActive)
+	}
+
+	if sActive.MemoryBytes == 0 {
+		t.Errorf("expected active process to have non-zero MemoryBytes")
+	}
+	if sActive.MemoryHuman == "" || sActive.MemoryHuman == "-" {
+		t.Errorf("expected active process to have formatted MemoryHuman, got %q", sActive.MemoryHuman)
+	}
+
+	repActive := &ProcessReport{
+		IsRemote:    false,
+		Timestamp:   time.Now(),
+		CgroupsMode: "local-process",
+		Services:    []ServiceStatus{sActive},
+	}
+
+	var buf bytes.Buffer
+	PrintReport(&buf, repActive)
+	tableOutput := buf.String()
+	t.Logf("Active Table Output:\n%s", tableOutput)
+
+	if !strings.Contains(tableOutput, "active") {
+		t.Errorf("expected 'active' status in table, got:\n%s", tableOutput)
+	}
+	if !strings.Contains(tableOutput, strconv.Itoa(livePID)) {
+		t.Errorf("expected PID %d in table, got:\n%s", livePID, tableOutput)
+	}
+	if !strings.Contains(tableOutput, FormatBytes(sActive.MemoryBytes)) {
+		t.Errorf("expected memory %s in table, got:\n%s", FormatBytes(sActive.MemoryBytes), tableOutput)
+	}
+
+	// 3. Now simulate active process with anon/file breakdown (e.g. Linux cgroups v2 / smaps)
+	sActive.MemoryBreakdown = &MemoryBreakdown{
+		AnonBytes:   10 * 1024 * 1024,
+		FileBytes:   2800 * 1024,
+		KernelBytes: 512 * 1024,
+		AnonHuman:   "10.0 MB",
+		FileHuman:   "2.7 MB",
+		KernelHuman: "512.0 KB",
+	}
+	sActive.MemoryHuman = FormatServiceMemoryHuman(&sActive)
+	repActive.Services = []ServiceStatus{sActive}
+
+	var bufBreakdown bytes.Buffer
+	repActive.Verbose = true
+	PrintReport(&bufBreakdown, repActive)
+	breakdownTableOutput := bufBreakdown.String()
+	t.Logf("Active Table Output with Breakdown & Verbose Tree:\n%s", breakdownTableOutput)
+
+	if !strings.Contains(breakdownTableOutput, "[anon:10.0 MB file:2.7 MB k:512.0 KB]") {
+		t.Errorf("expected inline breakdown tags in table, got:\n%s", breakdownTableOutput)
+	}
+	if !strings.Contains(breakdownTableOutput, "Anonymous (Heap / Goroutines): 10.0 MB") {
+		t.Errorf("expected verbose heap line in tree, got:\n%s", breakdownTableOutput)
+	}
+	if !strings.Contains(breakdownTableOutput, "File-backed (Page Cache / SO): 2.7 MB") {
+		t.Errorf("expected verbose page cache line in tree, got:\n%s", breakdownTableOutput)
 	}
 }
