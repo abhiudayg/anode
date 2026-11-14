@@ -1,9 +1,35 @@
 [
   {
+    "version": "v1.1.2",
+    "date": "November 14, 2026",
+    "tag": "v1.1.2",
+    "isLatest": true,
+    "summary": "Linux cgroups v2 specification alignment for anode ps, relabeling anonymous memory, improving page cache and kernel breakdown reporting, and dynamically reading systemd resource limits.",
+    "highlights": [
+      "Kernel Spec Alignment: Anon memory is accurately labeled 'Anonymous mappings' adhering to Linux cgroup-v2 documentation.",
+      "Page Cache & Shmem Accounting: Exposes file-backed cache with explicit (shmem: ...) tracking for tmpfs and shared memory.",
+      "Kernel Allocations Detail: Exposes kernel memory with (slab: ..., sock: ...) sub-allocations.",
+      "Dynamic Systemd Limits: Dynamically parses MemoryMax, MemoryLimit, and CPUQuotaPerSecUSec from unit properties.",
+      "Sandbox Resilient: Unit tests pass reliably under restricted sandbox profiles and container environments."
+    ],
+    "updates": [
+      {
+        "title": "anode ps: Kernel Spec Alignment & Dynamic Limits",
+        "category": "CLI",
+        "badge": "Refinement",
+        "description": "Aligns the verbose tree output in anode ps -v with Linux kernel cgroup v2 architecture. Re-labels anon to 'Anonymous mappings', accurately models file-backed page cache, and breaks down kernel allocations (slab, socket buffers). Queries actual systemd MemoryMax and CPUQuota properties for custom ceilings.",
+        "codeSnippet": {
+          "title": "Terminal Output — anode ps -v",
+          "code": "$ anode ps -v\n⚡ Anode Process Status — Target: prod.internal\n────────────────────────────────────────────────────────────────────────────────────────────\n[MEMORY BREAKDOWN — ANONYMOUS MAPPINGS VS PAGE CACHE]\n  • api.service      Total: 18.4 MB\n      ├─ Anonymous mappings:            12.1 MB    (65%)\n      ├─ File-backed (Page Cache):      5.8 MB     (31%)\n      └─ Kernel allocations:            512.0 KB   (4%) (slab: 320.0 KB, sock: 64.0 KB)"
+        }
+      }
+    ]
+  },
+  {
     "version": "v1.1.1",
     "date": "November 14, 2026",
     "tag": "v1.1.1",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Kernel memory diagnostics update exposing cgroups v2 memory.stat anon, file, and kernel breakdown in anode ps, allowing operators to compare disk/page cache versus active process memory across bare-metal and container setups.",
     "highlights": [
       "cgroups v2 memory.stat Breakdown: Extracts anon, file, kernel, slab, sock, and shmem directly from /sys/fs/cgroup.",

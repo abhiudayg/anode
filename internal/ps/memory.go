@@ -123,6 +123,9 @@ func ParseProcSmapsBreakdown(content string) (uint64, *MemoryBreakdown) {
 // FormatServiceMemoryHuman constructs the human-readable memory representation,
 // displaying both the total/limit and the anon/file/kernel breakdown.
 func FormatServiceMemoryHuman(status *ServiceStatus) string {
+	if status.MemoryBytes == 0 && status.MemoryBreakdown != nil {
+		status.MemoryBytes = status.MemoryBreakdown.AnonBytes + status.MemoryBreakdown.FileBytes + status.MemoryBreakdown.KernelBytes
+	}
 	if status.MemoryBytes == 0 {
 		return "-"
 	}

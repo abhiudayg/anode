@@ -199,7 +199,7 @@ func discoverAnodeUnits(ssh *deployer.SSHClient) []string {
 func inspectSystemdUnit(ssh *deployer.SSHClient, unit string, edge *EdgeStatus) *ServiceStatus {
 	// Query unit properties and cgroup memory.stat in a single round-trip
 	propsCmd := fmt.Sprintf(
-		"systemctl show %s -p Id,Description,LoadState,ActiveState,SubState,MainPID,TasksCurrent,CPUUsageNSec,MemoryCurrent,ControlGroup,NRestarts,ExecMainStatus,ExecMainCode,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainExitTimestamp,Environment --no-pager 2>/dev/null || true; "+
+		"systemctl show %s -p Id,Description,LoadState,ActiveState,SubState,MainPID,TasksCurrent,CPUUsageNSec,MemoryCurrent,MemoryMax,MemoryLimit,CPUQuotaPerSecUSec,ControlGroup,NRestarts,ExecMainStatus,ExecMainCode,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainExitTimestamp,Environment --no-pager 2>/dev/null || true; "+
 			"echo '---CGROUP_STAT---'; "+
 			"CG=$(systemctl show %s -p ControlGroup 2>/dev/null | grep -E '^ControlGroup=' | cut -d= -f2-); "+
 			"[ -n \"$CG\" ] && [ -f \"/sys/fs/cgroup$CG/memory.stat\" ] && cat \"/sys/fs/cgroup$CG/memory.stat\" || "+
@@ -226,6 +226,19 @@ func inspectSystemdUnit(ssh *deployer.SSHClient, unit string, edge *EdgeStatus) 
 		ActiveState:    props["ActiveState"],
 		SubState:       props["SubState"],
 		MemoryMaxBytes: 1024 * 1024 * 1024, // 1GB default MemoryMax in Anode systemd template
+	}
+
+	// MemoryMax / MemoryLimit from systemd properties
+	if maxStr := props["MemoryMax"]; maxStr != "" && maxStr != "infinity" && maxStr != "[not set]" && maxStr != "18446744073709551615" {
+		if maxBytes, err := strconv.ParseUint(maxStr, 10, 64); err == nil && maxBytes > 0 {
+			status.MemoryMaxBytes = maxBytes
+		}
+	} else if limStr := props["MemoryLimit"]; limStr != "" && limStr != "infinity" && limStr != "[not set]" && limStr != "18446744073709551615" {
+		if maxBytes, err := strconv.ParseUint(limStr, 10, 64); err == nil && maxBytes > 0 {
+			status.MemoryMaxBytes = maxBytes
+		}
+	} else if maxStr == "infinity" || maxStr == "18446744073709551615" || limStr == "infinity" || limStr == "18446744073709551615" {
+		status.MemoryMaxBytes = 0
 	}
 
 	// PID
@@ -303,6 +316,12 @@ func inspectSystemdUnit(ssh *deployer.SSHClient, unit string, edge *EdgeStatus) 
 
 	// CPU Quota & Usage
 	status.CPUQuota = "200%" // Anode default CPUQuota in template
+	if qStr := props["CPUQuotaPerSecUSec"]; qStr != "" && qStr != "[not set]" && qStr != "infinity" {
+		trimmed := strings.TrimSuffix(qStr, "us")
+		if us, err := strconv.ParseUint(trimmed, 10, 64); err == nil && us > 0 {
+			status.CPUQuota = fmt.Sprintf("%d%%", us/10000)
+		}
+	}
 	if cpuStr := props["CPUUsageNSec"]; cpuStr != "" && cpuStr != "[not set]" {
 		if nsec, err := strconv.ParseUint(cpuStr, 10, 64); err == nil {
 			status.CPUUsageNSec = nsec
