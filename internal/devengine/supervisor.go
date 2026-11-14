@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -106,8 +107,15 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 
 	logDir := filepath.Join(absRoot, ".verify", "logs")
 	_ = os.MkdirAll(logDir, 0755)
-	stdoutLog, _ := os.OpenFile(filepath.Join(logDir, svc.Name+".log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	stderrLog, _ := os.OpenFile(filepath.Join(logDir, svc.Name+".log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	logPath := filepath.Join(logDir, svc.Name+".log")
+
+	var stdoutLog, stderrLog *os.File
+	if f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+		stdoutLog = f
+	}
+	if f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+		stderrLog = f
+	}
 
 	go s.streamLogs(stdout, svc.Name, color, stdoutLog)
 	go s.streamLogs(stderr, svc.Name, color, stderrLog)
@@ -127,7 +135,11 @@ func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[
 
 func (s *Supervisor) streamLogs(r io.Reader, serviceName string, color string, logFile *os.File) {
 	if logFile != nil {
-		defer logFile.Close()
+		defer func() {
+			if err := logFile.Close(); err != nil {
+				log.Printf("warning: error closing log file for %s: %v", serviceName, err)
+			}
+		}()
 	}
 	scanner := bufio.NewScanner(r)
 	prefix := fmt.Sprintf("%s[%s]%s ", color, serviceName, colorReset)
