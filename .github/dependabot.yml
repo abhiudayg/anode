@@ -3,6 +3,10 @@ updates:
   # Maintain Go dependencies for the core Anode CLI
   - package-ecosystem: "gomod"
     directory: "/"
+    exclude-paths:
+      - "examples/**"
+      - "testdata/**"
+      - "**/testdata/**"
     schedule:
       interval: "weekly"
       day: "monday"
