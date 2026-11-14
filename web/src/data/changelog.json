@@ -1,9 +1,43 @@
 [
   {
+    "version": "v1.1.1",
+    "date": "November 14, 2026",
+    "tag": "v1.1.1",
+    "isLatest": true,
+    "summary": "Kernel memory diagnostics update exposing cgroups v2 memory.stat anon, file, and kernel breakdown in anode ps, allowing operators to compare disk/page cache versus active process memory across bare-metal and container setups.",
+    "highlights": [
+      "cgroups v2 memory.stat Breakdown: Extracts anon, file, kernel, slab, sock, and shmem directly from /sys/fs/cgroup.",
+      "Workload Memory Gap Comparison: Compare identical workloads in bare metal vs containers to inspect disk cache vs process heap.",
+      "Proc Fallback Accounting: Gracefully parses /proc/<pid>/smaps_rollup (Pss_Anon, Pss_File) and /proc/<pid>/status for legacy kernels.",
+      "Inline & Dynamic Table Alignment: Formats memory as 40.0 MB / 100.0 MB (40%) [anon:28.0 MB file:10.0 MB k:2.0 MB] with auto-adjusting column widths.",
+      "Verbose Memory Breakdown Tree: Dedicated tree view in anode ps -v detailing non-reclaimable heap vs evictable page cache.",
+      "JSON Serialization: Full machine-readable memory_breakdown exported under anode ps --json.",
+      "Website & Hero UI Alignment: Resolved hero card overlap and synchronized release badges."
+    ],
+    "updates": [
+      {
+        "title": "anode ps: cgroups v2 memory.stat Anon / File / Kernel Breakdown",
+        "category": "CLI",
+        "badge": "Enhancement",
+        "description": "Exposes real-time cgroups v2 memory.stat metrics directly in anode ps. Operators can now observe exactly how much memory is consumed by anonymous process allocations (Go runtime heap, goroutine stacks, mallocs) versus file-backed page cache (cached disk blocks, shared libraries) and kernel data structures (slab allocator, TCP/UDP sockets). Includes /proc/<pid>/smaps_rollup fallback, dynamic column auto-sizing, and JSON export.",
+        "codeSnippet": {
+          "title": "Terminal Output — anode ps -v --target=prod",
+          "code": "$ anode ps -v --target=prod\n⚡ Anode Process Status — Target: prod (198.51.100.24)\nRelease: 20261114   Cgroups: v2 (unified)\n────────────────────────────────────────────────────────────────────────────────────────────\n[MICROSERVICES & TOPOLOGY]\nSERVICE          STATUS           PID      TASKS    MEMORY                                                 REST   UPTIME     PORT/EDGE\napi.service      active           142091   14       18.4 MB / 1.0 GB (1%) [anon:12.1 MB file:5.8 MB k:512 KB] 0      4d 12h     :8080 (https://api.example.com)\nworker.service   active           142104   28       42.1 MB / 2.0 GB (2%) [anon:38.0 MB file:3.2 MB k:900 KB] 0      4d 12h     -\n\n[MEMORY BREAKDOWN — PROCESS HEAP VS KERNEL PAGE CACHE]\n  • api.service      Total: 18.4 MB\n      ├─ Anonymous (Heap / Goroutines): 12.1 MB    (65%) [Non-reclaimable]\n      ├─ File-backed (Page Cache / SO): 5.8 MB     (31%) [Evictable under pressure]\n      └─ Kernel Data (Slab / Sockets):  512.0 KB   (4%)  (slab: 320.0 KB)\n  • worker.service   Total: 42.1 MB\n      ├─ Anonymous (Heap / Goroutines): 38.0 MB    (90%) [Non-reclaimable]\n      ├─ File-backed (Page Cache / SO): 3.2 MB     (7%)  [Evictable under pressure]\n      └─ Kernel Data (Slab / Sockets):  900.0 KB   (3%)  (slab: 610.0 KB)"
+        }
+      },
+      {
+        "title": "Hero & Navbar Vertical Stacking Polish",
+        "category": "Runtime",
+        "badge": "UI Polish",
+        "description": "Resolved a vertical collision where the hero interactive terminal card overlapped the fixed navigation bar during initial scroll events. Updated hero badge and documentation version tags to v1.1.1."
+      }
+    ]
+  },
+  {
     "version": "v1.1.0",
     "date": "November 13, 2026",
     "tag": "v1.1.0",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Operational, diagnostic, and kernel security release introducing bare-metal process inspection (anode ps) with cgroups v2 resource accounting, decoupled 2-phase pre-flight network diagnostics (anode doctor), anti-jailbreak systemd confinement, and in-memory streaming SCP binary deployment.",
     "highlights": [
       "Bare-Metal Process Inspection (anode ps): Direct systemd service inspection with zero container engine overhead.",
