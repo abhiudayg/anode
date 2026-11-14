@@ -16,11 +16,11 @@ import (
 
 type DeployCoordinator struct {
 	rootDir  string
-	ssh      *SSHClient
+	ssh      Remote
 	lockfile *iag.LockFile
 }
 
-func NewDeployCoordinator(rootDir string, sshClient *SSHClient, lockfile *iag.LockFile) *DeployCoordinator {
+func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFile) *DeployCoordinator {
 	return &DeployCoordinator{
 		rootDir:  rootDir,
 		ssh:      sshClient,

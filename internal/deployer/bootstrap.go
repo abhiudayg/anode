@@ -9,10 +9,10 @@ import (
 )
 
 type Bootstrapper struct {
-	ssh *SSHClient
+	ssh Remote
 }
 
-func NewBootstrapper(sshClient *SSHClient) *Bootstrapper {
+func NewBootstrapper(sshClient Remote) *Bootstrapper {
 	return &Bootstrapper{ssh: sshClient}
 }
 

@@ -39,6 +39,7 @@ Method: agstack `security-audit` and `jailbreak-defense` checklists, `govulnchec
 - **Verification:** live check: the env file holds `ORDERS_DB_URL`, the unit does not contain it or the password.
 
 ### [PARTIAL] [CWE-250] Deployment ran as root (high)
+- **Status update:** direct root login is now disabled by `anode host-setup --disable-root-login`, which checks the deploy account before touching sshd and removes its own setting if sshd rejects it. Verified live: root login is refused, the deploy account deploys. The privileged helper below is still open.
 - **What this is:** Deploys connect as `root`. A compromised deploy host or stolen key gives root on the server (excessive agency).
 - **Remediation:** `anode host-setup root@host` creates a dedicated deploy account with a validated sudoers rule. Deploys run as that account, and every privileged command goes through `sudo -n`.
 - **Residual risk:** the sudoers rule is NOPASSWD ALL, which is root-equivalent. A compromised key still gives root. Scoping sudo to a privileged helper binary is the next step, and it requires changing how commands are sent to the host.
@@ -58,7 +59,7 @@ Method: agstack `security-audit` and `jailbreak-defense` checklists, `govulnchec
 ### [FIXED] `.env` permissions are not checked (low)
 - **Remediation:** deploys refuse a `.env` readable by other users (`checkDotEnvPermissions`).
 
-### [DOCUMENTED] Application logs may contain secrets (informational)
+### [ACCEPTED] Application logs may contain secrets (informational)
 - **What this is:** an application can print secrets, for example filebrowser prints its generated admin password at first start. This is the application's behavior, not Anode's.
 
 ### [DOCUMENTED] Local development credentials (low)
@@ -84,6 +85,5 @@ Method: agstack `security-audit` and `jailbreak-defense` checklists, `govulnchec
 
 ## Remaining work
 
-1. Scope sudo to a privileged helper binary (the root-equivalent residual risk).
-2. Add a fake-SSH integration harness so the coordinator is tested without a server.
-3. Disable direct root SSH login on hosts after the deploy account is verified.
+1. Scope sudo to a privileged helper binary (the root-equivalent residual risk). Sizing from the code: the deployer issues 49 remote commands, which reduce to about a dozen privileged operations (install a file, write a unit, systemctl, caddy validate and reload, apt install, iptables rule, port registry, prune releases, rollback unit copy, sshd drop-in). The helper requires refactoring every call site, and it changes the deploy contract. It is not implemented yet.
+2. Application logs can contain secrets. This is application behavior that Anode cannot filter reliably. Accepted, and documented in the README.

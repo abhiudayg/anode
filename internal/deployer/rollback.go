@@ -8,7 +8,7 @@ import (
 
 var recordedUnitPattern = regexp.MustCompile(`^anode-[a-z0-9][a-z0-9-]{0,62}\.service$`)
 
-func Rollback(client *SSHClient) (string, error) {
+func Rollback(client Remote) (string, error) {
 	listing, err := client.Run("ls -1 " + releasesRoot + " 2>/dev/null || true")
 	if err != nil {
 		return "", fmt.Errorf("failed to list releases: %w", err)

@@ -184,10 +184,13 @@ func main() {
 			os.Exit(1)
 		}
 		deployUser := "anode-deploy"
+		disableRoot := false
 		for i := 3; i < len(os.Args); i++ {
 			if os.Args[i] == "--user" && i+1 < len(os.Args) {
 				i++
 				deployUser = os.Args[i]
+			} else if os.Args[i] == "--disable-root-login" {
+				disableRoot = true
 			}
 		}
 		rootClient, err := deployer.DialSSH(os.Args[2])
@@ -201,6 +204,22 @@ func main() {
 		}
 		if err := deployer.HostSetup(rootClient, deployUser, string(keyData)); err != nil {
 			log.Fatalf("Host setup failed: %v", err)
+		}
+		if disableRoot {
+			hostPart := strings.SplitN(os.Args[2], "@", 2)[len(strings.SplitN(os.Args[2], "@", 2))-1]
+			deployClient, err := deployer.DialSSH(deployUser + "@" + hostPart)
+			if err != nil {
+				log.Fatalf("Root login left enabled: cannot reach %s@%s: %v", deployUser, hostPart, err)
+			}
+			err = deployer.VerifyDeployAccount(deployClient)
+			_ = deployClient.Close()
+			if err != nil {
+				log.Fatalf("Root login left enabled: %v", err)
+			}
+			if err := deployer.DisableRootLogin(rootClient); err != nil {
+				log.Fatalf("Disable root login failed: %v", err)
+			}
+			fmt.Println("Direct root login disabled.")
 		}
 		fmt.Printf("Deploy user %s is ready. Deploy with: anode deploy %s@<host>\n", deployUser, deployUser)
 	case "dev":
