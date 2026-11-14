@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"time"
 
+	"github.com/abhiudayg/anode/internal/deployer"
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
@@ -19,25 +21,27 @@ type ServiceInstance struct {
 }
 
 type Engine struct {
-	rootDir          string
-	lockfile         *iag.LockFile
-	containerMgr     *ContainerManager
-	migrationRunner  *MigrationRunner
-	supervisor       *Supervisor
-	allocatedPorts   map[string]int
-	allocatedDBPorts map[string]int
-	mu               sync.Mutex
+	rootDir           string
+	lockfile          *iag.LockFile
+	containerMgr      *ContainerManager
+	migrationRunner   *MigrationRunner
+	supervisor        *Supervisor
+	allocatedPorts    map[string]int
+	allocatedDBPorts  map[string]int
+	migrationsApplied map[string]int
+	mu                sync.Mutex
 }
 
 func NewEngine(rootDir string, lockfile *iag.LockFile) *Engine {
 	return &Engine{
-		rootDir:          rootDir,
-		lockfile:         lockfile,
-		containerMgr:     NewContainerManager(),
-		migrationRunner:  NewMigrationRunner(rootDir),
-		supervisor:       NewSupervisor(rootDir, lockfile),
-		allocatedPorts:   make(map[string]int),
-		allocatedDBPorts: make(map[string]int),
+		rootDir:           rootDir,
+		lockfile:          lockfile,
+		containerMgr:      NewContainerManager(),
+		migrationRunner:   NewMigrationRunner(rootDir),
+		supervisor:        NewSupervisor(rootDir, lockfile),
+		allocatedPorts:    make(map[string]int),
+		allocatedDBPorts:  make(map[string]int),
+		migrationsApplied: make(map[string]int),
 	}
 }
 
@@ -75,6 +79,7 @@ func (e *Engine) PrepareInfrastructure(ctx context.Context) error {
 				if err != nil {
 					return fmt.Errorf("migration failed for %s: %w", resID, err)
 				}
+				e.migrationsApplied[resID] = applied
 				fmt.Printf("  ✓ Applied %d migration(s) for %s\n", applied, resID)
 			}
 		}
@@ -84,6 +89,10 @@ func (e *Engine) PrepareInfrastructure(ctx context.Context) error {
 
 // PlanEnvVariables assigns ports and generates comprehensive connection strings
 func (e *Engine) PlanEnvVariables() (map[string]map[string]string, error) {
+	dotEnv, err := deployer.ReadDotEnv(filepath.Join(e.rootDir, ".env"))
+	if err != nil {
+		return nil, err
+	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -107,15 +116,18 @@ func (e *Engine) PlanEnvVariables() (map[string]map[string]string, error) {
 			if b.ResourceRef != "" {
 				res := e.lockfile.Resources[b.ResourceRef]
 				if res.Kind == iag.KindPostgres {
+					key := deployer.BindingEnvKey(svc.Name, b)
 					dbPort := e.allocatedDBPorts[b.ResourceRef]
 					if dbPort == 0 {
-						dbPort = 5432
+						value := dotEnv[key]
+						if value == "" {
+							return nil, fmt.Errorf("%s is missing from .env (the connection string for %s)", key, b.ResourceRef)
+						}
+						envPlan[name][key] = value
+						continue
 					}
 					dbName := b.ResourceRef
-
-					if b.InjectEnv != "" {
-						envPlan[name][b.InjectEnv] = fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/%s?sslmode=disable", dbPort, dbName)
-					}
+					envPlan[name][key] = fmt.Sprintf("postgres://postgres:postgres@127.0.0.1:%d/%s?sslmode=disable", dbPort, dbName)
 					for _, exp := range b.ExpandedEnv {
 						switch exp {
 						case "DB_HOST", "DATABASE_HOST", "POSTGRES_HOST":

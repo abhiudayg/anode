@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Anode Technical Journal — Architecture & Engineering",
     description:
-      "Read engineering essays on eliminating Docker daemons, compile-time topology verification, and 8ms cold-boot systemd orchestration.",
+      "Read engineering essays on eliminating Docker daemons, compile-time topology verification, and fast cold-boot systemd orchestration.",
     url: "https://anode.abhiudayg.dev/blog",
     type: "article",
     images: [
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Anode Technical Journal — Architecture & Engineering",
     description:
-      "Read engineering essays on eliminating Docker daemons, compile-time topology verification, and 8ms cold-boot systemd orchestration.",
+      "Read engineering essays on eliminating Docker daemons, compile-time topology verification, and fast cold-boot systemd orchestration.",
     images: ["/og-image.png"],
   },
 };

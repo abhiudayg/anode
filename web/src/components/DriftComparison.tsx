@@ -66,7 +66,7 @@ export function DriftComparison() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-neutral-400">
                   <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
-                  <span>Heavy container daemon memory footprint (200MB+ idle)</span>
+                  <span>Heavy container daemon memory footprint (large idle)</span>
                 </div>
               </div>
             </div>

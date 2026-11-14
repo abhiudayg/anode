@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -47,9 +48,20 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 		}
 	}
 
+	if err := checkDotEnvPermissions(d.rootDir); err != nil {
+		return err
+	}
+	secrets, err := ReadDotEnv(filepath.Join(d.rootDir, ".env"))
+	if err != nil {
+		return fmt.Errorf("failed to read .env: %w", err)
+	}
+	if err := checkDeployInputs(d.lockfile, secrets); err != nil {
+		return err
+	}
+
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
-	if err := bootstrapper.BootstrapServer(d.lockfile); err != nil {
+	if err := bootstrapper.BootstrapServer(d.lockfile, secrets); err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 
@@ -85,11 +97,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	reg := catalog.NewRegistry()
 	reg.LoadProjectOverrides(d.rootDir)
 
-	servicePortMap := make(map[string]int)
-	idx := 0
-	for name := range d.lockfile.Services {
-		servicePortMap[name] = 21040 + idx
-		idx++
+	servicePortMap, err := d.allocateHostPorts()
+	if err != nil {
+		return err
 	}
 
 	for name, svc := range d.lockfile.Services {
@@ -100,14 +110,37 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			"PORT": fmt.Sprintf("%d", port),
 		}
 
+		secretEnv := map[string]string{}
+		configValues := map[string]string{}
+
 		// Inject DB bindings via catalog templates
 		for _, b := range svc.Bindings {
-			envKey := b.InjectEnv
-			if envKey == "" {
-				envKey = strings.ToUpper(svc.Name) + "_DB_URL"
+			if b.ConfigKey != "" {
+				res := d.lockfile.Resources[b.ResourceRef]
+				port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
+				value, err := configBindingValue(string(res.Kind), b.ConfigKey, res.AutoProvision, port, secrets)
+				if err != nil {
+					return err
+				}
+				configValues[b.ConfigKey] = value
+				continue
 			}
+			envKey := BindingEnvKey(svc.Name, b)
 
 			if res, exists := d.lockfile.Resources[b.ResourceRef]; exists {
+				if res.Kind == "redis" {
+					port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
+					secretEnv[envKey] = RedisConnectionURL(secrets[RedisPasswordKey()], port)
+					continue
+				}
+				if !res.AutoProvision {
+					value := secrets[envKey]
+					if value == "" {
+						return fmt.Errorf("%s is missing from .env (the connection string for %s)", envKey, b.ResourceRef)
+					}
+					secretEnv[envKey] = value
+					continue
+				}
 				driver := reg.Resolve(string(res.Kind))
 				connEnv := driver.BuildConnectionEnv(b.ResourceRef, "127.0.0.1", driver.Networking.PrimaryPort, b.ResourceRef)
 				if connURL, ok := connEnv["URL"]; ok {
@@ -120,45 +153,81 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					envVars[envKey] = fmt.Sprintf("%s://127.0.0.1:%d/%s", res.Kind, driver.Networking.PrimaryPort, b.ResourceRef)
 				}
 			} else {
-				envVars[envKey] = "postgres://postgres:postgres@127.0.0.1:5432/" + b.ResourceRef + "?sslmode=disable"
+				return fmt.Errorf("service %s binds %s, which is not a declared resource", svc.Name, b.ResourceRef)
 			}
+		}
+
+		var preStart []string
+		if len(configValues) > 0 {
+			if svc.ConfigFile == "" || strings.Contains(svc.ConfigFile, "/") {
+				return fmt.Errorf("service %s has an invalid config file path %q", svc.Name, svc.ConfigFile)
+			}
+			doc, err := BuildConfigDocument(configValues)
+			if err != nil {
+				return err
+			}
+			if _, err := d.ssh.Run("mkdir -p -m 700 /etc/anode/env"); err != nil {
+				return fmt.Errorf("failed to create env directory: %w", err)
+			}
+			configSrc := fmt.Sprintf("/etc/anode/env/%s.%s.config.json", releaseID, svc.Name)
+			if err := bootstrapper.WriteRemoteFile(string(doc), configSrc); err != nil {
+				return fmt.Errorf("failed to write config for %s: %w", svc.Name, err)
+			}
+			if _, err := d.ssh.Run(fmt.Sprintf("chmod 0600 '%s'", configSrc)); err != nil {
+				return fmt.Errorf("failed to lock down config for %s: %w", svc.Name, err)
+			}
+			handoff, err := configHandoffCommand(svc.Name, configSrc, svc.ConfigFile)
+			if err != nil {
+				return err
+			}
+			preStart = append(preStart, handoff)
 		}
 
 		// Inject inter-service discovery URLs
 		for otherName, otherPort := range servicePortMap {
 			if otherName != name {
-				envKey := strings.ToUpper(otherName) + "_SERVICE_URL"
+				envKey := envName(otherName) + "_SERVICE_URL"
 				envVars[envKey] = fmt.Sprintf("http://127.0.0.1:%d", otherPort)
 			}
 		}
 
 		// Inject and isolate secrets into a secured 0600 environment file
-		envFilePath := ""
 		for _, s := range svc.Secrets {
-			if _, exists := envVars[s.EnvVar]; !exists {
-				envVars[s.EnvVar] = "anode_secret_placeholder"
-			}
+			value := secrets[s.EnvVar]
+			secretEnv[s.EnvVar] = value
+			delete(envVars, s.EnvVar)
 		}
 
-		if len(svc.Secrets) > 0 {
+		envFilePath := ""
+		if len(secretEnv) > 0 {
+			keys := make([]string, 0, len(secretEnv))
+			for k := range secretEnv {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
 			var envFileContent strings.Builder
-			for _, s := range svc.Secrets {
-				val := envVars[s.EnvVar]
-				envFileContent.WriteString(fmt.Sprintf("%s=%s\n", s.EnvVar, val))
-				delete(envVars, s.EnvVar)
+			for _, k := range keys {
+				envFileContent.WriteString(fmt.Sprintf("%s=%s\n", k, secretEnv[k]))
 			}
-			remoteEnvPath := fmt.Sprintf("%s/.env.%s", remoteReleaseDir, svc.Name)
-			if err := bootstrapper.WriteRemoteFile(envFileContent.String(), remoteEnvPath); err == nil {
-				_, _ = d.ssh.Run(fmt.Sprintf("chmod 0600 '%s' && chown anode:anode '%s'", remoteEnvPath, remoteEnvPath))
-				envFilePath = remoteEnvPath
+			if _, err := d.ssh.Run("mkdir -p -m 700 /etc/anode/env"); err != nil {
+				return fmt.Errorf("failed to create env directory: %w", err)
 			}
+			remoteEnvPath := fmt.Sprintf("/etc/anode/env/%s.%s", releaseID, svc.Name)
+			if err := bootstrapper.WriteRemoteFile(envFileContent.String(), remoteEnvPath); err != nil {
+				return fmt.Errorf("failed to write env file for %s: %w", svc.Name, err)
+			}
+			if _, err := d.ssh.Run(fmt.Sprintf("chmod 0600 '%s'", remoteEnvPath)); err != nil {
+				return fmt.Errorf("failed to lock down env file for %s: %w", svc.Name, err)
+			}
+			envFilePath = remoteEnvPath
 		}
 
 		unitContent, err := GenerateSystemdUnit(SystemdUnitConfig{
 			ServiceName: svc.Name,
 			Description: fmt.Sprintf("Anode %s (release %s)", svc.Name, releaseID),
 			ExecStart:   remoteBin,
-			WorkingDir:  remoteReleaseDir,
+			StateDir:    svc.Name,
+			PreStart:    preStart,
 			EnvVars:     envVars,
 			EnvFile:     envFilePath,
 		})
@@ -166,6 +235,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			return err
 		}
 
+		if err := bootstrapper.WriteRemoteFile(unitContent, remoteReleaseDir+"/anode-"+svc.Name+".service"); err != nil {
+			return fmt.Errorf("failed to record unit for %s: %w", svc.Name, err)
+		}
 		unitPath := fmt.Sprintf("/etc/systemd/system/anode-%s.service", svc.Name)
 		if err := bootstrapper.WriteRemoteFile(unitContent, unitPath); err != nil {
 			return fmt.Errorf("failed to write systemd unit for %s: %w", svc.Name, err)
@@ -177,10 +249,18 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			return fmt.Errorf("failed to start systemd service %s: %w", svc.Name, err)
 		}
 
-		// Verify remote health
-		healthCmd := fmt.Sprintf("curl -s -f http://127.0.0.1:%d/ || curl -s -f http://127.0.0.1:%d/healthz || true", port, port)
-		_, _ = d.ssh.Run(healthCmd)
-		fmt.Printf("  ✓ Service %s live on 127.0.0.1:%d\n", name, port)
+		activeCmd := fmt.Sprintf("sleep 2 && systemctl is-active --quiet 'anode-%s.service'", svc.Name)
+		if _, err := d.ssh.Run(activeCmd); err != nil {
+			return fmt.Errorf("service %s is not running after restart (check: journalctl -u anode-%s.service): %w", svc.Name, svc.Name, err)
+		}
+		if healthPath, err := healthRoutePath(svc); err != nil {
+			return err
+		} else if healthPath != "" {
+			if _, err := d.ssh.Run(httpHealthCommand(port, healthPath)); err != nil {
+				return fmt.Errorf("service %s does not answer HTTP on port %d%s: %w", svc.Name, port, healthPath, err)
+			}
+		}
+		fmt.Printf("  ✓ Service %s running on 127.0.0.1:%d\n", name, port)
 	}
 
 	// 5. Caddy Edge Proxy Route Flip
@@ -191,10 +271,25 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 		return fmt.Errorf("failed to write Caddyfile: %w", err)
 	}
 
+	if _, err := d.ssh.Run("caddy validate --config /etc/caddy/Caddyfile"); err != nil {
+		return fmt.Errorf("Caddyfile is invalid: %w", err)
+	}
 	if _, err := d.ssh.Run("systemctl reload caddy || systemctl restart caddy"); err != nil {
-		fmt.Printf("  ℹ Notice on Caddy reload: %v\n", err)
+		return fmt.Errorf("failed to reload Caddy: %w", err)
 	}
 
+	keepUnits := make(map[string]bool)
+	for name := range d.lockfile.Services {
+		keepUnits["anode-"+name+".service"] = true
+	}
+	for resID, res := range d.lockfile.Resources {
+		if res.AutoProvision && res.Kind == "redis" {
+			keepUnits["anode-"+resID+".service"] = true
+		}
+	}
+	if err := d.pruneHost(keepUnits); err != nil {
+		return err
+	}
 	fmt.Printf("\n🎉 Release %s deployed successfully!\n", releaseID)
 	fmt.Printf("   Public URL: https://%s\n", domain)
 

@@ -1,12 +1,23 @@
 package devengine_test
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/abhiudayg/anode/internal/devengine"
 	"github.com/abhiudayg/anode/internal/iag"
 )
+
+func projectWithDotEnv(t *testing.T, content string) string {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, ".env"), []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return dir
+}
 
 func TestPlanEnvVariables(t *testing.T) {
 	lockfile := &iag.LockFile{
@@ -33,7 +44,8 @@ func TestPlanEnvVariables(t *testing.T) {
 		},
 	}
 
-	engine := devengine.NewEngine(".", lockfile)
+	dir := projectWithDotEnv(t, "DATABASE_URL=postgres://app@127.0.0.1:5432/orders\n")
+	engine := devengine.NewEngine(dir, lockfile)
 	plan, err := engine.PlanEnvVariables()
 	if err != nil {
 		t.Fatalf("PlanEnvVariables failed: %v", err)
@@ -42,33 +54,27 @@ func TestPlanEnvVariables(t *testing.T) {
 	ordersEnv := plan["orders"]
 	paymentsEnv := plan["payments"]
 
-	if ordersEnv["PORT"] == "" {
-		t.Errorf("expected PORT to be assigned for orders")
-	}
-	if paymentsEnv["PORT"] == "" {
-		t.Errorf("expected PORT to be assigned for payments")
+	if ordersEnv["PORT"] == "" || paymentsEnv["PORT"] == "" {
+		t.Errorf("expected PORT to be assigned for both services")
 	}
 	if ordersEnv["PORT"] == paymentsEnv["PORT"] {
 		t.Errorf("expected distinct ports for orders and payments, got %s", ordersEnv["PORT"])
 	}
-	if ordersEnv["DATABASE_URL"] == "" {
-		t.Errorf("expected DATABASE_URL to be injected for orders")
-	}
-	if ordersEnv["PAYMENTS_ADDR"] == "" {
-		t.Errorf("expected PAYMENTS_ADDR to be injected pointing to payments port")
+	if ordersEnv["DATABASE_URL"] != "postgres://app@127.0.0.1:5432/orders" {
+		t.Errorf("expected DATABASE_URL from .env, got %q", ordersEnv["DATABASE_URL"])
 	}
 	if !strings.Contains(ordersEnv["PAYMENTS_ADDR"], paymentsEnv["PORT"]) {
 		t.Errorf("expected PAYMENTS_ADDR to reference payments port %s, got %s", paymentsEnv["PORT"], ordersEnv["PAYMENTS_ADDR"])
 	}
 }
 
-func TestExpandedEnvDecomposition(t *testing.T) {
+func TestExternalDatabaseReadsDotEnvOnly(t *testing.T) {
 	lockfile := &iag.LockFile{
 		SchemaVersion: iag.V1,
 		Resources: map[string]iag.Resource{
 			"db-inventory": {
 				Kind:          iag.KindPostgres,
-				AutoProvision: true,
+				AutoProvision: false,
 			},
 		},
 		Services: map[string]iag.Service{
@@ -76,30 +82,47 @@ func TestExpandedEnvDecomposition(t *testing.T) {
 				Name:       "inventory",
 				Entrypoint: "./inventory",
 				Bindings: []iag.Binding{
-					{
-						ResourceRef: "db-inventory",
-						ExpandedEnv: []string{"DB_HOST", "DB_PORT", "DB_USER", "DB_NAME"},
-					},
+					{ResourceRef: "db-inventory", ExpandedEnv: []string{"DB_HOST", "DB_USER"}},
 				},
 			},
 		},
 	}
 
-	engine := devengine.NewEngine(".", lockfile)
+	dir := projectWithDotEnv(t, "INVENTORY_DB_URL=postgres://app@db.example.internal:5432/inventory\n")
+	engine := devengine.NewEngine(dir, lockfile)
 	plan, err := engine.PlanEnvVariables()
 	if err != nil {
 		t.Fatalf("PlanEnvVariables failed: %v", err)
 	}
 
 	env := plan["inventory"]
-	if env["DB_HOST"] != "127.0.0.1" {
-		t.Errorf("expected DB_HOST to be 127.0.0.1, got %s", env["DB_HOST"])
+	if env["INVENTORY_DB_URL"] != "postgres://app@db.example.internal:5432/inventory" {
+		t.Errorf("expected INVENTORY_DB_URL from .env, got %q", env["INVENTORY_DB_URL"])
 	}
-	if env["DB_USER"] == "" {
-		t.Errorf("expected DB_USER to be set")
+	for _, synthesized := range []string{"DB_HOST", "DB_USER"} {
+		if _, ok := env[synthesized]; ok {
+			t.Errorf("%s must not be invented for a database that is not provisioned locally", synthesized)
+		}
 	}
-	if env["DB_NAME"] == "" {
-		t.Errorf("expected DB_NAME to be set")
+}
+
+func TestMissingExternalDatabaseValueStopsPlan(t *testing.T) {
+	lockfile := &iag.LockFile{
+		SchemaVersion: iag.V1,
+		Resources: map[string]iag.Resource{
+			"db-inventory": {Kind: iag.KindPostgres},
+		},
+		Services: map[string]iag.Service{
+			"inventory": {
+				Name:     "inventory",
+				Bindings: []iag.Binding{{ResourceRef: "db-inventory"}},
+			},
+		},
+	}
+
+	engine := devengine.NewEngine(t.TempDir(), lockfile)
+	if _, err := engine.PlanEnvVariables(); err == nil {
+		t.Fatalf("expected an error when the connection string is missing from .env")
 	}
 }
 

@@ -31,16 +31,16 @@ $ anode inspect ./testdata/sample-shop
       • Discovered upstream RPC: payment.v1.PaymentService via dialContext()
 [4/4] 🔒 Synthesizing immutable contract...
       ✓ Generated anode.lock.json (Schema v1.0, SHA256: 8e4b7a1...)
-      ✓ Determinism proof verified (4/4 Pillars satisfied in 18ms)
+      ✓ Determinism proof verified (4/4 Pillars satisfied)
 `.trim();
 
   const devOutput = `
 $ anode dev
 
-[anode:dev] 🚀 Starting Local Orchestrator (Zero Port Collisions)
+[anode:dev] 🚀 Starting Local Orchestrator (Free local ports)
 [anode:dev] 📦 Allocating isolated ephemeral resources:
-            • postgres:16-alpine ──> dynamic loopback 127.0.0.1:54329 (host: free)
-            • redis:7-alpine     ──> dynamic loopback 127.0.0.1:63792 (host: free)
+            • postgres:16-alpine ──> ephemeral local port 127.0.0.1:54329 (host: free)
+            • redis:7-alpine     ──> ephemeral local port 127.0.0.1:63792 (host: free)
 [anode:dev] 💉 Injected runtime configuration:
             • DATABASE_URL = "postgres://anode:secret@127.0.0.1:54329/shop_dev?sslmode=disable"
             • PORT         = "8080"
@@ -185,7 +185,7 @@ $ anode dev
                     <span className="text-cyan-400 font-bold">~</span>
                     <span className="text-white">anode inspect ./testdata/sample-shop</span>
                     <span className="ml-auto text-[11px] px-2 py-0.5 rounded bg-cyan-950/60 border border-cyan-800/40 text-cyan-400">
-                      SSA Static Pass • 18ms
+                      SSA Static Pass
                     </span>
                   </div>
 
@@ -244,7 +244,7 @@ $ anode dev
                   <div className="text-neutral-400 space-y-1">
                     <p className="text-neutral-300 font-semibold flex items-center gap-2">
                       <Server className="w-4 h-4 text-emerald-400" />
-                      <span>Starting Local Orchestrator (Zero Port Collisions)</span>
+                      <span>Starting Local Orchestrator (Free local ports)</span>
                     </p>
 
                     <p className="pl-6 text-neutral-300 font-medium">📦 Allocating isolated ephemeral resources:</p>

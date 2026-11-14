@@ -141,7 +141,7 @@ export function Navbar() {
                           Hetzner Cloud VPS Guide
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Run on €3.79/mo servers (8ms cold starts)
+                          Run on €3.79/mo servers
                         </div>
                       </div>
                     </Link>
@@ -465,7 +465,7 @@ export function Navbar() {
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-neutral-300 hover:text-cyan-300 hover:bg-white/[0.04]"
               >
                 <Zap className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Deploy Fiber (8ms Boot)</span>
+                <span>Deploy Fiber</span>
               </Link>
               <Link
                 href="/deploy/hetzner-vps"

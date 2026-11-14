@@ -49,18 +49,69 @@ func hasMigrationFiles(dir string) bool {
 	return false
 }
 
+func (s *SinkInspector) ownsPos(pos token.Pos) bool {
+	if !pos.IsValid() || s.fset == nil {
+		return false
+	}
+	root, err := filepath.Abs(s.rootDir)
+	if err != nil {
+		return false
+	}
+	file, err := filepath.Abs(s.fset.Position(pos).Filename)
+	if err != nil {
+		return false
+	}
+	return strings.HasPrefix(file, root+string(filepath.Separator))
+}
+
+func isDatabaseOrRedisSink(pkgPath, name string) bool {
+	if pkgPath == "database/sql" && name == "Open" {
+		return true
+	}
+	if strings.Contains(pkgPath, "pgxpool") && (name == "New" || name == "Connect" || name == "NewWithConfig") {
+		return true
+	}
+	return strings.Contains(pkgPath, "redis") && name == "NewClient"
+}
+
+func addDependencyDiagnostic(graph *iag.Graph, provenance string) {
+	for _, d := range graph.Diagnostics {
+		if d.Provenance == provenance {
+			return
+		}
+	}
+	graph.Diagnostics = append(graph.Diagnostics, iag.Diagnostic{
+		Level:      "warn",
+		Message:    "database or Redis connection is opened inside a dependency, so Anode does not attribute it to this project",
+		Provenance: provenance,
+		Suggestion: "Open the connection in this project's own code (outside the module cache) so Anode can see the connection string.",
+	})
+}
+
 func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc *iag.Service, graph *iag.Graph) {
 	callee := call.StaticCallee()
 	if callee == nil {
 		return
 	}
-
 	pkgPath := ""
 	if callee.Pkg != nil && callee.Pkg.Pkg != nil {
 		pkgPath = callee.Pkg.Pkg.Path()
 	}
 	name := callee.Name()
 	provenance := s.FormatPos(call.Pos())
+
+	if !s.ownsPos(call.Pos()) {
+		if isDatabaseOrRedisSink(pkgPath, name) {
+			addDependencyDiagnostic(graph, provenance)
+		}
+		return
+	}
+
+	if pkgPath == "os" && (name == "ReadFile" || name == "Open") && len(call.Args) > 0 && svc.ConfigFile == "" {
+		if path := ResolveConstantString(call.Args[0]); strings.HasSuffix(path, ".json") {
+			svc.ConfigFile = path
+		}
+	}
 
 	// 1. Relational Database Sinks:
 	// - database/sql.Open(driver, dsn)
@@ -98,9 +149,13 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 
 		var envVar string
 		var compositeEnvs []string
+		var configKey string
 		if len(call.Args) > dsnArgIdx {
 			envVar = TraceToEnvVar(call.Args[dsnArgIdx])
 			compositeEnvs = TraceCompositeEnvVars(call.Args[dsnArgIdx])
+			if envVar == "" {
+				configKey = TraceConfigKey(call.Args[dsnArgIdx])
+			}
 		}
 
 		// Determine resource identity based on service or env name
@@ -148,6 +203,7 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 			ResourceRef: resourceID,
 			Protocol:    string(kind),
 			InjectEnv:   envVar,
+			ConfigKey:   configKey,
 			ExpandedEnv: compositeEnvs,
 			Provenance:  provenance,
 		})

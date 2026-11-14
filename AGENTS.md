@@ -45,7 +45,7 @@ anode/
 │   │   └── registry.go         # Driver resolution and project-level catalog overrides
 │   ├── deployer/               # Bare-metal Linux production orchestrator
 │   │   ├── bootstrap.go        # Remote VPS prerequisite provisioning & user creation
-│   │   ├── coordinator.go      # Zero-downtime blue/green deployment & symlink switching
+│   │   ├── coordinator.go      # Systemd restart-based deployment
 │   │   ├── ssh.go              # Hardened SSH client with known_hosts verification
 │   │   └── systemd.go          # Linux systemd unit & Caddy reverse-proxy synthesis
 │   ├── devengine/              # Local zero-collision orchestrator
@@ -53,7 +53,7 @@ anode/
 │   │   ├── engine.go           # Dynamic port allocation & environment decomposer
 │   │   ├── migrator.go         # Automated pre-traffic Goose/Golang-Migrate execution
 │   │   ├── supervisor.go       # Process pool manager with graceful SIGINT/SIGTERM
-│   │   └── watcher.go          # Sub-second Go source file hot-reloader
+│   │   └── watcher.go          # Go source file hot-reloader (300ms debounce)
 │   ├── cluster/                # Multi-host placement pools & zero-trust bin-packing
 │   └── iag/                    # Infrastructure-as-Graph data models & lockfile schema
 ├── web/                        # Next.js 16 (App Router) + Tailwind CSS documentation & tools
@@ -104,19 +104,6 @@ To provide complete Docker parity without container daemons, the following 4 cor
   - *Edge Case 3: Log rotation & disk bounds*:
     - *Handling*: If journald rotated or truncated logs, report `No entries found` cleanly without error exit.
 
-### C. `anode rollback <user@host> [PATH]` (Sub-Second Zero-Downtime Rollback)
-* **Purpose**: Revert production release to the immediately preceding version in `<50ms` with zero recompilation.
-* **Use Cases**:
-  1. Immediate rollback on production HTTP 500 error spikes or boot panics.
-  2. Automated canary rollback if post-deployment smoke tests fail.
-* **Edge Cases & Failure Recovery**:
-  - *Edge Case 1: Breaking database migrations*:
-    - *Handling*: Inspect `anode.lock.json` migration records. If release B ran a non-backward-compatible migration, warn the developer before proceeding (`Down migration or schema compatibility required`).
-  - *Edge Case 2: Single-release VPS (no prior release)*:
-    - *Handling*: If `/var/lib/anode/releases/` contains only 1 release, abort with exit code 1: `No previous release found`.
-  - *Edge Case 3: Dynamic port misalignment in Caddy*:
-    - *Handling*: Rolling back binaries without updating Caddy will proxy traffic to dead ports. The rollback coordinator must atomically flip BOTH the `/var/lib/anode/releases/latest` symlink AND the `/etc/caddy/Caddyfile` associated with that release, then execute `systemctl reload caddy`.
-
 ### D. `anode doctor [PATH]` (Pre-Flight & Topology Sanity Linter)
 * **Purpose**: Pre-flight verification of developer toolchain, Go compiler, local container engines, and SSH remote connectivity.
 * **Use Cases**:
@@ -152,7 +139,7 @@ When assigned an issue, enhancement, or bugfix in this repository, follow this e
 
 ### Step 1: Context & Invariant Verification
 1. Read the relevant files in `cmd/` or `internal/`.
-2. Ensure any new CLI flags or commands align with Docker parity (e.g., `anode ps`, `anode logs`, `anode rollback`, `anode doctor`).
+2. Ensure any new CLI flags or commands align with Docker parity (e.g., `anode ps`, `anode logs`, `anode doctor`).
 3. Verify that changes do NOT break the 4 Proof-of-Topology pillars.
 
 ### Step 2: Implementation & Tests

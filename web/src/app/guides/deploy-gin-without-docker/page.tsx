@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/guides/deploy-gin-without-docker",
     title: "Deploy Gin to Linux VPS Without Docker",
     description:
-      "Run your Gin Go REST API natively on Linux bare metal with 8ms cold starts and zero Docker container daemons.",
+      "Run your Gin Go REST API natively on Linux bare metal with fast cold starts and zero Docker container daemons.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Gin to Linux VPS Without Docker",
     description:
-      "Run your Gin Go REST API natively on Linux bare metal with 8ms cold starts.",
+      "Run your Gin Go REST API natively on Linux bare metal with fast cold starts.",
     images: ["/og-image.png"],
   },
 };
@@ -80,7 +80,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       "name": "Inspect SSA Call Graph",
-      "text": "Run 'anode inspect' locally to resolve Gin ingress routes and synthesis lockfile in ~60ms.",
+      "text": "Run 'anode inspect' locally to resolve Gin ingress routes and synthesis lockfile.",
       "url": "https://anode.abhiudayg.dev/guides/deploy-gin-without-docker#step-2"
     },
     {
@@ -132,7 +132,7 @@ export default function DeployGinGuide() {
               Deploy Gin (Go) to a Linux VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Gin is one of the fastest HTTP web frameworks in Go. Wrapping it in Docker adds 200MB of daemon memory overhead and slows cold starts from 8ms to 450ms. Here is how to run Gin natively on Linux bare metal with automated systemd and HTTPS.
+              Gin is one of the fastest HTTP web frameworks in Go. Wrapping it in Docker adds daemon memory overhead and slows cold starts. Here is how to run Gin natively on Linux bare metal with automated systemd and HTTPS.
             </p>
           </header>
 
@@ -141,12 +141,12 @@ export default function DeployGinGuide() {
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
               <div className="text-xs font-mono-code text-neutral-400">Cold Boot Latency</div>
               <div className="text-xl font-bold text-cyan-300 font-mono-code mt-1">8.2 ms</div>
-              <div className="text-[11px] text-neutral-500 mt-0.5">vs ~450ms Docker containerd</div>
+              <div className="text-[11px] text-neutral-500 mt-0.5">vs Docker containerd</div>
             </div>
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
               <div className="text-xs font-mono-code text-neutral-400">Idle RAM Footprint</div>
-              <div className="text-xl font-bold text-emerald-400 font-mono-code mt-1">4.8 MB</div>
-              <div className="text-[11px] text-neutral-500 mt-0.5">vs 186MB+ container overhead</div>
+              <div className="text-xl font-bold text-emerald-400 font-mono-code mt-1">Small</div>
+              <div className="text-[11px] text-neutral-500 mt-0.5">vs large+ container overhead</div>
             </div>
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
               <div className="text-xs font-mono-code text-neutral-400">Port Conflicts</div>
@@ -201,7 +201,7 @@ export default function DeployGinGuide() {
               </h2>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>. Anode traces Gin handlers starting from <code className="text-neutral-300">func main()</code> and synthesizes an immutable lockfile in ~60ms:
+              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>. Anode traces Gin handlers starting from <code className="text-neutral-300">func main()</code> and synthesizes an immutable lockfile:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect .<br />

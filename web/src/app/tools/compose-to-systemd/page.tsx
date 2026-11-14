@@ -260,7 +260,7 @@ export default function ComposeToSystemdTool() {
                   Want to eliminate writing systemd files and Docker Compose entirely?
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-                  <strong>Anode</strong> automatically traces your Go SSA call graphs to auto-discover network routes and database bindings in ~60ms, deploying straight to Linux systemd with 8ms cold starts.
+                  <strong>Anode</strong> automatically traces your Go SSA call graphs to auto-discover network routes and database bindings, deploying straight to Linux systemd with fast cold starts.
                 </p>
               </div>
             </div>
@@ -284,10 +284,10 @@ export default function ComposeToSystemdTool() {
               <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]">
                 <h3 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-cyan-400" />
-                  <span>56x Lower Latency &amp; 97% Lower Memory</span>
+                  <span>Lower Latency &amp; Lower Memory</span>
                 </h3>
                 <p>
-                  Compiled Go binaries do not require container runtimes like Docker Engine or containerd. When running natively under Linux systemd, cold boots drop from 450ms to 8.2ms, and idle RAM overhead drops from 210MB to just 4.8MB.
+                  Compiled Go binaries do not require container runtimes like Docker Engine or containerd. When running natively under Linux systemd, cold boots are faster, and idle RAM overhead is lower.
                 </p>
               </div>
 

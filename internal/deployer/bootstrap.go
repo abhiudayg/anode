@@ -17,7 +17,7 @@ func NewBootstrapper(sshClient *SSHClient) *Bootstrapper {
 }
 
 // BootstrapServer idempotently sets up /var/lib/anode, Caddy, and stateful databases
-func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile) error {
+func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, secrets map[string]string) error {
 	fmt.Println("  ⚙ Verifying remote host directories...")
 	setupDirsCmd := `id -u anode &>/dev/null || useradd -r -s /bin/false anode && \
                      mkdir -p /var/lib/anode/bin \
@@ -39,12 +39,23 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile) error {
 		apt-get update -qq && apt-get install -y -qq caddy
 	)`
 	if _, err := b.ssh.Run(checkCaddyCmd); err != nil {
-		fmt.Printf("    ⚠ Warning: Automatic Caddy installation had notice: %v\n", err)
+		return fmt.Errorf("caddy is not available on the host: %w", err)
+	}
+
+	if _, err := b.ssh.Run(appPortFirewallCommand()); err != nil {
+		return fmt.Errorf("could not restrict application ports to loopback: %w", err)
 	}
 
 	// 2. Provision Auto-Provisioned Stateful Dependencies via Pluggable Least-Privilege Catalog
 	reg := catalog.NewRegistry()
 	for resID, res := range lockfile.Resources {
+		if res.AutoProvision && res.Kind == "redis" {
+			port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
+			if err := b.provisionNativeRedis(resID, port, secrets[RedisPasswordKey()]); err != nil {
+				return err
+			}
+			continue
+		}
 		if !res.AutoProvision {
 			continue
 		}
@@ -58,7 +69,7 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile) error {
 		provisionCmd := driver.BuildProvisionCommand(resID, version, dataPath)
 
 		if _, err := b.ssh.Run(provisionCmd); err != nil {
-			fmt.Printf("    ℹ Notice: Host stateful setup for %s: %v\n", resID, err)
+			return fmt.Errorf("failed to provision stateful resource %s: %w", resID, err)
 		}
 	}
 

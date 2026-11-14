@@ -70,7 +70,7 @@ func TestSystemdSecurityDirectives(t *testing.T) {
 		ServiceName: "orders",
 		Description: "Production Orders Service",
 		ExecStart:   "/var/lib/anode/releases/100/orders",
-		WorkingDir:  "/var/lib/anode/releases/100",
+		StateDir:    "orders",
 		EnvVars: map[string]string{
 			"PORT": "21040",
 		},
@@ -82,8 +82,9 @@ func TestSystemdSecurityDirectives(t *testing.T) {
 	}
 
 	requiredDirectives := []string{
-		"User=anode",
 		"DynamicUser=yes",
+		"StateDirectory=orders",
+		"WorkingDirectory=/var/lib/orders",
 		"NoNewPrivileges=true",
 		"ProtectSystem=strict",
 		"ProtectHome=true",
@@ -102,7 +103,6 @@ func TestSystemdSecurityDirectives(t *testing.T) {
 		"RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6",
 		"ProtectProc=invisible",
 		"SystemCallArchitectures=native",
-		"ReadWritePaths=/var/lib/anode/releases/100",
 		"CPUQuota=200%",
 		"MemoryMax=1G",
 		"Restart=always",

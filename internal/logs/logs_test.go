@@ -134,8 +134,8 @@ func TestBuildJournalctlCommand(t *testing.T) {
 		"-u anode-worker.service",
 		"-n 50",
 		"-f",
-		`--since="15m"`,
-		`--until="1m"`,
+		`--since='15m'`,
+		`--until='1m'`,
 		"-o json",
 	}
 

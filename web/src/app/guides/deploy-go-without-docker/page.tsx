@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/guides/deploy-go-without-docker",
     title: "Deploy Go to Linux Without Docker",
     description:
-      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with 8ms cold starts and zero Docker daemons.",
+      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with fast cold starts and zero Docker daemons.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Go to Linux Without Docker",
     description:
-      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with 8ms cold starts and zero Docker daemons.",
+      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with fast cold starts and zero Docker daemons.",
     images: ["/og-image.png"],
   },
 };
@@ -80,7 +80,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       "name": "Inspect Go SSA Call Graph",
-      "text": "Run 'anode inspect' in your Go project repository to extract your service topology, database bindings, and lockfile in ~60ms.",
+      "text": "Run 'anode inspect' in your Go project repository to extract your service topology, database bindings, and lockfile.",
       "url": "https://anode.abhiudayg.dev/guides/deploy-go-without-docker#step-2"
     },
     {
@@ -150,7 +150,7 @@ export default function DeployGoWithoutDockerGuide() {
               <div className="text-xs text-neutral-400 mt-1">Cold Boot Time</div>
             </div>
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
-              <div className="text-2xl font-bold text-purple-400 font-mono-code">4.8 MB</div>
+              <div className="text-2xl font-bold text-purple-400 font-mono-code">Small</div>
               <div className="text-xs text-neutral-400 mt-1">RAM Footprint</div>
             </div>
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
@@ -195,7 +195,7 @@ export default function DeployGoWithoutDockerGuide() {
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300 space-y-1">
               <div className="text-cyan-400">$ anode inspect</div>
-              <div className="text-neutral-500">→ Tracing SSA call graphs... (48ms)</div>
+              <div className="text-neutral-500">→ Tracing SSA call graphs... </div>
               <div className="text-emerald-400">✓ Ingress: POST /v1/orders (:8080)</div>
               <div className="text-emerald-400">✓ Inferred DB: pgx/v5 (PostgreSQL 16)</div>
               <div className="text-purple-300">✓ Synthesized: anode.lock.json (hash: 4f9e2b10)</div>
@@ -239,7 +239,7 @@ export default function DeployGoWithoutDockerGuide() {
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                <span>Performs zero-downtime rolling restart via systemd socket activation.</span>
+                <span>Performs rolling restart via systemd socket activation.</span>
               </li>
             </ul>
           </section>

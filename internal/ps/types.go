@@ -8,22 +8,22 @@ import (
 type ServiceState string
 
 const (
-	StateRunning     ServiceState = "running"
-	StateRestarting  ServiceState = "auto-restart"
-	StateCrashLoop   ServiceState = "crashloop"
-	StateFailed      ServiceState = "failed"
-	StateInactive    ServiceState = "inactive"
-	StateUnknown     ServiceState = "unknown"
+	StateRunning    ServiceState = "running"
+	StateRestarting ServiceState = "auto-restart"
+	StateCrashLoop  ServiceState = "crashloop"
+	StateFailed     ServiceState = "failed"
+	StateInactive   ServiceState = "inactive"
+	StateUnknown    ServiceState = "unknown"
 )
 
 // MemoryBreakdown details the cgroup memory.stat or proc smaps breakdown into anonymous, file cache, and kernel usage.
 type MemoryBreakdown struct {
-	AnonBytes   uint64 `json:"anon_bytes"`           // Process memory: heap, goroutine stacks, anonymous mmap
-	FileBytes   uint64 `json:"file_bytes"`           // Page cache: cached disk blocks, shared libraries, binary text
+	AnonBytes   uint64 `json:"anon_bytes"`             // Process memory: heap, goroutine stacks, anonymous mmap
+	FileBytes   uint64 `json:"file_bytes"`             // Page cache: cached disk blocks, shared libraries, binary text
 	KernelBytes uint64 `json:"kernel_bytes,omitempty"` // Kernel memory: slab, socket buffers, page tables, kernel stacks
-	SlabBytes   uint64 `json:"slab_bytes,omitempty"` // In-kernel slab allocator (dentries, inodes)
-	SockBytes   uint64 `json:"sock_bytes,omitempty"` // TCP/UDP network socket buffers
-	ShmemBytes  uint64 `json:"shmem_bytes,omitempty"`// Shared memory & tmpfs
+	SlabBytes   uint64 `json:"slab_bytes,omitempty"`   // In-kernel slab allocator (dentries, inodes)
+	SockBytes   uint64 `json:"sock_bytes,omitempty"`   // TCP/UDP network socket buffers
+	ShmemBytes  uint64 `json:"shmem_bytes,omitempty"`  // Shared memory & tmpfs
 	AnonHuman   string `json:"anon"`
 	FileHuman   string `json:"file"`
 	KernelHuman string `json:"kernel,omitempty"`
@@ -72,22 +72,22 @@ type StatefulResourceStatus struct {
 
 // ProcessReport holds the complete topology runtime state.
 type ProcessReport struct {
-	Target       string                   `json:"target,omitempty"`
-	IsRemote     bool                     `json:"is_remote"`
-	ReleaseID    string                   `json:"release_id,omitempty"`
-	Edge         *EdgeStatus              `json:"edge,omitempty"`
-	Services     []ServiceStatus          `json:"services"`
-	Resources    []StatefulResourceStatus `json:"resources,omitempty"`
-	CgroupsMode  string                   `json:"cgroups_mode"` // "v2 (unified)", "v1 (hybrid/fallback)", "unsupported"
-	Timestamp    time.Time                `json:"timestamp"`
-	Verbose      bool                     `json:"verbose,omitempty"`
+	Target      string                   `json:"target,omitempty"`
+	IsRemote    bool                     `json:"is_remote"`
+	ReleaseID   string                   `json:"release_id,omitempty"`
+	Edge        *EdgeStatus              `json:"edge,omitempty"`
+	Services    []ServiceStatus          `json:"services"`
+	Resources   []StatefulResourceStatus `json:"resources,omitempty"`
+	CgroupsMode string                   `json:"cgroups_mode"` // "v2 (unified)", "v1 (hybrid/fallback)", "unsupported"
+	Timestamp   time.Time                `json:"timestamp"`
+	Verbose     bool                     `json:"verbose,omitempty"`
 }
 
 // Options configures the ps / status command.
 type Options struct {
-	Target     string // Remote user@host, or empty for local
-	TargetDir  string // Local project workspace directory
-	All        bool   // Include stopped/inactive services
-	JSON       bool   // Output machine-readable JSON
-	Verbose    bool   // Detailed debug output
+	Target    string // Remote user@host, or empty for local
+	TargetDir string // Local project workspace directory
+	All       bool   // Include stopped/inactive services
+	JSON      bool   // Output machine-readable JSON
+	Verbose   bool   // Detailed debug output
 }

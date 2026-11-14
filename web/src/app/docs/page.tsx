@@ -295,7 +295,7 @@ export default function DocsPage() {
                       Bare-Metal Performance
                     </h3>
                     <p className="text-xs text-neutral-400 leading-relaxed">
-                      Deploys to Linux systemd with 8ms cold starts and 4.8MB RAM footprint compared to 180MB+ container runtime overhead.
+                      Deploys to Linux systemd with fast cold starts and small RAM footprint compared to large container runtime overhead.
                     </p>
                   </div>
                 </div>
@@ -361,7 +361,7 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                       <code>{`anode inspect ./testdata/sample-shop`}</code>
                     </pre>
                     <p className="text-xs text-neutral-400 mt-2">
-                      Anode analyzes the package graph, executes VTA dead-code elimination, and writes <code className="text-cyan-300">anode.lock.json</code> in ~18ms.
+                      Anode analyzes the package graph, executes VTA dead-code elimination, and writes <code className="text-cyan-300">anode.lock.json</code>.
                     </p>
                   </div>
 
@@ -371,7 +371,7 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                       <code>{`anode dev`}</code>
                     </pre>
                     <p className="text-xs text-neutral-400 mt-2">
-                      Anode automatically allocates guaranteed free loopback ports (e.g. 127.0.0.1:54329 for Postgres), executes schema migrations, injects environment variables, and starts the sub-second reload loop.
+                      Anode automatically allocates free local ports (e.g. 127.0.0.1:54329 for Postgres), executes schema migrations, injects environment variables, and starts the sub-second reload loop.
                     </p>
                   </div>
 
@@ -422,7 +422,7 @@ Management Commands:
 
 Commands:
   inspect [PATH]         Extract whole-program SSA topology and write anode.lock.json
-  dev [PATH]             Start local hot-reload daemon with dynamic loopback ports
+  dev [PATH]             Start local hot-reload daemon with ephemeral local port ports
   deploy TARGET [PATH]   Deploy release to bare-metal Linux host via systemd & Caddy
   run TARGET [PATH]      Alias for deploy (Docker CLI parity)
   ps [TARGET] [PATH]     List running processes, cgroup v2 memory/CPU, and Caddy routes
@@ -482,7 +482,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                     generatedCommand = parts.join(" ");
                     commandExplanation = psTargetMode === "remote"
                       ? `Queries systemd D-Bus and cgroup v2 controller on ${psTarget.trim() || "remote VPS"} for process health, CPU/RAM, and Caddy routing.`
-                      : "Queries local dev supervisor status, active dynamic loopback port allocations, and service uptimes.";
+                      : "Queries local dev supervisor status, active ephemeral local port port allocations, and service uptimes.";
                   } else if (cmdType === "doctor") {
                     const parts = ["anode doctor"];
                     if (doctorTargetMode === "remote") {
@@ -493,13 +493,13 @@ Run 'anode COMMAND --help' for more information on a command.`}
                     if (doctorVerbose) parts.push("-v");
                     generatedCommand = parts.join(" ");
                     commandExplanation = doctorTargetMode === "remote"
-                      ? `Performs pre-flight diagnosis of Go toolchain, loopbacks, and executes 3s TCP/SSH handshake with ${doctorTarget.trim() || "remote VPS"}.`
-                      : "Runs 5-pillar local pre-flight checks (Go compiler, cross-compile CGO_ENABLED=0, dynamic loopbacks, and container engine).";
+                      ? `Performs pre-flight diagnosis of Go toolchain, local ports, and executes 3s TCP/SSH handshake with ${doctorTarget.trim() || "remote VPS"}.`
+                      : "Runs 5-pillar local pre-flight checks (Go compiler, cross-compile CGO_ENABLED=0, ephemeral local ports, and container engine).";
                   } else if (cmdType === "dev") {
                     const parts = ["anode dev"];
                     if (devPath.trim()) parts.push(devPath.trim());
                     generatedCommand = parts.join(" ");
-                    commandExplanation = "Starts local zero-port-collision dev supervisor with ephemeral loopback sockets (127.0.0.1:0) and sub-second hot reload.";
+                    commandExplanation = "Starts local dev supervisor with ephemeral local sockets (127.0.0.1:0) and sub-second hot reload.";
                   } else if (cmdType === "inspect") {
                     const parts = ["anode inspect"];
                     if (inspectPath.trim()) parts.push(inspectPath.trim());
@@ -938,7 +938,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                             />
                           </div>
                           <p className="text-neutral-400 text-xs font-mono-code">
-                            Allocates dynamic loopback sockets on 127.0.0.1:0 for 0% port collisions, spins up ephemeral databases, and hot reloads in &lt;15ms.
+                            Allocates ephemeral local port sockets on 127.0.0.1:0 for 0% port collisions, spins up ephemeral databases, and hot reloads in &lt;15ms.
                           </p>
                         </div>
                       )}
@@ -1136,7 +1136,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <span className="text-[11px] font-mono-code text-neutral-500">Local Orchestrator</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
-                      Starts the zero-port-collision local development engine. Operates strictly against <code className="text-neutral-200">anode.lock.json</code> (or auto-compiles if missing), binds ephemeral loopback sockets (<code className="text-neutral-200">127.0.0.1:0</code>), provisions isolated database containers, applies pending Goose migrations, and supervises sub-second live recompilation.
+                      Starts the local development engine. Operates strictly against <code className="text-neutral-200">anode.lock.json</code> (or auto-compiles if missing), binds ephemeral loopback sockets (<code className="text-neutral-200">127.0.0.1:0</code>), provisions isolated database containers, applies pending Goose migrations, and supervises sub-second live recompilation.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Options:</div>
@@ -1234,7 +1234,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <span className="text-[11px] font-mono-code text-neutral-500">Pre-Flight &amp; Topology Linter</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
-                      Performs deep pre-flight sanity checks across 5 core pillars: Go toolchain (<code className="text-neutral-200">go &gt;= 1.27</code>), Linux cross-compilation capability (<code className="text-neutral-200">CGO_ENABLED=0</code>), dynamic loopback subnet allocation (<code className="text-neutral-200">127.0.0.0/8</code>), container daemon socket readiness for ephemeral DBs, migration asset verification, and hardened remote SSH/cgroups v2/systemd pre-flight with strict 3-second timeout root-cause triage.
+                      Performs deep pre-flight sanity checks across 5 core pillars: Go toolchain (<code className="text-neutral-200">go &gt;= 1.27</code>), Linux cross-compilation capability (<code className="text-neutral-200">CGO_ENABLED=0</code>), ephemeral local port subnet allocation (<code className="text-neutral-200">127.0.0.0/8</code>), container daemon socket readiness for ephemeral DBs, migration asset verification, and hardened remote SSH/cgroups v2/systemd pre-flight with strict 3-second timeout root-cause triage.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Options:</div>
@@ -1495,7 +1495,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   <div className="text-cyan-400">{"// internal/devengine/engine.go"}</div>
                   <div>l, err := net.ListenTCP(&quot;tcp&quot;, &amp;net.TCPAddr{`{IP: net.ParseIP("127.0.0.1"), Port: 0}`})</div>
                   <div>assignedPort := l.Addr().(*net.TCPAddr).Port</div>
-                  <div className="text-neutral-500">{"// Returns guaranteed free port from kernel ephemeral range: e.g. 54329"}</div>
+                  <div className="text-neutral-500">{"// Returns free port from kernel ephemeral range: e.g. 54329"}</div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
@@ -1729,309 +1729,10 @@ terraform -chdir=infra/terraform apply`}</code>
               </div>
 
             {/* 9. BENCHMARKS ANALYSIS */}
-            <div className={effectiveDoc === "benchmarks-analysis" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
-                  Empirical Verification
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                  Empirical Numbers & Verification Analysis
-                </h2>
-                <p className="text-sm text-neutral-300">
-                  Every performance claim in Anode is benchmarked and verified under Linux kernel 6.x and Go 1.27+. Here is the rigorous engineering methodology behind each number.
+              <div className={effectiveDoc === "benchmarks-analysis" ? "block space-y-6 leading-relaxed" : "hidden"}>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  No benchmark results are published yet. Earlier figures on this site were not backed by recorded runs, so they have been removed. Measurements will be published only with the hardware, the command, and the raw output that produced them.
                 </p>
-
-                {/* 8ms vs 1420ms */}
-                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-cyan-400" />
-                      1. Cold-Boot Startup: 8ms (Anode) vs 1,420ms (Docker)
-                    </h3>
-                    <span className="text-xs font-mono-code text-emerald-400">177x Faster</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Measurement Method:</strong> Using <code className="text-neutral-300">systemd-analyze blame</code> and high-resolution wall-clock kernel timers.
-                  </p>
-                  <div className="text-xs text-neutral-300 space-y-1.5 pl-3 border-l-2 border-cyan-500/40">
-                    <p>• <strong>Anode (8ms):</strong> A statically linked ELF binary (<code className="text-neutral-300">CGO_ENABLED=0</code>) executed directly by the Linux kernel via <code className="text-neutral-300">execve</code>. Zero container namespace creation, zero overlayfs mount setups, zero bridge network plumbing.</p>
-                    <p>• <strong>Docker (1,420ms):</strong> Involves dockerd IPC, containerd client call, containerd-shim fork, cgroup directory creation, veth pair allocation, iptables rule injection, and rootfs pivot.</p>
-                  </div>
-                </div>
-
-                {/* 4.8MB vs 186MB */}
-                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Gauge className="w-4 h-4 text-purple-400" />
-                      2. Memory Footprint: 4.8 MB (Anode) vs 186 MB (Docker)
-                    </h3>
-                    <span className="text-xs font-mono-code text-emerald-400">97% Less RAM</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Measurement Method:</strong> Monitored via Linux kernel Proportional Set Size (PSS) in <code className="text-neutral-300">/proc/[pid]/smaps_rollup</code> compared to <code className="text-neutral-300">docker stats</code>.
-                  </p>
-                  <div className="text-xs text-neutral-300 space-y-1.5 pl-3 border-l-2 border-purple-500/40">
-                    <p>• <strong>Anode:</strong> The Go runtime memory footprint for idle HTTP services sits at ~4.8 MB RSS. There are no additional daemons or supervisor shims.</p>
-                    <p>• <strong>Docker Daemon Stack:</strong> `dockerd` (65MB RSS) + `containerd` (40MB RSS) + `containerd-shim-runc-v2` (18MB per container) + internal DNS and network drivers (~30MB) = ~186 MB baseline overhead.</p>
-                  </div>
-                </div>
-
-                {/* SSA Reachability & Scaling Benchmarks */}
-                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <Cpu className="w-4 h-4 text-yellow-400" />
-                      3. SSA Static Sweep Time: 18ms–62ms (Pure SSA) / ~1.0s–2.5s (Full End-to-End)
-                    </h3>
-                    <span className="text-xs font-mono-code text-cyan-400">Compiler Speed</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Measurement Method:</strong> Whole-program reachability traversal and sink extraction (<code className="text-neutral-300">vta.CallGraph</code> + backward taint analysis) evaluated with Go 1.27+ SSA.
-                  </p>
-                  <div className="text-xs text-neutral-300 space-y-1 pl-3 border-l-2 border-yellow-500/40">
-                    <p>• <strong>Pure In-Memory SSA Sweep:</strong> Variable Type Analysis computes reachability in O(N) linear time. The pure sweep runs in <strong>18ms to 62ms</strong> on single-service backends, <strong>268ms</strong> on 12 microservices, and <strong>798ms</strong> on a 32-microservice enterprise monorepo.</p>
-                  </div>
-
-                  {/* Comprehensive Benchmark Table in Docs */}
-                  <div className="mt-4 pt-3 border-t border-white/[0.06]">
-                    <h3 className="text-xs font-bold text-neutral-200 uppercase tracking-wider mb-2 font-mono-code">
-                      Empirical Profiling Matrix (Enterprise & Open-Source Backends)
-                    </h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-[11px] font-mono-code">
-                        <thead>
-                          <tr className="border-b border-white/[0.08] text-neutral-500 uppercase">
-                            <th className="py-2 px-2.5">Target</th>
-                            <th className="py-2 px-2.5">Topology Scale</th>
-                            <th className="py-2 px-2.5">go list AST</th>
-                            <th className="py-2 px-2.5">SSA Build</th>
-                            <th className="py-2 px-2.5 text-cyan-300 text-right">Anode SSA Sweep</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/[0.04] text-neutral-300">
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/abhiudayg/anode/tree/master/examples/sample-shop"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>sample-shop</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">2 services / 2 stores</td>
-                            <td className="py-2 px-2.5">460 ms</td>
-                            <td className="py-2 px-2.5">182 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">62.2 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/abhiudayg/anode/tree/master/examples/hyper_mesh_12"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>hyper_mesh_12</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">12 services / 7 stores</td>
-                            <td className="py-2 px-2.5">615 ms</td>
-                            <td className="py-2 px-2.5">200 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">268.8 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/abhiudayg/anode/tree/master/examples/fintech_core_20"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>fintech_core_20</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">20 services / 22 stores</td>
-                            <td className="py-2 px-2.5">615 ms</td>
-                            <td className="py-2 px-2.5">213 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">548.8 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/abhiudayg/anode/tree/master/examples/health_mesh_25"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>health_mesh_25</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">25 services / 26 stores</td>
-                            <td className="py-2 px-2.5">680 ms</td>
-                            <td className="py-2 px-2.5">249 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">642.6 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/abhiudayg/anode/tree/master/examples/omni_mesh_32"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>omni_mesh_32</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">32 services / 35 stores</td>
-                            <td className="py-2 px-2.5">653 ms</td>
-                            <td className="py-2 px-2.5">205 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">799.0 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/glanceapp/glance"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>glanceapp/glance</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">Dashboard Server</td>
-                            <td className="py-2 px-2.5">1,041 ms</td>
-                            <td className="py-2 px-2.5">410 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">40.4 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/filebrowser/filebrowser"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>filebrowser/filebrowser</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">File Storage Engine</td>
-                            <td className="py-2 px-2.5">1,103 ms</td>
-                            <td className="py-2 px-2.5">540 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">66.7 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/chubin/wttr.in"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>chubin/wttr.in</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">Terminal Forecast Service</td>
-                            <td className="py-2 px-2.5">881 ms</td>
-                            <td className="py-2 px-2.5">290 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">78.7 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/schollz/croc"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>schollz/croc</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">P2P Relay & Rendezvous</td>
-                            <td className="py-2 px-2.5">1,011 ms</td>
-                            <td className="py-2 px-2.5">412 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">140.6 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/restic/restic"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>restic/restic</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">Encrypted Backup Engine</td>
-                            <td className="py-2 px-2.5">1,583 ms</td>
-                            <td className="py-2 px-2.5">624 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">134.1 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/binwiederhier/ntfy"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>binwiederhier/ntfy</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">HTTP Pub-Sub Server</td>
-                            <td className="py-2 px-2.5">1,531 ms</td>
-                            <td className="py-2 px-2.5">520 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">346.1 ms</td>
-                          </tr>
-                          <tr>
-                            <td className="py-2 px-2.5 font-bold text-white">
-                              <a
-                                href="https://github.com/netbirdio/netbird"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-cyan-400 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <span>netbirdio/netbird</span>
-                                <ExternalLink className="w-2.5 h-2.5 text-neutral-500" />
-                              </a>
-                            </td>
-                            <td className="py-2 px-2.5 text-neutral-400">Zero-Trust VPN Mesh</td>
-                            <td className="py-2 px-2.5">3,210 ms</td>
-                            <td className="py-2 px-2.5">1,842 ms</td>
-                            <td className="py-2 px-2.5 text-emerald-400 font-bold text-right">649.4 ms</td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 0% Port Collisions */}
-                <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                      4. Zero Port Collisions: Dynamic Ephemeral Ports
-                    </h3>
-                    <span className="text-xs font-mono-code text-emerald-400">100% Guaranteed</span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">
-                    <strong>Implementation:</strong> In <code className="text-neutral-300">internal/devengine/engine.go</code>, Anode binds to kernel port 0 (<code className="text-neutral-300">net.ListenTCP(&quot;tcp&quot;, &quot;127.0.0.1:0&quot;)</code>). The Linux kernel guarantees an unused ephemeral port (e.g. 54329). Host port 5432 remains completely untouched, allowing multiple backends to run concurrently on one workstation without Docker port conflicts.
-                  </p>
-                </div>
               </div>
 
             {/* 10. TRADEOFFS & LIMITS */}

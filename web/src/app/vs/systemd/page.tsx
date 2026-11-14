@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "Anode vs Raw Systemd: Units vs Automation",
   description:
-    "Systemd is the gold standard for Linux process management. See how Anode automates unit generation, cgroups v2, dynamic loopbacks, and zero-downtime Caddy TLS.",
+    "Systemd is the gold standard for Linux process management. See how Anode automates unit generation, cgroups v2, ephemeral local ports, and Caddy TLS.",
   alternates: {
     canonical: "/vs/systemd",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/vs/systemd",
     title: "Anode vs Raw Systemd: Units vs Automation",
     description:
-      "Systemd is great, but manual unit management is brittle. See how Anode automates cgroups v2, dynamic loopbacks, and Caddy TLS.",
+      "Systemd is great, but manual unit management is brittle. See how Anode automates cgroups v2, ephemeral local ports, and Caddy TLS.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Anode vs Raw Systemd: Units vs Automation",
     description:
-      "Systemd is great, but manual unit management is brittle. See how Anode automates cgroups v2, dynamic loopbacks, and Caddy TLS.",
+      "Systemd is great, but manual unit management is brittle. See how Anode automates cgroups v2, ephemeral local ports, and Caddy TLS.",
     images: ["/og-image.png"],
   },
 };
@@ -91,7 +91,7 @@ export default function AnodeVsSystemdPage() {
   const comparisonRows = [
     {
       feature: "Local Port Collisions",
-      anode: "0% (Dynamic ephemeral loopbacks)",
+      anode: "Ephemeral local ports",
       manual: "Manual port coordination or clashes",
     },
     {
@@ -202,11 +202,11 @@ export default function AnodeVsSystemdPage() {
               <ul className="space-y-3 text-sm text-neutral-300 leading-relaxed">
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 font-bold">✓</span>
-                  <span><strong>Cross-Platform Development:</strong> <code>anode dev</code> runs seamlessly on macOS, Linux, and WSL with dynamic loopbacks.</span>
+                  <span><strong>Cross-Platform Development:</strong> <code>anode dev</code> runs seamlessly on macOS, Linux, and WSL with ephemeral local ports.</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 font-bold">✓</span>
-                  <span><strong>Zero Port Clashes:</strong> Dynamic socket proxies allocate conflict-free ephemeral addresses (<code>127.0.0.1:0</code>).</span>
+                  <span><strong>Free local ports:</strong> The dev engine assigns free local ports to backing services and addresses (<code>127.0.0.1:0</code>).</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-cyan-400 font-bold">✓</span>

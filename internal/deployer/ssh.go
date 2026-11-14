@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/abhiudayg/anode/internal/sshauth"
 	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/knownhosts"
 )
 
@@ -35,34 +35,12 @@ func DialSSH(target string) (*SSHClient, error) {
 		host = host + ":22"
 	}
 
-	var authMethods []ssh.AuthMethod
-
-	// 1. Try SSH Agent socket
-	if sock := os.Getenv("SSH_AUTH_SOCK"); sock != "" {
-		if agentConn, err := net.Dial("unix", sock); err == nil {
-			authMethods = append(authMethods, ssh.PublicKeysCallback(agent.NewClient(agentConn).Signers))
-		}
+	authMethods, err := sshauth.AuthMethods()
+	if err != nil {
+		return nil, err
 	}
 
-	// 2. Try default key files
 	home, _ := os.UserHomeDir()
-	keyFiles := []string{
-		filepath.Join(home, ".ssh", "id_ed25519"),
-		filepath.Join(home, ".ssh", "id_rsa"),
-	}
-
-	for _, keyPath := range keyFiles {
-		if keyData, err := os.ReadFile(keyPath); err == nil {
-			if signer, err := ssh.ParsePrivateKey(keyData); err == nil {
-				authMethods = append(authMethods, ssh.PublicKeys(signer))
-			}
-		}
-	}
-
-	if len(authMethods) == 0 {
-		return nil, fmt.Errorf("no SSH authentication methods found (check ssh-agent or ~/.ssh keys)")
-	}
-
 	// Host key verification: check ~/.ssh/known_hosts, enforce strict mismatch checks and TOFU
 	knownHostsPath := filepath.Join(home, ".ssh", "known_hosts")
 	_ = os.MkdirAll(filepath.Dir(knownHostsPath), 0700)
@@ -84,6 +62,10 @@ func DialSSH(target string) (*SSHClient, error) {
 				if len(keyErr.Want) > 0 {
 					return fmt.Errorf("SECURITY ALERT: HOST KEY MISMATCH for %s. Remote key changed or MITM attack detected! (%w)", hostname, err)
 				}
+				if err := checkNewHostTrust(os.Getenv("ANODE_TRUST_NEW_HOST"), hostname, ssh.FingerprintSHA256(key)); err != nil {
+					return err
+				}
+				fmt.Printf("  ⚠ Trusting new host key for %s: %s\n", hostname, ssh.FingerprintSHA256(key))
 				// Trust On First Use (TOFU): Record new host key into known_hosts
 				f, fErr := os.OpenFile(knownHostsPath, os.O_APPEND|os.O_WRONLY, 0600)
 				if fErr != nil {
@@ -126,6 +108,9 @@ func DialSSH(target string) (*SSHClient, error) {
 
 // Run executes a command on the remote host and returns combined output
 func (s *SSHClient) Run(cmd string) (string, error) {
+	if !s.isRoot() {
+		cmd = sudoWrap(cmd)
+	}
 	session, err := s.client.NewSession()
 	if err != nil {
 		return "", fmt.Errorf("failed to create SSH session: %w", err)
@@ -146,6 +131,9 @@ func (s *SSHClient) Client() *ssh.Client {
 
 // Stream initiates a command on the remote host with streaming stdout/stderr reader pipes
 func (s *SSHClient) Stream(cmd string) (io.Reader, io.Reader, *ssh.Session, error) {
+	if !s.isRoot() {
+		cmd = sudoWrap(cmd)
+	}
 	session, err := s.client.NewSession()
 	if err != nil {
 		return nil, nil, nil, fmt.Errorf("failed to create SSH session: %w", err)
@@ -168,79 +156,7 @@ func (s *SSHClient) Stream(cmd string) (io.Reader, io.Reader, *ssh.Session, erro
 }
 
 // StreamFile copies a local file to remote host with specified permissions
-func (s *SSHClient) StreamFile(srcPath string, dstPath string, mode os.FileMode) error {
-	session, err := s.client.NewSession()
-	if err != nil {
-		return fmt.Errorf("failed to create SSH session for upload: %w", err)
-	}
-	defer session.Close()
-
-	srcFile, err := os.Open(srcPath)
-	if err != nil {
-		return fmt.Errorf("failed to open local file: %w", err)
-	}
-	defer srcFile.Close()
-
-	stat, err := srcFile.Stat()
-	if err != nil {
-		return err
-	}
-
-	stdin, err := session.StdinPipe()
-	if err != nil {
-		return err
-	}
-
-	// Use SCP protocol over SSH session
-	targetDir := filepath.Dir(dstPath)
-	targetBase := filepath.Base(dstPath)
-
-	go func() {
-		defer stdin.Close()
-		fmt.Fprintf(stdin, "C%04o %d %s\n", mode.Perm(), stat.Size(), targetBase)
-		io.Copy(stdin, srcFile)
-		fmt.Fprint(stdin, "\x00")
-	}()
-
-	cmd := fmt.Sprintf("scp -t %s", targetDir)
-	if err := session.Run(cmd); err != nil {
-		return fmt.Errorf("SCP stream failed for %s: %w", dstPath, err)
-	}
-
-	return nil
-}
-
 // StreamBytes copies in-memory bytes directly to remote host via SCP protocol safely without shell interpolation
-func (s *SSHClient) StreamBytes(data []byte, dstPath string, mode os.FileMode) error {
-	session, err := s.client.NewSession()
-	if err != nil {
-		return fmt.Errorf("failed to create SSH session for upload: %w", err)
-	}
-	defer session.Close()
-
-	stdin, err := session.StdinPipe()
-	if err != nil {
-		return err
-	}
-
-	targetDir := filepath.Dir(dstPath)
-	targetBase := filepath.Base(dstPath)
-
-	go func() {
-		defer stdin.Close()
-		fmt.Fprintf(stdin, "C%04o %d %s\n", mode.Perm(), len(data), targetBase)
-		_, _ = stdin.Write(data)
-		fmt.Fprint(stdin, "\x00")
-	}()
-
-	cmd := fmt.Sprintf("scp -t %s", targetDir)
-	if err := session.Run(cmd); err != nil {
-		return fmt.Errorf("SCP stream bytes failed for %s: %w", dstPath, err)
-	}
-
-	return nil
-}
-
 func (s *SSHClient) Close() error {
 	return s.client.Close()
 }

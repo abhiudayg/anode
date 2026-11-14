@@ -30,6 +30,7 @@ func Run(ctx context.Context, opts Options) (*Report, error) {
 	// Pillar 4: Topology & Contract Integrity
 	report.Add(CheckTopologyAnalysis(targetDir))
 	report.Add(CheckLockfileContract(targetDir))
+	report.Add(CheckDeployInputs(targetDir))
 	report.Add(CheckMigrationAssets(targetDir))
 
 	// Local SSH keys
@@ -38,6 +39,7 @@ func Run(ctx context.Context, opts Options) (*Report, error) {
 	// Pillar 5: Remote VPS Pre-Flight (if remote target specified)
 	if opts.RemoteTarget != "" {
 		remoteResults := CheckRemoteTarget(ctx, opts.RemoteTarget)
+		remoteResults = append(remoteResults, CheckAppPortFirewall(opts.RemoteTarget))
 		for _, res := range remoteResults {
 			report.Add(res)
 		}

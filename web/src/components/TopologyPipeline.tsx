@@ -49,7 +49,7 @@ http.ListenAndServe(":" + cfg.Port, mux)`
       details: {
         description: "Anode parses the abstract syntax tree and builds a Variable Type Analysis (VTA) call graph rooted at func main(). It statically pinpoints network choke points and dependencies.",
         points: [
-          "Mathematical proof of topology in ~18ms",
+          "Mathematical proof of topology",
           "Static tracing through configuration structs and wrappers",
           "Dead-code pruning eliminates false positives"
         ],
@@ -94,7 +94,7 @@ http.ListenAndServe(":" + cfg.Port, mux)`
         points: [
           "Zero port collisions (Postgres on 54329, Redis on 63792)",
           "systemd supervisor with automatic crash restarts",
-          "Zero-downtime port swap with automated Caddy TLS"
+          "Port swap with automated Caddy TLS"
         ],
         snippet: `# /etc/systemd/system/shop-api.service
 [Unit]
