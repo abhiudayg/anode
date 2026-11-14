@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/abhiudayg/anode/internal/analyzer"
 	"github.com/abhiudayg/anode/internal/catalog"
@@ -262,11 +263,13 @@ func main() {
 
 		// Prepare isolated containers & run schema migrations
 		if err := engine.PrepareInfrastructure(ctx); err != nil {
+			engine.StopAll()
 			log.Fatalf("Dev environment failed: %v", err)
 		}
 
 		plan, err := engine.PlanEnvVariables()
 		if err != nil {
+			engine.StopAll()
 			log.Fatalf("Failed to plan dev environment: %v", err)
 		}
 
@@ -285,11 +288,16 @@ func main() {
 			fmt.Println("\n[VERBOSE] Supervisor process pool initialized.")
 		}
 
-		defer engine.StopAll()
 		if err := engine.StartAll(ctx, plan); err != nil {
+			engine.StopAll()
 			log.Fatalf("Failed to start services: %v", err)
 		}
+		if err := engine.WaitForServices(ctx, 30*time.Second); err != nil {
+			engine.StopAll()
+			log.Fatalf("Dev environment failed: %v", err)
+		}
 		<-ctx.Done()
+		engine.StopAll()
 
 	case "deploy", "run":
 		if len(os.Args) < 3 || os.Args[2] == "--help" || os.Args[2] == "-h" {
@@ -331,6 +339,13 @@ func main() {
 		fmt.Printf("⚡ Anode Production Deployer\nTarget: %s\n", host)
 		lockfile, err := loadOrInspect(targetDir)
 		if err != nil {
+			log.Fatalf("Deployment preparation failed: %v", err)
+		}
+		cfg, err := projectconfig.Load(targetDir)
+		if err != nil {
+			log.Fatalf("Deployment preparation failed: %v", err)
+		}
+		if err := cfg.Validate(lockfile); err != nil {
 			log.Fatalf("Deployment preparation failed: %v", err)
 		}
 
@@ -771,7 +786,7 @@ func printDeployUsage() {
 	fmt.Println("\nOptions:")
 	fmt.Println("  --dry-run              Synthesize and validate systemd units without live SSH")
 	fmt.Println("  --domain DOMAIN        Custom domain for automated Let's Encrypt TLS reverse proxy")
-		fmt.Println("  --plain-http           Accept unencrypted HTTP when deploying to an IP address")
+	fmt.Println("  --plain-http           Accept unencrypted HTTP when deploying to an IP address")
 	fmt.Println("  -h, --help             Print usage information")
 }
 
