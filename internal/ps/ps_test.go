@@ -221,3 +221,158 @@ func TestRunInspectLocalEmptyWorkspace(t *testing.T) {
 		t.Errorf("expected IsRemote=false")
 	}
 }
+
+func TestParseMemoryStat(t *testing.T) {
+	cgroupV2Stat := `anon 33554432
+file 16777216
+kernel 4194304
+slab 2097152
+sock 1048576
+shmem 524288
+pgfault 18920
+pgmajfault 12
+workingset_refault_anon 0
+workingset_refault_file 48
+`
+	mb := ParseMemoryStat(cgroupV2Stat)
+	if mb == nil {
+		t.Fatal("expected non-nil MemoryBreakdown")
+	}
+
+	if mb.AnonBytes != 33554432 {
+		t.Errorf("expected AnonBytes=33554432, got %d", mb.AnonBytes)
+	}
+	if mb.FileBytes != 16777216 {
+		t.Errorf("expected FileBytes=16777216, got %d", mb.FileBytes)
+	}
+	if mb.KernelBytes != 4194304 {
+		t.Errorf("expected KernelBytes=4194304, got %d", mb.KernelBytes)
+	}
+	if mb.SlabBytes != 2097152 {
+		t.Errorf("expected SlabBytes=2097152, got %d", mb.SlabBytes)
+	}
+	if mb.SockBytes != 1048576 {
+		t.Errorf("expected SockBytes=1048576, got %d", mb.SockBytes)
+	}
+	if mb.ShmemBytes != 524288 {
+		t.Errorf("expected ShmemBytes=524288, got %d", mb.ShmemBytes)
+	}
+	if mb.AnonHuman != "32.0 MB" {
+		t.Errorf("expected AnonHuman='32.0 MB', got %q", mb.AnonHuman)
+	}
+	if mb.FileHuman != "16.0 MB" {
+		t.Errorf("expected FileHuman='16.0 MB', got %q", mb.FileHuman)
+	}
+	if mb.KernelHuman != "4.0 MB" {
+		t.Errorf("expected KernelHuman='4.0 MB', got %q", mb.KernelHuman)
+	}
+}
+
+func TestParseProcSmapsBreakdown(t *testing.T) {
+	smapsRollup := `Rss:               24576 kB
+Pss:               20480 kB
+Pss_Dirty:         16384 kB
+Pss_Anon:          14336 kB
+Pss_File:           6144 kB
+Pss_Shmem:             0 kB
+`
+	pss, mb := ParseProcSmapsBreakdown(smapsRollup)
+	if pss != 20480*1024 {
+		t.Errorf("expected Pss %d bytes, got %d", 20480*1024, pss)
+	}
+	if mb == nil {
+		t.Fatal("expected non-nil MemoryBreakdown")
+	}
+	if mb.AnonBytes != 14336*1024 {
+		t.Errorf("expected AnonBytes %d, got %d", 14336*1024, mb.AnonBytes)
+	}
+	if mb.FileBytes != 6144*1024 {
+		t.Errorf("expected FileBytes %d, got %d", 6144*1024, mb.FileBytes)
+	}
+}
+
+func TestFormatServiceMemoryHuman(t *testing.T) {
+	// 1. With cgroup max limit & breakdown
+	svc := &ServiceStatus{
+		MemoryBytes:    40 * 1024 * 1024,
+		MemoryMaxBytes: 100 * 1024 * 1024,
+		MemoryBreakdown: &MemoryBreakdown{
+			AnonBytes:   28 * 1024 * 1024,
+			FileBytes:   10 * 1024 * 1024,
+			KernelBytes: 2 * 1024 * 1024,
+		},
+	}
+	formatted := FormatServiceMemoryHuman(svc)
+	if !strings.Contains(formatted, "40.0 MB / 100.0 MB (40%)") {
+		t.Errorf("unexpected base formatted memory: %q", formatted)
+	}
+	if !strings.Contains(formatted, "anon:28.0 MB") || !strings.Contains(formatted, "file:10.0 MB") || !strings.Contains(formatted, "k:2.0 MB") {
+		t.Errorf("expected anon/file/k tags in formatted memory: %q", formatted)
+	}
+
+	// 2. Fallback mode (PSS)
+	fallbackSvc := &ServiceStatus{
+		MemoryBytes:    18 * 1024 * 1024,
+		CgroupFallback: true,
+		MemoryBreakdown: &MemoryBreakdown{
+			AnonBytes: 12 * 1024 * 1024,
+			FileBytes: 6 * 1024 * 1024,
+		},
+	}
+	fallbackFormatted := FormatServiceMemoryHuman(fallbackSvc)
+	if !strings.Contains(fallbackFormatted, "18.0 MB (PSS)") {
+		t.Errorf("expected PSS indicator in fallback: %q", fallbackFormatted)
+	}
+	if !strings.Contains(fallbackFormatted, "anon:12.0 MB file:6.0 MB") {
+		t.Errorf("expected breakdown in fallback: %q", fallbackFormatted)
+	}
+}
+
+func TestPrintReportVerboseMemoryBreakdown(t *testing.T) {
+	rep := &ProcessReport{
+		IsRemote:    true,
+		Target:      "prod-node-1",
+		ReleaseID:   "20261114",
+		CgroupsMode: "v2 (unified)",
+		Verbose:     true,
+		Services: []ServiceStatus{
+			{
+				Name:           "order-service",
+				State:          StateRunning,
+				PID:            14902,
+				TasksCurrent:   8,
+				MemoryBytes:    50 * 1024 * 1024,
+				MemoryMaxBytes: 256 * 1024 * 1024,
+				MemoryHuman:    "50.0 MB / 256.0 MB (19%) [anon:35.0 MB file:12.0 MB k:3.0 MB]",
+				MemoryBreakdown: &MemoryBreakdown{
+					AnonBytes:   35 * 1024 * 1024,
+					FileBytes:   12 * 1024 * 1024,
+					KernelBytes: 3 * 1024 * 1024,
+					SlabBytes:   2 * 1024 * 1024,
+					AnonHuman:   "35.0 MB",
+					FileHuman:   "12.0 MB",
+					KernelHuman: "3.0 MB",
+				},
+				UptimeHuman: "4h 12m",
+				Port:        21040,
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	PrintReport(&buf, rep)
+	out := buf.String()
+
+	if !strings.Contains(out, "MEMORY BREAKDOWN — PROCESS HEAP VS KERNEL PAGE CACHE") {
+		t.Errorf("expected verbose memory breakdown section header, got:\n%s", out)
+	}
+	if !strings.Contains(out, "Anonymous (Heap / Goroutines): 35.0 MB") {
+		t.Errorf("expected Anonymous heap breakdown line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "File-backed (Page Cache / SO): 12.0 MB") {
+		t.Errorf("expected File-backed page cache line, got:\n%s", out)
+	}
+	if !strings.Contains(out, "Kernel Data (Slab / Sockets):  3.0 MB") {
+		t.Errorf("expected Kernel line with slab, got:\n%s", out)
+	}
+}

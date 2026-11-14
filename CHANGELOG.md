@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.1] - 2026-11-14
+
+### 🚀 Added
+- **`anode ps` Memory Breakdown (`memory.stat` anon/file/kernel breakdown)**:
+  - Extracted Linux cgroups v2 `memory.stat` metrics directly from `/sys/fs/cgroup$CG/memory.stat` in a unified query over SSH alongside systemd properties.
+  - Exposes `anon` (process heap, goroutines, anonymous mmap), `file` (page cache, shared libraries, binary text), and `kernel` (slab allocator, TCP/UDP sockets), as well as `slab`, `sock`, and `shmem`.
+  - Enables direct workload comparison between bare-metal systemd and containerized setups to determine how much of the memory footprint is disk cache versus active process heap.
+  - Fallback support for kernels without unified cgroups v2 or local inspection via `/proc/<pid>/smaps_rollup` (`Pss_Anon`, `Pss_File`) and `/proc/<pid>/status`.
+  - Formatted inline in the standard process table `MEMORY` column: `40.0 MB / 100.0 MB (40%) [anon:28.0 MB file:10.0 MB k:2.0 MB]`.
+  - Dynamic table column auto-sizing ensures clean column alignment regardless of breakdown length.
+  - Dedicated verbose memory tree (`-v` / `--verbose`) under `[MEMORY BREAKDOWN — PROCESS HEAP VS KERNEL PAGE CACHE]` displaying percentage share and reclaimability details ("Non-reclaimable" heap vs "Evictable under pressure" page cache).
+  - Machine-readable serialization under `"memory_breakdown"` in `--json` mode.
+
+### 🎨 Website & UX Enhancements
+- **Hero & Navbar Collision Fix**:
+  - Resolved vertical header collision where terminal inspection card overlapped the top navigation bar.
+  - Bumped version badges across Hero and Navbar to `v1.1.1`.
+
+---
+
 ## [1.1.0] - 2026-11-13
 
 ### 🚀 Added

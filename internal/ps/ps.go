@@ -6,8 +6,18 @@ import (
 
 // Run executes process status inspection either locally or remotely based on options.
 func Run(ctx context.Context, opts Options) (*ProcessReport, error) {
+	var rep *ProcessReport
+	var err error
 	if opts.Target != "" {
-		return InspectRemote(ctx, opts.Target, opts)
+		rep, err = InspectRemote(ctx, opts.Target, opts)
+	} else {
+		rep, err = InspectLocal(ctx, opts)
 	}
-	return InspectLocal(ctx, opts)
+	if err != nil {
+		return nil, err
+	}
+	if rep != nil {
+		rep.Verbose = opts.Verbose
+	}
+	return rep, nil
 }

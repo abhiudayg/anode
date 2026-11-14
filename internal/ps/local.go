@@ -59,10 +59,11 @@ func InspectLocal(ctx context.Context, opts Options) (*ProcessReport, error) {
 			status.SubState = "running"
 			status.UptimeHuman = "active"
 
-			// Get Memory via ps -o rss=
-			if memBytes := getLocalProcessRSS(pid); memBytes > 0 {
+			// Get Memory (with anon/file breakdown when available)
+			if memBytes, bd := getLocalProcessMemory(pid); memBytes > 0 {
 				status.MemoryBytes = memBytes
-				status.MemoryHuman = FormatBytes(memBytes)
+				status.MemoryBreakdown = bd
+				status.MemoryHuman = FormatServiceMemoryHuman(&status)
 			}
 		} else {
 			status.ActiveState = "inactive"
@@ -124,6 +125,24 @@ func findLocalProcesses() map[string]int {
 	}
 
 	return procs
+}
+
+func getLocalProcessMemory(pid int) (uint64, *MemoryBreakdown) {
+	// Try /proc/<pid>/smaps_rollup first (Linux)
+	if data, err := os.ReadFile(fmt.Sprintf("/proc/%d/smaps_rollup", pid)); err == nil {
+		if pss, bd := ParseProcSmapsBreakdown(string(data)); pss > 0 {
+			return pss, bd
+		}
+	}
+	// Try /proc/<pid>/status (Linux)
+	if data, err := os.ReadFile(fmt.Sprintf("/proc/%d/status", pid)); err == nil {
+		if pss, bd := ParseProcSmapsBreakdown(string(data)); pss > 0 {
+			return pss, bd
+		}
+	}
+	// Fallback to ps -o rss= (macOS / generic UNIX)
+	rss := getLocalProcessRSS(pid)
+	return rss, nil
 }
 
 func getLocalProcessRSS(pid int) uint64 {
