@@ -115,13 +115,31 @@ func PrintReport(w io.Writer, report *ProcessReport) {
 	if len(report.Services) == 0 {
 		fmt.Fprintln(w, "  (No active Anode services found on target. Run 'anode deploy' or 'anode dev')")
 	} else {
+		// Calculate dynamic column widths for memory
+		maxMemWidth := 18
+		for _, svc := range report.Services {
+			memStr := "-"
+			if svc.MemoryHuman != "" {
+				memStr = svc.MemoryHuman
+			} else if svc.MemoryBytes > 0 {
+				memStr = FormatBytes(svc.MemoryBytes)
+			}
+			if len(memStr) > maxMemWidth {
+				maxMemWidth = len(memStr)
+			}
+		}
+
 		// Table Header
-		fmt.Fprintf(w, "%s%-18s %-16s %-8s %-8s %-18s %-6s %-10s %-16s%s\n",
+		fmt.Fprintf(w, "%s%-16s %-16s %-8s %-8s %-*s %-6s %-10s %-16s%s\n",
 			colorBold,
-			"SERVICE", "STATUS", "PID", "TASKS", "MEMORY (CUR/MAX)", "REST", "UPTIME", "PORT/EDGE",
+			"SERVICE", "STATUS", "PID", "TASKS", maxMemWidth, "MEMORY", "REST", "UPTIME", "PORT/EDGE",
 			colorReset,
 		)
-		fmt.Fprintln(w, strings.Repeat("─", 80))
+		totalWidth := 66 + maxMemWidth
+		if totalWidth < 80 {
+			totalWidth = 80
+		}
+		fmt.Fprintln(w, strings.Repeat("─", totalWidth))
 
 		for _, svc := range report.Services {
 			pidStr := "-"
@@ -157,16 +175,59 @@ func PrintReport(w io.Writer, report *ProcessReport) {
 
 			coloredStatus := ColorizeState(svc.State, fmt.Sprintf("%-16s", statusDisplay))
 
-			fmt.Fprintf(w, "%-18s %s %-8s %-8s %-18s %-6d %-10s %-16s\n",
+			fmt.Fprintf(w, "%-16s %s %-8s %-8s %-*s %-6d %-10s %-16s\n",
 				svc.Name,
 				coloredStatus,
 				pidStr,
 				tasksStr,
+				maxMemWidth,
 				memStr,
 				svc.NRestarts,
 				svc.UptimeHuman,
 				portStr,
 			)
+		}
+	}
+
+	// Verbose Memory Breakdown Section
+	if report.Verbose {
+		hasAnyBreakdown := false
+		for _, svc := range report.Services {
+			if svc.MemoryBreakdown != nil {
+				hasAnyBreakdown = true
+				break
+			}
+		}
+		if hasAnyBreakdown {
+			fmt.Fprintf(w, "\n%s[MEMORY BREAKDOWN — PROCESS HEAP VS KERNEL PAGE CACHE]%s\n", colorBold+colorCyan, colorReset)
+			for _, svc := range report.Services {
+				if svc.MemoryBreakdown == nil {
+					continue
+				}
+				bd := svc.MemoryBreakdown
+				total := bd.AnonBytes + bd.FileBytes + bd.KernelBytes
+				if total == 0 {
+					total = svc.MemoryBytes
+				}
+				var anonPct, filePct, kernelPct uint64
+				if total > 0 {
+					anonPct = (bd.AnonBytes * 100) / total
+					filePct = (bd.FileBytes * 100) / total
+					kernelPct = (bd.KernelBytes * 100) / total
+				}
+				fmt.Fprintf(w, "  • %s%-16s%s Total: %s\n", colorBold, svc.Name, colorReset, FormatBytes(svc.MemoryBytes))
+				fmt.Fprintf(w, "      ├─ Anonymous (Heap / Goroutines): %-10s (%d%%) [Non-reclaimable]\n", bd.AnonHuman, anonPct)
+				fmt.Fprintf(w, "      ├─ File-backed (Page Cache / SO): %-10s (%d%%) [Evictable under pressure]\n", bd.FileHuman, filePct)
+				if bd.KernelBytes > 0 {
+					slabInfo := ""
+					if bd.SlabBytes > 0 {
+						slabInfo = fmt.Sprintf(" (slab: %s)", FormatBytes(bd.SlabBytes))
+					}
+					fmt.Fprintf(w, "      └─ Kernel Data (Slab / Sockets):  %-10s (%d%%)%s\n", bd.KernelHuman, kernelPct, slabInfo)
+				} else {
+					fmt.Fprintf(w, "      └─ Kernel Data:                  -\n")
+				}
+			}
 		}
 	}
 

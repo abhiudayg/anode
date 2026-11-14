@@ -197,14 +197,27 @@ func discoverAnodeUnits(ssh *deployer.SSHClient) []string {
 }
 
 func inspectSystemdUnit(ssh *deployer.SSHClient, unit string, edge *EdgeStatus) *ServiceStatus {
-	// Query unit properties
-	propsCmd := fmt.Sprintf("systemctl show %s -p Id,Description,LoadState,ActiveState,SubState,MainPID,TasksCurrent,CPUUsageNSec,MemoryCurrent,NRestarts,ExecMainStatus,ExecMainCode,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainExitTimestamp,Environment --no-pager 2>/dev/null || true", unit)
+	// Query unit properties and cgroup memory.stat in a single round-trip
+	propsCmd := fmt.Sprintf(
+		"systemctl show %s -p Id,Description,LoadState,ActiveState,SubState,MainPID,TasksCurrent,CPUUsageNSec,MemoryCurrent,ControlGroup,NRestarts,ExecMainStatus,ExecMainCode,ActiveEnterTimestamp,ExecMainStartTimestamp,ExecMainExitTimestamp,Environment --no-pager 2>/dev/null || true; "+
+			"echo '---CGROUP_STAT---'; "+
+			"CG=$(systemctl show %s -p ControlGroup 2>/dev/null | grep -E '^ControlGroup=' | cut -d= -f2-); "+
+			"[ -n \"$CG\" ] && [ -f \"/sys/fs/cgroup$CG/memory.stat\" ] && cat \"/sys/fs/cgroup$CG/memory.stat\" || "+
+			"([ -f \"/sys/fs/cgroup/system.slice/%s/memory.stat\" ] && cat \"/sys/fs/cgroup/system.slice/%s/memory.stat\" || true)",
+		unit, unit, unit, unit,
+	)
 	out, err := ssh.Run(propsCmd)
 	if err != nil || strings.TrimSpace(out) == "" {
 		return nil
 	}
 
-	props := parseSystemdProperties(out)
+	parts := strings.SplitN(out, "---CGROUP_STAT---", 2)
+	props := parseSystemdProperties(parts[0])
+	statPart := ""
+	if len(parts) > 1 {
+		statPart = strings.TrimSpace(parts[1])
+	}
+
 	svcName := strings.TrimPrefix(strings.TrimSuffix(unit, ".service"), "anode-")
 
 	status := &ServiceStatus{
@@ -255,25 +268,38 @@ func inspectSystemdUnit(ssh *deployer.SSHClient, unit string, edge *EdgeStatus) 
 		}
 	}
 
-	// Cgroups v2 Memory vs Fallback (Edge Case 1: Missing cgroups v2 / smaps fallback)
+	// Cgroups v2 Memory vs Fallback (with anonymous, file cache, and kernel breakdown)
 	memSet := false
 	if memStr := props["MemoryCurrent"]; memStr != "" && memStr != "[not set]" && memStr != "18446744073709551615" {
 		if mem, err := strconv.ParseUint(memStr, 10, 64); err == nil && mem > 0 {
 			status.MemoryBytes = mem
-			status.MemoryHuman = fmt.Sprintf("%s / %s", FormatBytes(mem), FormatBytes(status.MemoryMaxBytes))
 			memSet = true
 		}
 	}
 
-	if !memSet && status.PID > 0 {
-		// Fallback to /proc/<pid>/smaps_rollup (PSS / RSS)
-		fallbackMem := queryProcMemory(ssh, status.PID)
-		if fallbackMem > 0 {
-			status.MemoryBytes = fallbackMem
-			status.MemoryHuman = fmt.Sprintf("%s (PSS)", FormatBytes(fallbackMem))
-			status.CgroupFallback = true
+	if statPart != "" {
+		status.MemoryBreakdown = ParseMemoryStat(statPart)
+		if status.MemoryBytes == 0 && status.MemoryBreakdown != nil {
+			status.MemoryBytes = status.MemoryBreakdown.AnonBytes + status.MemoryBreakdown.FileBytes + status.MemoryBreakdown.KernelBytes
+			if status.MemoryBytes > 0 {
+				memSet = true
+			}
 		}
 	}
+
+	if (!memSet || status.MemoryBreakdown == nil) && status.PID > 0 {
+		fallbackMem, fallbackBreakdown := queryProcMemoryAndBreakdown(ssh, status.PID)
+		if !memSet && fallbackMem > 0 {
+			status.MemoryBytes = fallbackMem
+			status.CgroupFallback = true
+			memSet = true
+		}
+		if status.MemoryBreakdown == nil && fallbackBreakdown != nil {
+			status.MemoryBreakdown = fallbackBreakdown
+		}
+	}
+
+	status.MemoryHuman = FormatServiceMemoryHuman(status)
 
 	// CPU Quota & Usage
 	status.CPUQuota = "200%" // Anode default CPUQuota in template
@@ -397,16 +423,13 @@ func calculateUptime(enterTimestamp, exitTimestamp string, state ServiceState) (
 	return 0, string(state)
 }
 
-func queryProcMemory(ssh *deployer.SSHClient, pid int) uint64 {
-	// Try /proc/<pid>/smaps_rollup
-	cmd := fmt.Sprintf("cat /proc/%d/smaps_rollup 2>/dev/null | grep -E '^Pss:' || true", pid)
+func queryProcMemoryAndBreakdown(ssh *deployer.SSHClient, pid int) (uint64, *MemoryBreakdown) {
+	// Try /proc/<pid>/smaps_rollup or status (accurate for PSS and anon/file breakdown)
+	cmd := fmt.Sprintf("cat /proc/%d/smaps_rollup 2>/dev/null || cat /proc/%d/status 2>/dev/null || true", pid, pid)
 	if out, err := ssh.Run(cmd); err == nil && strings.TrimSpace(out) != "" {
-		// Format: Pss:       1420 kB
-		fields := strings.Fields(out)
-		if len(fields) >= 2 {
-			if kb, err := strconv.ParseUint(fields[1], 10, 64); err == nil {
-				return kb * 1024
-			}
+		pss, breakdown := ParseProcSmapsBreakdown(out)
+		if pss > 0 || breakdown != nil {
+			return pss, breakdown
 		}
 	}
 
@@ -416,10 +439,10 @@ func queryProcMemory(ssh *deployer.SSHClient, pid int) uint64 {
 		fields := strings.Fields(out)
 		if len(fields) >= 2 {
 			if pages, err := strconv.ParseUint(fields[1], 10, 64); err == nil {
-				return pages * 4096 // standard 4KB page size
+				return pages * 4096, nil // standard 4KB page size
 			}
 		}
 	}
 
-	return 0
+	return 0, nil
 }

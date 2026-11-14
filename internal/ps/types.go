@@ -16,27 +16,41 @@ const (
 	StateUnknown     ServiceState = "unknown"
 )
 
+// MemoryBreakdown details the cgroup memory.stat or proc smaps breakdown into anonymous, file cache, and kernel usage.
+type MemoryBreakdown struct {
+	AnonBytes   uint64 `json:"anon_bytes"`           // Process memory: heap, goroutine stacks, anonymous mmap
+	FileBytes   uint64 `json:"file_bytes"`           // Page cache: cached disk blocks, shared libraries, binary text
+	KernelBytes uint64 `json:"kernel_bytes,omitempty"` // Kernel memory: slab, socket buffers, page tables, kernel stacks
+	SlabBytes   uint64 `json:"slab_bytes,omitempty"` // In-kernel slab allocator (dentries, inodes)
+	SockBytes   uint64 `json:"sock_bytes,omitempty"` // TCP/UDP network socket buffers
+	ShmemBytes  uint64 `json:"shmem_bytes,omitempty"`// Shared memory & tmpfs
+	AnonHuman   string `json:"anon"`
+	FileHuman   string `json:"file"`
+	KernelHuman string `json:"kernel,omitempty"`
+}
+
 // ServiceStatus contains low-level process and cgroup metrics for a single service.
 type ServiceStatus struct {
-	Name            string        `json:"name"`
-	UnitName        string        `json:"unit_name"`
-	State           ServiceState  `json:"state"`
-	ActiveState     string        `json:"active_state"`
-	SubState        string        `json:"sub_state"`
-	PID             int           `json:"pid"`
-	TasksCurrent    int           `json:"tasks_current"`
-	MemoryBytes     uint64        `json:"memory_bytes"`
-	MemoryMaxBytes  uint64        `json:"memory_max_bytes"`
-	MemoryHuman     string        `json:"memory_human"`
-	CPUUsageNSec    uint64        `json:"cpu_usage_nsec,omitempty"`
-	CPUQuota        string        `json:"cpu_quota,omitempty"`
-	NRestarts       int           `json:"restarts"`
-	ExitCode        int           `json:"exit_code,omitempty"`
-	Uptime          time.Duration `json:"uptime_duration,omitempty"`
-	UptimeHuman     string        `json:"uptime"`
-	Port            int           `json:"port,omitempty"`
-	PublicEndpoints []string      `json:"public_endpoints,omitempty"`
-	CgroupFallback  bool          `json:"cgroup_fallback,omitempty"`
+	Name            string           `json:"name"`
+	UnitName        string           `json:"unit_name"`
+	State           ServiceState     `json:"state"`
+	ActiveState     string           `json:"active_state"`
+	SubState        string           `json:"sub_state"`
+	PID             int              `json:"pid"`
+	TasksCurrent    int              `json:"tasks_current"`
+	MemoryBytes     uint64           `json:"memory_bytes"`
+	MemoryMaxBytes  uint64           `json:"memory_max_bytes"`
+	MemoryHuman     string           `json:"memory_human"`
+	MemoryBreakdown *MemoryBreakdown `json:"memory_breakdown,omitempty"`
+	CPUUsageNSec    uint64           `json:"cpu_usage_nsec,omitempty"`
+	CPUQuota        string           `json:"cpu_quota,omitempty"`
+	NRestarts       int              `json:"restarts"`
+	ExitCode        int              `json:"exit_code,omitempty"`
+	Uptime          time.Duration    `json:"uptime_duration,omitempty"`
+	UptimeHuman     string           `json:"uptime"`
+	Port            int              `json:"port,omitempty"`
+	PublicEndpoints []string         `json:"public_endpoints,omitempty"`
+	CgroupFallback  bool             `json:"cgroup_fallback,omitempty"`
 }
 
 // EdgeStatus represents the Caddy reverse-proxy health and route configuration.
@@ -66,6 +80,7 @@ type ProcessReport struct {
 	Resources    []StatefulResourceStatus `json:"resources,omitempty"`
 	CgroupsMode  string                   `json:"cgroups_mode"` // "v2 (unified)", "v1 (hybrid/fallback)", "unsupported"
 	Timestamp    time.Time                `json:"timestamp"`
+	Verbose      bool                     `json:"verbose,omitempty"`
 }
 
 // Options configures the ps / status command.
