@@ -199,7 +199,7 @@ func PrintReport(w io.Writer, report *ProcessReport) {
 			}
 		}
 		if hasAnyBreakdown {
-			fmt.Fprintf(w, "\n%s[MEMORY BREAKDOWN — PROCESS HEAP VS KERNEL PAGE CACHE]%s\n", colorBold+colorCyan, colorReset)
+			fmt.Fprintf(w, "\n%s[MEMORY BREAKDOWN — ANONYMOUS MAPPINGS VS PAGE CACHE]%s\n", colorBold+colorCyan, colorReset)
 			for _, svc := range report.Services {
 				if svc.MemoryBreakdown == nil {
 					continue
@@ -216,7 +216,7 @@ func PrintReport(w io.Writer, report *ProcessReport) {
 					kernelPct = (bd.KernelBytes * 100) / total
 				}
 				fmt.Fprintf(w, "  • %s%-16s%s Total: %s\n", colorBold, svc.Name, colorReset, FormatBytes(svc.MemoryBytes))
-				fmt.Fprintf(w, "      ├─ Anonymous (Heap / Goroutines): %-10s (%d%%) [Non-reclaimable]\n", bd.AnonHuman, anonPct)
+				fmt.Fprintf(w, "      ├─ Anonymous mappings:            %-10s (%d%%)\n", bd.AnonHuman, anonPct)
 				fmt.Fprintf(w, "      ├─ File-backed (Page Cache / SO): %-10s (%d%%) [Evictable under pressure]\n", bd.FileHuman, filePct)
 				if bd.KernelBytes > 0 {
 					slabInfo := ""

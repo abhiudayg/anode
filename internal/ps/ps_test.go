@@ -366,11 +366,11 @@ func TestPrintReportVerboseMemoryBreakdown(t *testing.T) {
 	PrintReport(&buf, rep)
 	out := buf.String()
 
-	if !strings.Contains(out, "MEMORY BREAKDOWN — PROCESS HEAP VS KERNEL PAGE CACHE") {
+	if !strings.Contains(out, "MEMORY BREAKDOWN — ANONYMOUS MAPPINGS VS PAGE CACHE") {
 		t.Errorf("expected verbose memory breakdown section header, got:\n%s", out)
 	}
-	if !strings.Contains(out, "Anonymous (Heap / Goroutines): 35.0 MB") {
-		t.Errorf("expected Anonymous heap breakdown line, got:\n%s", out)
+	if !strings.Contains(out, "Anonymous mappings:            35.0 MB") {
+		t.Errorf("expected Anonymous mappings line, got:\n%s", out)
 	}
 	if !strings.Contains(out, "File-backed (Page Cache / SO): 12.0 MB") {
 		t.Errorf("expected File-backed page cache line, got:\n%s", out)
@@ -661,8 +661,8 @@ func TestInspectLocalWithSimulatedActiveService(t *testing.T) {
 	if !strings.Contains(breakdownTableOutput, "[anon:10.0 MB file:2.7 MB k:512.0 KB]") {
 		t.Errorf("expected inline breakdown tags in table, got:\n%s", breakdownTableOutput)
 	}
-	if !strings.Contains(breakdownTableOutput, "Anonymous (Heap / Goroutines): 10.0 MB") {
-		t.Errorf("expected verbose heap line in tree, got:\n%s", breakdownTableOutput)
+	if !strings.Contains(breakdownTableOutput, "Anonymous mappings:            10.0 MB") {
+		t.Errorf("expected verbose anonymous mappings line in tree, got:\n%s", breakdownTableOutput)
 	}
 	if !strings.Contains(breakdownTableOutput, "File-backed (Page Cache / SO): 2.7 MB") {
 		t.Errorf("expected verbose page cache line in tree, got:\n%s", breakdownTableOutput)
