@@ -27,7 +27,7 @@ import (
 )
 
 const LockFileName = "anode.lock.json"
-var Version = "1.1.2"
+var Version = "1.2.0"
 
 func main() {
 	if len(os.Args) < 2 {

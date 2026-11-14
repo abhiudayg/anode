@@ -51,7 +51,7 @@ export function Hero() {
             >
               <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-xs font-mono-code text-cyan-300 font-medium">
-                Anode 1.1.2 — 4-Pillar Proof of Topology
+                Anode 1.2.0 — 4-Pillar Proof of Topology
               </span>
               <span className="text-neutral-500">•</span>
               <span className="text-xs text-neutral-300 flex items-center gap-1 group-hover:text-white transition-colors">

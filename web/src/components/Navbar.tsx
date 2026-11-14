@@ -547,7 +547,7 @@ export function Navbar() {
                 <span>Changelog &amp; Releases</span>
               </div>
               <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                v1.1.2
+                v1.2.0
               </span>
             </Link>
             <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between">
