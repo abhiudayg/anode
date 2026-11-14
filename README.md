@@ -212,7 +212,7 @@ Examples live in [`examples/`](examples/). Service counts are the number of `mai
 | [`sample-shop`](examples/sample-shop/README.md) | 2 | Two-service app with Postgres |
 | [`complex_ecommerce`](examples/complex_ecommerce/README.md) | 3 | Composite DSN unpacking, pre-traffic migrations, SendGrid egress |
 | [`hyper_mesh_12`](examples/hyper_mesh_12/README.md) | 12 | Config indirection, composite DSNs, gRPC and REST links; analyzer test fixture |
-| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | Many backing stores, gRPC and REST links; used by the `anode cluster` example |
+| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | 14 of 35 store connections detected by Anode; 21 undetected; used by the `anode cluster` example |
 
 Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
 

@@ -1,26 +1,47 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
+	"encoding/json"
+	"log"
 	"net/http"
 	"os"
+
+	"go.temporal.io/sdk/client"
 )
 
-func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "9020"
-	}
+const workflowQueue = "workflows"
 
-	temporalURL := os.Getenv("WORKFLOWS_TEMPORAL_URL")
-	db, _ := sql.Open("temporal", temporalURL)
-	defer db.Close()
+func main() {
+	temporal, err := client.Dial(client.Options{HostPort: os.Getenv("WORKFLOWS_TEMPORAL_ADDR")})
+	if err != nil {
+		log.Fatalf("temporal: %v", err)
+	}
+	defer temporal.Close()
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /v1/workflows/start", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, `{"workflow_id":"wf_abc","status":"running"}`)
+	mux.HandleFunc("POST /v1/workflows/{type}/{id}", func(w http.ResponseWriter, r *http.Request) {
+		var input json.RawMessage
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			http.Error(w, "invalid input", http.StatusBadRequest)
+			return
+		}
+		run, err := temporal.ExecuteWorkflow(r.Context(),
+			client.StartWorkflowOptions{ID: r.PathValue("type") + "-" + r.PathValue("id"), TaskQueue: workflowQueue},
+			r.PathValue("type"), input)
+		if err != nil {
+			http.Error(w, "could not start workflow", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusAccepted)
+		_ = json.NewEncoder(w).Encode(map[string]string{"workflow_id": run.GetID(), "run_id": run.GetRunID()})
 	})
 
-	_ = http.ListenAndServe(":"+port, mux)
+	log.Fatal(http.ListenAndServe(":"+envOr("PORT", "9032"), mux))
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

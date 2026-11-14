@@ -2,98 +2,43 @@
   "schema_version": "1.0",
   "resources": {
     "db-accounting-timescale": {
-      "kind": "timescaledb",
+      "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/accounting/main.go:25",
+      "provenance": "services/accounting/main.go:21",
       "migrations": {
         "tool": "goose",
         "path": "migrations/accounting",
         "execution": "pre_traffic_job"
       }
     },
-    "db-analytics-clickhouse": {
-      "kind": "clickhouse",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/analytics/main.go:17"
-    },
-    "db-auditlog-clickhouse": {
-      "kind": "clickhouse",
-      "lifecycle": "stateful_retain",
-      "auto_provision": true,
-      "provenance": "services/auditlog/main.go:17",
-      "migrations": {
-        "tool": "goose",
-        "path": "migrations/auditlog",
-        "execution": "pre_traffic_job"
-      }
-    },
-    "db-catalog-mongo": {
-      "kind": "mongodb",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/catalog/main.go:17"
-    },
-    "db-cms-minio": {
-      "kind": "minio",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/cms/main.go:19"
-    },
     "db-cms-postgres": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/cms/main.go:22"
-    },
-    "db-coupons-memcached": {
-      "kind": "memcached",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/coupons/main.go:19"
+      "auto_provision": true,
+      "provenance": "services/cms/main.go:25",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/cms",
+        "execution": "pre_traffic_job"
+      }
     },
     "db-coupons-postgres": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/coupons/main.go:22"
-    },
-    "db-disputes-temporal": {
-      "kind": "temporal",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/disputes/main.go:19"
-    },
-    "db-docs-minio": {
-      "kind": "minio",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/documents/main.go:19"
-    },
-    "db-docs-mongo": {
-      "kind": "mongodb",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/documents/main.go:22"
-    },
-    "db-email-rabbitmq": {
-      "kind": "rabbitmq",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/email/main.go:19"
-    },
-    "db-fraud-scylla": {
-      "kind": "scylladb",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/fraud/main.go:25"
+      "auto_provision": true,
+      "provenance": "services/coupons/main.go:24",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/coupons",
+        "execution": "pre_traffic_job"
+      }
     },
     "db-inventory-mariadb": {
-      "kind": "mariadb",
+      "kind": "mysql",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/inventory/main.go:21",
+      "provenance": "services/inventory/main.go:23",
       "migrations": {
         "tool": "goose",
         "path": "migrations/inventory",
@@ -104,143 +49,77 @@
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/loyalty/main.go:21",
+      "provenance": "services/loyalty/main.go:25",
       "migrations": {
         "tool": "goose",
         "path": "migrations/loyalty",
         "execution": "pre_traffic_job"
       }
     },
-    "db-media-minio": {
-      "kind": "minio",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/media/main.go:17"
-    },
-    "db-metrics-clickhouse": {
-      "kind": "clickhouse",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/metrics/main.go:17"
-    },
-    "db-notifications-rabbitmq": {
-      "kind": "rabbitmq",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/notifications/main.go:19"
-    },
-    "db-orders": {
+    "db-orders-postgres": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/orders/main.go:16",
+      "provenance": "services/orders/main.go:28",
       "migrations": {
         "tool": "goose",
         "path": "migrations/orders",
         "execution": "pre_traffic_job"
       }
     },
-    "db-payments-scylla": {
-      "kind": "scylladb",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/payments/main.go:19"
-    },
-    "db-recs-qdrant": {
-      "kind": "qdrant",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/recommendations/main.go:21"
-    },
-    "db-reviews-mongo": {
-      "kind": "mongodb",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/reviews/main.go:17"
-    },
-    "db-search-qdrant": {
-      "kind": "qdrant",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/search/main.go:17"
-    },
-    "db-shipping-kafka-brokers": {
-      "kind": "kafka",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/shipping/main.go:17"
-    },
-    "db-subs-cockroach": {
-      "kind": "cockroachdb",
+    "db-subscriptions-cockroach": {
+      "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/subscriptions/main.go:17",
+      "provenance": "services/subscriptions/main.go:25",
       "migrations": {
         "tool": "goose",
         "path": "migrations/subscriptions",
         "execution": "pre_traffic_job"
       }
     },
-    "db-users": {
+    "db-users-postgres": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/users/main.go:14",
+      "provenance": "services/users/main.go:33",
       "migrations": {
         "tool": "goose",
         "path": "migrations/users",
         "execution": "pre_traffic_job"
       }
     },
-    "db-warehouse-rabbitmq": {
-      "kind": "rabbitmq",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/warehouse/main.go:17"
-    },
-    "db-webhooks-rabbitmq": {
-      "kind": "rabbitmq",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/webhooks/main.go:19"
-    },
-    "db-workflows-temporal": {
-      "kind": "temporal",
-      "lifecycle": "stateful_retain",
-      "auto_provision": false,
-      "provenance": "services/workflows/main.go:17"
-    },
     "redis-auth": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/auth/main.go:21"
+      "provenance": "services/auth/main.go:23"
     },
     "redis-inventory-locks": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/inventory/main.go:24"
+      "provenance": "services/inventory/main.go:29"
     },
     "redis-livechat": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/livechat/main.go:18"
+      "provenance": "services/livechat/main.go:23"
     },
     "redis-loyalty": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/loyalty/main.go:24"
+      "provenance": "services/loyalty/main.go:31"
     },
     "redis-pricing-valkey": {
       "kind": "valkey",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/pricing/main.go:18"
+      "provenance": "services/pricing/main.go:20"
     },
-    "redis-recs-cache": {
+    "redis-recs": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
@@ -253,27 +132,23 @@
       "entrypoint": "./services/accounting",
       "ingress": [
         {
-          "protocol": "grpc",
-          "port_env": "PORT",
-          "service": "RegisterLedgerServiceServer"
-        },
-        {
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/accounting/balance"
+            "POST /v1/ledger/entries",
+            "GET /v1/ledger/balance/{account}"
           ]
         }
       ],
       "bindings": [
         {
           "resource_ref": "db-accounting-timescale",
-          "protocol": "timescaledb",
-          "inject_env": "ACCOUNTING_TIMESCALE_URL",
+          "protocol": "postgres",
+          "inject_env": "ACCOUNTING_TIMESCALE_DSN",
           "expanded_env": [
-            "ACCOUNTING_TIMESCALE_URL"
+            "ACCOUNTING_TIMESCALE_DSN"
           ],
-          "provenance": "services/accounting/main.go:25"
+          "provenance": "services/accounting/main.go:21"
         }
       ],
       "secrets": []
@@ -286,22 +161,18 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/analytics/stats"
+            "POST /v1/events",
+            "GET /v1/events/count"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-analytics-clickhouse",
-          "protocol": "clickhouse",
-          "inject_env": "ANALYTICS_CLICKHOUSE_URL",
-          "expanded_env": [
-            "ANALYTICS_CLICKHOUSE_URL"
-          ],
-          "provenance": "services/analytics/main.go:17"
+          "env_var": "ANALYTICS_CLICKHOUSE_PASSWORD",
+          "provenance": "services/analytics/main.go:25"
         }
-      ],
-      "secrets": []
+      ]
     },
     "apigateway": {
       "name": "apigateway",
@@ -311,51 +182,11 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /api/v1/auth",
-            "GET /api/v1/users",
-            "POST /api/v1/orders",
-            "GET /api/v1/search",
-            "GET /api/v1/media"
+            "GET /healthz"
           ]
         }
       ],
-      "bindings": [
-        {
-          "service_ref": "orders",
-          "protocol": "http",
-          "interface": "/v1/orders",
-          "inject_env": "ORDERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:33"
-        },
-        {
-          "service_ref": "users",
-          "protocol": "http",
-          "interface": "/v1/users",
-          "inject_env": "USERS_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:28"
-        },
-        {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:38"
-        },
-        {
-          "service_ref": "auth",
-          "protocol": "http",
-          "interface": "/v1/auth/token",
-          "inject_env": "AUTH_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:23"
-        },
-        {
-          "service_ref": "media",
-          "protocol": "http",
-          "interface": "/v1/media",
-          "inject_env": "MEDIA_SERVICE_URL",
-          "provenance": "services/apigateway/main.go:43"
-        }
-      ],
+      "bindings": [],
       "secrets": []
     },
     "auditlog": {
@@ -366,22 +197,18 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/audit/log"
+            "POST /v1/audit",
+            "GET /v1/audit/recent"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-auditlog-clickhouse",
-          "protocol": "clickhouse",
-          "inject_env": "AUDITLOG_CLICKHOUSE_URL",
-          "expanded_env": [
-            "AUDITLOG_CLICKHOUSE_URL"
-          ],
-          "provenance": "services/auditlog/main.go:17"
+          "env_var": "AUDITLOG_CLICKHOUSE_PASSWORD",
+          "provenance": "services/auditlog/main.go:26"
         }
-      ],
-      "secrets": []
+      ]
     },
     "auth": {
       "name": "auth",
@@ -391,7 +218,8 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/auth/token"
+            "POST /v1/auth/login",
+            "GET /v1/auth/session/{token}"
           ]
         }
       ],
@@ -400,20 +228,13 @@
           "resource_ref": "redis-auth",
           "protocol": "redis",
           "inject_env": "AUTH_REDIS_ADDR",
-          "provenance": "services/auth/main.go:21"
-        },
-        {
-          "service_ref": "users",
-          "protocol": "http",
-          "interface": "/v1/users/lookup",
-          "inject_env": "USERS_SERVICE_URL",
-          "provenance": "services/auth/main.go:27"
+          "provenance": "services/auth/main.go:23"
         }
       ],
       "secrets": [
         {
-          "env_var": "JWT_SIGNING_SECRET_KEY",
-          "provenance": "services/auth/main.go:18"
+          "env_var": "AUTH_REDIS_PASSWORD",
+          "provenance": "services/auth/main.go:25"
         }
       ]
     },
@@ -425,29 +246,22 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "POST /v1/catalog/items",
             "GET /v1/catalog/items"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-catalog-mongo",
-          "protocol": "mongodb",
-          "inject_env": "CATALOG_MONGO_URL",
-          "expanded_env": [
-            "CATALOG_MONGO_URL"
-          ],
-          "provenance": "services/catalog/main.go:17"
+          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
         },
         {
-          "service_ref": "search",
-          "protocol": "http",
-          "interface": "/v1/search/sync",
-          "inject_env": "SEARCH_SERVICE_URL",
-          "provenance": "services/catalog/main.go:24"
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
         }
-      ],
-      "secrets": []
+      ]
     },
     "cms": {
       "name": "cms",
@@ -457,31 +271,85 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/cms/pages"
+            "POST /v1/pages",
+            "GET /v1/pages/{slug}",
+            "PUT /v1/assets/{name}"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-cms-minio",
-          "protocol": "minio",
-          "inject_env": "CMS_MINIO_URL",
-          "expanded_env": [
-            "CMS_MINIO_URL"
-          ],
-          "provenance": "services/cms/main.go:19"
-        },
-        {
           "resource_ref": "db-cms-postgres",
           "protocol": "postgres",
-          "inject_env": "CMS_POSTGRES_URL",
+          "inject_env": "CMS_POSTGRES_DSN",
           "expanded_env": [
-            "CMS_POSTGRES_URL"
+            "CMS_POSTGRES_DSN"
           ],
-          "provenance": "services/cms/main.go:22"
+          "provenance": "services/cms/main.go:25"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
+        },
+        {
+          "env_var": "MINIO_ROOT_PASSWORD",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
+        },
+        {
+          "env_var": "CMS_MINIO_ACCESS_KEY",
+          "provenance": "services/cms/main.go:32"
+        },
+        {
+          "env_var": "CMS_MINIO_SECRET_KEY",
+          "provenance": "services/cms/main.go:32"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:128"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:133"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_FULL_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:138"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
+        }
+      ]
     },
     "coupons": {
       "name": "coupons",
@@ -491,28 +359,20 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/coupons/apply"
+            "POST /v1/coupons",
+            "GET /v1/coupons/{code}"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-coupons-memcached",
-          "protocol": "memcached",
-          "inject_env": "COUPONS_MEMCACHED_URL",
-          "expanded_env": [
-            "COUPONS_MEMCACHED_URL"
-          ],
-          "provenance": "services/coupons/main.go:19"
-        },
-        {
           "resource_ref": "db-coupons-postgres",
           "protocol": "postgres",
-          "inject_env": "COUPONS_POSTGRES_URL",
+          "inject_env": "COUPONS_POSTGRES_DSN",
           "expanded_env": [
-            "COUPONS_POSTGRES_URL"
+            "COUPONS_POSTGRES_DSN"
           ],
-          "provenance": "services/coupons/main.go:22"
+          "provenance": "services/coupons/main.go:24"
         }
       ],
       "secrets": []
@@ -525,15 +385,15 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/crm/sync"
+            "POST /v1/crm/contacts"
           ]
         }
       ],
       "bindings": [],
       "secrets": [
         {
-          "env_var": "SALESFORCE_AUTH_TOKEN",
-          "provenance": "services/crm/main.go:15"
+          "env_var": "SALESFORCE_ACCESS_TOKEN",
+          "provenance": "services/crm/main.go:38"
         }
       ]
     },
@@ -545,28 +405,11 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/disputes/file"
+            "POST /v1/disputes"
           ]
         }
       ],
-      "bindings": [
-        {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/payments/refund",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/disputes/main.go:24"
-        },
-        {
-          "resource_ref": "db-disputes-temporal",
-          "protocol": "temporal",
-          "inject_env": "DISPUTES_TEMPORAL_URL",
-          "expanded_env": [
-            "DISPUTES_TEMPORAL_URL"
-          ],
-          "provenance": "services/disputes/main.go:19"
-        }
-      ],
+      "bindings": [],
       "secrets": []
     },
     "documents": {
@@ -577,31 +420,82 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/documents/invoice"
+            "PUT /v1/documents/{id}",
+            "GET /v1/documents/{id}"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-docs-minio",
-          "protocol": "minio",
-          "inject_env": "DOCS_MINIO_URL",
-          "expanded_env": [
-            "DOCS_MINIO_URL"
-          ],
-          "provenance": "services/documents/main.go:19"
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
         },
         {
-          "resource_ref": "db-docs-mongo",
-          "protocol": "mongodb",
-          "inject_env": "DOCS_MONGO_URL",
-          "expanded_env": [
-            "DOCS_MONGO_URL"
-          ],
-          "provenance": "services/documents/main.go:22"
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "DOCUMENTS_MINIO_ACCESS_KEY",
+          "provenance": "services/documents/main.go:38"
+        },
+        {
+          "env_var": "DOCUMENTS_MINIO_SECRET_KEY",
+          "provenance": "services/documents/main.go:38"
+        },
+        {
+          "env_var": "MINIO_ROOT_PASSWORD",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
+        },
+        {
+          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:128"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:133"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_FULL_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:138"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         }
-      ],
-      "secrets": []
+      ]
     },
     "email": {
       "name": "email",
@@ -615,35 +509,13 @@
           ]
         }
       ],
-      "bindings": [
-        {
-          "resource_ref": "db-email-rabbitmq",
-          "protocol": "rabbitmq",
-          "inject_env": "EMAIL_RABBITMQ_URL",
-          "expanded_env": [
-            "EMAIL_RABBITMQ_URL"
-          ],
-          "provenance": "services/email/main.go:19"
-        },
-        {
-          "service_ref": "auditlog",
-          "protocol": "http",
-          "interface": "/v1/audit/log",
-          "inject_env": "AUDITLOG_SERVICE_URL",
-          "provenance": "services/email/main.go:24"
-        }
-      ],
+      "bindings": [],
       "secrets": []
     },
     "fraud": {
       "name": "fraud",
       "entrypoint": "./services/fraud",
       "ingress": [
-        {
-          "protocol": "grpc",
-          "port_env": "PORT",
-          "service": "RegisterFraudServer"
-        },
         {
           "protocol": "http",
           "port_env": "PORT",
@@ -652,17 +524,7 @@
           ]
         }
       ],
-      "bindings": [
-        {
-          "resource_ref": "db-fraud-scylla",
-          "protocol": "scylladb",
-          "inject_env": "FRAUD_SCYLLA_URL",
-          "expanded_env": [
-            "FRAUD_SCYLLA_URL"
-          ],
-          "provenance": "services/fraud/main.go:25"
-        }
-      ],
+      "bindings": [],
       "secrets": []
     },
     "inventory": {
@@ -680,18 +542,18 @@
       "bindings": [
         {
           "resource_ref": "db-inventory-mariadb",
-          "protocol": "mariadb",
-          "inject_env": "INVENTORY_MARIADB_URL",
+          "protocol": "mysql",
+          "inject_env": "INVENTORY_MARIADB_DSN",
           "expanded_env": [
-            "INVENTORY_MARIADB_URL"
+            "INVENTORY_MARIADB_DSN"
           ],
-          "provenance": "services/inventory/main.go:21"
+          "provenance": "services/inventory/main.go:23"
         },
         {
           "resource_ref": "redis-inventory-locks",
           "protocol": "redis",
           "inject_env": "INVENTORY_LOCKS_REDIS_ADDR",
-          "provenance": "services/inventory/main.go:24"
+          "provenance": "services/inventory/main.go:29"
         }
       ],
       "secrets": []
@@ -704,7 +566,8 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/chat/ws"
+            "POST /v1/livechat/rooms/{room}/messages",
+            "GET /v1/livechat/rooms/{room}/history"
           ]
         }
       ],
@@ -713,7 +576,7 @@
           "resource_ref": "redis-livechat",
           "protocol": "redis",
           "inject_env": "LIVECHAT_REDIS_ADDR",
-          "provenance": "services/livechat/main.go:18"
+          "provenance": "services/livechat/main.go:23"
         }
       ],
       "secrets": []
@@ -726,7 +589,8 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/loyalty/points"
+            "POST /v1/loyalty/points",
+            "GET /v1/loyalty/points/{customer}"
           ]
         }
       ],
@@ -734,17 +598,17 @@
         {
           "resource_ref": "db-loyalty-postgres",
           "protocol": "postgres",
-          "inject_env": "LOYALTY_POSTGRES_URL",
+          "inject_env": "LOYALTY_POSTGRES_DSN",
           "expanded_env": [
-            "LOYALTY_POSTGRES_URL"
+            "LOYALTY_POSTGRES_DSN"
           ],
-          "provenance": "services/loyalty/main.go:21"
+          "provenance": "services/loyalty/main.go:25"
         },
         {
           "resource_ref": "redis-loyalty",
           "protocol": "redis",
           "inject_env": "LOYALTY_REDIS_ADDR",
-          "provenance": "services/loyalty/main.go:24"
+          "provenance": "services/loyalty/main.go:31"
         }
       ],
       "secrets": []
@@ -757,22 +621,74 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/media"
+            "PUT /v1/media/{name}",
+            "GET /v1/media/{name}"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-media-minio",
-          "protocol": "minio",
-          "inject_env": "MEDIA_MINIO_URL",
-          "expanded_env": [
-            "MEDIA_MINIO_URL"
-          ],
+          "env_var": "MINIO_ROOT_PASSWORD",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
+        },
+        {
+          "env_var": "MEDIA_MINIO_ACCESS_KEY",
           "provenance": "services/media/main.go:17"
+        },
+        {
+          "env_var": "MEDIA_MINIO_SECRET_KEY",
+          "provenance": "services/media/main.go:17"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:128"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:133"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_FULL_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:138"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         }
-      ],
-      "secrets": []
+      ]
     },
     "metrics": {
       "name": "metrics",
@@ -782,22 +698,18 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/metrics/ingest"
+            "POST /v1/metrics",
+            "GET /v1/metrics/{name}/avg"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-metrics-clickhouse",
-          "protocol": "clickhouse",
-          "inject_env": "METRICS_CLICKHOUSE_URL",
-          "expanded_env": [
-            "METRICS_CLICKHOUSE_URL"
-          ],
-          "provenance": "services/metrics/main.go:17"
+          "env_var": "METRICS_CLICKHOUSE_PASSWORD",
+          "provenance": "services/metrics/main.go:24"
         }
-      ],
-      "secrets": []
+      ]
     },
     "notifications": {
       "name": "notifications",
@@ -807,25 +719,15 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/notifications/push"
+            "POST /v1/notifications"
           ]
         }
       ],
-      "bindings": [
-        {
-          "resource_ref": "db-notifications-rabbitmq",
-          "protocol": "rabbitmq",
-          "inject_env": "NOTIFICATIONS_RABBITMQ_URL",
-          "expanded_env": [
-            "NOTIFICATIONS_RABBITMQ_URL"
-          ],
-          "provenance": "services/notifications/main.go:19"
-        }
-      ],
+      "bindings": [],
       "secrets": [
         {
-          "env_var": "SENDGRID_API_SECRET_TOKEN",
-          "provenance": "services/notifications/main.go:17"
+          "env_var": "SENDGRID_API_KEY",
+          "provenance": "services/notifications/main.go:75"
         }
       ]
     },
@@ -837,52 +739,37 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/orders"
+            "POST /v1/orders",
+            "GET /v1/orders/{id}"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-orders",
-          "protocol": "postgres",
-          "inject_env": "",
-          "expanded_env": [
-            "ORDERS_DB_USER",
-            "ORDERS_DB_PASSWORD",
-            "ORDERS_DB_HOST",
-            "ORDERS_DB_NAME",
-            "ORDERS_SSLMODE"
-          ],
-          "provenance": "services/orders/main.go:16"
-        },
-        {
-          "service_ref": "accounting",
-          "protocol": "grpc",
-          "interface": "RegisterLedgerServiceServer",
-          "inject_env": "LEDGER_GRPC_ADDR",
-          "provenance": "services/orders/main.go:28"
-        },
-        {
           "service_ref": "payments",
           "protocol": "http",
-          "interface": "/v1/payments/charge",
+          "interface": "/v1/charges",
           "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:34"
+          "provenance": "services/orders/main.go:112"
+        },
+        {
+          "resource_ref": "db-orders-postgres",
+          "protocol": "postgres",
+          "inject_env": "ORDERS_POSTGRES_DSN",
+          "expanded_env": [
+            "ORDERS_POSTGRES_DSN"
+          ],
+          "provenance": "services/orders/main.go:28"
         },
         {
           "service_ref": "inventory",
           "protocol": "http",
           "interface": "/v1/inventory/reserve",
           "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:37"
+          "provenance": "services/orders/main.go:92"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "_DB_PASSWORD",
-          "provenance": "pkg/config/config.go:35"
-        }
-      ]
+      "secrets": []
     },
     "payments": {
       "name": "payments",
@@ -892,26 +779,16 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/payments/charge",
-            "POST /v1/payments/refund"
+            "POST /v1/charges",
+            "POST /v1/payments/hold"
           ]
         }
       ],
-      "bindings": [
-        {
-          "resource_ref": "db-payments-scylla",
-          "protocol": "scylladb",
-          "inject_env": "PAYMENTS_SCYLLA_URL",
-          "expanded_env": [
-            "PAYMENTS_SCYLLA_URL"
-          ],
-          "provenance": "services/payments/main.go:19"
-        }
-      ],
+      "bindings": [],
       "secrets": [
         {
-          "env_var": "STRIPE_API_SECRET_KEY",
-          "provenance": "services/payments/main.go:17"
+          "env_var": "STRIPE_SECRET_KEY",
+          "provenance": "services/payments/main.go:90"
         }
       ]
     },
@@ -923,7 +800,8 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/pricing/quote"
+            "PUT /v1/pricing/{sku}",
+            "GET /v1/pricing/{sku}"
           ]
         }
       ],
@@ -932,10 +810,15 @@
           "resource_ref": "redis-pricing-valkey",
           "protocol": "redis",
           "inject_env": "PRICING_VALKEY_ADDR",
-          "provenance": "services/pricing/main.go:18"
+          "provenance": "services/pricing/main.go:20"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "PRICING_VALKEY_PASSWORD",
+          "provenance": "services/pricing/main.go:22"
+        }
+      ]
     },
     "recommendations": {
       "name": "recommendations",
@@ -945,25 +828,23 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/recommendations/user"
+            "GET /v1/recommendations/{user}"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-recs-qdrant",
-          "protocol": "qdrant",
-          "inject_env": "RECS_QDRANT_URL",
-          "expanded_env": [
-            "RECS_QDRANT_URL"
-          ],
-          "provenance": "services/recommendations/main.go:21"
+          "resource_ref": "redis-recs",
+          "protocol": "redis",
+          "inject_env": "RECS_REDIS_ADDR",
+          "provenance": "services/recommendations/main.go:24"
         },
         {
-          "resource_ref": "redis-recs-cache",
-          "protocol": "redis",
-          "inject_env": "RECS_CACHE_REDIS_ADDR",
-          "provenance": "services/recommendations/main.go:24"
+          "service_ref": "RECS_QDRANT_URL",
+          "protocol": "http",
+          "interface": "/collections/products/points/search",
+          "inject_env": "RECS_QDRANT_URL",
+          "provenance": "services/recommendations/main.go:71"
         }
       ],
       "secrets": []
@@ -976,22 +857,22 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/reviews/submit"
+            "POST /v1/reviews",
+            "GET /v1/reviews"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-reviews-mongo",
-          "protocol": "mongodb",
-          "inject_env": "REVIEWS_MONGO_URL",
-          "expanded_env": [
-            "REVIEWS_MONGO_URL"
-          ],
-          "provenance": "services/reviews/main.go:17"
+          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
         }
-      ],
-      "secrets": []
+      ]
     },
     "search": {
       "name": "search",
@@ -1001,20 +882,17 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/search",
-            "GET /v1/search/sync"
+            "POST /v1/index",
+            "POST /v1/search"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-search-qdrant",
-          "protocol": "qdrant",
+          "service_ref": "SEARCH_QDRANT_URL",
+          "protocol": "http",
           "inject_env": "SEARCH_QDRANT_URL",
-          "expanded_env": [
-            "SEARCH_QDRANT_URL"
-          ],
-          "provenance": "services/search/main.go:17"
+          "provenance": "services/search/main.go:80"
         }
       ],
       "secrets": []
@@ -1027,22 +905,17 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/shipments/create"
+            "POST /v1/shipments"
           ]
         }
       ],
-      "bindings": [
+      "bindings": [],
+      "secrets": [
         {
-          "resource_ref": "db-shipping-kafka-brokers",
-          "protocol": "kafka",
-          "inject_env": "SHIPPING_KAFKA_BROKERS",
-          "expanded_env": [
-            "SHIPPING_KAFKA_BROKERS"
-          ],
-          "provenance": "services/shipping/main.go:17"
+          "env_var": "EASYPOST_API_KEY",
+          "provenance": "services/shipping/main.go:75"
         }
-      ],
-      "secrets": []
+      ]
     },
     "subscriptions": {
       "name": "subscriptions",
@@ -1052,19 +925,20 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/subscriptions/create"
+            "POST /v1/subscriptions",
+            "GET /v1/subscriptions/{id}"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-subs-cockroach",
-          "protocol": "cockroachdb",
-          "inject_env": "SUBS_COCKROACH_URL",
+          "resource_ref": "db-subscriptions-cockroach",
+          "protocol": "postgres",
+          "inject_env": "SUBSCRIPTIONS_COCKROACH_DSN",
           "expanded_env": [
-            "SUBS_COCKROACH_URL"
+            "SUBSCRIPTIONS_COCKROACH_DSN"
           ],
-          "provenance": "services/subscriptions/main.go:17"
+          "provenance": "services/subscriptions/main.go:25"
         }
       ],
       "secrets": []
@@ -1077,15 +951,15 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/tax/calculate"
+            "GET /v1/tax/rates"
           ]
         }
       ],
       "bindings": [],
       "secrets": [
         {
-          "env_var": "AVALARA_API_KEY",
-          "provenance": "services/tax/main.go:15"
+          "env_var": "AVATAX_LICENSE_KEY",
+          "provenance": "services/tax/main.go:25"
         }
       ]
     },
@@ -1097,32 +971,24 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "GET /v1/users",
-            "GET /v1/users/lookup"
+            "POST /v1/users",
+            "POST /v1/users/verify",
+            "GET /v1/users/{id}"
           ]
         }
       ],
       "bindings": [
         {
-          "resource_ref": "db-users",
+          "resource_ref": "db-users-postgres",
           "protocol": "postgres",
-          "inject_env": "",
+          "inject_env": "USERS_POSTGRES_DSN",
           "expanded_env": [
-            "USERS_DB_USER",
-            "USERS_DB_PASSWORD",
-            "USERS_DB_HOST",
-            "USERS_DB_NAME",
-            "USERS_SSLMODE"
+            "USERS_POSTGRES_DSN"
           ],
-          "provenance": "services/users/main.go:14"
+          "provenance": "services/users/main.go:33"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "_DB_PASSWORD",
-          "provenance": "pkg/config/config.go:35"
-        }
-      ]
+      "secrets": []
     },
     "warehouse": {
       "name": "warehouse",
@@ -1132,28 +998,11 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/warehouse/pack"
+            "POST /v1/warehouse/picks"
           ]
         }
       ],
-      "bindings": [
-        {
-          "service_ref": "shipping",
-          "protocol": "http",
-          "interface": "/v1/shipments/create",
-          "inject_env": "SHIPPING_SERVICE_URL",
-          "provenance": "services/warehouse/main.go:24"
-        },
-        {
-          "resource_ref": "db-warehouse-rabbitmq",
-          "protocol": "rabbitmq",
-          "inject_env": "WAREHOUSE_RABBITMQ_URL",
-          "expanded_env": [
-            "WAREHOUSE_RABBITMQ_URL"
-          ],
-          "provenance": "services/warehouse/main.go:17"
-        }
-      ],
+      "bindings": [],
       "secrets": []
     },
     "webhooks": {
@@ -1168,23 +1017,8 @@
           ]
         }
       ],
-      "bindings": [
-        {
-          "resource_ref": "db-webhooks-rabbitmq",
-          "protocol": "rabbitmq",
-          "inject_env": "WEBHOOKS_RABBITMQ_URL",
-          "expanded_env": [
-            "WEBHOOKS_RABBITMQ_URL"
-          ],
-          "provenance": "services/webhooks/main.go:19"
-        }
-      ],
-      "secrets": [
-        {
-          "env_var": "WEBHOOK_HMAC_SECRET",
-          "provenance": "services/webhooks/main.go:17"
-        }
-      ]
+      "bindings": [],
+      "secrets": []
     },
     "workflows": {
       "name": "workflows",
@@ -1194,28 +1028,18 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
-            "POST /v1/workflows/start"
+            "POST /v1/workflows/{type}/{id}"
           ]
         }
       ],
-      "bindings": [
-        {
-          "resource_ref": "db-workflows-temporal",
-          "protocol": "temporal",
-          "inject_env": "WORKFLOWS_TEMPORAL_URL",
-          "expanded_env": [
-            "WORKFLOWS_TEMPORAL_URL"
-          ],
-          "provenance": "services/workflows/main.go:17"
-        }
-      ],
+      "bindings": [],
       "secrets": []
     }
   },
   "egress_rules": [
     {
       "source_service": "crm",
-      "target_host": "https://api.salesforce.com/services/data/v58.0",
+      "target_host": "https://api.salesforce.com/services/data/v58.0/sobjects/Contact",
       "port": 443,
       "protocol": "https",
       "is_external": true
@@ -1247,6 +1071,20 @@
       "port": 443,
       "protocol": "https",
       "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"search\" via env \"SEARCH_QDRANT_URL\" could not be matched to an internal service",
+      "provenance": "services/search/main.go:80",
+      "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
+    },
+    {
+      "level": "warn",
+      "message": "Outbound HTTP call in service \"recommendations\" via env \"RECS_QDRANT_URL\" could not be matched to an internal service",
+      "provenance": "services/recommendations/main.go:71",
+      "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
     }
   ]
 }

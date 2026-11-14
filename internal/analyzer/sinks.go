@@ -74,6 +74,10 @@ func isDatabaseOrRedisSink(pkgPath, name string) bool {
 	return strings.Contains(pkgPath, "redis") && name == "NewClient"
 }
 
+func delegatesWithinPackage(fn *ssa.Function, pkgPath string) bool {
+	return fn != nil && fn.Pkg != nil && fn.Pkg.Pkg != nil && fn.Pkg.Pkg.Path() == pkgPath
+}
+
 func addDependencyDiagnostic(graph *iag.Graph, provenance string) {
 	for _, d := range graph.Diagnostics {
 		if d.Provenance == provenance {
@@ -101,7 +105,7 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 	provenance := s.FormatPos(call.Pos())
 
 	if !s.ownsPos(call.Pos()) {
-		if isDatabaseOrRedisSink(pkgPath, name) {
+		if isDatabaseOrRedisSink(pkgPath, name) && !delegatesWithinPackage(fn, pkgPath) {
 			addDependencyDiagnostic(graph, provenance)
 		}
 		return
