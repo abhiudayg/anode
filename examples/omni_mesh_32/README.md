@@ -1,118 +1,98 @@
-# OmniMesh-32 Enterprise Architecture Benchmark
+# omni_mesh_32
 
-`omni_mesh_32` is a hyper-scale, 32-microservice distributed banking and commerce platform designed to benchmark and stress-test the limits of **Anode's** whole-program SSA compiler, static type analysis, and bare-metal cluster deployment engine.
+A 32-service Go sample mesh. Each service uses the official client library for its store, reads its connection settings from environment variables, and serves HTTP. Some services call each other over HTTP, and five services call external APIs.
 
-It exercises 14 distinct backing stores and infrastructure drivers defined in `internal/catalog/defaults.yaml`.
+It is a fixture for Anode's analysis, not a system to run. It has not been deployed. Multi-service meshes are outside the supported profile in [`docs/supported-profile.md`](../../docs/supported-profile.md).
 
----
+## What `anode inspect` detects
 
-## Architecture Topology
+Run `anode inspect ./examples/omni_mesh_32`. The lockfile in this directory is its output for this code.
 
-```
-                                      ┌───────────────────────┐
-                                      │   1. apigateway       │ (Public Reverse Proxy Entrypoint)
-                                      └───────────┬───────────┘
-                                                  │
-                 ┌────────────────────────────────┼────────────────────────────────┬─────────────────────┐
-                 ▼                                ▼                                ▼                     ▼
-      ┌────────────────────┐           ┌────────────────────┐           ┌────────────────────┐ ┌────────────────────┐
-      │     2. auth        │           │     3. users       │           │    4. catalog      │ │     5. search      │
-      │ (Redis + JWT Keys) │           │ (Postgres + Goose) │           │     (MongoDB)      │ │  (Qdrant Vector)   │
-      └──────────┬─────────┘           └────────────────────┘           └──────────┬─────────┘ └────────────────────┘
-                 │                                                                 │
-                 ▼                                                                 ▼
-      ┌────────────────────┐                                            ┌────────────────────┐
-      │    6. orders       │ ────────────────────────────────────────── │  15. recs-engine   │
-      │ (Postgres + Queue) │                                            │ (Qdrant + Redis)   │
-      └──────────┬─────────┘                                            └────────────────────┘
-                 │
-                 ├──────────────────────────────┬──────────────────────────────┐
-                 ▼                              ▼                              ▼
-      ┌────────────────────┐         ┌────────────────────┐         ┌────────────────────┐
-      │   7. payments      │         │   8. inventory     │         │  19. accounting    │
-      │ (ScyllaDB + Stripe)│         │(MariaDB + RedisLk) │         │ (Timescale + gRPC) │
-      └──────────┬─────────┘         └──────────┬─────────┘         └────────────────────┘
-                 │                              │
-                 ▼                              ▼
-      ┌────────────────────┐         ┌────────────────────┐
-      │   23. disputes     │         │   9. warehouse     │
-      │ (Temporal Worker)  │         │    (RabbitMQ)      │
-      └────────────────────┘         └──────────┬─────────┘
-                                                │
-                                                ▼
-                                     ┌────────────────────┐
-                                     │   10. shipping     │
-                                     │ (Kafka + EasyPost) │
-                                     └────────────────────┘
-```
+| Found by Anode | Count | Stores |
+| :--- | :---: | :--- |
+| Resources | 14 | Postgres 7 (`accounting` via TimescaleDB, `subscriptions` via CockroachDB, plus `cms`, `coupons`, `loyalty`, `orders`, `users`), Redis 5 (`auth`, `inventory`, `livechat`, `loyalty`, `recommendations`), Valkey 1 (`pricing`), MySQL protocol 1 (`inventory`, MariaDB) |
+| External egress | 5 | Stripe, SendGrid, Salesforce, EasyPost, Avalara |
+| Diagnostics | 2 | Two Qdrant REST calls (`search`, `recommendations`) that Anode cannot match to an internal service. Qdrant is a real dependency; Anode simply has no sink for it |
 
----
+Anode does not detect the other 21 store connections in this mesh. It has no sink for these clients:
 
-## 32 Microservices Breakdown
-
-| # | Service | Primary Backing Store | Drivers / Egress | Role & Responsibilities |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | `apigateway` | Loopback Ingress | HTTP Reverse Proxy | Ingress routing to auth, users, orders, search, media |
-| **2** | `auth` | `redis` | JWT Secret Key | Session store, authentication tokens, user lookups |
-| **3** | `users` | `postgres` | Goose Migrations | User account management, credential authentication |
-| **4** | `catalog` | `mongodb` | Document Store | High-volume product catalog metadata |
-| **5** | `search` | `qdrant` | Vector Embeddings | Neural semantic product and vector search |
-| **6** | `orders` | `postgres` | Goose Migrations, gRPC | Multi-phase order checkout, inventory reservation |
-| **7** | `payments` | `scylladb` | External Stripe API | High-throughput distributed payment ledger |
-| **8** | `inventory` | `mariadb` | Redis Mutex, Goose | Real-time stock counters with distributed locking |
-| **9** | `warehouse` | `rabbitmq` | Task Queue | Order fulfillment packaging and dispatch pipeline |
-| **10** | `shipping` | `kafka` | External EasyPost API | Real-time package tracking and label creation |
-| **11** | `notifications` | `rabbitmq` | External SendGrid API | Push notification dispatcher with rate limiting |
-| **12** | `email` | `rabbitmq` | Internal Audit Binding | Transactional receipt and invoice mailer |
-| **13** | `auditlog` | `clickhouse` | Goose Migrations | Append-only immutable regulatory audit ledger |
-| **14** | `analytics` | `clickhouse` | OLAP Aggregations | Real-time conversion and traffic analysis |
-| **15** | `recommendations` | `qdrant` | Redis Feature Store | Real-time collaborative filtering & vector similarity |
-| **16** | `media` | `minio` | S3-Compatible Object | Product image and video asset CDN storage |
-| **17** | `documents` | `minio` + `mongodb` | Dual Storage Driver | Invoice PDF generation and metadata indexing |
-| **18** | `fraud` | `scylladb` | Typed gRPC Server | Real-time transactional risk evaluation |
-| **19** | `accounting` | `timescaledb` | Goose, gRPC Server | Double-entry bookkeeping balance sheet |
-| **20** | `tax` | External API | External Avalara API | Real-time sales tax and VAT computation |
-| **21** | `workflows` | `temporal` | Workflow Engine | Complex asynchronous returns and order orchestration |
-| **22** | `subscriptions` | `cockroachdb` | Goose Migrations | Recurring billing and plan management |
-| **23** | `disputes` | `temporal` | Internal Payment Binding | Chargeback processing and resolution workflows |
-| **24** | `reviews` | `mongodb` | Document Store | User rating and verified review submissions |
-| **25** | `cms` | `minio` + `postgres` | Static Assets + SQL | Marketing landing page copy and blog storage |
-| **26** | `pricing` | `valkey` | High-Speed Cache | Ultra-low-latency dynamic spot pricing |
-| **27** | `loyalty` | `postgres` + `redis` | Goose + Sorted Sets | Gamified customer reward tiers and leaderboards |
-| **28** | `coupons` | `memcached` + `postgres` | Ephemeral LRU Cache | Promotional discount validation and rate-limiting |
-| **29** | `metrics` | `clickhouse` | Time-Series OLAP | High-cardinality telemetry ingestion |
-| **30** | `webhooks` | `rabbitmq` | HMAC Secret Key | Outbound partner webhook dispatch queue |
-| **31** | `crm` | External API | External Salesforce API | Enterprise customer sync and sales pipeline feed |
-| **32** | `livechat` | `redis` | WebSocket Pub/Sub | Real-time support messaging and agent routing |
-
----
-
-## Backing Store Coverage Matrix
-
-| Infrastructure Kind | Services Leveraging Driver | Least Privilege & Sandboxing Profile |
+| Store | Services | Client library |
 | :--- | :--- | :--- |
-| **`postgres`** | `users`, `orders`, `cms`, `loyalty`, `coupons` | UID 999, `0700` POSIX isolation, `--oom-score-adj=-900` |
-| **`mariadb`** | `inventory` | UID 999, `127.0.0.1:3306`, `--oom-score-adj=-900` |
-| **`timescaledb`** | `accounting` | UID 999, `0700` POSIX isolation, `--oom-score-adj=-900` |
-| **`cockroachdb`** | `subscriptions` | UID 10005, `--security-opt=no-new-privileges:true` |
-| **`scylladb`** | `payments`, `fraud` | UID 10001, `--oom-score-adj=-900` |
-| **`clickhouse`** | `auditlog`, `analytics`, `metrics` | UID 101, `0700` POSIX isolation, OLAP compression |
-| **`mongodb`** | `catalog`, `documents`, `reviews` | UID 999, `127.0.0.1:27017` |
-| **`redis`** | `auth`, `inventory`, `recommendations`, `loyalty`, `livechat` | UID 999, ephemeral loopback mapping |
-| **`valkey`** | `pricing` | UID 999, dynamic loopback port mapping |
-| **`memcached`** | `coupons` | UID 11211, `127.0.0.1:11211` |
-| **`rabbitmq`** | `warehouse`, `notifications`, `email`, `webhooks` | UID 999, `127.0.0.1:5672` |
-| **`kafka`** | `shipping` | UID 1000, `127.0.0.1:9092` |
-| **`minio`** | `media`, `documents`, `cms` | UID 1000, `0700` POSIX bucket permissions |
-| **`temporal`** | `workflows`, `disputes` | UID 1000, `127.0.0.1:7233` |
-| **`qdrant`** | `search`, `recommendations` | UID 1000, `127.0.0.1:6333` |
+| MongoDB | `catalog`, `documents`, `reviews` | `go.mongodb.org/mongo-driver/v2` |
+| RabbitMQ | `email`, `notifications`, `warehouse`, `webhooks` | `github.com/rabbitmq/amqp091-go` |
+| MinIO | `cms`, `documents`, `media` | `github.com/minio/minio-go/v7` |
+| ClickHouse | `analytics`, `auditlog`, `metrics` | `github.com/ClickHouse/clickhouse-go/v2` |
+| ScyllaDB | `fraud`, `payments` | `github.com/gocql/gocql` |
+| Temporal | `disputes`, `workflows` | `go.temporal.io/sdk/client` |
+| Kafka | `shipping` | `github.com/segmentio/kafka-go` |
+| Memcached | `coupons` | `github.com/bradfitz/gomemcache/memcache` |
+| Qdrant | `search`, `recommendations` | plain HTTP (no SDK) |
 
----
+So the lockfile is a partial map of this code, not a complete inventory of its stores.
 
-## Verification
+## Services
 
-To verify that Anode analyzes this 32-microservice architecture and compiles a deterministic lockfile:
+| Service | Store | Calls | External |
+| :--- | :--- | :--- | :--- |
+| `accounting` | TimescaleDB (pgx) | | |
+| `analytics` | ClickHouse | | |
+| `apigateway` | | `auth`, `users`, `orders`, `media`, `search` (reverse proxy) | |
+| `auditlog` | ClickHouse | | |
+| `auth` | Redis | `users` | |
+| `catalog` | MongoDB | `search` | |
+| `cms` | Postgres (pgx), MinIO | | |
+| `coupons` | Postgres (pgx), Memcached | | |
+| `crm` | | | Salesforce |
+| `disputes` | Temporal | `payments` | |
+| `documents` | MinIO, MongoDB | | |
+| `email` | RabbitMQ | `auditlog` | |
+| `fraud` | ScyllaDB | | |
+| `inventory` | MariaDB, Redis (locks) | | |
+| `livechat` | Redis (history and pub/sub) | | |
+| `loyalty` | Postgres (pgx), Redis (cache) | | |
+| `media` | MinIO | | |
+| `metrics` | ClickHouse | | |
+| `notifications` | RabbitMQ | | SendGrid |
+| `orders` | Postgres (pgx) | `inventory`, `payments`, `accounting` | |
+| `payments` | ScyllaDB | | Stripe |
+| `pricing` | Valkey | | |
+| `recommendations` | Redis (cache), Qdrant | | |
+| `reviews` | MongoDB | | |
+| `search` | Qdrant | | |
+| `shipping` | Kafka | | EasyPost |
+| `subscriptions` | CockroachDB (pgx) | | |
+| `tax` | | | Avalara |
+| `users` | Postgres (pgx) | | |
+| `warehouse` | RabbitMQ | `shipping` | |
+| `webhooks` | RabbitMQ | | |
+| `workflows` | Temporal | | |
+
+`payments` also needs the Stripe secret key from the environment. `shipping` and `tax` need their own provider keys.
+
+## Migrations
+
+`migrations/<service>/` holds the schema for each store-backed service: SQL for Postgres, Timescale, CockroachDB, MariaDB, and ClickHouse, and CQL for ScyllaDB. Anode does not apply them. Apply them with your own tool, for example `psql`, `mysql`, `clickhouse-client --multiquery`, or `cqlsh -f`, before starting the service. The services assume the tables exist.
+
+## Not included
+
+- No Temporal worker. `disputes` and `workflows` start workflows on the `disputes` and `workflows` task queues, and nothing in this mesh runs them.
+- No seed data, no docker-compose, and no provider accounts. The services are not run against live infrastructure in this repository.
+
+## Tests
+
+The unit tests cover the pure logic: the fraud rules, vector parsing, point IDs, and user IDs. They do not connect to any store.
 
 ```bash
-anode inspect ./examples/omni_mesh_32
+cd examples/omni_mesh_32
+go build ./...
+go vet ./...
+go test ./...
 ```
+
+## Anode analysis
+
+```bash
+anode inspect .
+```
+
+The lockfile in this directory is the output for this code. See "What `anode inspect` detects" above for the counts.

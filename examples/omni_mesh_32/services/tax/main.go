@@ -1,26 +1,45 @@
 package main
 
 import (
-	"fmt"
+	"io"
+	"log"
 	"net/http"
+	"net/url"
 	"os"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "9019"
-	}
-
-	taxKey := os.Getenv("AVALARA_API_KEY")
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /v1/tax/calculate", func(w http.ResponseWriter, r *http.Request) {
-		_ = taxKey
-		req, _ := http.NewRequestWithContext(r.Context(), "POST", "https://rest.avatax.com/api/v2/tax/rates", nil)
-		_, _ = http.DefaultClient.Do(req)
-		fmt.Fprintln(w, `{"tax_rate":0.0825}`)
+	mux.HandleFunc("GET /v1/tax/rates", func(w http.ResponseWriter, r *http.Request) {
+		postal := r.URL.Query().Get("postal_code")
+		if postal == "" {
+			http.Error(w, "postal_code is required", http.StatusBadRequest)
+			return
+		}
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, "https://rest.avatax.com/api/v2/tax/rates", nil)
+		if err != nil {
+			http.Error(w, "request failed", http.StatusInternalServerError)
+			return
+		}
+		req.URL.RawQuery = url.Values{"postalCode": {postal}}.Encode()
+		req.SetBasicAuth(os.Getenv("AVATAX_ACCOUNT_ID"), os.Getenv("AVATAX_LICENSE_KEY"))
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			http.Error(w, "tax service unavailable", http.StatusBadGateway)
+			return
+		}
+		defer resp.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(resp.StatusCode)
+		_, _ = io.Copy(w, resp.Body)
 	})
 
-	_ = http.ListenAndServe(":"+port, mux)
+	log.Fatal(http.ListenAndServe(":"+envOr("PORT", "9028"), mux))
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }

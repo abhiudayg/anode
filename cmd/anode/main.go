@@ -23,6 +23,7 @@ import (
 	"github.com/abhiudayg/anode/internal/doctor"
 	"github.com/abhiudayg/anode/internal/iag"
 	"github.com/abhiudayg/anode/internal/logs"
+	"github.com/abhiudayg/anode/internal/projectconfig"
 	"github.com/abhiudayg/anode/internal/ps"
 )
 
@@ -144,6 +145,17 @@ func main() {
 		fmt.Println("[4/4] Synthesizing immutable contract")
 		fmt.Printf("  ✓ Generated %s (SHA256: %s...)\n", LockFileName, shaShort)
 		fmt.Println("  ✓ Determinism proof verified: 4/4 Pillars satisfied")
+
+		reg := catalog.NewRegistry()
+		added, err := projectconfig.Ensure(targetDir, lockfile, func(kind string) string {
+			return reg.Resolve(kind).DefaultVersion
+		})
+		if err != nil {
+			log.Fatalf("Failed to write %s: %v", projectconfig.FileName, err)
+		}
+		if len(added) > 0 {
+			fmt.Printf("  ✓ Added to %s: %s\n", projectconfig.FileName, strings.Join(added, ", "))
+		}
 
 		if verbose {
 			fmt.Printf("\n--- [VERBOSE] %s Contract (SHA256: %x) ---\n", LockFileName, hash)

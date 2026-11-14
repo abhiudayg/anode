@@ -60,3 +60,13 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 - **Rollback:** `anode rollback user@host` switches each recorded app unit back to the previous release. It stops and reports if any step fails.
 - **Deploy input checks** also run in `anode doctor`, which reports missing `.env` values before any deploy.
 - **Security:** see `docs/security-audit.md`. The deploy account's passwordless sudo is an accepted risk for single-owner hosts.
+
+## Versions and runtimes (anode.toml)
+
+- `anode inspect` creates `anode.toml` if it is missing. It adds one `[stores.<name>]` section per store the code uses and one `[services.<name>]` section per service. Each store gets the catalog's default version. Review it before the first deploy.
+- `runtime = "binary"` installs the store as a host binary. Only Redis has a binary install today.
+- `runtime = "docker"` runs the store in a container at the pinned version. Every catalog kind supports it.
+- App services run as systemd binaries. `runtime = "docker"` is refused for services until the Docker path is designed for DynamicUser services.
+- Deploy stops before any host change when a store has no version, when a binary install is not available for its kind, or when the config does not match the lockfile. Nothing falls back to `latest`.
+- Native Redis checks the host's `redis-server` against the pinned version after install. If the distribution package is a different version, the deploy stops. Set the version to what the host provides, or use `runtime = "docker"`.
+- To upgrade, change `version` in `anode.toml` and deploy. Anode does not run migrations, so a breaking data change is your job.

@@ -1,6 +1,7 @@
--- +goose Up
-CREATE TABLE users (
-    id UUID PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- PostgreSQL: accounts served by services/users. Passwords are stored as bcrypt hashes.
+CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    email         TEXT NOT NULL UNIQUE,
+    name          TEXT NOT NULL DEFAULT '',
+    password_hash TEXT NOT NULL
 );

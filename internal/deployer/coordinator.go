@@ -12,6 +12,7 @@ import (
 
 	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
 type DeployCoordinator struct {
@@ -58,10 +59,17 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := checkDeployInputs(d.lockfile, secrets); err != nil {
 		return err
 	}
+	cfg, err := projectconfig.Load(d.rootDir)
+	if err != nil {
+		return err
+	}
+	if err := cfg.Validate(d.lockfile); err != nil {
+		return err
+	}
 
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
-	if err := bootstrapper.BootstrapServer(d.lockfile, secrets); err != nil {
+	if err := bootstrapper.BootstrapServer(d.lockfile, cfg, secrets); err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 

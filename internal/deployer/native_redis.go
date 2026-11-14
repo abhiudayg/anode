@@ -50,7 +50,7 @@ func redisUnit(resID string, port int) (string, error) {
 	})
 }
 
-func (b *Bootstrapper) provisionNativeRedis(resID string, port int, password string) error {
+func (b *Bootstrapper) provisionNativeRedis(resID string, port int, password, version string) error {
 	if err := validateRedisPassword(password); err != nil {
 		return err
 	}
@@ -70,6 +70,13 @@ func (b *Bootstrapper) provisionNativeRedis(resID string, port int, password str
 		if _, err := b.ssh.Run(cmd); err != nil {
 			return fmt.Errorf("redis host setup for %s failed: %w", resID, err)
 		}
+	}
+	installed, err := b.ssh.Run("redis-server --version")
+	if err != nil {
+		return fmt.Errorf("could not read the redis version on the host: %w", err)
+	}
+	if err := checkRedisVersion(installed, version); err != nil {
+		return fmt.Errorf("stores.%q: %w", resID, err)
 	}
 
 	if err := b.WriteRemoteFile(redisStartScript, redisStartPath); err != nil {

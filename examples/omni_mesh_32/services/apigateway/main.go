@@ -1,49 +1,38 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "9000"
-	}
-
-	authAddr := os.Getenv("AUTH_SERVICE_URL")
-	usersAddr := os.Getenv("USERS_SERVICE_URL")
-	ordersAddr := os.Getenv("ORDERS_SERVICE_URL")
-	searchAddr := os.Getenv("SEARCH_SERVICE_URL")
-	mediaAddr := os.Getenv("MEDIA_SERVICE_URL")
-
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/v1/auth", func(w http.ResponseWriter, r *http.Request) {
-		req, _ := http.NewRequestWithContext(r.Context(), "GET", authAddr+"/v1/auth/token", nil)
-		_, _ = http.DefaultClient.Do(req)
-		fmt.Fprintln(w, `{"routed":"auth"}`)
-	})
-	mux.HandleFunc("GET /api/v1/users", func(w http.ResponseWriter, r *http.Request) {
-		req, _ := http.NewRequestWithContext(r.Context(), "GET", usersAddr+"/v1/users", nil)
-		_, _ = http.DefaultClient.Do(req)
-		fmt.Fprintln(w, `{"routed":"users"}`)
-	})
-	mux.HandleFunc("POST /api/v1/orders", func(w http.ResponseWriter, r *http.Request) {
-		req, _ := http.NewRequestWithContext(r.Context(), "POST", ordersAddr+"/v1/orders", nil)
-		_, _ = http.DefaultClient.Do(req)
-		fmt.Fprintln(w, `{"routed":"orders"}`)
-	})
-	mux.HandleFunc("GET /api/v1/search", func(w http.ResponseWriter, r *http.Request) {
-		req, _ := http.NewRequestWithContext(r.Context(), "GET", searchAddr+"/v1/search", nil)
-		_, _ = http.DefaultClient.Do(req)
-		fmt.Fprintln(w, `{"routed":"search"}`)
-	})
-	mux.HandleFunc("GET /api/v1/media", func(w http.ResponseWriter, r *http.Request) {
-		req, _ := http.NewRequestWithContext(r.Context(), "GET", mediaAddr+"/v1/media", nil)
-		_, _ = http.DefaultClient.Do(req)
-		fmt.Fprintln(w, `{"routed":"media"}`)
+	mux.Handle("/v1/auth/", proxyTo(os.Getenv("AUTH_SERVICE_URL")))
+	mux.Handle("/v1/users/", proxyTo(os.Getenv("USERS_SERVICE_URL")))
+	mux.Handle("/v1/orders", proxyTo(os.Getenv("ORDERS_SERVICE_URL")))
+	mux.Handle("/v1/media/", proxyTo(os.Getenv("MEDIA_SERVICE_URL")))
+	mux.Handle("/v1/search", proxyTo(os.Getenv("SEARCH_SERVICE_URL")))
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("ok\n"))
 	})
 
-	_ = http.ListenAndServe(":"+port, mux)
+	log.Fatal(http.ListenAndServe(":"+envOr("PORT", "9003"), mux))
+}
+
+func proxyTo(target string) http.Handler {
+	u, err := url.Parse(target)
+	if err != nil {
+		log.Fatalf("bad upstream %q: %v", target, err)
+	}
+	return httputil.NewSingleHostReverseProxy(u)
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
 }
