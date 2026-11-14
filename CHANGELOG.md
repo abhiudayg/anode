@@ -7,6 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.2.0] - 2026-11-14
+
+### 🚀 Added
+- **`anode logs` Multi-Service Streaming & Aggregation**:
+  - Implemented top-level `anode logs [OPTIONS] [TARGET] [SERVICE]` command for local supervisor and remote VPS journald log inspection.
+  - Concurrently aggregates and multiplexes logs across all microservices with deterministic color-coded service prefixes (`[orders]`, `[payments]`).
+  - Remote log streaming over SSH via `journalctl -u anode-*.service -o json` with clean cancellation, SIGINT signal forwarding, and timestamp parsing.
+  - Local log persistence and tailing: `anode dev` tees service stdout/stderr into `.verify/logs/<svc>.log` with RFC3339 timestamps for instant local review and live tailing.
+  - Comprehensive flag support:
+    - `-f, --follow`: Follow log output (stream live updates).
+    - `-n, --lines, --tail N`: Number of historical lines to show (default: 100).
+    - `-t, --timestamps`: Show RFC3339 timestamps for each entry.
+    - `--since TIME`: Filter logs newer than a relative time (e.g. `10m`, `1h`) or specific date.
+    - `--until TIME`: Filter logs older than a specific date or relative time.
+    - `--edge`: Include Caddy reverse-proxy access logs in the multiplexed stream.
+    - `--json`: Output structured log records as line-delimited JSON for log forwarders (Vector, Datadog, Fluentbit).
+  - SSH streaming client (`Stream`) and terminal signal listener for resilient remote stream interruption without hanging sessions.
+
+### 🎨 Documentation & Interactive Command Generator
+- **Multi-Command Live Interactive Generator**:
+  - Expanded interactive command builder on `/docs` into a multi-command configurator covering `deploy`, `logs`, `ps`, `doctor`, `dev`, and `inspect`.
+  - Added dedicated interactive controls for each command, target environment toggles (Remote VPS vs Local Dev), real-time contextual explanations, and single-click copy with animated feedback.
+- **CLI Reference Modernization**:
+  - Added detailed documentation cards for `anode logs` and `anode version`.
+  - Synchronized global synopsis with actual CLI `anode --help` output.
+  - Added deep-linking section aliases for `logs`, `ps`, `status`, `doctor`, `deploy`, and `inspect`.
+  - Added `anode logs` to global Command Palette (`Cmd+K`) and `llms-full.txt`.
+
+### 🛡️ Fixed & Hardened
+- **Safe Supervisor Log File Closure**:
+  - Replaced unhandled file closure in `devengine.Supervisor.streamLogs` with explicit error logging and fallback handling, resolving CodeQL analysis alert.
+
+---
+
 ## [1.1.2] - 2026-11-14
 
 ### 🚀 Changed & Fixed

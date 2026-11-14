@@ -1,9 +1,46 @@
 [
   {
+    "version": "v1.2.0",
+    "date": "November 14, 2026",
+    "tag": "v1.2.0",
+    "isLatest": true,
+    "summary": "Major release introducing anode logs for multi-service log streaming and aggregation across bare-metal journald and local dev supervisors, along with an enhanced interactive command generator and modernized documentation.",
+    "highlights": [
+      "anode logs: Multi-service color-coded log multiplexing across local dev and remote VPS journald over SSH.",
+      "Live Streaming & Snapshots: Supports -f/--follow, -n/--lines history, -t/--timestamps, --since, and --until filtering.",
+      "Edge Proxy Inclusion: Stream Caddy reverse-proxy logs alongside microservices with --edge.",
+      "Machine-Readable Logging: Emit structured line-delimited JSON with --json for Vector, Datadog, and Fluentbit.",
+      "Interactive Command Generator: Full multi-command live configurator on /docs with instant copy and preset flags.",
+      "Hardened Supervisor: Safe error-handled file closure for local log persistence."
+    ],
+    "updates": [
+      {
+        "title": "anode logs: Multi-Service Log Streaming & Aggregation",
+        "category": "CLI",
+        "badge": "Feature",
+        "description": "Stream and multiplex application logs across all microservices and edge proxies with deterministic color prefixes. Reads from .verify/logs/<svc>.log locally and streams remote systemd journald logs over SSH using journalctl -u anode-*.service -o json with clean SIGINT forwarding.",
+        "codeSnippet": {
+          "title": "Terminal Output — anode logs root@my-vps.com -f",
+          "code": "$ anode logs root@my-vps.com -f\n[orders]   2026-11-14T18:00:01Z INF processing order id=ord_9921\n[payments] 2026-11-14T18:00:01Z INF stripe webhook received event=charge.succeeded\n[orders]   2026-11-14T18:00:02Z INF order ord_9921 committed to ledger\n[caddy]    2026-11-14T18:00:02Z INF 200 POST /v1/orders 2.4ms"
+        }
+      },
+      {
+        "title": "Interactive Command Generator & CLI Reference Modernization",
+        "category": "Docs",
+        "badge": "Enhancement",
+        "description": "Revamped the interactive command generator on /docs to configure all six core commands (deploy, logs, ps, doctor, dev, inspect) with live parameter toggles, dynamic explanations, and single-click copy.",
+        "codeSnippet": {
+          "title": "Live Builder",
+          "code": "$ anode logs root@my-vps.com -f --edge\n# Streams real-time journald logs from remote VPS over SSH multiplexed across services including Caddy reverse proxy."
+        }
+      }
+    ]
+  },
+  {
     "version": "v1.1.2",
     "date": "November 14, 2026",
     "tag": "v1.1.2",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Linux cgroups v2 specification alignment for anode ps, relabeling anonymous memory, improving page cache and kernel breakdown reporting, and dynamically reading systemd resource limits.",
     "highlights": [
       "Kernel Spec Alignment: Anon memory is accurately labeled 'Anonymous mappings' adhering to Linux cgroup-v2 documentation.",
