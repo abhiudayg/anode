@@ -68,4 +68,4 @@ One-time steps the deploy does not do yet:
 
 - Create the Kafka topic `shipments.created` on the store host.
 - Create the MinIO buckets `documents`, `cms-assets`, and `media` on each SeaweedFS store.
-- Apply the migrations with `anode migrate root@<host> <path>`. ClickHouse and Scylla schemas are not covered by that command yet and are applied with their own clients.
+- Apply the migrations with `anode migrate root@<host> <path>`. ClickHouse migrations run over the server's HTTP interface and need `<PREFIX>_HTTP_ADDR`, `<PREFIX>_DB`, and optionally `<PREFIX>_USER` and `<PREFIX>_PASSWORD`. Scylla migrations run `cqlsh` from the pinned image and need `docker` on the machine running `anode migrate`, plus `<PREFIX>_KEYSPACE`. Both record applied files in `anode_migrations`, so a rerun applies only new files. Store addresses on loopback are reached over SSH when a host is given.

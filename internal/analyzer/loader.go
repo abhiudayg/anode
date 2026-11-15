@@ -131,6 +131,7 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 	// Link cross-service topologies and typed contracts (PILLAR 2)
 	l.linkServices(lockfile)
 	attachInferredResources(lockfile)
+	attachStoreMigrations(lockfile, l.rootDir)
 	sortLockfile(lockfile)
 
 	l.stats = AnalysisStats{

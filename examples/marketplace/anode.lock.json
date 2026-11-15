@@ -5,13 +5,23 @@
       "kind": "clickhouse",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/analytics/main.go:20"
+      "provenance": "services/analytics/main.go:20",
+      "migrations": {
+        "tool": "sql",
+        "path": "migrations/analytics",
+        "execution": "pre_traffic_job"
+      }
     },
     "auditlog-clickhouse": {
       "kind": "clickhouse",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/auditlog/main.go:21"
+      "provenance": "services/auditlog/main.go:21",
+      "migrations": {
+        "tool": "sql",
+        "path": "migrations/auditlog",
+        "execution": "pre_traffic_job"
+      }
     },
     "catalog-mongo": {
       "kind": "mongodb",
@@ -153,7 +163,12 @@
       "kind": "scylladb",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/fraud/main.go:26"
+      "provenance": "services/fraud/main.go:26",
+      "migrations": {
+        "tool": "cql",
+        "path": "migrations/fraud",
+        "execution": "pre_traffic_job"
+      }
     },
     "media-minio": {
       "kind": "minio",
@@ -168,7 +183,12 @@
       "kind": "clickhouse",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/metrics/main.go:19"
+      "provenance": "services/metrics/main.go:19",
+      "migrations": {
+        "tool": "sql",
+        "path": "migrations/metrics",
+        "execution": "pre_traffic_job"
+      }
     },
     "notifications-rabbitmq": {
       "kind": "rabbitmq",
@@ -180,7 +200,12 @@
       "kind": "scylladb",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/payments/main.go:30"
+      "provenance": "services/payments/main.go:30",
+      "migrations": {
+        "tool": "cql",
+        "path": "migrations/payments",
+        "execution": "pre_traffic_job"
+      }
     },
     "recs-qdrant": {
       "kind": "qdrant",

@@ -104,7 +104,7 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 ## Known limits
 
 - Migrations are forward-only. Goose `Down` sections are empty, so `anode migrate` cannot reverse a schema change. Write a corrective migration instead.
-- ClickHouse and ScyllaDB migrations are not run by `anode migrate`. Apply their schema by hand until a runner is chosen; the marketplace README lists the steps.
+- ClickHouse migrations run over HTTP and Scylla migrations run through `cqlsh` in the pinned image, both tracked in `anode_migrations`. The Scylla path needs `docker` on the machine running `anode migrate`. Migration files must not contain a `;` inside a string literal, because the runner splits on semicolons.
 - The Temporal store runs the Temporal dev server. It is for development and rehearsal, not for production workflow history.
 - SeaweedFS (the `minio` kind) runs as one node with no replication.
 - The analyzer resolves an environment name only when the whole name is a constant or a constant-only concatenation. A name built at runtime is reported as a warning diagnostic. Declare such names in `anode.overrides.json`.
