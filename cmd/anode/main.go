@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/abhiudayg/anode/internal/overrides"
 	"log"
 	"os"
 	"os/signal"
@@ -66,6 +67,9 @@ func main() {
 		lockfile, err := loader.LoadAndAnalyze("./...")
 		if err != nil {
 			log.Fatalf("Analysis failed: %v", err)
+		}
+		if err := overrides.ApplyFile(targetDir, lockfile); err != nil {
+			log.Fatalf("%v", err)
 		}
 
 		data, err := json.MarshalIndent(lockfile, "", "  ")
