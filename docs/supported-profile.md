@@ -88,5 +88,8 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 - To change an inferred value, add an entry to `anode.overrides.json`: the `path` (for example `resources.documents-minio.buckets`), the `value` you want, and the `inferred` value it replaces.
 - While the code still infers the value in `inferred`, the override applies on every `inspect`.
 - If the code changes that value, `inspect` stops with a conflict and writes nothing. Update the entry to accept the new value or keep yours.
-- Supported paths: `resources.<id>.topics`, `resources.<id>.buckets`, `resources.<id>.kind`, `services.<name>.config_env`.
+- Supported paths: `resources.<id>.topics`, `resources.<id>.buckets`, `resources.<id>.collections`, `resources.<id>.kind`, `services.<name>.config_env`.
+- If a resource is renamed and exactly one resource in the lockfile comes from the same source file, `inspect` moves the override to it and rewrites the file. If more than one matches, the override is left alone and reported.
 - Git history is the version history of the lockfile and the overrides file. There are no numbered versions.
+- `anode.state.json` holds deploy state, currently the host port of each container store. Deploy writes it; the config does not carry ports.
+- Each successful release records the SHA-256 of the lockfile it deployed at `/var/lib/anode/releases/<release>.lock.sha256` on the host.
