@@ -431,20 +431,12 @@
       ],
       "secrets": [
         {
-          "env_var": "AWS_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+          "env_var": "CMS_MINIO_ACCESS_KEY",
+          "provenance": "services/cms/main.go:32"
         },
         {
-          "env_var": "AWS_SECRET_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
-        },
-        {
-          "env_var": "AWS_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
-        },
-        {
-          "env_var": "AWS_SESSION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+          "env_var": "CMS_MINIO_SECRET_KEY",
+          "provenance": "services/cms/main.go:32"
         },
         {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
@@ -467,14 +459,6 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
-          "env_var": "CMS_MINIO_ACCESS_KEY",
-          "provenance": "services/cms/main.go:32"
-        },
-        {
-          "env_var": "CMS_MINIO_SECRET_KEY",
-          "provenance": "services/cms/main.go:32"
-        },
-        {
           "env_var": "MINIO_ROOT_PASSWORD",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
         },
@@ -485,6 +469,22 @@
         {
           "env_var": "MINIO_SECRET_KEY",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
         },
         {
           "env_var": "AWS_SHARED_CREDENTIALS_FILE",
@@ -606,14 +606,6 @@
       ],
       "secrets": [
         {
-          "env_var": "DOCUMENTS_MINIO_ACCESS_KEY",
-          "provenance": "services/documents/main.go:38"
-        },
-        {
-          "env_var": "DOCUMENTS_MINIO_SECRET_KEY",
-          "provenance": "services/documents/main.go:38"
-        },
-        {
           "env_var": "MINIO_ROOT_PASSWORD",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
         },
@@ -624,26 +616,6 @@
         {
           "env_var": "MINIO_SECRET_KEY",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
-        },
-        {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
-        },
-        {
-          "env_var": "AWS_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
-        },
-        {
-          "env_var": "AWS_SECRET_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
-        },
-        {
-          "env_var": "AWS_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
-        },
-        {
-          "env_var": "AWS_SESSION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
         },
         {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
@@ -666,12 +638,40 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
+          "env_var": "DOCUMENTS_MINIO_ACCESS_KEY",
+          "provenance": "services/documents/main.go:38"
+        },
+        {
+          "env_var": "DOCUMENTS_MINIO_SECRET_KEY",
+          "provenance": "services/documents/main.go:38"
+        },
+        {
           "env_var": "AZURE_FEDERATED_TOKEN_FILE",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
         },
         {
           "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
+        },
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         }
       ]
     },
@@ -834,6 +834,30 @@
       ],
       "secrets": [
         {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "MEDIA_MINIO_ACCESS_KEY",
+          "provenance": "services/media/main.go:17"
+        },
+        {
+          "env_var": "MEDIA_MINIO_SECRET_KEY",
+          "provenance": "services/media/main.go:17"
+        },
+        {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
         },
@@ -854,10 +878,6 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
-        },
-        {
           "env_var": "MINIO_ROOT_PASSWORD",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
         },
@@ -870,28 +890,8 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
         },
         {
-          "env_var": "MEDIA_MINIO_ACCESS_KEY",
-          "provenance": "services/media/main.go:17"
-        },
-        {
-          "env_var": "MEDIA_MINIO_SECRET_KEY",
-          "provenance": "services/media/main.go:17"
-        },
-        {
-          "env_var": "AWS_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
-        },
-        {
-          "env_var": "AWS_SECRET_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
-        },
-        {
-          "env_var": "AWS_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
-        },
-        {
-          "env_var": "AWS_SESSION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         }
       ]
     },
@@ -975,6 +975,13 @@
           "provenance": "services/orders/main.go:115"
         },
         {
+          "service_ref": "inventory",
+          "protocol": "http",
+          "interface": "/v1/inventory/reserve",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:95"
+        },
+        {
           "resource_ref": "db-orders-postgres",
           "protocol": "postgres",
           "inject_env": "ORDERS_POSTGRES_DSN",
@@ -982,13 +989,6 @@
             "ORDERS_POSTGRES_DSN"
           ],
           "provenance": "services/orders/main.go:28"
-        },
-        {
-          "service_ref": "inventory",
-          "protocol": "http",
-          "interface": "/v1/inventory/reserve",
-          "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:95"
         }
       ],
       "secrets": []
@@ -1066,17 +1066,17 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-recs",
-          "protocol": "redis",
-          "inject_env": "RECS_REDIS_ADDR",
-          "provenance": "services/recommendations/main.go:24"
-        },
-        {
           "service_ref": "RECS_QDRANT_URL",
           "protocol": "http",
           "interface": "/collections/products/points/search",
           "inject_env": "RECS_QDRANT_URL",
           "provenance": "services/recommendations/main.go:74"
+        },
+        {
+          "resource_ref": "redis-recs",
+          "protocol": "redis",
+          "inject_env": "RECS_REDIS_ADDR",
+          "provenance": "services/recommendations/main.go:24"
         }
       ],
       "secrets": []

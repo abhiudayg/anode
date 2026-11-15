@@ -1,4 +1,4 @@
-# omni_mesh_32
+# omni-mesh-32
 
 A 32-service Go sample mesh. Each service uses the official client library for its store, reads its connection settings from environment variables, and serves HTTP. Some services call each other over HTTP, and five services call external APIs.
 
@@ -6,7 +6,7 @@ It is a fixture for Anode's analysis, not a system to run. It has not been deplo
 
 ## What `anode inspect` detects
 
-Run `anode inspect ./examples/omni_mesh_32`. The lockfile in this directory is its output for this code.
+Run `anode inspect ./examples/omni-mesh-32`. The lockfile in this directory is its output for this code.
 
 | Found by Anode | Count | Stores |
 | :--- | :---: | :--- |
@@ -77,7 +77,7 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 The unit tests cover the pure logic: the fraud rules, vector parsing, point IDs, and user IDs. They do not connect to any store.
 
 ```bash
-cd examples/omni_mesh_32
+cd examples/omni-mesh-32
 go build ./...
 go vet ./...
 go test ./...

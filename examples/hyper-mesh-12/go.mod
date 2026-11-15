@@ -1,4 +1,4 @@
-module hyper_mesh_12
+module hyper-mesh-12
 
 go 1.26.0
 

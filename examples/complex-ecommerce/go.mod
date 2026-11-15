@@ -1,4 +1,4 @@
-module complex_ecommerce
+module complex-ecommerce
 
 go 1.22
 

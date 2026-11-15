@@ -90,7 +90,7 @@ go build -o /usr/local/bin/anode ./cmd/anode
 ### 2. Inspect a Go Repository
 
 ```bash
-anode inspect ./examples/complex_ecommerce
+anode inspect ./examples/complex-ecommerce
 ```
 
 This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
@@ -133,7 +133,7 @@ This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
 ### 3. Run Locally
 
 ```bash
-anode dev ./examples/complex_ecommerce
+anode dev ./examples/complex-ecommerce
 ```
 
 `anode dev` allocates free loopback ports, starts the stateful services your code uses in Docker or Podman containers, reads external database values from `.env`, and streams service logs. It reloads after a 300ms debounce when files change.
@@ -141,14 +141,14 @@ anode dev ./examples/complex_ecommerce
 ### 4. Deploy to a Linux Host
 
 ```bash
-anode deploy root@my-box.example.com ./examples/complex_ecommerce
+anode deploy root@my-box.example.com ./examples/complex-ecommerce
 ```
 
 Deploying as root works. For day-to-day use, create a deploy account first:
 
 ```bash
 anode host-setup root@my-box.example.com --disable-root-login
-anode deploy anode-deploy@my-box.example.com ./examples/complex_ecommerce
+anode deploy anode-deploy@my-box.example.com ./examples/complex-ecommerce
 ```
 
 What a deploy does:
@@ -210,9 +210,9 @@ Examples live in [`examples/`](examples/). Service counts are the number of `mai
 | Example | Services | What it covers |
 | :--- | :---: | :--- |
 | [`sample-shop`](examples/sample-shop/README.md) | 2 | Two-service app with Postgres |
-| [`complex_ecommerce`](examples/complex_ecommerce/README.md) | 3 | Composite DSN unpacking, pre-traffic migrations, SendGrid egress |
-| [`hyper_mesh_12`](examples/hyper_mesh_12/README.md) | 12 | Config indirection, composite DSNs, gRPC and REST links; analyzer test fixture |
-| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | 14 of 35 store connections detected by Anode; 21 undetected; used by the `anode cluster` example |
+| [`complex-ecommerce`](examples/complex-ecommerce/README.md) | 3 | Composite DSN unpacking, pre-traffic migrations, SendGrid egress |
+| [`hyper-mesh-12`](examples/hyper-mesh-12/README.md) | 12 | Config indirection, composite DSNs, gRPC and REST links; analyzer test fixture |
+| [`omni-mesh-32`](examples/omni-mesh-32/README.md) | 32 | All 32 store resources detected; Kafka and Qdrant calls are not; used by the `anode cluster` example |
 
 Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
 

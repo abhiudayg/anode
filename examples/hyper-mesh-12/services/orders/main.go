@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"hyper_mesh_12/pkg/config"
-	ledgerv1 "hyper_mesh_12/proto/ledger/v1"
+	"hyper-mesh-12/pkg/config"
+	ledgerv1 "hyper-mesh-12/proto/ledger/v1"
 )
 
 func main() {

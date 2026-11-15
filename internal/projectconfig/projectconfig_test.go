@@ -115,7 +115,7 @@ func TestValidateRejectsUnsafeOrIncompleteConfig(t *testing.T) {
 }
 
 func TestOmniMeshConfigValidates(t *testing.T) {
-	dir := filepath.Join("..", "..", "examples", "omni_mesh_32")
+	dir := filepath.Join("..", "..", "examples", "omni-mesh-32")
 	data, err := os.ReadFile(filepath.Join(dir, "anode.lock.json"))
 	if err != nil {
 		t.Fatal(err)

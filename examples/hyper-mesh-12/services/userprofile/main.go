@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"hyper_mesh_12/pkg/config"
+	"hyper-mesh-12/pkg/config"
 )
 
 func main() {

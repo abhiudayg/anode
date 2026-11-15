@@ -1,4 +1,4 @@
-module omni_mesh_32
+module omni-mesh-32
 
 go 1.26.0
 

@@ -1,6 +1,6 @@
 # Complex E-Commerce Test Fixture
 
-`complex_ecommerce` is a multi-tier e-commerce microservice topology designed to test Anode's handling of composite DSN configurations, external third-party payment/messaging egress (Stripe, SendGrid, Twilio), and database migration tracking with Goose.
+`complex-ecommerce` is a multi-tier e-commerce microservice topology designed to test Anode's handling of composite DSN configurations, external third-party payment/messaging egress (Stripe, SendGrid, Twilio), and database migration tracking with Goose.
 
 ---
 
@@ -64,7 +64,7 @@
 
 ### Tool Execution
 ```bash
-anode inspect ./testdata/complex_ecommerce
+anode inspect .
 ```
 
 ### Outcome: **SUCCESS (100% Precision)**

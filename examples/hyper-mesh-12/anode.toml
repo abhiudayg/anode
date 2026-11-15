@@ -1,0 +1,59 @@
+# Anode project configuration.
+# Versions and runtimes are written by `anode inspect`. Edit them here, then redeploy.
+# runtime = "binary" installs a host binary; "docker" runs the store in a container.
+
+[stores."db-fulfillment"]
+runtime = "docker"
+version = "16"
+
+[stores."db-orders"]
+runtime = "docker"
+version = "16"
+
+[stores."db-userprofile"]
+runtime = "docker"
+version = "16"
+
+[stores."redis-auth"]
+runtime = "binary"
+version = "auto"
+
+[stores."redis-inventory"]
+runtime = "binary"
+version = "auto"
+
+[services."analytics"]
+runtime = "binary"
+
+[services."apigateway"]
+runtime = "binary"
+
+[services."auditlog"]
+runtime = "binary"
+
+[services."auth"]
+runtime = "binary"
+
+[services."catalog"]
+runtime = "binary"
+
+[services."fulfillment"]
+runtime = "binary"
+
+[services."inventory"]
+runtime = "binary"
+
+[services."ledger"]
+runtime = "binary"
+
+[services."notifications"]
+runtime = "binary"
+
+[services."orders"]
+runtime = "binary"
+
+[services."payments"]
+runtime = "binary"
+
+[services."userprofile"]
+runtime = "binary"

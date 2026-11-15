@@ -1,6 +1,6 @@
 # HyperMesh-12 Complex Distributed Test Fixture
 
-`hyper_mesh_12` is Anode's flagship architectural stress test, comprising **12 interconnected Go microservices** that communicate via mixed HTTP/1.1 REST, HTTP/2 gRPC stubs, Redis caching clusters, stateful Postgres databases, and external third-party SaaS APIs.
+`hyper-mesh-12` is Anode's flagship architectural stress test, comprising **12 interconnected Go microservices** that communicate via mixed HTTP/1.1 REST, HTTP/2 gRPC stubs, Redis caching clusters, stateful Postgres databases, and external third-party SaaS APIs.
 
 ---
 
@@ -77,7 +77,7 @@
 
 ## 2. Hard Go SSA Static Analysis Challenges
 
-`hyper_mesh_12` was purposely engineered with intricate Go idioms to test the limits of static compiler analysis:
+`hyper-mesh-12` was purposely engineered with intricate Go idioms to test the limits of static compiler analysis:
 
 1. **3-Hop Nested Struct Pointer Indirections**:
    - Variables are not read at the top level; instead, config structs are passed across pointer fields (`cfg.DB.Conn.DSN`).
@@ -100,7 +100,7 @@
 
 ### Tool Execution
 ```bash
-anode inspect ./testdata/hyper_mesh_12
+anode inspect .
 ```
 
 ### Outcome: **SUCCESS (100% Precision)**

@@ -6,7 +6,7 @@ import (
 )
 
 func TestHyperMesh12Analysis(t *testing.T) {
-	hyperMeshDir, err := filepath.Abs("../../testdata/hyper_mesh_12")
+	hyperMeshDir, err := filepath.Abs("../../testdata/hyper-mesh-12")
 	if err != nil {
 		t.Fatalf("failed to get abs path: %v", err)
 	}

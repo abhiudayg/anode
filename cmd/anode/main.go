@@ -849,7 +849,7 @@ func printClusterUsage() {
 	fmt.Println("  anode cluster                               # Inspect cluster nodes and service placement")
 	fmt.Println("  anode cluster init                          # Generate starter anode.cluster.yaml template")
 	fmt.Println("  anode cluster --firewall                    # View synthesized zero-trust nftables rules")
-	fmt.Println("  anode cluster ./examples/omni_mesh_32       # Plan placement for a 32-service mesh")
+	fmt.Println("  anode cluster ./examples/omni-mesh-32       # Plan placement for a 32-service mesh")
 	fmt.Println("  anode cluster --json                        # Machine-readable output for CI/CD pipelines")
 }
 
