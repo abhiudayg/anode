@@ -261,11 +261,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 		if _, err := d.ssh.Run(activeCmd); err != nil {
 			return fmt.Errorf("service %s is not running after restart (check: journalctl -u anode-%s.service): %w", svc.Name, svc.Name, err)
 		}
-		if healthPath, err := healthRoutePath(svc); err != nil {
-			return err
-		} else if healthPath != "" {
-			if _, err := d.ssh.Run(httpHealthCommand(port, healthPath)); err != nil {
-				return fmt.Errorf("service %s does not answer HTTP on port %d%s: %w", svc.Name, port, healthPath, err)
+		if hasHTTPService(svc) {
+			if _, err := d.ssh.Run(httpHealthCommand(port)); err != nil {
+				return fmt.Errorf("service %s does not pass GET %s on port %d: add the route, or check journalctl -u anode-%s.service: %w", svc.Name, healthPath, port, svc.Name, err)
 			}
 		}
 		fmt.Printf("  ✓ Service %s running on 127.0.0.1:%d\n", name, port)

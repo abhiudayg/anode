@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### 🛠 Changed
 - The `dev` readiness check requires `GET /healthz` to return below 400. Services that serve HTTP must add that route.
+- **Breaking:** `anode deploy` requires `GET /healthz` to return a status from 200 to 399 on every service that serves HTTP. Deploys of apps without the route stop after the service starts. Add the route before upgrading.
 - External provider URLs (`*_API_URL`) can be overridden. The real provider is the default.
 - The `dev` Postgres readiness check pings the database instead of checking the TCP port.
 
