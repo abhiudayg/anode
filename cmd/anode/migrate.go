@@ -6,6 +6,7 @@ import (
 	"net"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/abhiudayg/anode/internal/deployer"
 	"github.com/abhiudayg/anode/internal/devengine"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/migrations"
 	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
@@ -57,16 +59,7 @@ func runMigrate(host, targetDir string) error {
 		if res.Migrations == nil || res.Migrations.Path == "" {
 			continue
 		}
-		driver, dialect, ok := migrationEngine(string(res.Kind))
-		if !ok {
-			return fmt.Errorf("%s: anode migrate has no migration engine for kind %s", id, res.Kind)
-		}
-		dsn, cleanup, err := migrationDSN(targetDir, id, res, lockfile, cfg, secrets, remote)
-		if err != nil {
-			return err
-		}
-		applied, err := runner.RunGooseMigrationsFor(driver, dialect, dsn, res.Migrations.Path)
-		cleanup()
+		applied, err := applyResourceMigrations(targetDir, id, res, cfg, lockfile, secrets, remote, runner)
 		if err != nil {
 			return fmt.Errorf("migrations for %s: %w", id, err)
 		}
@@ -160,4 +153,99 @@ func connectionKeyFor(lockfile *iag.LockFile, resourceID string) string {
 		}
 	}
 	return ""
+}
+
+func applyResourceMigrations(targetDir, id string, res iag.Resource, cfg *projectconfig.File, lockfile *iag.LockFile, secrets map[string]string, remote *ssh.Client, runner *devengine.MigrationRunner) (int, error) {
+	switch string(res.Kind) {
+	case "clickhouse":
+		return applyClickHouseMigrations(targetDir, id, res, lockfile, secrets, remote)
+	case "scylladb":
+		return applyScyllaMigrations(targetDir, id, res, cfg, lockfile, secrets, remote)
+	}
+	driver, dialect, ok := migrationEngine(string(res.Kind))
+	if !ok {
+		return 0, fmt.Errorf("anode migrate has no migration engine for kind %s", res.Kind)
+	}
+	dsn, cleanup, err := migrationDSN(targetDir, id, res, lockfile, cfg, secrets, remote)
+	if err != nil {
+		return 0, err
+	}
+	defer cleanup()
+	return runner.RunGooseMigrationsFor(driver, dialect, dsn, res.Migrations.Path)
+}
+
+func applyClickHouseMigrations(targetDir, id string, res iag.Resource, lockfile *iag.LockFile, secrets map[string]string, remote *ssh.Client) (int, error) {
+	prefix := strings.TrimSuffix(connectionKeyFor(lockfile, id), "_ADDR")
+	httpAddr := secrets[prefix+"_HTTP_ADDR"]
+	if httpAddr == "" {
+		return 0, fmt.Errorf("%s_HTTP_ADDR is missing from .env (the HTTP address of the ClickHouse server, usually port 8123)", prefix)
+	}
+	database := secrets[prefix+"_DB"]
+	if database == "" {
+		return 0, fmt.Errorf("%s_DB is missing from .env (the database that holds this store's tables)", prefix)
+	}
+	endpoint, cleanup, err := reachable(remote, httpAddr)
+	if err != nil {
+		return 0, err
+	}
+	defer cleanup()
+	user := secrets[prefix+"_USER"]
+	if user == "" {
+		user = "default"
+	}
+	runner := migrations.ClickHouse{
+		Endpoint: "http://" + endpoint,
+		Database: database,
+		User:     user,
+		Password: secrets[prefix+"_PASSWORD"],
+	}
+	return runner.Apply(filepath.Join(targetDir, res.Migrations.Path))
+}
+
+func applyScyllaMigrations(targetDir, id string, res iag.Resource, cfg *projectconfig.File, lockfile *iag.LockFile, secrets map[string]string, remote *ssh.Client) (int, error) {
+	key := connectionKeyFor(lockfile, id)
+	prefix := strings.TrimSuffix(key, "_HOSTS")
+	first := strings.TrimSpace(strings.Split(secrets[key], ",")[0])
+	if first == "" {
+		return 0, fmt.Errorf("%s is missing from .env (the contact point for %s)", key, id)
+	}
+	keyspace := secrets[prefix+"_KEYSPACE"]
+	if keyspace == "" {
+		return 0, fmt.Errorf("%s_KEYSPACE is missing from .env (the keyspace the service reads)", prefix)
+	}
+	endpoint, cleanup, err := reachable(remote, first)
+	if err != nil {
+		return 0, err
+	}
+	defer cleanup()
+	host, port, err := net.SplitHostPort(endpoint)
+	if err != nil {
+		return 0, err
+	}
+	image := catalog.NewRegistry().Resolve("scylladb").ResolveImage(cfg.Stores[id].Version)
+	runner := migrations.Scylla{
+		Image:    image,
+		Host:     host,
+		Port:     port,
+		Keyspace: keyspace,
+		User:     secrets[prefix+"_USER"],
+		Password: secrets[prefix+"_PASSWORD"],
+	}
+	return runner.Apply(filepath.Join(targetDir, res.Migrations.Path))
+}
+
+func reachable(remote *ssh.Client, addr string) (string, func(), error) {
+	noop := func() {}
+	host, _, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", noop, fmt.Errorf("%s: %w", addr, err)
+	}
+	if remote == nil || (host != "127.0.0.1" && host != "localhost") {
+		return addr, noop, nil
+	}
+	port, cleanup, err := forwardLocal(remote, addr)
+	if err != nil {
+		return "", noop, fmt.Errorf("forward %s: %w", addr, err)
+	}
+	return fmt.Sprintf("127.0.0.1:%d", port), cleanup, nil
 }
