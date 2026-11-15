@@ -122,7 +122,7 @@ export default function AnodeVsSystemdPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -139,27 +139,27 @@ export default function AnodeVsSystemdPage() {
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
               <li>
-                <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+                <Link href="/" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li><span>/</span></li>
               <li>
                 <span className="text-neutral-500">Comparisons</span>
               </li>
               <li><span>/</span></li>
-              <li className="text-cyan-300 font-medium">Anode vs Raw Systemd</li>
+              <li className="text-neutral-200 font-medium">Anode vs Raw Systemd</li>
             </ol>
           </nav>
 
           {/* Header */}
           <div className="text-center max-w-4xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 text-xs font-mono-code mb-6">
-              <GitCompare className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] text-neutral-200 text-xs font-mono-code mb-6">
+              <GitCompare className="w-3.5 h-3.5 text-white" />
               <span>Architecture Comparison</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
               Anode vs Raw Systemd:{" "}
-              <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+              <span className="text-white">
                 Why Not Write Units Manually?
               </span>
             </h1>
@@ -172,7 +172,7 @@ export default function AnodeVsSystemdPage() {
           {/* Side-by-Side Comparison */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
             {/* Raw Systemd */}
-            <div className="p-8 rounded-2xl border border-white/[0.08] bg-[#0c0e14]">
+            <div className="p-8 rounded-2xl border border-white/[0.08] bg-[#0a0a0c]">
               <div className="text-xs font-mono-code text-neutral-400 uppercase tracking-wider mb-2">
                 The Manual Approach
               </div>
@@ -194,22 +194,22 @@ export default function AnodeVsSystemdPage() {
             </div>
 
             {/* Anode */}
-            <div className="p-8 rounded-2xl border border-cyan-500/30 bg-cyan-950/10">
-              <div className="text-xs font-mono-code text-cyan-400 uppercase tracking-wider mb-2">
+            <div className="p-8 rounded-2xl border border-white/[0.12] bg-white/[0.04]">
+              <div className="text-xs font-mono-code text-white uppercase tracking-wider mb-2">
                 The Compiler-Backed Approach
               </div>
               <h2 className="text-xl font-bold text-white mb-3">Anode Compiler Orchestration</h2>
               <ul className="space-y-3 text-sm text-neutral-300 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="text-cyan-400 font-bold">✓</span>
+                  <span className="text-white font-bold">✓</span>
                   <span><strong>Cross-Platform Development:</strong> <code>anode dev</code> runs seamlessly on macOS, Linux, and WSL with ephemeral local ports.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-cyan-400 font-bold">✓</span>
+                  <span className="text-white font-bold">✓</span>
                   <span><strong>Free local ports:</strong> The dev engine assigns free local ports to backing services and addresses (<code>127.0.0.1:0</code>).</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-cyan-400 font-bold">✓</span>
+                  <span className="text-white font-bold">✓</span>
                   <span><strong>Automated Systemd Synthesis:</strong> Emits hardened units with <code>DynamicUser=yes</code> and cgroups v2 quotas over SSH.</span>
                 </li>
               </ul>
@@ -217,12 +217,12 @@ export default function AnodeVsSystemdPage() {
           </div>
 
           {/* Comparison Table */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden mb-16 shadow-2xl">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] overflow-hidden mb-16 shadow-2xl">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/[0.08] bg-white/[0.02]">
                   <th className="py-4 px-6 text-xs font-mono-code uppercase text-neutral-400">Capability</th>
-                  <th className="py-4 px-6 text-xs font-mono-code uppercase text-cyan-400 bg-cyan-500/5">Anode Orchestration</th>
+                  <th className="py-4 px-6 text-xs font-mono-code uppercase text-white bg-white/[0.08]">Anode Orchestration</th>
                   <th className="py-4 px-6 text-xs font-mono-code uppercase text-neutral-400">Manual Systemd</th>
                 </tr>
               </thead>
@@ -230,7 +230,7 @@ export default function AnodeVsSystemdPage() {
                 {comparisonRows.map((r, i) => (
                   <tr key={i} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-4 px-6 font-medium text-white">{r.feature}</td>
-                    <td className="py-4 px-6 text-cyan-300 font-semibold bg-cyan-500/5">{r.anode}</td>
+                    <td className="py-4 px-6 text-neutral-200 font-semibold bg-white/[0.08]">{r.anode}</td>
                     <td className="py-4 px-6 text-neutral-400">{r.manual}</td>
                   </tr>
                 ))}
@@ -264,18 +264,18 @@ export default function AnodeVsSystemdPage() {
           </div>
 
           {/* CTA */}
-          <div className="p-8 rounded-2xl border border-white/[0.08] bg-[#0c0e14] text-center">
+          <div className="p-8 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] text-center">
             <h2 className="text-xl font-bold text-white mb-2">Automate Your Linux Systemd Services</h2>
             <p className="text-sm text-neutral-400 mb-6">
               Install the Anode CLI and run your first bare-metal deployment in seconds.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <div className="px-4 py-2 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-cyan-300">
+              <div className="px-4 py-2 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-neutral-200">
                 brew install abhiudayg/tap/anode
               </div>
               <Link
                 href="/docs#quickstart"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-mono-code font-bold transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Read Quickstart</span>
                 <ArrowRight className="w-3.5 h-3.5" />

@@ -4,7 +4,7 @@ import { SmoothScroll } from "@/components/SmoothScroll";
 import { CommandPalette } from "@/components/CommandPalette";
 
 export const viewport: Viewport = {
-  themeColor: "#08090b",
+  themeColor: "#070709",
   colorScheme: "dark",
   width: "device-width",
   initialScale: 1,

@@ -112,7 +112,7 @@ export default async function BlogPostPage({ params }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -129,7 +129,7 @@ export default async function BlogPostPage({ params }: Props) {
           <div className="flex items-center justify-between pb-6 border-b border-white/[0.08]">
             <Link
               href="/blog"
-              className="inline-flex items-center gap-1.5 text-xs font-mono-code text-cyan-400 hover:text-cyan-300 transition-colors py-1 px-2.5 rounded-lg bg-cyan-950/40 border border-cyan-800/40 hover:bg-cyan-900/30"
+              className="inline-flex items-center gap-1.5 text-xs font-mono-code text-white hover:text-white transition-colors py-1 px-2.5 rounded-lg bg-white/[0.04] border border-white/[0.1] hover:bg-white/[0.08]"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Back to Journal</span>
@@ -143,7 +143,7 @@ export default async function BlogPostPage({ params }: Props) {
           {/* Header */}
           <div className="space-y-4 pt-2">
             <div className="flex flex-wrap items-center gap-3 text-xs text-neutral-400 font-mono-code">
-              <span className="px-2.5 py-0.5 rounded-full bg-cyan-950/60 text-cyan-400 border border-cyan-800/40 font-semibold">
+              <span className="px-2.5 py-0.5 rounded-full bg-white/[0.04] text-white border border-white/[0.1] font-semibold">
                 {post.category}
               </span>
               <span>•</span>
@@ -167,7 +167,7 @@ export default async function BlogPostPage({ params }: Props) {
             </p>
 
             <div className="flex items-center gap-3 pt-2">
-              <div className="w-9 h-9 rounded-full bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400 font-bold text-xs">
+              <div className="w-9 h-9 rounded-full bg-white/[0.08] border border-white/[0.12] flex items-center justify-center text-white font-bold text-xs">
                 {post.author[0]}
               </div>
               <div>
@@ -198,7 +198,7 @@ export default async function BlogPostPage({ params }: Props) {
                         ? "bg-amber-950/20 border-amber-500/30 text-amber-200"
                         : sec.callout.type === "tip"
                         ? "bg-emerald-950/20 border-emerald-500/30 text-emerald-200"
-                        : "bg-cyan-950/20 border-cyan-500/30 text-cyan-200"
+                        : "bg-white/[0.04] border-white/[0.12] text-neutral-300"
                     }`}
                   >
                     <div className="flex items-start gap-2.5">
@@ -209,7 +209,7 @@ export default async function BlogPostPage({ params }: Props) {
                 )}
 
                 {sec.codeBlock && (
-                  <div className="rounded-xl border border-white/[0.08] bg-[#06070a] overflow-hidden my-6 shadow-inner">
+                  <div className="rounded-xl border border-white/[0.08] bg-[#050507] overflow-hidden my-6 shadow-inner">
                     <div className="px-4 py-2.5 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between text-xs font-mono-code text-neutral-400">
                       <span>{sec.codeBlock.title}</span>
                       <span className="uppercase text-[10px] text-neutral-500 font-semibold">
@@ -225,9 +225,9 @@ export default async function BlogPostPage({ params }: Props) {
             ))}
 
             {/* End of article CTA */}
-            <div className="p-8 rounded-2xl bg-[#07090e] border border-cyan-500/30 mt-12 space-y-4">
+            <div className="p-8 rounded-2xl bg-[#0a0a0c] border border-white/[0.12] mt-12 space-y-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Terminal className="w-5 h-5 text-cyan-400" />
+                <Terminal className="w-5 h-5 text-white" />
                 <span>Try Anode On Your Go Codebase</span>
               </h3>
               <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
@@ -236,7 +236,7 @@ export default async function BlogPostPage({ params }: Props) {
               <div className="flex items-center gap-3">
                 <Link
                   href="/docs#quickstart"
-                  className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-semibold font-mono-code transition-colors"
+                  className="px-4 py-2 rounded-lg bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-semibold font-mono-code transition-colors"
                 >
                   Read Quickstart →
                 </Link>

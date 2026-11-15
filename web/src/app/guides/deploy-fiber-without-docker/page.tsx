@@ -93,7 +93,7 @@ const howToJsonLd = {
 
 export default function DeployFiberGuide() {
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -110,21 +110,21 @@ export default function DeployFiberGuide() {
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
               <li>
-                <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+                <Link href="/" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li><span>/</span></li>
               <li>
                 <span className="text-neutral-500">Guides</span>
               </li>
               <li><span>/</span></li>
-              <li className="text-cyan-300 font-medium">Deploy Fiber Without Docker</li>
+              <li className="text-neutral-200 font-medium">Deploy Fiber Without Docker</li>
             </ol>
           </nav>
 
           {/* Header */}
           <header className="mb-14">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 text-xs font-mono-code mb-4">
-              <Zap className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.12] bg-white/[0.04] text-neutral-200 text-xs font-mono-code mb-4">
+              <Zap className="w-3.5 h-3.5 text-white" />
               <span>Fasthttp Router Guide</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
@@ -138,7 +138,7 @@ export default function DeployFiberGuide() {
           {/* Step 1: Write Fiber Code */}
           <section id="step-1" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 1
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -149,18 +149,18 @@ export default function DeployFiberGuide() {
               Write standard Fiber handlers using <code className="text-neutral-300">fiber.New()</code>:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300 leading-relaxed overflow-x-auto">
-              <span className="text-purple-400">package</span> main<br /><br />
-              <span className="text-purple-400">import</span> (<br />
-              &nbsp;&nbsp;<span className="text-cyan-400">&quot;os&quot;</span><br />
-              &nbsp;&nbsp;<span className="text-cyan-400">&quot;github.com/gofiber/fiber/v2&quot;</span><br />
+              <span className="text-white">package</span> main<br /><br />
+              <span className="text-white">import</span> (<br />
+              &nbsp;&nbsp;<span className="text-white">&quot;os&quot;</span><br />
+              &nbsp;&nbsp;<span className="text-white">&quot;github.com/gofiber/fiber/v2&quot;</span><br />
               )<br /><br />
-              <span className="text-purple-400">func</span> <span className="text-cyan-300">main</span>() &#123;<br />
+              <span className="text-white">func</span> <span className="text-neutral-200">main</span>() &#123;<br />
               &nbsp;&nbsp;app := fiber.New()<br /><br />
-              &nbsp;&nbsp;app.Get(<span className="text-emerald-400">&quot;/&quot;</span>, <span className="text-purple-400">func</span>(c *fiber.Ctx) error &#123;<br />
-              &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-purple-400">return</span> c.JSON(fiber.Map&#123;<span className="text-emerald-400">&quot;status&quot;</span>: <span className="text-emerald-400">&quot;ok&quot;</span>, <span className="text-emerald-400">&quot;engine&quot;</span>: <span className="text-emerald-400">&quot;fiber-baremetal&quot;</span>&#125;)<br />
+              &nbsp;&nbsp;app.Get(<span className="text-emerald-400">&quot;/&quot;</span>, <span className="text-white">func</span>(c *fiber.Ctx) error &#123;<br />
+              &nbsp;&nbsp;&nbsp;&nbsp;<span className="text-white">return</span> c.JSON(fiber.Map&#123;<span className="text-emerald-400">&quot;status&quot;</span>: <span className="text-emerald-400">&quot;ok&quot;</span>, <span className="text-emerald-400">&quot;engine&quot;</span>: <span className="text-emerald-400">&quot;fiber-baremetal&quot;</span>&#125;)<br />
               &nbsp;&nbsp;&#125;)<br /><br />
               &nbsp;&nbsp;port := os.Getenv(<span className="text-emerald-400">&quot;PORT&quot;</span>)<br />
-              &nbsp;&nbsp;<span className="text-purple-400">if</span> port == <span className="text-emerald-400">&quot;&quot;</span> &#123;<br />
+              &nbsp;&nbsp;<span className="text-white">if</span> port == <span className="text-emerald-400">&quot;&quot;</span> &#123;<br />
               &nbsp;&nbsp;&nbsp;&nbsp;port = <span className="text-emerald-400">&quot;8080&quot;</span><br />
               &nbsp;&nbsp;&#125;<br />
               &nbsp;&nbsp;app.Listen(<span className="text-emerald-400">&quot;:&quot;</span> + port)<br />
@@ -171,7 +171,7 @@ export default function DeployFiberGuide() {
           {/* Step 2: Anode SSA Analysis */}
           <section id="step-2" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 2
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -179,13 +179,13 @@ export default function DeployFiberGuide() {
               </h2>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>. Anode traces Fiber routes directly into an immutable lockfile:
+              Run <code className="text-neutral-200 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>. Anode traces Fiber routes directly into an immutable lockfile:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect .<br />
               <span className="text-emerald-400">✔ SSA AST resolved</span><br />
-              <span className="text-cyan-400">✔ Detected Router: gofiber/fiber/v2 (GET /)</span><br />
-              <span className="text-purple-400">✔ Port Binding: :PORT env choke point (default 8080)</span><br />
+              <span className="text-white">✔ Detected Router: gofiber/fiber/v2 (GET /)</span><br />
+              <span className="text-white">✔ Port Binding: :PORT env choke point (default 8080)</span><br />
               <span className="text-emerald-400">✔ Emitted immutable contract: anode.lock.json</span>
             </div>
           </section>
@@ -193,7 +193,7 @@ export default function DeployFiberGuide() {
           {/* Step 3: Deploy to VPS */}
           <section id="step-3" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 3
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -203,7 +203,7 @@ export default function DeployFiberGuide() {
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
               Deploy directly to your server:
             </p>
-            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-cyan-300">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-200">
               $ anode deploy user@your-vps.com --domain fiber.example.com
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mt-4">
@@ -212,18 +212,18 @@ export default function DeployFiberGuide() {
           </section>
 
           {/* CTA */}
-          <div className="mt-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0c0e14] text-center">
+          <div className="mt-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] text-center">
             <h3 className="text-xl font-bold text-white mb-2">Deploy Your Fiber App to Bare Metal</h3>
             <p className="text-sm text-neutral-400 mb-6">
               Install the Anode CLI and run your first bare-metal deployment in seconds.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <div className="px-4 py-2 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-cyan-300">
+              <div className="px-4 py-2 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-neutral-200">
                 brew install abhiudayg/tap/anode
               </div>
               <Link
                 href="/docs#quickstart"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-mono-code font-bold transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Read Quickstart</span>
                 <ArrowRight className="w-3.5 h-3.5" />

@@ -372,7 +372,7 @@ export function CommandPalette() {
       >
         {/* Search Header Input */}
         <div className="px-4 py-3.5 border-b border-white/[0.08] flex items-center gap-3 bg-white/[0.02]">
-          <Search className="w-5 h-5 text-cyan-400 shrink-0" />
+          <Search className="w-5 h-5 text-white shrink-0" />
           <input
             ref={inputRef}
             type="text"
@@ -418,7 +418,7 @@ export function CommandPalette() {
                   onMouseEnter={() => setSelectedIndex(index)}
                   className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
                     isSelected
-                      ? "bg-cyan-500/15 border border-cyan-500/30 text-white shadow-sm"
+                      ? "bg-white/[0.1] border border-white/[0.2] text-white shadow-sm"
                       : "text-neutral-300 hover:bg-white/[0.04] border border-transparent"
                   }`}
                 >
@@ -426,7 +426,7 @@ export function CommandPalette() {
                     <div
                       className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
                         isSelected
-                          ? "bg-cyan-500/20 text-cyan-300"
+                          ? "bg-white text-black"
                           : "bg-white/[0.04] text-neutral-400"
                       }`}
                     >
@@ -439,7 +439,7 @@ export function CommandPalette() {
                           <span
                             className={`text-[9px] px-1.5 py-0.2 rounded-full font-medium ${
                               isSelected
-                                ? "bg-cyan-950 text-cyan-300 border border-cyan-700/50"
+                                ? "bg-white/[0.2] text-white border border-white/[0.3]"
                                 : "bg-white/[0.06] text-neutral-400"
                             }`}
                           >

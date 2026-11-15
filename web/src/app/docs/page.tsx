@@ -13,14 +13,13 @@ import {
   Zap,
   FileCode,
   Gauge,
-  CheckCircle2,
   AlertTriangle,
   Search,
   Check,
   Copy,
   ShieldAlert,
-  ExternalLink,
-  HelpCircle
+  HelpCircle,
+  ChevronDown
 } from "lucide-react";
 
 const SECTION_ALIASES: Record<string, string> = {
@@ -74,6 +73,7 @@ export default function DocsPage() {
   const [activeDoc, setActiveDoc] = useState<string>("overview");
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
+  const [mobileDocsNavOpen, setMobileDocsNavOpen] = useState(false);
 
   // Interactive Command Generator States
   const [cmdType, setCmdType] = useState<"deploy" | "logs" | "ps" | "doctor" | "dev" | "inspect" | "cluster" | "catalog">("deploy");
@@ -193,15 +193,87 @@ export default function DocsPage() {
   }, []);
 
   const effectiveDoc = allValidIds.has(activeDoc) ? activeDoc : "overview";
+  const currentItem = docSections.flatMap((s) => s.items).find((i) => i.id === effectiveDoc);
+  const currentTitle = currentItem?.title || "Anode Overview";
 
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6] relative bg-grid-pattern">
+    <div className="min-h-screen bg-[#000000] text-[#f3f4f6] relative bg-grid-pattern">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-20">
+        {/* Mobile Collapsible Docs Directory Accordion */}
+        <div className="lg:hidden mb-6">
+          <button
+            type="button"
+            onClick={() => setMobileDocsNavOpen(!mobileDocsNavOpen)}
+            className="flex w-full items-center justify-between rounded-xl border border-white/[0.1] bg-[#0a0a0c] px-4 py-3 text-xs font-mono-code text-neutral-200 transition-colors hover:bg-white/[0.04]"
+          >
+            <span className="flex items-center gap-2">
+              <Layers className="w-4 h-4 text-white" />
+              <span>Section: <strong className="text-white">{currentTitle}</strong></span>
+            </span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${mobileDocsNavOpen ? "rotate-180 text-white" : "text-neutral-400"}`} />
+          </button>
+
+          {mobileDocsNavOpen && (
+            <div className="mt-2 rounded-xl border border-white/[0.08] bg-[#090a0d] p-4 space-y-4 shadow-2xl">
+              <div className="relative">
+                <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Filter documentation..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 rounded-lg bg-[#050507] border border-white/[0.08] text-xs font-mono-code text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
+                />
+              </div>
+
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+                {docSections.map((sec, idx) => (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="text-[10px] font-mono-code uppercase tracking-wider text-neutral-500 font-semibold px-2">
+                      {sec.category}
+                    </div>
+                    <div className="space-y-1">
+                      {sec.items
+                        .filter((item) =>
+                          item.title.toLowerCase().includes(searchQuery.toLowerCase())
+                        )
+                        .map((item) => {
+                          const Icon = item.icon;
+                          const isActive = effectiveDoc === item.id;
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                setActiveDoc(item.id);
+                                setMobileDocsNavOpen(false);
+                                if (typeof window !== "undefined") {
+                                  window.history.replaceState(null, "", `#${item.id}`);
+                                }
+                              }}
+                              className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-mono-code transition-all text-left ${
+                                isActive
+                                  ? "bg-white/[0.08] text-white font-semibold border-l-2 border-white"
+                                  : "text-neutral-400 hover:text-white hover:bg-white/[0.04]"
+                              }`}
+                            >
+                              <Icon className="w-3.5 h-3.5 shrink-0" />
+                              <span className="truncate">{item.title}</span>
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Docs Sidebar */}
-          <aside className="lg:col-span-3 space-y-6">
+          {/* Docs Sidebar: Hidden on mobile/tablet (< lg), sticky on desktop */}
+          <aside className="hidden lg:block lg:col-span-3 space-y-6">
             <div className="sticky top-24 space-y-6">
               {/* Search Bar */}
               <div className="relative">
@@ -211,7 +283,7 @@ export default function DocsPage() {
                   placeholder="Filter documentation..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#0c0e14] border border-white/[0.08] text-xs font-mono-code text-white placeholder-neutral-500 focus:outline-none focus:border-cyan-500/50"
+                  className="w-full pl-9 pr-4 py-2 rounded-xl bg-[#0a0a0c] border border-white/[0.08] text-xs font-mono-code text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                 />
               </div>
 
@@ -241,11 +313,11 @@ export default function DocsPage() {
                               }}
                               className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium text-left transition-all ${
                                 isActive
-                                  ? "bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-semibold shadow-[0_0_15px_rgba(0,173,216,0.15)]"
+                                  ? "bg-white/[0.08] text-white border border-white/[0.15] font-semibold shadow-sm"
                                   : "text-neutral-400 hover:text-white hover:bg-white/[0.03]"
                               }`}
                             >
-                              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-cyan-400" : "text-neutral-500"}`} />
+                              <Icon className={`w-3.5 h-3.5 ${isActive ? "text-white" : "text-neutral-500"}`} />
                               <span>{item.title}</span>
                             </button>
                           );
@@ -258,14 +330,14 @@ export default function DocsPage() {
           </aside>
 
           {/* Docs Content Area */}
-          <article className="lg:col-span-9 bg-[#0c0e14]/90 rounded-2xl border border-white/[0.08] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
+          <article className="lg:col-span-9 bg-[#0a0a0c]/90 rounded-2xl border border-white/[0.08] p-6 sm:p-10 backdrop-blur-xl shadow-2xl">
             {/* Accessible Main Page Heading */}
             <h1 className="sr-only">Anode Technical Documentation &amp; CLI Reference</h1>
 
             {/* 1. OVERVIEW */}
             <div className={effectiveDoc === "overview" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
+                  <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                     Core Concepts
                   </span>
                 </div>
@@ -273,16 +345,16 @@ export default function DocsPage() {
                   Anode Overview & The 4 Pillars
                 </h2>
                 <p className="text-sm sm:text-base text-neutral-300">
-                  Every time you build a Go backend, you declare your architecture twice: once in Go (invoking <code className="text-cyan-300 font-mono-code">sql.Open</code>, listening on ports, registering routes), and again in YAML (multi-stage Dockerfiles, 50-line compose files, port maps, env lists).
+                  Every time you build a Go backend, you declare your architecture twice: once in Go (invoking <code className="text-neutral-200 font-mono-code">sql.Open</code>, listening on ports, registering routes), and again in YAML (multi-stage Dockerfiles, 50-line compose files, port maps, env lists).
                 </p>
                 <p className="text-sm text-neutral-300">
-                  <strong>Anode</strong> eliminates configuration drift by analyzing your Go source code using compiler-backed <strong>Static Single Assignment (SSA)</strong> and <strong>Variable Type Analysis (VTA)</strong> call graphs rooted at <code className="text-cyan-300 font-mono-code">func main()</code>. It extracts an immutable, human-readable <code className="text-neutral-200 font-mono-code">anode.lock.json</code> and deploys directly to Linux VPS bare-metal primitives: <strong>systemd</strong>, <strong>cgroups v2</strong>, loopback proxies, and automated Let&apos;s Encrypt TLS.
+                  <strong>Anode</strong> eliminates configuration drift by analyzing your Go source code using compiler-backed <strong>Static Single Assignment (SSA)</strong> and <strong>Variable Type Analysis (VTA)</strong> call graphs rooted at <code className="text-neutral-200 font-mono-code">func main()</code>. It extracts an immutable, human-readable <code className="text-neutral-200 font-mono-code">anode.lock.json</code> and deploys directly to Linux VPS bare-metal primitives: <strong>systemd</strong>, <strong>cgroups v2</strong>, loopback proxies, and automated Let&apos;s Encrypt TLS.
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
                   <div className="p-5 rounded-xl border border-white/[0.06] bg-[#07080a]">
                     <h3 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
                       Zero Proprietary SDKs
                     </h3>
                     <p className="text-xs text-neutral-400 leading-relaxed">
@@ -300,17 +372,17 @@ export default function DocsPage() {
                   </div>
                 </div>
 
-                <div className="p-5 rounded-xl border border-cyan-500/20 bg-cyan-950/20 space-y-3">
-                  <h3 className="text-sm font-semibold text-cyan-300">
+                <div className="p-5 rounded-xl border border-white/[0.15] bg-white/[0.04] space-y-3">
+                  <h3 className="text-sm font-semibold text-neutral-200">
                     The 4 Pillars of Topology Engine
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-neutral-300">
                     <div className="p-3 rounded-lg bg-[#07080a]/80 border border-white/[0.05]">
-                      <strong className="text-cyan-400 block mb-1">1. Migration-Driven Provenance</strong>
+                      <strong className="text-white block mb-1">1. Migration-Driven Provenance</strong>
                       Databases are auto-provisioned only when verified migration assets (e.g. Goose SQL files) exist alongside the service.
                     </div>
                     <div className="p-3 rounded-lg bg-[#07080a]/80 border border-white/[0.05]">
-                      <strong className="text-purple-400 block mb-1">2. Typed Interface Linking</strong>
+                      <strong className="text-white block mb-1">2. Typed Interface Linking</strong>
                       gRPC stubs (<code className="text-neutral-200">NewPaymentServiceClient</code>) and HTTP routes match 1:1 without naming heuristics.
                     </div>
                     <div className="p-3 rounded-lg bg-[#07080a]/80 border border-white/[0.05]">
@@ -327,7 +399,7 @@ export default function DocsPage() {
 
             {/* 2. QUICKSTART */}
             <div className={effectiveDoc === "quickstart" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Getting Started
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -340,7 +412,7 @@ export default function DocsPage() {
                 <div className="space-y-6">
                   <div>
                     <h3 className="text-base font-bold text-white mb-2">Step 1: Install Anode CLI</h3>
-                    <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-cyan-300 overflow-x-auto">
+                    <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
                       <code>{`# Official Homebrew Tap (macOS & Linux)
 brew install abhiudayg/tap/anode
 
@@ -361,7 +433,7 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                       <code>{`anode inspect ./testdata/sample-shop`}</code>
                     </pre>
                     <p className="text-xs text-neutral-400 mt-2">
-                      Anode analyzes the package graph, executes VTA dead-code elimination, and writes <code className="text-cyan-300">anode.lock.json</code>.
+                      Anode analyzes the package graph, executes VTA dead-code elimination, and writes <code className="text-neutral-200">anode.lock.json</code>.
                     </p>
                   </div>
 
@@ -377,7 +449,7 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
 
                   <div>
                     <h3 className="text-base font-bold text-white mb-2">Step 4: Deploy to Any Linux VPS</h3>
-                    <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-purple-300 overflow-x-auto">
+                    <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
                       <code>{`anode deploy root@198.51.100.42 --domain api.example.com`}</code>
                     </pre>
                     <p className="text-xs text-neutral-400 mt-2">
@@ -389,7 +461,7 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
 
             {/* 3. CLI REFERENCE */}
             <div className={effectiveDoc === "cli" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Command Line Interface
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -402,7 +474,7 @@ go install github.com/abhiudayg/anode/cmd/anode@latest`}</code>
                 {/* Docker-Style Global Synopsis */}
                 <div className="rounded-xl border border-white/[0.08] bg-[#07080a] p-5 space-y-3 font-mono-code text-xs">
                   <div className="flex items-center justify-between pb-2 border-b border-white/[0.06] text-neutral-400">
-                    <span className="text-cyan-400 font-bold">$ anode --help</span>
+                    <span className="text-white font-bold">$ anode --help</span>
                     <span className="text-[11px] text-neutral-500">Docker-Style Syntax</span>
                   </div>
                   <pre className="text-neutral-300 leading-relaxed overflow-x-auto whitespace-pre">
@@ -534,13 +606,13 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   }
 
                   return (
-                    <div className="rounded-xl border border-cyan-500/30 bg-cyan-950/20 p-5 space-y-4">
+                    <div className="rounded-xl border border-white/[0.15] bg-white/[0.04] p-5 space-y-4">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <span className="text-xs font-mono-code text-cyan-300 font-bold uppercase tracking-wider flex items-center gap-1.5">
-                          <Terminal className="w-3.5 h-3.5 text-cyan-400" />
+                        <span className="text-xs font-mono-code text-neutral-200 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                          <Terminal className="w-3.5 h-3.5 text-white" />
                           <span>Interactive Command Generator</span>
                         </span>
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-mono-code font-semibold self-start sm:self-auto">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-white/[0.1] text-neutral-200 font-mono-code font-semibold self-start sm:self-auto">
                           Live Builder &amp; Flag Configurator
                         </span>
                       </div>
@@ -565,13 +637,13 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               onClick={() => setCmdType(tab.id)}
                               className={`px-2.5 py-1.5 rounded-lg text-xs font-mono-code font-semibold transition-all flex items-center gap-1.5 ${
                                 isActive
-                                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm shadow-cyan-500/10"
+                                  ? "bg-white/[0.1] text-neutral-200 border border-white/[0.15] shadow-sm shadow-none"
                                   : "bg-white/[0.04] text-neutral-400 hover:text-white hover:bg-white/[0.08] border border-transparent"
                               }`}
                             >
                               <span>anode {tab.label}</span>
                               <span className={`text-[9px] px-1 py-0.5 rounded font-mono-code ${
-                                isActive ? "bg-cyan-400/20 text-cyan-200" : "bg-white/[0.06] text-neutral-500"
+                                isActive ? "bg-white/[0.1] text-white" : "bg-white/[0.06] text-neutral-500"
                               }`}>
                                 {tab.badge}
                               </span>
@@ -591,7 +663,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={cliHost}
                                 onChange={(e) => setCliHost(e.target.value)}
                                 placeholder="user@your-vps.com"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                             <div>
@@ -601,7 +673,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={cliDomain}
                                 onChange={(e) => setCliDomain(e.target.value)}
                                 placeholder="api.example.com (optional)"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                           </div>
@@ -613,7 +685,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={cliDeployPath}
                                 onChange={(e) => setCliDeployPath(e.target.value)}
                                 placeholder=". or ./examples/sample-shop"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                             <div className="flex items-end">
@@ -622,7 +694,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 <button
                                   type="button"
                                   onClick={() => setCliArch(cliArch === "amd64" ? "arm64" : "amd64")}
-                                  className="px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-cyan-300 text-xs font-mono-code border border-white/[0.1]"
+                                  className="px-2.5 py-1 rounded bg-white/[0.08] hover:bg-white/[0.15] text-neutral-200 text-xs font-mono-code border border-white/[0.1]"
                                 >
                                   linux/{cliArch}
                                 </button>
@@ -635,7 +707,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={cliDryRun}
                                 onChange={(e) => setCliDryRun(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>--dry-run (preview only)</span>
                             </label>
@@ -644,7 +716,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={cliDeployAlias}
                                 onChange={(e) => setCliDeployAlias(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>Docker alias (&apos;anode run&apos;)</span>
                             </label>
@@ -660,14 +732,14 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               <button
                                 type="button"
                                 onClick={() => setLogsTargetMode("remote")}
-                                className={`px-2.5 py-0.5 rounded-md ${logsTargetMode === "remote" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${logsTargetMode === "remote" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Remote VPS (SSH)
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setLogsTargetMode("local")}
-                                className={`px-2.5 py-0.5 rounded-md ${logsTargetMode === "local" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${logsTargetMode === "local" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Local Dev Engine
                               </button>
@@ -683,7 +755,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                   value={logsTarget}
                                   onChange={(e) => setLogsTarget(e.target.value)}
                                   placeholder="root@my-vps.com"
-                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                                 />
                               </div>
                             )}
@@ -694,7 +766,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={logsService}
                                 onChange={(e) => setLogsService(e.target.value)}
                                 placeholder="e.g. orders, payments, caddy (empty for all)"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                           </div>
@@ -710,7 +782,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                     onClick={() => setLogsLines(lines)}
                                     className={`px-2 py-1 rounded text-xs font-mono-code border ${
                                       logsLines === lines
-                                        ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
+                                        ? "bg-white/[0.1] text-neutral-200 border-white/[0.15]"
                                         : "bg-white/[0.04] text-neutral-400 border-white/[0.08] hover:text-white"
                                     }`}
                                   >
@@ -722,7 +794,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                   value={logsLines}
                                   onChange={(e) => setLogsLines(e.target.value)}
                                   placeholder="custom"
-                                  className="w-20 px-2 py-1 rounded bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                  className="w-20 px-2 py-1 rounded bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                                 />
                               </div>
                             </div>
@@ -733,7 +805,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={logsSince}
                                 onChange={(e) => setLogsSince(e.target.value)}
                                 placeholder="e.g. 15m, 1h, 2026-11-14"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                           </div>
@@ -744,7 +816,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={logsFollow}
                                 onChange={(e) => setLogsFollow(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>-f, --follow (live streaming)</span>
                             </label>
@@ -753,7 +825,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={logsTimestamps}
                                 onChange={(e) => setLogsTimestamps(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>-t, --timestamps (RFC3339)</span>
                             </label>
@@ -762,7 +834,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={logsEdge}
                                 onChange={(e) => setLogsEdge(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>--edge (include Caddy logs)</span>
                             </label>
@@ -771,7 +843,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={logsJson}
                                 onChange={(e) => setLogsJson(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>--json (ndjson)</span>
                             </label>
@@ -787,14 +859,14 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               <button
                                 type="button"
                                 onClick={() => setPsTargetMode("remote")}
-                                className={`px-2.5 py-0.5 rounded-md ${psTargetMode === "remote" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${psTargetMode === "remote" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Remote VPS (SSH)
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setPsTargetMode("local")}
-                                className={`px-2.5 py-0.5 rounded-md ${psTargetMode === "local" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${psTargetMode === "local" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Local Dev Engine
                               </button>
@@ -809,7 +881,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={psTarget}
                                 onChange={(e) => setPsTarget(e.target.value)}
                                 placeholder="root@my-vps.com"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                           )}
@@ -820,7 +892,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={psAll}
                                 onChange={(e) => setPsAll(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>-a, --all (show stopped units)</span>
                             </label>
@@ -829,7 +901,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={psJson}
                                 onChange={(e) => setPsJson(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>--json (raw cgroups v2 telemetry)</span>
                             </label>
@@ -838,7 +910,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={psVerbose}
                                 onChange={(e) => setPsVerbose(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>-v, --verbose</span>
                             </label>
@@ -847,7 +919,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={psAlias}
                                 onChange={(e) => setPsAlias(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>Docker alias (&apos;anode status&apos;)</span>
                             </label>
@@ -863,14 +935,14 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               <button
                                 type="button"
                                 onClick={() => setDoctorTargetMode("remote")}
-                                className={`px-2.5 py-0.5 rounded-md ${doctorTargetMode === "remote" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${doctorTargetMode === "remote" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Remote VPS (SSH)
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setDoctorTargetMode("local")}
-                                className={`px-2.5 py-0.5 rounded-md ${doctorTargetMode === "local" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${doctorTargetMode === "local" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Local Workspace
                               </button>
@@ -886,7 +958,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                   value={doctorTarget}
                                   onChange={(e) => setDoctorTarget(e.target.value)}
                                   placeholder="root@my-vps.com"
-                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                                 />
                               </div>
                             )}
@@ -897,7 +969,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={doctorPath}
                                 onChange={(e) => setDoctorPath(e.target.value)}
                                 placeholder=". or ./examples/sample-shop"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                           </div>
@@ -908,7 +980,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={doctorStrict}
                                 onChange={(e) => setDoctorStrict(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>--strict (treat warnings as errors)</span>
                             </label>
@@ -917,7 +989,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={doctorVerbose}
                                 onChange={(e) => setDoctorVerbose(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>-v, --verbose</span>
                             </label>
@@ -934,7 +1006,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               value={devPath}
                               onChange={(e) => setDevPath(e.target.value)}
                               placeholder=". (current repo) or ./examples/storefront"
-                              className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                             />
                           </div>
                           <p className="text-neutral-400 text-xs font-mono-code">
@@ -952,11 +1024,11 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               value={inspectPath}
                               onChange={(e) => setInspectPath(e.target.value)}
                               placeholder=". (current repo) or ./examples/marketplace"
-                              className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                              className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                             />
                           </div>
                           <p className="text-neutral-400 text-xs font-mono-code">
-                            Runs SSA and Variable Type Analysis (VTA) call graph sweep, resolves HTTP/gRPC choke points, and outputs immutable <code className="text-cyan-300">anode.lock.json</code>.
+                            Runs SSA and Variable Type Analysis (VTA) call graph sweep, resolves HTTP/gRPC choke points, and outputs immutable <code className="text-neutral-200">anode.lock.json</code>.
                           </p>
                         </div>
                       )}
@@ -969,21 +1041,21 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               <button
                                 type="button"
                                 onClick={() => setClusterMode("plan")}
-                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "plan" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "plan" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Placement Matrix
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setClusterMode("firewall")}
-                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "firewall" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "firewall" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 nftables Firewall
                               </button>
                               <button
                                 type="button"
                                 onClick={() => setClusterMode("init")}
-                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "init" ? "bg-cyan-500/20 text-cyan-300 font-bold" : "text-neutral-400 hover:text-white"}`}
+                                className={`px-2.5 py-0.5 rounded-md ${clusterMode === "init" ? "bg-white/[0.1] text-neutral-200 font-bold" : "text-neutral-400 hover:text-white"}`}
                               >
                                 Init Fleet Inventory
                               </button>
@@ -998,7 +1070,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={clusterPath}
                                 onChange={(e) => setClusterPath(e.target.value)}
                                 placeholder=". or ./examples/sample-shop"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                             {clusterMode !== "init" && (
@@ -1009,7 +1081,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                   value={clusterInventory}
                                   onChange={(e) => setClusterInventory(e.target.value)}
                                   placeholder="anode.cluster.yaml"
-                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                  className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                                 />
                               </div>
                             )}
@@ -1022,7 +1094,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                   type="checkbox"
                                   checked={clusterJson}
                                   onChange={(e) => setClusterJson(e.target.checked)}
-                                  className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                  className="rounded bg-black border-white/20 text-white focus:ring-0"
                                 />
                                 <span>--json (structured placement &amp; firewall metrics)</span>
                               </label>
@@ -1041,7 +1113,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={catalogDriver}
                                 onChange={(e) => setCatalogDriver(e.target.value)}
                                 placeholder="e.g. postgres, redis, kafka (empty for all)"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                             <div>
@@ -1051,7 +1123,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 value={catalogPath}
                                 onChange={(e) => setCatalogPath(e.target.value)}
                                 placeholder=". or ./my-custom-project"
-                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
+                                className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-white"
                               />
                             </div>
                           </div>
@@ -1062,7 +1134,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                                 type="checkbox"
                                 checked={catalogJson}
                                 onChange={(e) => setCatalogJson(e.target.checked)}
-                                className="rounded bg-black border-white/20 text-cyan-500 focus:ring-0"
+                                className="rounded bg-black border-white/20 text-white focus:ring-0"
                               />
                               <span>--json (structured driver specification)</span>
                             </label>
@@ -1072,9 +1144,9 @@ Run 'anode COMMAND --help' for more information on a command.`}
 
                       {/* Generated Command Box */}
                       <div className="space-y-2 pt-1">
-                        <div className="p-3.5 rounded-lg bg-black/90 border border-cyan-500/40 flex items-center justify-between font-mono-code text-xs text-cyan-300 shadow-inner">
+                        <div className="p-3.5 rounded-lg bg-black/90 border border-white/[0.15] flex items-center justify-between font-mono-code text-xs text-neutral-200 shadow-inner">
                           <div className="flex items-center gap-2 overflow-x-auto py-0.5">
-                            <span className="text-cyan-500 select-none font-bold">$</span>
+                            <span className="text-white select-none font-bold">$</span>
                             <span className="text-white font-medium whitespace-nowrap">{generatedCommand}</span>
                           </div>
                           <button
@@ -1101,7 +1173,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                           </button>
                         </div>
                         <div className="flex items-center gap-1.5 text-[11px] text-neutral-400 font-mono-code px-1">
-                          <span className="text-cyan-400 font-bold">ℹ</span>
+                          <span className="text-white font-bold">ℹ</span>
                           <span>{commandExplanation}</span>
                         </div>
                       </div>
@@ -1113,15 +1185,15 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   {/* anode inspect */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-cyan-400 font-mono-code">anode inspect [PATH]</code>
+                      <code className="text-sm font-bold text-white font-mono-code">anode inspect [PATH]</code>
                       <span className="text-[11px] font-mono-code text-neutral-500">Static Compilation Pass</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
-                      Compiles whole-program SSA and VTA call graphs rooted strictly at <code className="text-neutral-200">func main()</code>. Traces environment variable dataflow backwards to choke points (<code className="text-neutral-200">database/sql.Open</code>, <code className="text-neutral-200">net.Listen</code>, <code className="text-neutral-200">grpc.NewServer</code>), proves migration asset existence, and writes an immutable <code className="text-cyan-300">anode.lock.json</code>.
+                      Compiles whole-program SSA and VTA call graphs rooted strictly at <code className="text-neutral-200">func main()</code>. Traces environment variable dataflow backwards to choke points (<code className="text-neutral-200">database/sql.Open</code>, <code className="text-neutral-200">net.Listen</code>, <code className="text-neutral-200">grpc.NewServer</code>), proves migration asset existence, and writes an immutable <code className="text-neutral-200">anode.lock.json</code>.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Options:</div>
-                      <div className="pl-4"><span className="text-cyan-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="pl-4"><span className="text-neutral-200">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode inspect .</div>
                       <div className="pl-4 text-emerald-400">anode inspect ./examples/marketplace</div>
@@ -1150,7 +1222,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   {/* anode deploy / run */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-purple-400 font-mono-code">anode deploy &lt;user@host&gt; [PATH] [OPTIONS]</code>
+                      <code className="text-sm font-bold text-white font-mono-code">anode deploy &lt;user@host&gt; [PATH] [OPTIONS]</code>
                       <span className="text-[11px] font-mono-code text-neutral-500">Bare-Metal VPS Release</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
@@ -1158,9 +1230,9 @@ Run 'anode COMMAND --help' for more information on a command.`}
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Options:</div>
-                      <div className="pl-4"><span className="text-purple-300">--dry-run</span> : Synthesize and validate systemd units & Caddyfile without live SSH</div>
-                      <div className="pl-4"><span className="text-purple-300">--domain &lt;domain&gt;</span> : Custom FQDN for automated Let&apos;s Encrypt TLS reverse proxy</div>
-                      <div className="pl-4"><span className="text-purple-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="pl-4"><span className="text-neutral-200">--dry-run</span> : Synthesize and validate systemd units & Caddyfile without live SSH</div>
+                      <div className="pl-4"><span className="text-neutral-200">--domain &lt;domain&gt;</span> : Custom FQDN for automated Let&apos;s Encrypt TLS reverse proxy</div>
+                      <div className="pl-4"><span className="text-neutral-200">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com .</div>
                       <div className="pl-4 text-emerald-400">anode deploy root@192.168.1.50 ./examples/storefront --domain api.example.com</div>
@@ -1230,7 +1302,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   {/* anode doctor */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-sky-400 font-mono-code">anode doctor [TARGET_OR_PATH] [PATH] [OPTIONS]</code>
+                      <code className="text-sm font-bold text-white font-mono-code">anode doctor [TARGET_OR_PATH] [PATH] [OPTIONS]</code>
                       <span className="text-[11px] font-mono-code text-neutral-500">Pre-Flight &amp; Topology Linter</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
@@ -1238,10 +1310,10 @@ Run 'anode COMMAND --help' for more information on a command.`}
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Options:</div>
-                      <div className="pl-4"><span className="text-sky-300">--target &lt;user@host&gt;</span> : Remote VPS to perform 3s pre-flight SSH diagnosis</div>
-                      <div className="pl-4"><span className="text-sky-300">--strict</span> : Fail on warnings as well as fatal errors</div>
-                      <div className="pl-4"><span className="text-sky-300">-v, --verbose</span> : Print verbose trace logs</div>
-                      <div className="pl-4"><span className="text-sky-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="pl-4"><span className="text-neutral-200">--target &lt;user@host&gt;</span> : Remote VPS to perform 3s pre-flight SSH diagnosis</div>
+                      <div className="pl-4"><span className="text-neutral-200">--strict</span> : Fail on warnings as well as fatal errors</div>
+                      <div className="pl-4"><span className="text-neutral-200">-v, --verbose</span> : Print verbose trace logs</div>
+                      <div className="pl-4"><span className="text-neutral-200">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode doctor</div>
                       <div className="pl-4 text-emerald-400">anode doctor ./examples/sample-shop</div>
@@ -1275,20 +1347,20 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   {/* anode cluster */}
                   <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                     <div className="flex items-center justify-between">
-                      <code className="text-sm font-bold text-indigo-400 font-mono-code">anode cluster [COMMAND / OPTIONS] [PATH]</code>
+                      <code className="text-sm font-bold text-white font-mono-code">anode cluster [COMMAND / OPTIONS] [PATH]</code>
                       <span className="text-[11px] font-mono-code text-neutral-500">Multi-Node Fleet Placement</span>
                     </div>
                     <p className="text-xs text-neutral-300 leading-relaxed">
-                      Orchestrates bare-metal and Linux VPS node pools defined in <code className="text-neutral-200">anode.cluster.yaml</code>. Performs greedy Best-Fit Decreasing (BFD) bin-packing against <code className="text-cyan-300">anode.lock.json</code> based on service ingress roles and cgroups v2 RAM limits, and synthesizes atomic zero-trust Linux <code className="text-neutral-200">nftables</code> packet filter rules.
+                      Orchestrates bare-metal and Linux VPS node pools defined in <code className="text-neutral-200">anode.cluster.yaml</code>. Performs greedy Best-Fit Decreasing (BFD) bin-packing against <code className="text-neutral-200">anode.lock.json</code> based on service ingress roles and cgroups v2 RAM limits, and synthesizes atomic zero-trust Linux <code className="text-neutral-200">nftables</code> packet filter rules.
                     </p>
                     <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                       <div className="text-neutral-300 font-semibold mb-1">Commands:</div>
-                      <div className="pl-4"><span className="text-indigo-300">init</span> : Scaffold a starter annotated anode.cluster.yaml fleet inventory in the project root</div>
+                      <div className="pl-4"><span className="text-neutral-200">init</span> : Scaffold a starter annotated anode.cluster.yaml fleet inventory in the project root</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Options:</div>
-                      <div className="pl-4"><span className="text-indigo-300">--inventory &lt;PATH&gt;</span> : Custom path to cluster fleet inventory YAML</div>
-                      <div className="pl-4"><span className="text-indigo-300">--firewall</span> : Synthesize and display atomic Linux nftables packet filter rules for every node</div>
-                      <div className="pl-4"><span className="text-indigo-300">--json</span> : Output placement plan, node capacity, and firewall rules as JSON</div>
-                      <div className="pl-4"><span className="text-indigo-300">-h, --help</span> : Print command usage and syntax</div>
+                      <div className="pl-4"><span className="text-neutral-200">--inventory &lt;PATH&gt;</span> : Custom path to cluster fleet inventory YAML</div>
+                      <div className="pl-4"><span className="text-neutral-200">--firewall</span> : Synthesize and display atomic Linux nftables packet filter rules for every node</div>
+                      <div className="pl-4"><span className="text-neutral-200">--json</span> : Output placement plan, node capacity, and firewall rules as JSON</div>
+                      <div className="pl-4"><span className="text-neutral-200">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode cluster</div>
                       <div className="pl-4 text-emerald-400">anode cluster init</div>
@@ -1318,7 +1390,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
 
             {/* 4. SSA & VTA */}
             <div className={effectiveDoc === "ssa-vta" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Compiler Pipeline
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1345,7 +1417,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                 <p className="text-xs text-neutral-400 leading-relaxed">
                   Anode uses Variable Type Analysis (<code className="text-neutral-300">golang.org/x/tools/go/callgraph/vta</code>):
                 </p>
-                <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-purple-500/40">
+                <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-white/[0.15]">
                   <p>1. Type propagation is calculated strictly through <strong>explicit assignment edges</strong>.</p>
                   <p>2. The reachability graph is rooted strictly at <code className="text-neutral-200">func main()</code>.</p>
                   <p>3. Any helper function, test suite, or uncalled database driver is mathematically excluded from the final lockfile.</p>
@@ -1354,7 +1426,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
 
             {/* 5. STDLIB CHOKE POINTS */}
             <div className={effectiveDoc === "choke-points" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Static Analysis Sinks
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1366,11 +1438,11 @@ Run 'anode COMMAND --help' for more information on a command.`}
 
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h3 className="text-xs font-bold text-cyan-400 font-mono-code">1. Ingress Network Listeners</h3>
+                    <h3 className="text-xs font-bold text-white font-mono-code">1. Ingress Network Listeners</h3>
                     <p className="text-xs text-neutral-300">
                       Anode inspects calls to <code className="text-neutral-200">net/http.ListenAndServe</code>, <code className="text-neutral-200">net.Listen</code>, and popular routers (<code className="text-neutral-200">chi</code>, <code className="text-neutral-200">gin</code>, <code className="text-neutral-200">echo</code>, stdlib 1.27+ <code className="text-neutral-200">http.ServeMux</code>).
                     </p>
-                    <pre className="p-3 rounded-lg bg-black/50 border border-white/[0.04] text-[11px] font-mono-code text-cyan-300">
+                    <pre className="p-3 rounded-lg bg-black/50 border border-white/[0.04] text-[11px] font-mono-code text-neutral-200">
                       <code>{`// Automatically deduces listen port env and route endpoints
 mux.HandleFunc("POST /v1/orders", handlers.CreateOrder)
 http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
@@ -1388,7 +1460,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   </div>
 
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h3 className="text-xs font-bold text-purple-400 font-mono-code">3. Typed gRPC Stubs & Route Linker</h3>
+                    <h3 className="text-xs font-bold text-white font-mono-code">3. Typed gRPC Stubs & Route Linker</h3>
                     <p className="text-xs text-neutral-300">
                       Matches generated Protobuf constructors (<code className="text-neutral-200">New&lt;Service&gt;Client</code>) with server registrations (<code className="text-neutral-200">Register&lt;Service&gt;Server</code>) 1:1, wiring cross-service addresses automatically.
                     </p>
@@ -1408,7 +1480,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
 
             {/* 6. LOCKFILE SPEC */}
             <div className={effectiveDoc === "lockfile-spec" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Contract Specification
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1492,7 +1564,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                 </p>
 
                 <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 space-y-2">
-                  <div className="text-cyan-400">{"// internal/devengine/engine.go"}</div>
+                  <div className="text-white">{"// internal/devengine/engine.go"}</div>
                   <div>l, err := net.ListenTCP(&quot;tcp&quot;, &amp;net.TCPAddr{`{IP: net.ParseIP("127.0.0.1"), Port: 0}`})</div>
                   <div>assignedPort := l.Addr().(*net.TCPAddr).Port</div>
                   <div className="text-neutral-500">{"// Returns free port from kernel ephemeral range: e.g. 54329"}</div>
@@ -1502,7 +1574,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06]">
                     <h3 className="text-xs font-bold text-white mb-1">Dual Credential Injection</h3>
                     <p className="text-xs text-neutral-400">
-                      Anode simultaneously injects both unified DSNs (<code className="text-cyan-300">DATABASE_URL</code>) and decomposed credentials (<code className="text-cyan-300">DB_HOST</code>, <code className="text-cyan-300">DB_PORT=54329</code>) based on the application&apos;s discovered <code className="text-neutral-300">expanded_env</code>.
+                      Anode simultaneously injects both unified DSNs (<code className="text-neutral-200">DATABASE_URL</code>) and decomposed credentials (<code className="text-neutral-200">DB_HOST</code>, <code className="text-neutral-200">DB_PORT=54329</code>) based on the application&apos;s discovered <code className="text-neutral-300">expanded_env</code>.
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06]">
@@ -1516,7 +1588,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
 
             {/* 8. SYSTEMD VPS */}
             <div className={effectiveDoc === "systemd-vps" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Production VPS Deployer
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1528,7 +1600,7 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
 
                 <h3 className="text-base font-bold text-white">Generated Systemd Unit File</h3>
                 <p className="text-xs text-neutral-400">
-                  Located at <code className="text-cyan-300 font-mono-code">/etc/systemd/system/anode-&lt;service&gt;.service</code>:
+                  Located at <code className="text-neutral-200 font-mono-code">/etc/systemd/system/anode-&lt;service&gt;.service</code>:
                 </p>
 
                 <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto leading-relaxed">
@@ -1559,7 +1631,7 @@ WantedBy=multi-user.target`}</code>
                 </pre>
 
                 <h3 className="text-base font-bold text-white pt-2">Restart on Deploy</h3>
-                <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-cyan-500/40">
+                <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-white/[0.15]">
                   <p>1. Anode uploads the new static Linux executable and writes its systemd unit.</p>
                   <p>2. Restarts the service with <code className="text-neutral-200">systemctl restart</code> and checks GET /healthz until it returns a status from 200 to 399.</p>
                   <p>3. Writes the Caddy configuration for the service and reloads Caddy.</p>
@@ -1581,7 +1653,7 @@ WantedBy=multi-user.target`}</code>
 
                 <div className="p-4 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-3">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Database className="w-4 h-4 text-cyan-400" />
+                    <Database className="w-4 h-4 text-white" />
                     25+ Pre-Audited Built-in Drivers
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-neutral-300">
@@ -1608,7 +1680,7 @@ WantedBy=multi-user.target`}</code>
 
                 <h3 className="text-base font-bold text-white pt-2">Zero-Code Extensibility: .anode/catalog.yaml</h3>
                 <p className="text-xs text-neutral-300">
-                  Drop a YAML definition into your repository at <code className="text-cyan-400">.anode/catalog/my-db.yaml</code> to register internal databases or specialized configurations with zero recompilation:
+                  Drop a YAML definition into your repository at <code className="text-white">.anode/catalog/my-db.yaml</code> to register internal databases or specialized configurations with zero recompilation:
                 </p>
                 <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
                   <code>{`drivers:
@@ -1674,7 +1746,7 @@ WantedBy=multi-user.target`}</code>
                       3. Kernel OOM Score Priority Tiering
                     </h3>
                     <p className="text-xs text-neutral-400">
-                      Stateful databases receive <code className="text-cyan-400">--oom-score-adj=-900</code>, ensuring the Linux kernel never terminates databases during application memory pressure. Stateless services run with <code className="text-amber-400">+500</code> and are sacrificed first.
+                      Stateful databases receive <code className="text-white">--oom-score-adj=-900</code>, ensuring the Linux kernel never terminates databases during application memory pressure. Stateless services run with <code className="text-amber-400">+500</code> and are sacrificed first.
                     </p>
                   </div>
 
@@ -1692,7 +1764,7 @@ WantedBy=multi-user.target`}</code>
 
             {/* INFRASTRUCTURE AUTOMATION */}
             <div className={effectiveDoc === "infra-automation" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/40">
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
                   Infrastructure as Code
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
@@ -1706,13 +1778,13 @@ WantedBy=multi-user.target`}</code>
                 <p className="text-xs text-neutral-300">
                   Spins up an Ubuntu Linux VM, installs OpenSSH, synchronizes authorized keys, and tests live deployments:
                 </p>
-                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-cyan-300 overflow-x-auto">
+                <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
                   <code>{`./scripts/setup-test-vm.sh anode-vm`}</code>
                 </pre>
 
                 <h3 className="text-base font-bold text-white pt-2">2. Ansible Playbook (infra/ansible/)</h3>
                 <p className="text-xs text-neutral-300">
-                  Idempotent server orchestration configuring Caddy, Docker, Cgroups v2, and the unprivileged <code className="text-cyan-400">anode</code> user:
+                  Idempotent server orchestration configuring Caddy, Docker, Cgroups v2, and the unprivileged <code className="text-white">anode</code> user:
                 </p>
                 <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.08] font-mono-code text-xs text-neutral-200 overflow-x-auto">
                   <code>{`ansible-playbook -i infra/ansible/inventory.ini infra/ansible/playbook.yml`}</code>
@@ -1753,13 +1825,13 @@ terraform -chdir=infra/terraform apply`}</code>
                     <thead className="bg-[#07080a] text-neutral-400 border-b border-white/[0.08]">
                       <tr>
                         <th className="p-3 text-left">Capability</th>
-                        <th className="p-3 text-left text-cyan-400">Anode</th>
+                        <th className="p-3 text-left text-white">Anode</th>
                         <th className="p-3 text-left">Kubernetes</th>
                         <th className="p-3 text-left">Docker Compose</th>
                         <th className="p-3 text-left">Encore.dev</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-white/[0.05] bg-[#0c0e14]/50">
+                    <tbody className="divide-y divide-white/[0.05] bg-[#0a0a0c]/50">
                       <tr>
                         <td className="p-3 font-semibold text-white">Code Invasiveness</td>
                         <td className="p-3 text-emerald-400 font-bold">Zero SDK (Stdlib Go)</td>
@@ -1790,7 +1862,7 @@ terraform -chdir=infra/terraform apply`}</code>
                       </tr>
                       <tr>
                         <td className="p-3 font-semibold text-white">Hosting Economics</td>
-                        <td className="p-3 text-cyan-300 font-bold">Linux VPS</td>
+                        <td className="p-3 text-neutral-200 font-bold">Linux VPS</td>
                         <td className="p-3 text-red-400">Managed Kubernetes (EKS/GKE)</td>
                         <td className="p-3 text-neutral-300">Any VPS</td>
                         <td className="p-3 text-neutral-400">Encore Cloud / AWS</td>
@@ -1845,7 +1917,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   <p className="text-xs text-neutral-300 leading-relaxed">
                     <strong>Cause:</strong> An existing HTTP web server (such as legacy Apache, Nginx, or an old Docker port-forward) is currently listening on ports 80/443 on the remote Linux host.
                   </p>
-                  <div className="p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-cyan-300">
+                  <div className="p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-neutral-200">
                     # Disable conflicting legacy web servers on your VPS:
 
                     sudo systemctl stop nginx apache2 2&gt;/dev/null
@@ -1869,7 +1941,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   </p>
                   <div className="p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-emerald-300">
                     <div># Enable cgroups v2 on Debian/Ubuntu:</div>
-                    <div className="mt-2 text-cyan-200">
+                    <div className="mt-2 text-white">
                       {`sudo sed -i 's/GRUB_CMDLINE_LINUX="$/GRUB_CMDLINE_LINUX="systemd.unified_cgroup_hierarchy=1 /' /etc/default/grub`}
                     </div>
                     <div className="mt-1 text-neutral-400">sudo update-grub &amp;&amp; sudo reboot</div>
@@ -1878,7 +1950,7 @@ terraform -chdir=infra/terraform apply`}</code>
 
                 {/* Issue 3 */}
                 <div className="p-5 rounded-xl border border-white/[0.08] bg-[#07080a] space-y-2">
-                  <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono-code font-bold">
+                  <div className="flex items-center gap-2 text-white text-xs font-mono-code font-bold">
                     <Zap className="w-4 h-4" />
                     <span>Diagnostics: 0 Ingress Interfaces Detected during &apos;anode inspect&apos;</span>
                   </div>
