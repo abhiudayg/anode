@@ -8,17 +8,29 @@ import (
 	"github.com/abhiudayg/anode/internal/iag"
 )
 
-func checkDeployInputs(lockfile *iag.LockFile, secrets map[string]string) error {
-	redisCount := 0
+// CheckRedisLimit rejects a project that would provision more than one native Redis.
+func CheckRedisLimit(lockfile *iag.LockFile) error {
+	if n := redisCountOf(lockfile); n > 1 {
+		return fmt.Errorf("a project supports one native Redis resource, found %d", n)
+	}
+	return nil
+}
+
+func redisCountOf(lockfile *iag.LockFile) int {
+	count := 0
 	for _, res := range lockfile.Resources {
 		if res.AutoProvision && res.Kind == "redis" {
-			redisCount++
+			count++
 		}
 	}
-	if redisCount > 1 {
-		return fmt.Errorf("a project supports one native Redis resource, found %d", redisCount)
+	return count
+}
+
+func checkDeployInputs(lockfile *iag.LockFile, secrets map[string]string) error {
+	if err := CheckRedisLimit(lockfile); err != nil {
+		return err
 	}
-	if redisCount == 1 {
+	if redisCountOf(lockfile) == 1 {
 		if err := validateRedisPassword(secrets[RedisPasswordKey()]); err != nil {
 			return fmt.Errorf("%s in .env: %w", RedisPasswordKey(), err)
 		}

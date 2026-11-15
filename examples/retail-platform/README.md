@@ -32,9 +32,10 @@ Run `anode inspect ./examples/retail-platform`. The checked-in `anode.lock.json`
 
 ```bash
 anode inspect ./examples/retail-platform
-anode deploy root@127.0.0.1 ./examples/retail-platform --dry-run
 go test ./internal/analyzer
 ```
+
+`anode deploy` refuses this project. It has two Redis resources (`redis-auth` and `redis-inventory`), and the supported profile allows one native Redis per project, so `--dry-run` stops with `a project supports one native Redis resource, found 2`. The project is an analysis fixture and is not meant to be deployed.
 
 ## Limits
 
