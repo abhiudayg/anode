@@ -156,3 +156,15 @@ func TestAutoVersionIsOnlyForBinaryStores(t *testing.T) {
 		t.Fatalf("auto must be rejected for a docker store, got %v", err)
 	}
 }
+
+func TestLoadRefusesHostPortInTheConfig(t *testing.T) {
+	dir := t.TempDir()
+	body := "[stores.\"db-orders\"]\nruntime = \"docker\"\nhost_port = 31000\n"
+	if err := os.WriteFile(filepath.Join(dir, FileName), []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, err := Load(dir)
+	if err == nil || !strings.Contains(err.Error(), "anode.state.json") {
+		t.Fatalf("a host_port in anode.toml must be refused with a pointer to the state file, got %v", err)
+	}
+}

@@ -41,6 +41,10 @@
           "env_var": "STRIPE_SECRET_KEY",
           "provenance": "orders/main.go:36"
         }
+      ],
+      "config_env": [
+        "ORDERS_DB_URL",
+        "PAYMENT_SERVICE_URL"
       ]
     },
     "payments": {
@@ -67,7 +71,10 @@
           "provenance": "payments/main.go:40"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PAYMENTS_DB_URL"
+      ]
     }
   }
 }

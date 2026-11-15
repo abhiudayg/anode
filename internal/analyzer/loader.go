@@ -3,6 +3,7 @@ package analyzer
 import (
 	"fmt"
 	"go/types"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -39,6 +40,9 @@ func NewLoader(rootDir string) *Loader {
 // LoadAndAnalyze loads Go packages, builds SSA, runs reachability, and extracts the IAG
 func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 	start := time.Now()
+	if info, err := os.Stat(l.rootDir); err != nil || !info.IsDir() {
+		return nil, fmt.Errorf("project directory %s does not exist or is not a directory", l.rootDir)
+	}
 	cfg := &packages.Config{
 		Mode: packages.NeedName | packages.NeedFiles | packages.NeedCompiledGoFiles |
 			packages.NeedImports | packages.NeedTypes | packages.NeedTypesSizes |

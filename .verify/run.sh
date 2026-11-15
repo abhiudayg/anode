@@ -69,10 +69,10 @@ if [ "$TARGET" = "all" ] || [ "$TARGET" = "functional" ]; then
     # Fallback direct execution if gate reporter not present
     go build -o .verify/output/anode ./cmd/anode
     .verify/output/anode inspect ./testdata/sample-shop > "$RUN_DIR/sample-shop.iag.json"
-    .verify/output/anode inspect ./testdata/hyper_mesh_12 > "$RUN_DIR/hyper_mesh_12.iag.json"
+    .verify/output/anode inspect ./testdata/retail-platform > "$RUN_DIR/retail-platform.iag.json"
     .verify/output/anode dev ./testdata/sample-shop > "$RUN_DIR/sample-shop.dev.log"
-    .verify/output/anode deploy root@192.168.1.100 ./testdata/hyper_mesh_12 --dry-run > "$RUN_DIR/hyper_mesh_12.deploy.log"
-    .verify/output/anode cluster ./testdata/hyper_mesh_12 > "$RUN_DIR/hyper_mesh_12.cluster.log"
+    .verify/output/anode deploy root@192.168.1.100 ./testdata/retail-platform --dry-run > "$RUN_DIR/retail-platform.deploy.log"
+    .verify/output/anode cluster ./testdata/retail-platform > "$RUN_DIR/retail-platform.cluster.log"
   fi
 fi
 

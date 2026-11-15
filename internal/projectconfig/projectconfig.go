@@ -52,8 +52,14 @@ func Load(rootDir string) (*File, error) {
 		return nil, fmt.Errorf("%s not found: run anode inspect to create it", path)
 	}
 	var f File
-	if _, err := toml.DecodeFile(path, &f); err != nil {
+	meta, err := toml.DecodeFile(path, &f)
+	if err != nil {
 		return nil, fmt.Errorf("invalid %s: %w", path, err)
+	}
+	for _, key := range meta.Undecoded() {
+		if len(key) == 3 && key[0] == "stores" && key[2] == "host_port" {
+			return nil, fmt.Errorf("%s: host_port moved to anode.state.json, which deploy writes; remove it from %s", path, FileName)
+		}
 	}
 	return &f, nil
 }

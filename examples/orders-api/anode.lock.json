@@ -38,7 +38,10 @@
           "provenance": "services/orders/main.go:14"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "ORDERS_DB_URL"
+      ]
     }
   }
 }
