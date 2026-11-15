@@ -170,6 +170,8 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 			}
 		}
 
+		kind = engineFromEnvName(kind, envVar)
+
 		// Determine resource identity based on service or env name
 		resourceID := "db-" + svc.Name
 		if envVar != "" {
@@ -443,11 +445,19 @@ func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
 		return
 	}
 	callee := call.StaticCallee()
+	if callee != nil && callee.Name() == "providerURL" && len(call.Args) > 0 {
+		if name := ResolveConstantString(call.Args[0]); name != "" {
+			svc.ConfigEnv = appendUnique(svc.ConfigEnv, name)
+		}
+		return
+	}
 	if callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&
 		callee.Pkg.Pkg.Path() == "os" && callee.Name() == "Getenv" && len(call.Args) > 0 {
 		envName := ResolveConstantString(call.Args[0])
 		upper := strings.ToUpper(envName)
-		// Exclude network address and URL endpoints
+		if envName != "" && upper != "PORT" && !isSecretEnvName(upper) {
+			svc.ConfigEnv = appendUnique(svc.ConfigEnv, envName)
+		}
 		if strings.HasSuffix(upper, "_URL") || strings.HasSuffix(upper, "_ADDR") || strings.HasSuffix(upper, "_HOST") || strings.HasSuffix(upper, "_PORT") {
 			return
 		}
@@ -466,4 +476,35 @@ func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
 			})
 		}
 	}
+}
+
+func engineFromEnvName(kind iag.ResourceKind, envVar string) iag.ResourceKind {
+	if kind != iag.KindPostgres {
+		return kind
+	}
+	upper := strings.ToUpper(envVar)
+	switch {
+	case strings.Contains(upper, "TIMESCALE"):
+		return "timescaledb"
+	case strings.Contains(upper, "COCKROACH"):
+		return "cockroachdb"
+	}
+	return kind
+}
+
+func isSecretEnvName(upper string) bool {
+	if strings.Contains(upper, "SECRET") || strings.Contains(upper, "TOKEN") || strings.Contains(upper, "PASSWORD") ||
+		strings.Contains(upper, "PASSWD") || strings.Contains(upper, "CREDENTIAL") || strings.Contains(upper, "PRIVATE_KEY") {
+		return true
+	}
+	return strings.HasSuffix(upper, "_PASS") || strings.HasSuffix(upper, "_PWD") || strings.HasSuffix(upper, "_KEY")
+}
+
+func appendUnique(values []string, value string) []string {
+	for _, v := range values {
+		if v == value {
+			return values
+		}
+	}
+	return append(values, value)
 }

@@ -56,6 +56,7 @@ type Service struct {
 	Bindings   []Binding   `json:"bindings"`
 	Secrets    []SecretRef `json:"secrets"`
 	ConfigFile string      `json:"config_file,omitempty"` // e.g. "config.json" read from the working directory
+	ConfigEnv  []string    `json:"config_env,omitempty"`  // non-secret environment variables the code reads; their values come from .env
 }
 
 // Ingress defines inbound protocols, routes, and required port env.

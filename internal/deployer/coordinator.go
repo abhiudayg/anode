@@ -198,6 +198,14 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			}
 		}
 
+		for _, name := range svc.ConfigEnv {
+			if _, bound := envVars[name]; bound {
+				continue
+			}
+			if value := secrets[name]; value != "" {
+				secretEnv[name] = value
+			}
+		}
 		// Inject and isolate secrets into a secured 0600 environment file
 		for _, s := range svc.Secrets {
 			value := secrets[s.EnvVar]
