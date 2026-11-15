@@ -354,7 +354,7 @@ func main() {
 		}
 
 		if dryRun {
-			if err := deployer.CheckRedisLimit(lockfile); err != nil {
+			if err := deployer.CheckRedisLimit(lockfile, cfg); err != nil {
 				log.Fatalf("Deployment preparation failed: %v", err)
 			}
 			fmt.Println("  🔍 Dry-run mode: synthesizing deployment plan...")

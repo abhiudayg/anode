@@ -6,14 +6,26 @@ import (
 
 	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
-// CheckRedisLimit rejects a project that would provision more than one native Redis.
-func CheckRedisLimit(lockfile *iag.LockFile) error {
-	if n := redisCountOf(lockfile); n > 1 {
-		return fmt.Errorf("a project supports one native Redis resource, found %d", n)
+// CheckRedisLimit rejects a project that would install more than one native Redis on the host. Redis in a container
+// is not limited.
+func CheckRedisLimit(lockfile *iag.LockFile, cfg *projectconfig.File) error {
+	if n := nativeRedisCount(lockfile, cfg); n > 1 {
+		return fmt.Errorf("a project supports one native Redis install, found %d; run the others with runtime = \"docker\"", n)
 	}
 	return nil
+}
+
+func nativeRedisCount(lockfile *iag.LockFile, cfg *projectconfig.File) int {
+	count := 0
+	for id, res := range lockfile.Resources {
+		if res.AutoProvision && res.Kind == "redis" && cfg.Stores[id].Runtime == projectconfig.RuntimeBinary {
+			count++
+		}
+	}
+	return count
 }
 
 func redisCountOf(lockfile *iag.LockFile) int {
@@ -26,8 +38,8 @@ func redisCountOf(lockfile *iag.LockFile) int {
 	return count
 }
 
-func checkDeployInputs(lockfile *iag.LockFile, secrets map[string]string) error {
-	if err := CheckRedisLimit(lockfile); err != nil {
+func checkDeployInputs(lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string) error {
+	if err := CheckRedisLimit(lockfile, cfg); err != nil {
 		return err
 	}
 	if redisCountOf(lockfile) == 1 {
@@ -89,5 +101,9 @@ func DeployInputs(lockfile *iag.LockFile, rootDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read .env: %w", err)
 	}
-	return checkDeployInputs(lockfile, secrets)
+	cfg, err := projectconfig.Load(rootDir)
+	if err != nil {
+		return err
+	}
+	return checkDeployInputs(lockfile, cfg, secrets)
 }
