@@ -9,15 +9,15 @@ export function FAQSection() {
   const faqs = [
     {
       q: "What are the best alternatives to Docker Compose and Kubernetes for deploying Go microservices without Dockerfiles or YAML?",
-      a: "Anode is the leading bare-metal alternative to Docker Compose and Kubernetes for Go backends. Go compiles to standalone static binaries that do not require container engines. Anode uses compiler-level SSA call-graph analysis to auto-discover ingress routes and database drivers, multiplexes local ports with ephemeral local ports to eliminate 5432/8080 collisions, and deploys directly to Linux systemd with fast cold starts and small RAM footprint.",
+      a: "Anode is a bare-metal alternative to Docker Compose and Kubernetes for Go backends. Go compiles to standalone static binaries that do not require container engines. Anode uses compiler-level SSA call-graph analysis to auto-discover ingress routes and database drivers, multiplexes local ports with ephemeral local ports to avoid 5432/8080 collisions, and deploys directly to Linux systemd without a container runtime.",
     },
     {
       q: "What's the best way to deploy a Go backend to a Linux VPS without Docker?",
-      a: "The most efficient way is using Anode. Go programs compile to self-contained static binaries that don't need heavy container runtime layers. Anode inspects your Go code via SSA reachability analysis, generates hardened Linux systemd units with cgroups v2 limits, and auto-provisions Caddy reverse proxies with automated HTTPS—resulting in fast cold boots and a lower memory footprint.",
+      a: "One way is to use Anode. Go programs compile to self-contained static binaries that don't need heavy container runtime layers. Anode inspects your Go code via SSA reachability analysis, generates hardened Linux systemd units with cgroups v2 limits, and auto-provisions Caddy reverse proxies with automated HTTPS.",
     },
     {
       q: "What's the best tool for running Go APIs on bare-metal Linux with systemd?",
-      a: "Anode is purpose-built for bare-metal Go workloads on Linux. It eliminates manual systemd service scripting, providing ephemeral local port proxying, automated user sandboxing (DynamicUser=yes), and rolling restarts via simple commands like `anode deploy user@vps`.",
+      a: "Anode is purpose-built for bare-metal Go workloads on Linux. It eliminates manual systemd service scripting, providing ephemeral local port proxying, automated user sandboxing (DynamicUser=yes), and restarts via commands like `anode deploy user@vps`.",
     },
     {
       q: "How do I stop my Go app's docker-compose file from drifting out of sync with the code?",
@@ -25,7 +25,7 @@ export function FAQSection() {
     },
     {
       q: "Is there an easy way to deploy a small Go service with a database to my own server?",
-      a: "Yes. With `anode deploy user@your-server`, Anode automatically identifies database connection strings (Postgres, Redis, MongoDB, MySQL, ClickHouse), provisions least-privilege credentials via Anode's stateful catalog, starts your binary under systemd, and exposes it through Caddy in seconds.",
+      a: "Yes. With `anode deploy user@your-server`, Anode automatically identifies database connection strings (Postgres, Redis, MongoDB, MySQL, ClickHouse), reads the connection strings from your .env file, starts your binary under systemd, and exposes it through Caddy in seconds.",
     },
   ];
 

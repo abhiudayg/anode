@@ -44,7 +44,7 @@ $ anode dev
 [anode:dev] 💉 Injected runtime configuration:
             • DATABASE_URL = "postgres://anode:secret@127.0.0.1:54329/shop_dev?sslmode=disable"
             • PORT         = "8080"
-[anode:dev] ⚡ Running migration job: 4 pending migrations applied (3.4ms)
+[anode:dev] ⚡ Running migration job: 4 pending migrations applied
 [anode:dev] 🔄 Go app compiled & listening on http://127.0.0.1:8080
 [anode:dev] 📡 Loopback reverse-proxy active:
             ↳ http://localhost:8080 ──> :8080 (Process ID: 41892)
@@ -260,7 +260,7 @@ $ anode dev
                     <p className="pl-10 text-neutral-400">PORT = <span className="text-cyan-300">&quot;8080&quot;</span></p>
 
                     <p className="pl-6 text-neutral-300 font-medium pt-2">⚡ Running migration job:</p>
-                    <p className="pl-10 text-emerald-400 font-medium">✓ 4 pending SQL migrations applied in 3.4ms</p>
+                    <p className="pl-10 text-emerald-400 font-medium">✓ 4 pending SQL migrations applied</p>
 
                     <p className="pl-6 text-neutral-300 font-medium pt-2">📡 Loopback reverse-proxy active:</p>
                     <p className="pl-10 text-white font-bold">↳ Ready at <span className="text-cyan-400 underline underline-offset-4">http://localhost:8080</span></p>

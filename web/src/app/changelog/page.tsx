@@ -85,11 +85,11 @@ export default function ChangelogPage() {
             </div>
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="text-xs font-mono-code text-neutral-400">Docker Overhead</div>
-              <div className="text-lg font-bold text-purple-400 font-mono-code mt-0.5">0 MB / 0 ms</div>
+              <div className="text-lg font-bold text-purple-400 font-mono-code mt-0.5">No container daemon</div>
             </div>
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="text-xs font-mono-code text-neutral-400">Pre-Flight Speed</div>
-              <div className="text-lg font-bold text-amber-400 font-mono-code mt-0.5">&lt; 100 ms</div>
+              <div className="text-lg font-bold text-amber-400 font-mono-code mt-0.5">Read-only checks</div>
             </div>
           </div>
 

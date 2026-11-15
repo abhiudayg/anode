@@ -141,7 +141,7 @@ export function Navbar() {
                           Hetzner Cloud VPS Guide
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Run on €3.79/mo servers
+                          Run on Hetzner VPS
                         </div>
                       </div>
                     </Link>
@@ -159,7 +159,7 @@ export function Navbar() {
                           DigitalOcean Droplet Guide
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Deploy Go APIs to $4/mo droplets
+                          Deploy Go APIs to DigitalOcean droplets
                         </div>
                       </div>
                     </Link>

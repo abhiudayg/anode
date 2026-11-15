@@ -155,10 +155,10 @@ export function BentoPillars() {
             <div className="bg-[#050608] rounded-xl p-3 border border-red-500/20 font-mono-code text-xs text-neutral-300">
               <div className="text-amber-400 font-semibold flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                <span>diagnostic [ANODE_WARN_02] at cmd/worker/main.go:42:11</span>
+                <span>[warn] Outbound HTTP call in service "search" via env "SEARCH_QDRANT_URL" could not be matched to an internal service</span>
               </div>
               <div className="text-neutral-400 text-[11px] pt-1 pl-5">
-                Dynamic DSN string concatenation detected. Declare standard env var `DATABASE_URL` for 100% deterministic binding.
+                Calls Anode cannot match are reported with their call site and a suggested fix, not as a guessed connection.
               </div>
             </div>
           </SpotlightCard>

@@ -295,7 +295,7 @@ export default function DocsPage() {
                       Bare-Metal Performance
                     </h3>
                     <p className="text-xs text-neutral-400 leading-relaxed">
-                      Deploys to Linux systemd with fast cold starts and small RAM footprint compared to large container runtime overhead.
+                      Deploys to Linux systemd without a container runtime.
                     </p>
                   </div>
                 </div>
@@ -933,12 +933,12 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               type="text"
                               value={devPath}
                               onChange={(e) => setDevPath(e.target.value)}
-                              placeholder=". (current repo) or ./examples/complex_ecommerce"
+                              placeholder=". (current repo) or ./examples/complex-ecommerce"
                               className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
                             />
                           </div>
                           <p className="text-neutral-400 text-xs font-mono-code">
-                            Allocates ephemeral local port sockets on 127.0.0.1:0 for 0% port collisions, spins up ephemeral databases, and hot reloads in &lt;15ms.
+                            Allocates ephemeral local port sockets on 127.0.0.1:0 to avoid port collisions, spins up ephemeral databases, and checks for source changes every 300 ms.
                           </p>
                         </div>
                       )}
@@ -951,7 +951,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               type="text"
                               value={inspectPath}
                               onChange={(e) => setInspectPath(e.target.value)}
-                              placeholder=". (current repo) or ./examples/omni_mesh_32"
+                              placeholder=". (current repo) or ./examples/omni-mesh-32"
                               className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
                             />
                           </div>
@@ -1124,7 +1124,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-cyan-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode inspect .</div>
-                      <div className="pl-4 text-emerald-400">anode inspect ./examples/omni_mesh_32</div>
+                      <div className="pl-4 text-emerald-400">anode inspect ./examples/omni-mesh-32</div>
                       <div className="pl-4 text-emerald-400">anode inspect ./examples/realworld_benchmarks/glance</div>
                     </div>
                   </div>
@@ -1143,7 +1143,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-emerald-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode dev</div>
-                      <div className="pl-4 text-emerald-400">anode dev ./examples/complex_ecommerce</div>
+                      <div className="pl-4 text-emerald-400">anode dev ./examples/complex-ecommerce</div>
                     </div>
                   </div>
 
@@ -1163,10 +1163,10 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-purple-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com .</div>
-                      <div className="pl-4 text-emerald-400">anode deploy root@192.168.1.50 ./examples/complex_ecommerce --domain api.example.com</div>
+                      <div className="pl-4 text-emerald-400">anode deploy root@192.168.1.50 ./examples/complex-ecommerce --domain api.example.com</div>
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com --dry-run</div>
                       <div className="pl-4 text-neutral-400"># Docker CLI Parity: &apos;anode run&apos; is a drop-in alias for deploy</div>
-                      <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/omni_mesh_32</div>
+                      <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/omni-mesh-32</div>
                     </div>
                   </div>
 
@@ -1246,7 +1246,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4 text-emerald-400">anode doctor</div>
                       <div className="pl-4 text-emerald-400">anode doctor ./examples/sample-shop</div>
                       <div className="pl-4 text-emerald-400">anode doctor root@my-vps.com</div>
-                      <div className="pl-4 text-emerald-400">anode doctor root@192.168.1.50 ./examples/omni_mesh_32 --strict</div>
+                      <div className="pl-4 text-emerald-400">anode doctor root@192.168.1.50 ./examples/omni-mesh-32 --strict</div>
                     </div>
                   </div>
 
@@ -1325,7 +1325,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                   SSA & Variable Type Analysis (VTA)
                 </h2>
                 <p className="text-sm text-neutral-300">
-                  How Anode eliminates false positives and constructs a provably sound infrastructure topology in under 20ms.
+                  How Anode eliminates false positives and constructs a provably sound infrastructure topology.
                 </p>
 
                 <h3 className="text-base font-bold text-white">Why Class Hierarchy Analysis (CHA) Fails</h3>
@@ -1558,12 +1558,12 @@ ProtectHome=true
 WantedBy=multi-user.target`}</code>
                 </pre>
 
-                <h3 className="text-base font-bold text-white pt-2">Zero-Downtime Blue/Green Port Swap</h3>
+                <h3 className="text-base font-bold text-white pt-2">Restart on Deploy</h3>
                 <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-cyan-500/40">
-                  <p>1. Anode uploads the new static Linux executable and boots Version 2 on an alternate ephemeral loopback port.</p>
-                  <p>2. Performs an HTTP health-check probe against Version 2 until it responds with 200 OK.</p>
-                  <p>3. Reloads Caddy proxy configuration in ~1ms to route traffic to the new port.</p>
-                  <p>4. Gracefully stops Version 1 via <code className="text-neutral-200">systemctl stop</code> after draining connections.</p>
+                  <p>1. Anode uploads the new static Linux executable and writes its systemd unit.</p>
+                  <p>2. Restarts the service with <code className="text-neutral-200">systemctl restart</code> and checks GET /healthz until it returns a status from 200 to 399.</p>
+                  <p>3. Writes the Caddy configuration for the service and reloads Caddy.</p>
+                  <p>4. The restart is in place. Connections open when the service restarts are dropped, so each deploy has a short outage for that service.</p>
                 </div>
               </div>
 
@@ -1790,8 +1790,8 @@ terraform -chdir=infra/terraform apply`}</code>
                       </tr>
                       <tr>
                         <td className="p-3 font-semibold text-white">Hosting Economics</td>
-                        <td className="p-3 text-cyan-300 font-bold">$5–$40/mo Linux VPS</td>
-                        <td className="p-3 text-red-400">$150+/mo (EKS/GKE tax)</td>
+                        <td className="p-3 text-cyan-300 font-bold">Linux VPS</td>
+                        <td className="p-3 text-red-400">Managed Kubernetes (EKS/GKE)</td>
                         <td className="p-3 text-neutral-300">Any VPS</td>
                         <td className="p-3 text-neutral-400">Encore Cloud / AWS</td>
                       </tr>
@@ -1804,9 +1804,9 @@ terraform -chdir=infra/terraform apply`}</code>
                     <h3 className="text-sm font-bold text-emerald-300">When to Use Anode</h3>
                     <ul className="text-xs text-neutral-300 space-y-1.5 list-disc list-inside">
                       <li>Building standard Go services (<code className="text-neutral-200">net/http</code>, <code className="text-neutral-200">chi</code>, <code className="text-neutral-200">gin</code>, <code className="text-neutral-200">pgx</code>, gRPC).</li>
-                      <li>Hosting on high-value Linux VPS ($5–$45/mo Hetzner, OVH, DigitalOcean).</li>
+                      <li>Hosting on a Linux VPS from Hetzner, OVH, or DigitalOcean.</li>
                       <li>Tired of multi-stage Dockerfiles and compose port collisions.</li>
-                      <li>Want sub-second cold starts with automated Let&apos;s Encrypt TLS.</li>
+                      <li>Want automated Let&apos;s Encrypt TLS through Caddy.</li>
                     </ul>
                   </div>
 

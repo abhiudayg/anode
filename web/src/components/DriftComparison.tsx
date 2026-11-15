@@ -96,7 +96,7 @@ export function DriftComparison() {
                   <span>anode inspect (Auto-derived from Go AST)</span>
                   <span className="text-emerald-400 font-bold">Zero YAML</span>
                 </div>
-                <p className="text-cyan-300">{"// 100% Deterministic SSA Call Graph Pass"}</p>
+                <p className="text-cyan-300">{"// Deterministic SSA Call Graph Pass"}</p>
                 <p className="text-neutral-300">
                   Detected: <span className="text-emerald-300">sql.Open(&quot;postgres&quot;)</span> + <span className="text-emerald-300">./migrations/*.sql</span>
                 </p>

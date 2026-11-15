@@ -211,7 +211,7 @@ export function Hero() {
           >
             <div className="flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Sub-second Cold Boots</span>
+              <span>Sub-second Hot Reload</span>
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />

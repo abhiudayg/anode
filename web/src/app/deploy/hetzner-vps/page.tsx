@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/deploy/hetzner-vps",
     title: "Deploy Go to Hetzner Cloud Without Docker",
     description:
-      "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with fast cold starts and small RAM footprint.",
+      "Run unmodified Go backends on Hetzner VPS instances without a container runtime.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Go to Hetzner Cloud Without Docker",
     description:
-      "Run unmodified Go backends on €3.79/mo Hetzner VPS instances with fast cold starts and small RAM footprint.",
+      "Run unmodified Go backends on Hetzner VPS instances without a container runtime.",
     images: ["/og-image.png"],
   },
 };
@@ -74,7 +74,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       "name": "Spin up a Hetzner Cloud Server",
-      "text": "Create an Ubuntu 24.04 or Debian 12 server on Hetzner Cloud (e.g., CX22 for €3.79/mo) and add your SSH public key.",
+      "text": "Create an Ubuntu 24.04 or Debian 12 server on Hetzner Cloud (e.g., CX22) and add your SSH public key.",
       "url": "https://anode.abhiudayg.dev/deploy/hetzner-vps#step-1"
     },
     {
@@ -132,7 +132,7 @@ export default function HetznerDeployPage() {
               Deploy Go Backends to Hetzner VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Why pay $70+/month for managed Kubernetes when a €3.79/month Hetzner CX22 server can run your Go backend with fast cold starts and small RAM footprint? Here is how to deploy in under 4 minutes.
+              A Hetzner CX22 server can run a Go backend without a container runtime. Here is how to deploy one with Anode.
             </p>
           </header>
 
@@ -148,11 +148,11 @@ export default function HetznerDeployPage() {
                 </div>
               </div>
               <div className="text-2xl font-bold text-emerald-400 font-mono-code">
-                €3.79 / mo <span className="text-xs font-normal text-neutral-400">vs $70+/mo K8s</span>
+                CX22 <span className="text-xs font-normal text-neutral-400">Hetzner Cloud VPS</span>
               </div>
             </div>
             <p className="mt-3 text-sm text-neutral-300 leading-relaxed">
-              Kubernetes nodes lose 800MB+ RAM to system control planes (kubelet, coredns, containerd). With Anode, 100% of your Hetzner CPU and memory goes directly to serving customer HTTP requests.
+              Kubernetes nodes run control-plane components (kubelet, coredns, containerd) next to your workloads. Anode installs no control plane on the host, so each service runs under systemd by itself.
             </p>
           </div>
 

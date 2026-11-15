@@ -156,7 +156,7 @@ export function CommandPalette() {
     {
       id: "guide-hetzner",
       title: "Hetzner Cloud VPS Deployment Guide",
-      description: "Run compiled Go microservices on $4/month Hetzner CX22 instances",
+      description: "Run compiled Go microservices on Hetzner CX22 instances",
       category: "Guides",
       href: "/deploy/hetzner-vps",
       icon: Server,
@@ -261,7 +261,7 @@ export function CommandPalette() {
     {
       id: "comp-compose",
       title: "Docker Compose vs Anode",
-      description: "Deep technical comparison of developer workflows, memory, and cold boot",
+      description: "Deep technical comparison of developer workflows and deployment steps",
       category: "Comparisons",
       href: "/vs/docker-compose",
       icon: GitCompare,

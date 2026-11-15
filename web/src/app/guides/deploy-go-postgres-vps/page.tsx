@@ -10,7 +10,7 @@ import {
 export const metadata: Metadata = {
   title: "Deploy Go + PostgreSQL Without Docker",
   description:
-    "Deploy a Go REST API with PostgreSQL to a bare-metal Linux VPS using Anode. Zero container overhead, automated systemd isolation, and fast cold starts.",
+    "Deploy a Go REST API with PostgreSQL to a bare-metal Linux VPS using Anode. No container runtime, and automated systemd isolation.",
   alternates: {
     canonical: "/guides/deploy-go-postgres-vps",
   },
@@ -186,7 +186,7 @@ export default function DeployGoPostgresPage() {
               <span className="text-emerald-400">✔ SSA AST Resolved</span><br />
               <span className="text-cyan-400">✔ Detected Database Driver: PostgreSQL (pgx/v5)</span><br />
               <span className="text-purple-400">✔ Dynamic Loopback Assigned: 127.0.0.1:5432 (isolated virtual socket)</span><br />
-              <span className="text-emerald-400">✔ Listening: http://localhost:8080 (0% conflict)</span>
+              <span className="text-emerald-400">✔ Listening: http://localhost:8080</span>
             </div>
           </section>
 

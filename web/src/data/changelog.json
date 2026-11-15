@@ -250,10 +250,10 @@
         "title": "anode doctor: Decoupled 2-Phase Pre-Flight Verification",
         "category": "CLI",
         "badge": "New Command",
-        "description": "Executes a sub-100ms sanity check prior to deployment. Decoupled into two distinct phases: Phase 1 executes a raw TCP dial (strict 3s deadline) to catch firewalls, closed port 22, or bad DNS; Phase 2 performs the SSH auth handshake to diagnose rejected keys. Validates Go static cross-compilation (CGO_ENABLED=0), local loopback address space (127.0.0.0/8), and container runtime availability.",
+        "description": "Executes a quick sanity check prior to deployment. Decoupled into two distinct phases: Phase 1 executes a raw TCP dial (strict 3s deadline) to catch firewalls, closed port 22, or bad DNS; Phase 2 performs the SSH auth handshake to diagnose rejected keys. Validates Go static cross-compilation (CGO_ENABLED=0), local loopback address space (127.0.0.0/8), and container runtime availability.",
         "codeSnippet": {
           "title": "Terminal Output — anode doctor",
-          "code": "$ anode doctor\n[1/5] Checking Go compiler toolchain...\n      go version go1.27.2 linux/amd64 (CGO_ENABLED=0 pure static)  [OK]\n[2/5] Validating local loopback range (127.0.0.0/8)...\n      Subnet binding capability verified (zero collisions)         [OK]\n[3/5] Inspecting container runtime (Docker / Podman)...\n      Docker daemon active (v27.3.1 rootless)                      [OK]\n[4/5] Verifying lockfile topology (anode.lock.json)...\n      Contract SHA256: 8e4b7a1... 4/4 Pillars satisfied            [OK]\n[5/5] Testing remote VPS connectivity (prod)...\n      Phase 1: Raw TCP dial 198.51.100.24:22 (deadline: 3s)        [OK]\n      Phase 2: SSH auth handshake (user: deploy, key: ed25519)     [OK]\n\nResult: 5/5 passed. Pre-flight healthy — ready for zero-downtime deployment."
+          "code": "$ anode doctor\n[1/5] Checking Go compiler toolchain...\n      go version go1.27.2 linux/amd64 (CGO_ENABLED=0 pure static)  [OK]\n[2/5] Validating local loopback range (127.0.0.0/8)...\n      Subnet binding capability verified         [OK]\n[3/5] Inspecting container runtime (Docker / Podman)...\n      Docker daemon active (v27.3.1 rootless)                      [OK]\n[4/5] Verifying lockfile topology (anode.lock.json)...\n      Contract SHA256: 8e4b7a1... 4/4 Pillars satisfied            [OK]\n[5/5] Testing remote VPS connectivity (prod)...\n      Phase 1: Raw TCP dial 198.51.100.24:22 (deadline: 3s)        [OK]\n      Phase 2: SSH auth handshake (user: deploy, key: ed25519)     [OK]\n\nResult: 5/5 passed. Pre-flight healthy — ready for zero-downtime deployment."
         }
       },
       {
@@ -287,9 +287,9 @@
     "summary": "Initial general availability release of Anode — the Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Eliminates Docker and Kubernetes by compiling unmodified Go AST and SSA call graphs directly into hardened Linux systemd unit files, dynamic loopback networks, and automated Caddy TLS reverse proxies.",
     "highlights": [
       "4-Pillar Proof of Topology Engine: Migration-driven stateful provisioning, typed gRPC/HTTP route linking, commit-backed anode.lock.json, and actionable diagnostic compiler warnings.",
-      "Whole-Program Go SSA & VTA: Compiler pipeline analyzing standard library choke points and backward taint tracking in under 60ms.",
+      "Whole-Program Go SSA & VTA: Compiler pipeline analyzing standard library choke points and backward taint tracking.",
       "Bare-Metal VPS Deployer (anode deploy): Cross-compilation (arm64/amd64), hardened systemd unit sandboxing, and Linux cgroups v2 resource ceilings (CPUQuota, MemoryMax).",
-      "Local Dev Orchestrator (anode dev): Ephemeral kernel socket allocation (127.0.0.1:0) guaranteeing 0% port collisions with sub-second hot reload.",
+      "Local Dev Orchestrator (anode dev): Ephemeral kernel socket allocation (127.0.0.1:0) avoiding fixed-port collisions with sub-second hot reload.",
       "Pluggable Infrastructure Catalog: 28 out-of-the-box stateful drivers with intelligent version matrix resolution and least-privilege security.",
       "Cluster & Security Engine (anode cluster): Multi-node greedy least-loaded bin-packer and compiler-synthesized nftables zero-trust firewall policy.",
       "Enterprise & Real-World Benchmarks: Evaluated across OmniMesh-32, HealthMesh-25, Fintech Core 20, and 10 famous open-source Go backends.",
@@ -322,7 +322,7 @@
         "title": "Local Dev Orchestrator (anode dev)",
         "category": "CLI",
         "badge": "Dev Loop",
-        "description": "Provides zero-collision local microservice orchestration. Allocates dynamic kernel sockets via net.ListenTCP('tcp', '127.0.0.1:0') to guarantee 0% host port collisions. Injects both unified DSN (DATABASE_URL) and decomposed credentials (DB_HOST, DB_PORT, DB_USER), executes automated migrations prior to boot, and supervises sub-second file-watching hot-reloads."
+        "description": "Provides zero-collision local microservice orchestration. Allocates dynamic kernel sockets via net.ListenTCP('tcp', '127.0.0.1:0') to avoid fixed host port collisions. Injects both unified DSN (DATABASE_URL) and decomposed credentials (DB_HOST, DB_PORT, DB_USER), executes automated migrations prior to boot, and supervises sub-second file-watching hot-reloads."
       },
       {
         "title": "Pluggable Infrastructure Catalog (anode catalog)",
@@ -340,7 +340,7 @@
         "title": "Enterprise & Real-World Benchmark Verification",
         "category": "CLI",
         "badge": "Benchmarks",
-        "description": "Validated against enterprise synthetic meshes including OmniMesh-32 (32 services, 14 drivers), HealthMesh-25 (25 microservices), Fintech Core 20 (20 microservices), as well as 10 famous unmodified open-source Go repositories: croc, glance, 1Panel, restic, filebrowser, ntfy, netbird, wttr.in, cloudreve, and navidrome. Harmonized SSA sweep profiles achieve sub-100ms on single-service backends scaling to 799ms on a 32-service enterprise monorepo."
+        "description": "Validated against the omni-mesh-32 example (32 services, 11 store kinds)."
       },
       {
         "title": "Soft-Orphan Volume Protection & Reliability",

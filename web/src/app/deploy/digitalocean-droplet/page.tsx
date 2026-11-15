@@ -11,7 +11,7 @@ import {
 export const metadata: Metadata = {
   title: "Deploy Go to DigitalOcean Without Docker",
   description:
-    "Deploy Go microservices to DigitalOcean Droplets with bare-metal systemd execution, small RAM footprint, and automated Let's Encrypt TLS.",
+    "Deploy Go microservices to DigitalOcean Droplets with bare-metal systemd execution and automated Let's Encrypt TLS.",
   alternates: {
     canonical: "/deploy/digitalocean-droplet",
   },
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/deploy/digitalocean-droplet",
     title: "Deploy Go to DigitalOcean Without Docker",
     description:
-      "Run unmodified Go backends on $4/mo DigitalOcean Droplets with fast cold starts and zero container daemons.",
+      "Run unmodified Go backends on DigitalOcean Droplets without container daemons.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Go to DigitalOcean Without Docker",
     description:
-      "Run unmodified Go backends on $4/mo DigitalOcean Droplets with fast cold starts and zero container daemons.",
+      "Run unmodified Go backends on DigitalOcean Droplets without container daemons.",
     images: ["/og-image.png"],
   },
 };
@@ -74,7 +74,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       "name": "Create a DigitalOcean Droplet",
-      "text": "Spin up a Basic Droplet ($4 or $6/mo) running Ubuntu 24.04 LTS and add your SSH key.",
+      "text": "Spin up a Droplet running Ubuntu 24.04 LTS and add your SSH key.",
       "url": "https://anode.abhiudayg.dev/deploy/digitalocean-droplet#step-1"
     },
     {
@@ -132,7 +132,7 @@ export default function DigitalOceanDeployPage() {
               Deploy Go Backends to DigitalOcean Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Run your Go APIs natively on affordable $4/mo DigitalOcean Droplets. Eliminate large Docker daemon bloat, avoid port collisions, and enjoy instant fast cold starts.
+              Run your Go APIs natively on DigitalOcean Droplets. Skip the Docker daemon, avoid fixed-port collisions, and let systemd supervise each service.
             </p>
           </header>
 
@@ -152,7 +152,7 @@ export default function DigitalOceanDeployPage() {
             <ul className="space-y-2 text-sm text-neutral-300 mb-4">
               <li className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-cyan-400 mt-0.5" />
-                <span><strong>Plan:</strong> Basic Droplet (1 vCPU, 512MB or 1GB RAM) starting at $4/mo.</span>
+                <span><strong>Plan:</strong> any Droplet running Linux with systemd.</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-cyan-400 mt-0.5" />
