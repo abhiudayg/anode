@@ -248,7 +248,10 @@ drivers:
         image: "valkey/valkey:8.0-alpine"
     runtime:
       image_template: "valkey/valkey:{{.Version}}-alpine"
-      command: ["valkey-server", "--appendonly", "yes"]
+      command: ["valkey-server", "/data/valkey.conf"]
+      password_env: "VALKEYCLI_AUTH"
+      config_file: "valkey.conf"
+      config_template: "requirepass {{.Password}}\nbind 0.0.0.0\nappendonly yes\n"
       data_mount: "/data"
     security:
       uid: 999
@@ -263,6 +266,7 @@ drivers:
       primary_port: 6379
       bind_interface: "127.0.0.1"
       protocol: "redis"
+    primary_connection: "ADDR"
     connection_templates:
       URL: "redis://{{.Host}}:{{.Port}}"
       ADDR: "{{.Host}}:{{.Port}}"

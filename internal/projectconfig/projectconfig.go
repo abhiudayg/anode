@@ -32,9 +32,10 @@ type File struct {
 }
 
 type Store struct {
-	Runtime string `toml:"runtime"`
-	Version string `toml:"version"`
-	Image   string `toml:"image,omitempty"`
+	Runtime  string `toml:"runtime"`
+	Version  string `toml:"version"`
+	Image    string `toml:"image,omitempty"`
+	HostPort int    `toml:"host_port,omitempty"`
 }
 
 type Service struct {

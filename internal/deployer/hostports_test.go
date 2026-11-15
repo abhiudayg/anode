@@ -30,3 +30,21 @@ func TestContainerStoresGetDistinctHostPorts(t *testing.T) {
 		t.Fatalf("a native store must not get a container port")
 	}
 }
+
+func TestPersistedHostPortIsKept(t *testing.T) {
+	lock := &iag.LockFile{Resources: map[string]iag.Resource{
+		"warehouse-rabbitmq": {Kind: "rabbitmq", AutoProvision: true},
+		"email-rabbitmq":     {Kind: "rabbitmq", AutoProvision: true},
+	}}
+	cfg := &projectconfig.File{Stores: map[string]projectconfig.Store{
+		"warehouse-rabbitmq": {Runtime: projectconfig.RuntimeDocker, HostPort: 31007},
+		"email-rabbitmq":     {Runtime: projectconfig.RuntimeDocker},
+	}}
+	ports := containerHostPorts(lock, cfg)
+	if ports["warehouse-rabbitmq"] != 31007 {
+		t.Fatalf("a persisted host_port must not change, got %v", ports)
+	}
+	if ports["email-rabbitmq"] == 31007 {
+		t.Fatalf("an unset port must not reuse a persisted one, got %v", ports)
+	}
+}
