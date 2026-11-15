@@ -143,7 +143,13 @@ func GenerateCaddyfile(domain string, lockfile *iag.LockFile, servicePortMap map
 					path = parts[1]
 				}
 				cleanPath := strings.TrimSpace(path)
-				if strings.ContainsAny(cleanPath, "\r\n{}") {
+				if strings.ContainsAny(cleanPath, "\r\n") {
+					continue
+				}
+				if i := strings.Index(cleanPath, "{"); i >= 0 {
+					cleanPath = cleanPath[:i]
+				}
+				if cleanPath == "" || cleanPath == "/" {
 					continue
 				}
 				sb.WriteString(fmt.Sprintf("  handle %s* {\n", cleanPath))
