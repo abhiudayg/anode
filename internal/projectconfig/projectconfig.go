@@ -18,8 +18,9 @@ import (
 const FileName = "anode.toml"
 
 const (
-	RuntimeBinary = "binary"
-	RuntimeDocker = "docker"
+	RuntimeBinary   = "binary"
+	RuntimeDocker   = "docker"
+	RuntimeExternal = "external"
 )
 
 // VersionAuto is for binary stores: the version is whatever the host's package provides, read at deploy time.
@@ -73,7 +74,7 @@ func (f *File) Validate(lock *iag.LockFile) error {
 		if !ok {
 			return fmt.Errorf("%s has no [stores.%q] section: run anode inspect", FileName, id)
 		}
-		if strings.TrimSpace(store.Version) == "" {
+		if store.Runtime != RuntimeExternal && strings.TrimSpace(store.Version) == "" {
 			return fmt.Errorf("stores.%q.version is empty in %s: set a version and redeploy", id, FileName)
 		}
 		switch store.Runtime {
@@ -81,6 +82,7 @@ func (f *File) Validate(lock *iag.LockFile) error {
 			if !HasNativeInstall(string(res.Kind)) {
 				return fmt.Errorf("stores.%q: %s has no binary install; set runtime = %q", id, res.Kind, RuntimeDocker)
 			}
+		case RuntimeExternal:
 		case RuntimeDocker:
 			if store.Version == VersionAuto {
 				return fmt.Errorf("stores.%q: version = %q is only for runtime = %q; set an explicit version for docker", id, VersionAuto, RuntimeBinary)
@@ -180,4 +182,8 @@ func Ensure(rootDir string, lock *iag.LockFile, defaultVersion func(kind string)
 		return nil, err
 	}
 	return added, nil
+}
+
+func (f *File) Managed(id string, res iag.Resource) bool {
+	return res.AutoProvision && f.Stores[id].Runtime != RuntimeExternal
 }

@@ -75,3 +75,9 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 
 - Every service that serves HTTP must serve `GET /healthz`. Deploy checks it after the service starts and stops the deploy unless it returns a status from 200 to 399.
 - A service without the route fails the deploy, even if it answers other paths. This is a breaking change from v1.4.0, which accepted any status below 500 on the first route.
+
+## External stores (recommended for real projects)
+
+- `runtime = "external"` in `anode.toml` marks a store that Anode does not provision. Its connection string comes from `.env`, under the service's binding name (for example `ORDERS_DB_URL`).
+- `anode migrate` applies goose migrations for external PostgreSQL stores, from the machine that runs it, using the same connection string.
+- The reference deployment is `examples/orders-api`. It was tested end to end with an external PostgreSQL on a separate container on the test host.

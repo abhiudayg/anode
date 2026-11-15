@@ -1,38 +1,34 @@
 # orders-api
 
-One Go HTTP service with one PostgreSQL database. It is the smallest example that deploys with a container store, and it is what the Phase 1 Docker deploy was tested with.
+One Go HTTP service with one PostgreSQL database. It is the reference deployment for the recommended production shape: the app runs on a Linux host under systemd, and its database is external, configured through `.env`.
 
 | Service | Routes | Stores |
 | :--- | :--- | :--- |
-| `orders` | `GET /healthz`, `POST /v1/orders?note=...` | PostgreSQL `db-orders-db`, in a container (`runtime = "docker"`) |
+| `orders` | `GET /healthz`, `POST /v1/orders?note=...` | PostgreSQL `db-orders-db`, external |
 
 ## Deploy
 
-Put the database password in `.env`, in the project folder. The key is the resource name in upper case with `_PASSWORD` at the end:
+Put the database connection string in `.env`, in the project folder. Its key is the service's binding name, `ORDERS_DB_URL`:
 
 ```
-DB_ORDERS_DB_PASSWORD=<choose a password>
+ORDERS_DB_URL=postgres://<user>:<password>@<host>:5432/orders?sslmode=require
 ```
+
+`.env` must be readable only by its owner (`chmod 600 .env`), and it must not be committed.
 
 Then:
 
 ```bash
 anode inspect ./examples/orders-api
+anode migrate ./examples/orders-api
 anode deploy root@<host> ./examples/orders-api --domain <domain>
 ```
 
-`.env` must be readable only by its owner (`chmod 600 .env`), and it must not be committed.
+`anode migrate` applies the goose migrations in `migrations/orders` to the database in `ORDERS_DB_URL`, from the machine that runs it. The deploy does not run migrations.
 
 ## What a deploy does here
 
-- Installs Docker on the host, if it is missing.
-- Starts `postgres:16-alpine` on `127.0.0.1:5432`. The password goes to a `0600` env file on the host, not into the command line.
-- Writes the connection string into a `0600` secret env file for the service, not the systemd unit.
-
-The deploy does not run the migration in `migrations/orders`. Apply it yourself before the first request, as the profile says:
-
-```bash
-docker exec <container> psql -U postgres -d db-orders-db -c "<the Up statement>"
-```
-
-The deploy does not wait for PostgreSQL to accept connections after it starts. If the first request arrives during first-run initialization, it fails until the database is ready.
+- Installs Caddy and writes the service's systemd unit, which runs under `DynamicUser`.
+- Writes `ORDERS_DB_URL` to a `0600` env file for the service, not to the unit.
+- Waits for `GET /healthz` before switching traffic to the new release.
+- Starts nothing for the database. It is not provisioned or managed by Anode.

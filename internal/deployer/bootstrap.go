@@ -61,7 +61,7 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 	hostPorts := containerHostPorts(lockfile, cfg)
 	reg := catalog.NewRegistry()
 	for resID, res := range lockfile.Resources {
-		if !res.AutoProvision {
+		if !cfg.Managed(resID, res) {
 			continue
 		}
 		store, ok := cfg.Stores[resID]
