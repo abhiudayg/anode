@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] - 2026-11-15
+
+### 🚀 Added
+- **Inferred resources**: Kafka topics, MinIO buckets, and Qdrant collections are read from code into `anode.lock.json`. Deploy creates them on the store.
+- **Reviewed overrides** (`anode.overrides.json`): an edit to an inferred value applies while the code still infers the same value. A changed value stops `anode inspect` with a conflict. A renamed resource is followed through its source file when exactly one resource matches.
+- **Deploy state** (`anode.state.json`): container host ports.
+- **Automatic rollback**: a deploy that fails after it changes host units restores the previous release, including its Caddy routes.
+- **ClickHouse and ScyllaDB migrations** in `anode migrate`. ClickHouse runs over HTTP; Scylla runs `cqlsh` from the pinned image. Both record applied files in `anode_migrations`.
+- **Release records**: each release keeps a copy of its lockfile and a hash on the host. Rollback refuses a release whose copy does not match its hash.
+
+### 🛠 Changed
+- **Breaking:** `host_port` moved from `anode.toml` to `anode.state.json`. `anode.toml` with a `host_port` key is refused with a pointer to the new file.
+- Analyzer: an environment name built at runtime is reported as a warning diagnostic and is not recorded as a secret.
+- Go toolchain 1.27.4.
+
+### 🔒 Security
+- Topic, bucket, collection, distance, and environment variable names are validated before any host is touched. Shell commands quote every value. A name with a quote could previously run commands as root on the VPS.
+- HTTP route paths must match a strict Caddy path pattern.
+- The deploy domain and the host-setup account name are validated.
+- Migration paths must stay inside the project. The Scylla runner rejects unsafe keyspaces and multi-line credentials.
+
+### 🐛 Fixed
+- Rollback restores the previous release's Caddyfile with its units.
+- The analyzer no longer records a name built from a prefix as a bare secret.
+- A missing project directory is reported as such, not as a missing Go binary.
+
+---
+
 ## [1.5.0] - 2026-11-15
 
 ### 🚀 Added

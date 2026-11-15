@@ -9,10 +9,10 @@ commands = [
   "go vet ./...",
   "go build -o .verify/output/anode ./cmd/anode",
   ".verify/output/anode inspect ./testdata/sample-shop",
-  ".verify/output/anode inspect ./testdata/hyper_mesh_12",
+  ".verify/output/anode inspect ./testdata/retail-platform",
   ".verify/output/anode dev ./testdata/sample-shop",
-  ".verify/output/anode deploy root@192.168.1.100 ./testdata/hyper_mesh_12 --dry-run",
-  ".verify/output/anode cluster ./testdata/hyper_mesh_12",
+  ".verify/output/anode deploy root@192.168.1.100 ./testdata/retail-platform --dry-run",
+  ".verify/output/anode cluster ./testdata/retail-platform",
 ]
 
 [verify.default]

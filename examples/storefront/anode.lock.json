@@ -49,7 +49,11 @@
           "provenance": "services/catalog/main.go:39"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "CATALOG_DB_URL",
+        "REDIS_ADDR"
+      ]
     },
     "notifications": {
       "name": "notifications",
@@ -102,6 +106,13 @@
           "env_var": "STRIPE_SECRET_KEY",
           "provenance": "services/orders/main.go:35"
         }
+      ],
+      "config_env": [
+        "CATALOG_SERVICE_URL",
+        "ORDERS_DB_HOST",
+        "ORDERS_DB_NAME",
+        "ORDERS_DB_PORT",
+        "ORDERS_DB_USER"
       ]
     }
   },
