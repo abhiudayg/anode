@@ -106,6 +106,9 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 				return fmt.Errorf("stateful resource %s did not accept connections: %w", resID, err)
 			}
 		}
+		if err := b.ensureInferredResources(resID, res, driver, store.Version, hostPorts[resID], secrets[ContainerSecretKey(resID)]); err != nil {
+			return err
+		}
 	}
 
 	return nil

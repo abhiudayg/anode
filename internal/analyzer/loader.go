@@ -112,10 +112,12 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 						if common := call.Common(); common != nil {
 							inspector.InspectCall(fn, common, &svc, lockfile)
 							inspector.InspectEnvCall(common, &svc)
+							inspector.InspectMinioBucket(common, &svc)
 						}
 					}
 					if store, ok := instr.(*ssa.Store); ok {
 						inspector.InspectStore(store, &svc, lockfile)
+						inspector.InspectKafkaTopic(store, &svc)
 					}
 				}
 			}
@@ -126,6 +128,7 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 
 	// Link cross-service topologies and typed contracts (PILLAR 2)
 	l.linkServices(lockfile)
+	attachInferredResources(lockfile)
 	sortLockfile(lockfile)
 
 	l.stats = AnalysisStats{

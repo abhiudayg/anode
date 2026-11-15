@@ -38,6 +38,8 @@ type Resource struct {
 	AutoProvision bool              `json:"auto_provision"` // True ONLY if proven via migration assets/contracts
 	Provenance    string            `json:"provenance"`
 	Migrations    *MigrationSpec    `json:"migrations,omitempty"`
+	Topics        []string          `json:"topics,omitempty"`  // Kafka topics the code writes to, inferred from the code
+	Buckets       []string          `json:"buckets,omitempty"` // object-storage buckets the code uses, inferred from the code
 }
 
 // MigrationSpec details schema migrations attached to a resource.
@@ -56,7 +58,9 @@ type Service struct {
 	Bindings   []Binding   `json:"bindings"`
 	Secrets    []SecretRef `json:"secrets"`
 	ConfigFile string      `json:"config_file,omitempty"` // e.g. "config.json" read from the working directory
-	ConfigEnv  []string    `json:"config_env,omitempty"`  // non-secret environment variables the code reads; their values come from .env
+	Topics     []string    `json:"-"`
+	Buckets    []string    `json:"-"`
+	ConfigEnv  []string    `json:"config_env,omitempty"` // non-secret environment variables the code reads; their values come from .env
 }
 
 // Ingress defines inbound protocols, routes, and required port env.

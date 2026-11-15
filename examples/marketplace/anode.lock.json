@@ -23,7 +23,10 @@
       "kind": "minio",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/cms/main.go:31"
+      "provenance": "services/cms/main.go:31",
+      "buckets": [
+        "cms-assets"
+      ]
     },
     "coupons-memcached": {
       "kind": "memcached",
@@ -129,7 +132,10 @@
       "kind": "minio",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/documents/main.go:37"
+      "provenance": "services/documents/main.go:37",
+      "buckets": [
+        "documents"
+      ]
     },
     "documents-mongo": {
       "kind": "mongodb",
@@ -153,7 +159,10 @@
       "kind": "minio",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/media/main.go:16"
+      "provenance": "services/media/main.go:16",
+      "buckets": [
+        "media"
+      ]
     },
     "metrics-clickhouse": {
       "kind": "clickhouse",
@@ -231,7 +240,10 @@
       "kind": "kafka",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/shipping/main.go:30"
+      "provenance": "services/shipping/main.go:30",
+      "topics": [
+        "shipments.created"
+      ]
     },
     "warehouse-rabbitmq": {
       "kind": "rabbitmq",
