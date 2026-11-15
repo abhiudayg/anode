@@ -174,6 +174,14 @@ func main() {
 			}
 		}
 
+	case "migrate":
+		targetDir := "."
+		if len(os.Args) > 2 {
+			targetDir = os.Args[2]
+		}
+		if err := runMigrate(targetDir); err != nil {
+			log.Fatalf("Migration failed: %v", err)
+		}
 	case "rollback":
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: anode rollback <user>")

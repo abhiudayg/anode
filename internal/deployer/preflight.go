@@ -66,7 +66,7 @@ func checkDeployInputs(lockfile *iag.LockFile, cfg *projectconfig.File, secrets 
 				return fmt.Errorf("service %s binds %s, which is not a declared resource", svcName, b.ResourceRef)
 			}
 			port := catalog.NewRegistry().Resolve(string(res.Kind)).Networking.PrimaryPort
-			if _, err := configBindingValue(string(res.Kind), b.ConfigKey, res.AutoProvision, port, secrets); err != nil {
+			if _, err := configBindingValue(string(res.Kind), b.ConfigKey, cfg.Managed(b.ResourceRef, res), port, secrets); err != nil {
 				return fmt.Errorf("service %s: %w", svcName, err)
 			}
 			if svc.ConfigFile == "" {
@@ -89,7 +89,7 @@ func checkDeployInputs(lockfile *iag.LockFile, cfg *projectconfig.File, secrets 
 				continue
 			}
 			res, exists := lockfile.Resources[b.ResourceRef]
-			if !exists || res.AutoProvision || res.Kind == "redis" {
+			if !exists || cfg.Managed(b.ResourceRef, res) || res.Kind == "redis" {
 				continue
 			}
 			key := BindingEnvKey(svc.Name, b)

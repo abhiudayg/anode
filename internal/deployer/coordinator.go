@@ -127,7 +127,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			if b.ConfigKey != "" {
 				res := d.lockfile.Resources[b.ResourceRef]
 				port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
-				value, err := configBindingValue(string(res.Kind), b.ConfigKey, res.AutoProvision, port, secrets)
+				value, err := configBindingValue(string(res.Kind), b.ConfigKey, cfg.Managed(b.ResourceRef, res), port, secrets)
 				if err != nil {
 					return err
 				}
@@ -142,7 +142,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					secretEnv[envKey] = RedisConnectionURL(secrets[RedisPasswordKey()], port)
 					continue
 				}
-				if !res.AutoProvision {
+				if !cfg.Managed(b.ResourceRef, res) {
 					value := secrets[envKey]
 					if value == "" {
 						return fmt.Errorf("%s is missing from .env (the connection string for %s)", envKey, b.ResourceRef)

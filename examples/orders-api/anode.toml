@@ -3,8 +3,7 @@
 # runtime = "binary" installs a host binary; "docker" runs the store in a container.
 
 [stores."db-orders-db"]
-runtime = "docker"
-version = "16"
+runtime = "external"
 
 [services."orders"]
 runtime = "binary"
