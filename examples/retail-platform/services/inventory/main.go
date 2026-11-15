@@ -15,7 +15,7 @@ func main() {
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-		Addr: os.Getenv("INVENTORY_REDIS_ADDR"),
+		Addr: os.Getenv("CACHE_REDIS_ADDR"),
 	})
 	defer rdb.Close()
 

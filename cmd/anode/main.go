@@ -354,6 +354,9 @@ func main() {
 		}
 
 		if dryRun {
+			if err := deployer.CheckRedisLimit(lockfile, cfg); err != nil {
+				log.Fatalf("Deployment preparation failed: %v", err)
+			}
 			fmt.Println("  🔍 Dry-run mode: synthesizing deployment plan...")
 			portMap := make(map[string]int)
 			idx := 0

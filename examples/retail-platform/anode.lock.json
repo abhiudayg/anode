@@ -46,17 +46,11 @@
         "execution": "pre_traffic_job"
       }
     },
-    "redis-auth": {
+    "redis-cache": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
       "provenance": "services/auth/main.go:20"
-    },
-    "redis-inventory": {
-      "kind": "redis",
-      "lifecycle": "stateful_retain",
-      "auto_provision": true,
-      "provenance": "services/inventory/main.go:17"
     }
   },
   "services": {
@@ -145,9 +139,9 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-auth",
+          "resource_ref": "redis-cache",
           "protocol": "redis",
-          "inject_env": "AUTH_REDIS_ADDR",
+          "inject_env": "CACHE_REDIS_ADDR",
           "provenance": "services/auth/main.go:20"
         }
       ],
@@ -238,9 +232,9 @@
       ],
       "bindings": [
         {
-          "resource_ref": "redis-inventory",
+          "resource_ref": "redis-cache",
           "protocol": "redis",
-          "inject_env": "INVENTORY_REDIS_ADDR",
+          "inject_env": "CACHE_REDIS_ADDR",
           "provenance": "services/inventory/main.go:17"
         }
       ],

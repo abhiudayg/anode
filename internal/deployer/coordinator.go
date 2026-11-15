@@ -56,11 +56,11 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read .env: %w", err)
 	}
-	if err := checkDeployInputs(d.lockfile, secrets); err != nil {
-		return err
-	}
 	cfg, err := projectconfig.Load(d.rootDir)
 	if err != nil {
+		return err
+	}
+	if err := checkDeployInputs(d.lockfile, cfg, secrets); err != nil {
 		return err
 	}
 	if err := cfg.Validate(d.lockfile); err != nil {

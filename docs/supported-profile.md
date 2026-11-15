@@ -5,7 +5,7 @@ Anode targets one class of project first. Everything else is outside the current
 ## In scope
 
 - A Go HTTP service owned by the developer, with one `main` package in the project.
-- Postgres and/or Redis, connected directly with `database/sql`, `pgx`, or `go-redis` from the project's own code.
+- Stores the project connects to directly from its own code with a Go client. Postgres and Redis are the tested stores. Other catalog kinds (MongoDB, RabbitMQ, ClickHouse, and the rest) can run in containers with `runtime = "docker"`; that path is still being tested, see below.
 - Connection settings come from either:
   - an environment variable read with `os.Getenv` or `os.LookupEnv`, or
   - a config struct loaded from a JSON file, where each field has a `json` tag. The file path must be a literal in project code, such as `os.ReadFile("config.json")`.
@@ -33,7 +33,7 @@ Anode targets one class of project first. Everything else is outside the current
 - **Secrets and connection strings come from `.env`** in the project folder. Anode does not generate them.
   - Each secret the code reads (`STRIPE_SECRET_KEY`, for example) must be present. Missing values stop the deploy before any server change.
   - A connection string read from a config file needs a `.env` entry named after its `config_key`: dots become underscores and the name is uppercased. For example, `database.dsn` needs `DATABASE_DSN`.
-  - A Redis password is read from `REDIS_PASSWORD`. Each project can provision one native Redis, and the preflight check validates this value before any server change.
+  - A Redis password is read from `REDIS_PASSWORD`. A project can install one native Redis on the host. Redis in a container (`runtime = "docker"`) is not limited, and the preflight check validates the password before any server change.
 - **Redis** runs as a native systemd service bound to `127.0.0.1`, with a password, as a dynamic user. The distribution's default Redis service is disabled.
 - **Environment variables** for connections read from env are written to a `0600` env file, not the systemd unit.
 - **Config files** are built from the `config_key` values, written to a root-only location, and handed to the app's dynamic user with `ExecStartPre=+`. The app reads its file from its working directory.
@@ -64,7 +64,7 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 ## Versions and runtimes (anode.toml)
 
 - `anode inspect` creates `anode.toml` if it is missing. It adds one `[stores.<name>]` section per store the code uses and one `[services.<name>]` section per service. Each store gets the catalog's default version. Review it before the first deploy.
-- `runtime = "binary"` installs the store as a host binary. Only Redis has a binary install today.
+- `runtime = "binary"` installs the store as a host binary. Only Redis has a binary install today. A project may have one native Redis.
 - `runtime = "docker"` runs the store in a container at the pinned version. Every catalog kind supports it.
 - App services run as systemd binaries. `runtime = "docker"` is refused for services until the Docker path is designed for DynamicUser services.
 - Deploy stops before any host change when a store has no version, when a binary install is not available for its kind, or when the config does not match the lockfile. Nothing falls back to `latest`.

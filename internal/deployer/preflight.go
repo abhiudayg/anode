@@ -6,19 +6,43 @@ import (
 
 	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
+	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
-func checkDeployInputs(lockfile *iag.LockFile, secrets map[string]string) error {
-	redisCount := 0
-	for _, res := range lockfile.Resources {
-		if res.AutoProvision && res.Kind == "redis" {
-			redisCount++
+// CheckRedisLimit rejects a project that would install more than one native Redis on the host. Redis in a container
+// is not limited.
+func CheckRedisLimit(lockfile *iag.LockFile, cfg *projectconfig.File) error {
+	if n := nativeRedisCount(lockfile, cfg); n > 1 {
+		return fmt.Errorf("a project supports one native Redis install, found %d; run the others with runtime = \"docker\"", n)
+	}
+	return nil
+}
+
+func nativeRedisCount(lockfile *iag.LockFile, cfg *projectconfig.File) int {
+	count := 0
+	for id, res := range lockfile.Resources {
+		if res.AutoProvision && res.Kind == "redis" && cfg.Stores[id].Runtime == projectconfig.RuntimeBinary {
+			count++
 		}
 	}
-	if redisCount > 1 {
-		return fmt.Errorf("a project supports one native Redis resource, found %d", redisCount)
+	return count
+}
+
+func redisCountOf(lockfile *iag.LockFile) int {
+	count := 0
+	for _, res := range lockfile.Resources {
+		if res.AutoProvision && res.Kind == "redis" {
+			count++
+		}
 	}
-	if redisCount == 1 {
+	return count
+}
+
+func checkDeployInputs(lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string) error {
+	if err := CheckRedisLimit(lockfile, cfg); err != nil {
+		return err
+	}
+	if redisCountOf(lockfile) == 1 {
 		if err := validateRedisPassword(secrets[RedisPasswordKey()]); err != nil {
 			return fmt.Errorf("%s in .env: %w", RedisPasswordKey(), err)
 		}
@@ -77,5 +101,9 @@ func DeployInputs(lockfile *iag.LockFile, rootDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read .env: %w", err)
 	}
-	return checkDeployInputs(lockfile, secrets)
+	cfg, err := projectconfig.Load(rootDir)
+	if err != nil {
+		return err
+	}
+	return checkDeployInputs(lockfile, cfg, secrets)
 }

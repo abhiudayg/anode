@@ -43,6 +43,16 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 		return fmt.Errorf("caddy is not available on the host: %w", err)
 	}
 
+	if usesDockerStore(lockfile, cfg) {
+		fmt.Println("  ⚙ Checking Docker for container stores...")
+		checkDockerCmd := `command -v docker >/dev/null 2>&1 || (
+		DEBIAN_FRONTEND=noninteractive apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker.io
+	) && systemctl enable --now docker`
+		if _, err := b.ssh.Run(checkDockerCmd); err != nil {
+			return fmt.Errorf("docker is not available on the host: %w", err)
+		}
+	}
+
 	if _, err := b.ssh.Run(appPortFirewallCommand()); err != nil {
 		return fmt.Errorf("could not restrict application ports to loopback: %w", err)
 	}
@@ -91,4 +101,13 @@ func (b *Bootstrapper) WriteRemoteFile(content string, remotePath string) error 
 		return fmt.Errorf("failed to create remote directory %s: %w", dir, err)
 	}
 	return b.ssh.StreamBytes([]byte(content), remotePath, 0644)
+}
+
+func usesDockerStore(lockfile *iag.LockFile, cfg *projectconfig.File) bool {
+	for id, res := range lockfile.Resources {
+		if res.AutoProvision && cfg.Stores[id].Runtime == projectconfig.RuntimeDocker {
+			return true
+		}
+	}
+	return false
 }

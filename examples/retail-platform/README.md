@@ -7,11 +7,11 @@ A twelve-service retail fixture with HTTP and gRPC calls, Redis and PostgreSQL, 
 | Service | Routes | Stores and calls |
 | :--- | :--- | :--- |
 | `apigateway` | `GET /api/v1/auth/verify`, `POST /api/v1/orders` | HTTP to `auth` and `orders` |
-| `auth` | `GET /v1/auth/token` | Redis `redis-auth`; secret `JWT_SIGNING_SECRET_KEY` |
+| `auth` | `GET /v1/auth/token` | Redis `cache-redis`; secret `JWT_SIGNING_SECRET_KEY` |
 | `orders` | `POST /v1/orders` | PostgreSQL `db-orders`; HTTP to `payments`; gRPC to `ledger` |
 | `payments` | `POST /v1/payments/charge` | Stripe, `https://api.stripe.com/v1/charges` |
 | `ledger` | gRPC server | none |
-| `inventory` | `POST /v1/inventory/reserve` | Redis `redis-inventory` |
+| `inventory` | `POST /v1/inventory/reserve` | Redis `cache-redis` (shared) |
 | `fulfillment` | `POST /v1/fulfillment/dispatch` | PostgreSQL `db-fulfillment`; HTTP to `notifications` |
 | `notifications` | `POST /v1/notify/shipment` | SendGrid, `https://api.sendgrid.com/v3/mail/send` |
 | `catalog` | `GET /v1/catalog/items` | PostgreSQL `db-external-catalog-db`, resolved from config indirection |
@@ -32,10 +32,13 @@ Run `anode inspect ./examples/retail-platform`. The checked-in `anode.lock.json`
 
 ```bash
 anode inspect ./examples/retail-platform
-anode deploy root@127.0.0.1 ./examples/retail-platform --dry-run
 go test ./internal/analyzer
 ```
 
+`auth` and `inventory` share one Redis resource, `cache-redis`, through `CACHE_REDIS_ADDR`, because the supported profile allows one native Redis per project.
+
 ## Limits
 
-This is a fixture for Anode's analysis, not a retail system. Its services contain no business logic, and they are not run as a set. See [`docs/supported-profile.md`](../../docs/supported-profile.md) for what Anode supports.
+This is a fixture for Anode's analysis, not a retail system. Its services contain no business logic.
+
+A live deploy also needs what the dry-run does not check: the four PostgreSQL connection strings and the ClickHouse connection string in `.env`, the Stripe, SendGrid, and JWT secrets, and the PostgreSQL containers in `anode.toml` (`runtime = "docker"`), which need Docker on the host. The Docker store path has not been tested end to end. See [`docs/supported-profile.md`](../../docs/supported-profile.md) for what Anode supports.
