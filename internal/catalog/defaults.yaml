@@ -213,7 +213,7 @@ drivers:
       file_mode: "0700"
       no_new_privileges: true
       drop_capabilities: ["ALL"]
-      add_capabilities: ["SETGID", "SETUID"]
+      add_capabilities: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
       oom_score_adjust: -500
       cgroups:
         memory_max: "1G"
@@ -364,11 +364,11 @@ drivers:
         - "--node-id=0"
         - "--check=false"
         - "--kafka-addr=PLAINTEXT://0.0.0.0:9092"
-        - "--advertise-kafka-addr=PLAINTEXT://127.0.0.1:9092"
+        - "--advertise-kafka-addr=PLAINTEXT://127.0.0.1:${HOST_PORT}"
       data_mount: "/var/lib/redpanda/data"
     security:
-      uid: 1000
-      gid: 1000
+      uid: 101
+      gid: 101
       file_mode: "0700"
       no_new_privileges: true
       oom_score_adjust: -500

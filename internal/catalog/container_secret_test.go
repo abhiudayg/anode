@@ -12,7 +12,7 @@ func TestContainerPasswordStaysOutOfProvisionCommand(t *testing.T) {
 	if !strings.Contains(env, "POSTGRES_PASSWORD="+secret+"\n") {
 		t.Fatalf("env file must carry the .env password:\n%s", env)
 	}
-	cmd := pg.BuildProvisionCommand("db-orders", "16", "/var/lib/anode/data/db-orders", "/etc/anode/env/db-orders.docker.env")
+	cmd := pg.BuildProvisionCommand("db-orders", "16", "/var/lib/anode/data/db-orders", "/etc/anode/env/db-orders.docker.env", pg.Networking.PrimaryPort)
 	if strings.Contains(cmd, secret) || strings.Contains(cmd, "POSTGRES_PASSWORD") {
 		t.Fatalf("provision command must not carry the password:\n%s", cmd)
 	}
@@ -42,7 +42,7 @@ func TestNoDefaultPasswordLiteralsRemain(t *testing.T) {
 
 func TestContainerCPUQuotaIsConvertedToCPUs(t *testing.T) {
 	pg := NewRegistry().Resolve("postgres")
-	cmd := pg.BuildProvisionCommand("db-orders", "16", "/var/lib/anode/data/db-orders", "/etc/anode/env/db-orders.docker.env")
+	cmd := pg.BuildProvisionCommand("db-orders", "16", "/var/lib/anode/data/db-orders", "/etc/anode/env/db-orders.docker.env", pg.Networking.PrimaryPort)
 	if !strings.Contains(cmd, "--cpus=2 ") {
 		t.Fatalf("a 200%% quota must become --cpus=2, got:\n%s", cmd)
 	}

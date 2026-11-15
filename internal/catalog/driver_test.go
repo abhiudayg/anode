@@ -15,7 +15,7 @@ func TestAllCatalogDriversLeastPrivilege(t *testing.T) {
 
 	for _, kind := range kinds {
 		driver := reg.Resolve(kind)
-		cmd := driver.BuildProvisionCommand("test-res", driver.DefaultVersion, "/var/lib/anode/data/test-res", "/etc/anode/env/test-res.docker.env")
+		cmd := driver.BuildProvisionCommand("test-res", driver.DefaultVersion, "/var/lib/anode/data/test-res", "/etc/anode/env/test-res.docker.env", driver.Networking.PrimaryPort)
 
 		// 1. Must bind exclusively to loopback (127.0.0.1) for zero public exposure
 		if !strings.Contains(cmd, "127.0.0.1:") {

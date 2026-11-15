@@ -95,7 +95,7 @@ func (d *DriverSpec) ResolveImage(version string) string {
 }
 
 // BuildProvisionCommand synthesizes the Docker/Podman execution command enforcing least privilege.
-func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataDir string, envFile string) string {
+func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataDir string, envFile string, hostPort int) string {
 	image := d.ResolveImage(version)
 	containerName := fmt.Sprintf("anode-%s", resName)
 
@@ -152,7 +152,7 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 
 	commandArgs := ""
 	if len(d.Runtime.Command) > 0 {
-		commandArgs = " " + strings.Join(d.Runtime.Command, " ")
+		commandArgs = " " + strings.ReplaceAll(strings.Join(d.Runtime.Command, " "), "${HOST_PORT}", strconv.Itoa(hostPort))
 	}
 
 	runCmd := fmt.Sprintf(`(%s && docker ps -q -f 'name=^/%s$' | grep -q . || docker run -d \
@@ -165,7 +165,7 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 		setupDirCmd,
 		containerName,
 		containerName,
-		bindAddr, d.Networking.PrimaryPort, d.Networking.PrimaryPort,
+		bindAddr, hostPort, d.Networking.PrimaryPort,
 		dataDir, d.Runtime.DataMount,
 		secFlags.String(),
 		envFlags,

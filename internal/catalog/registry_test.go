@@ -39,7 +39,7 @@ func TestCatalogRegistryDefaults(t *testing.T) {
 	}
 
 	// Verify least privilege provision command
-	cmd := pg.BuildProvisionCommand("orders-db", "16", "/var/lib/anode/data/orders-db", "/etc/anode/env/orders-db.docker.env")
+	cmd := pg.BuildProvisionCommand("orders-db", "16", "/var/lib/anode/data/orders-db", "/etc/anode/env/orders-db.docker.env", pg.Networking.PrimaryPort)
 	if !strings.Contains(cmd, "install -d -m 0700 -o 70 -g 70") {
 		t.Errorf("expected deterministic POSIX directory setup with uid 70, got: %s", cmd)
 	}
@@ -68,7 +68,7 @@ func TestCatalogDynamicFallback(t *testing.T) {
 		t.Errorf("expected customunregistereddb:1.0, got %s", img)
 	}
 
-	cmd := driver.BuildProvisionCommand("custom-main", "1.0", "/var/lib/anode/data/custom", "/etc/anode/env/custom-main.docker.env")
+	cmd := driver.BuildProvisionCommand("custom-main", "1.0", "/var/lib/anode/data/custom", "/etc/anode/env/custom-main.docker.env", driver.Networking.PrimaryPort)
 	if !strings.Contains(cmd, "127.0.0.1") {
 		t.Errorf("expected loopback bind for unknown kind, got: %s", cmd)
 	}

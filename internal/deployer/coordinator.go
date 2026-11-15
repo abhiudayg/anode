@@ -66,6 +66,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := cfg.Validate(d.lockfile); err != nil {
 		return err
 	}
+	hostPorts := containerHostPorts(d.lockfile, cfg)
 
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
@@ -150,7 +151,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					continue
 				}
 				driver := reg.Resolve(string(res.Kind))
-				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", driver.Networking.PrimaryPort, b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
+				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", hostPorts[b.ResourceRef], b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
 				if err != nil {
 					return err
 				}
