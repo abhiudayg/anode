@@ -222,7 +222,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Automated migration execution prior to application process boot.
   - Sub-second hot-reloading supervisor.
 - **Enterprise Benchmark Suites (`examples/`)**:
-  - **OmniMesh-32 (`examples/omni_mesh_32`)**: Hyper-scale stress-test benchmark modeling 32 distinct Go microservices across 14 infrastructure drivers (PostgreSQL, MariaDB, TimescaleDB, CockroachDB, ScyllaDB, ClickHouse, MongoDB, Redis, Valkey, Memcached, RabbitMQ, Kafka, MinIO, Temporal, Qdrant).
+  - **Marketplace (`examples/marketplace`)**: Hyper-scale stress-test benchmark modeling 32 distinct Go microservices across 14 infrastructure drivers (PostgreSQL, MariaDB, TimescaleDB, CockroachDB, ScyllaDB, ClickHouse, MongoDB, Redis, Valkey, Memcached, RabbitMQ, Kafka, MinIO, Temporal, Qdrant).
   - **HealthMesh-25 (`examples/health_mesh_25`)**: HIPAA-compliant hospital & telehealth system modeling 25 microservices with FHIR document stores, typed WebRTC gRPC stubs, e-prescriptions, and medical billing claims.
   - **Fintech Core 20 (`examples/fintech_core_20`)**: Modular neo-banking and trading engine with layered package separation (`config` -> `repo` -> `handler`), Kafka order books, TimescaleDB double-entry ledger, and ScyllaDB payments.
   - **Real-World Open-Source Benchmarks (`examples/realworld_benchmarks/`)**: Evaluated Anode against 10 famous, unmodified production Go backend codebases: `croc`, `glance`, `1Panel`, `restic`, `filebrowser`, `ntfy`, `netbird`, `wttr.in`, `cloudreve`, and `navidrome`. Verified multi-dialect DB driver resolution, Gin/Chi/Mux routing discovery, and automated systemd + Caddy deployment synthesis.

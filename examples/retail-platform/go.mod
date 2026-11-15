@@ -1,4 +1,4 @@
-module hyper-mesh-12
+module retail-platform
 
 go 1.26.0
 

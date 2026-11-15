@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 
-	ledgerv1 "hyper-mesh-12/proto/ledger/v1"
+	ledgerv1 "retail-platform/proto/ledger/v1"
 )
 
 type ledgerServer struct{}

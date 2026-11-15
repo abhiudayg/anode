@@ -60,7 +60,7 @@ anode/
 │   ├── src/app/                # Routes (docs, blog, tools/ssa-visualizer, vs/docker-compose)
 │   ├── src/components/         # Interactive UI widgets (Cmd+K palette, savings calculator)
 │   └── src/data/blogPosts.ts   # Engineering essays & deep-dive technical benchmarks
-├── examples/                   # Sample apps: sample-shop, complex-ecommerce, omni-mesh-32, hyper-mesh-12 (test fixture)
+├── examples/                   # Sample apps: sample-shop, storefront, marketplace, retail-platform (test fixture)
 └── .github/
     ├── workflows/              # CI test suite, CodeQL analysis, release workflows
     ├── codeql/                 # CodeQL path filters (excludes third-party benchmarks)

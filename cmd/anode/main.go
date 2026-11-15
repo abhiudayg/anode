@@ -196,6 +196,10 @@ func main() {
 			fmt.Println("Usage: anode host-setup root@host [--user NAME] [--disable-root-login]")
 			os.Exit(1)
 		}
+		if os.Args[2] == "-h" || os.Args[2] == "--help" {
+			fmt.Println("Usage: anode host-setup root@host [--user NAME] [--disable-root-login]")
+			os.Exit(0)
+		}
 		deployUser := "anode-deploy"
 		disableRoot := false
 		for i := 3; i < len(os.Args); i++ {
@@ -849,7 +853,7 @@ func printClusterUsage() {
 	fmt.Println("  anode cluster                               # Inspect cluster nodes and service placement")
 	fmt.Println("  anode cluster init                          # Generate starter anode.cluster.yaml template")
 	fmt.Println("  anode cluster --firewall                    # View synthesized zero-trust nftables rules")
-	fmt.Println("  anode cluster ./examples/omni-mesh-32       # Plan placement for a 32-service mesh")
+	fmt.Println("  anode cluster ./examples/marketplace       # Plan placement for a 32-service mesh")
 	fmt.Println("  anode cluster --json                        # Machine-readable output for CI/CD pipelines")
 }
 

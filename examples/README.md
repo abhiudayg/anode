@@ -1,26 +1,27 @@
 # Examples
 
-Small Go services used to exercise Anode's analysis, dry-run deploy, and tests. Each example has its own README.
+Go services that Anode analyzes, dry-run deploys, and tests against. Each example has its own README with its services, the lockfile Anode writes for it, and how to run it.
 
-| Example | Services | What it covers | Used by |
+| Example | Services | Stores | What it covers |
 | :--- | :---: | :--- | :--- |
-| [`sample-shop/`](sample-shop/README.md) | 2 | Two HTTP services with Postgres and direct env vars | Tests, `anode doctor` help, deploy walkthroughs |
-| [`complex-ecommerce/`](complex-ecommerce/README.md) | 3 | Composite DSN formatting, pre-traffic migrations, external egress (Stripe, SendGrid) | README quick start, `anode dev` and `deploy --dry-run` |
-| [`omni-mesh-32/`](omni-mesh-32/README.md) | 32 | All 32 store resources detected; Kafka and Qdrant calls are not | `anode cluster` help |
-| [`hyper-mesh-12/`](hyper-mesh-12/README.md) | 12 | Config indirection, composite DSNs, mixed gRPC and REST, external egress, dead code | `internal/analyzer` test fixture (`testdata` links here) |
+| [`sample-shop/`](sample-shop/README.md) | 2 | PostgreSQL | Two HTTP services, direct env vars, the `doctor` contract check |
+| [`storefront/`](storefront/README.md) | 3 | PostgreSQL ×2 | Composite DSNs, Goose migrations, Stripe and SendGrid egress |
+| [`retail-platform/`](retail-platform/README.md) | 12 | PostgreSQL ×4, Redis ×2, ClickHouse | Config indirection, HTTP and gRPC links, a pruned dead helper |
+| [`marketplace/`](marketplace/README.md) | 32 | 11 store kinds, 32 resources | Large-scale analysis, Temporal workers, live store tests |
 
-The examples in this directory are fixtures, not production applications. Other example projects that used to live here were removed in v1.4.0; they remain in git history.
+These are fixtures for Anode's analysis, not production applications. Other example projects that used to live here were removed in v1.4.0 and remain in git history.
 
-## Verification
+## Use
 
 ```bash
-# Extract the lockfile
-anode inspect ./examples/sample-shop
-anode inspect ./examples/complex-ecommerce
+# Extract the lockfile for an example
+anode inspect ./examples/storefront
 
-# Synthesize a deploy plan without touching a host
-anode deploy root@127.0.0.1 ./examples/complex-ecommerce --dry-run
+# Plan a deploy without touching a host
+anode deploy root@127.0.0.1 ./examples/storefront --dry-run
 
-# Run the Go test suite, including the analyzer tests that read these fixtures
-go test ./...
+# Run the analyzer tests, which read retail-platform and the other fixtures
+go test ./internal/analyzer
 ```
+
+Each example is its own Go module, so `go build ./...` and `go test ./...` also work inside an example directory.
