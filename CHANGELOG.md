@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] - 2026-11-15
+
+### 🚀 Added
+- **Live test infrastructure**: `infra/compose.yaml` runs every store the mesh uses, plus Kafka. `infra/live-test.sh` starts them, runs 17 live tests, and stops them.
+- **Temporal workers** in the `disputes` and `workflows` services. Activities retry on failure.
+- **Store detection widened**: RabbitMQ, MinIO, MongoDB, ClickHouse, ScyllaDB, Temporal, and Memcached clients are now bound to named resources, and their env vars are recorded.
+- **Temporal registrations** are followed by the analyzer, so calls made inside workflows and activities are recorded.
+- **Redis version `auto`**: a binary Redis store takes the version the host provides, and the deploy prints it.
+- **`anode.toml`** is the source of truth for store versions and runtimes.
+
+### 🛠 Changed
+- The `dev` readiness check requires `GET /healthz` to return below 400. Services that serve HTTP must add that route.
+- External provider URLs (`*_API_URL`) can be overridden. The real provider is the default.
+- The `dev` Postgres readiness check pings the database instead of checking the TCP port.
+
+### 🐛 Fixed
+- `anode dev` no longer reports services as running before they answer.
+- `anode dev` removes its database containers when it exits.
+- Dry-run and deploy validate `anode.toml` before any SSH connection.
+
+---
+
 ## [1.4.0] - 2026-11-15
 
 ### 🔒 Security

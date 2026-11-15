@@ -77,7 +77,7 @@ export default function ChangelogPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4">
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="text-xs font-mono-code text-neutral-400">Current Release</div>
-              <div className="text-lg font-bold text-emerald-400 font-mono-code mt-0.5">v1.4.0</div>
+              <div className="text-lg font-bold text-emerald-400 font-mono-code mt-0.5">v1.5.0</div>
             </div>
             <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
               <div className="text-xs font-mono-code text-neutral-400">Pillars Verified</div>
@@ -260,7 +260,7 @@ export default function ChangelogPage() {
           </div>
 
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Upgrade to Anode v1.4.0 in Seconds
+            Upgrade to Anode v1.5.0 in Seconds
           </h2>
 
           <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed max-w-2xl">

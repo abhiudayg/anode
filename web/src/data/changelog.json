@@ -1,9 +1,42 @@
 [
   {
+    "version": "v1.5.0",
+    "date": "November 15, 2026",
+    "tag": "v1.5.0",
+    "isLatest": true,
+    "summary": "Live-tested stores and external providers, Temporal workers for workflows, and wider store detection in the analyzer.",
+    "highlights": [
+      "Live test suite: every store the mesh uses, plus Kafka, runs in Docker and the tests check each record.",
+      "Temporal workers for disputes and workflows, with activity retries.",
+      "Store detection widened to RabbitMQ, MinIO, MongoDB, ClickHouse, ScyllaDB, Temporal, and Memcached.",
+      "Redis version auto: a binary Redis store takes the host package version."
+    ],
+    "updates": [
+      {
+        "title": "Live test infrastructure",
+        "category": "Testing",
+        "badge": "Feature",
+        "description": "infra/compose.yaml runs the stores and Kafka. infra/live-test.sh starts them, runs 17 live tests, and stops them."
+      },
+      {
+        "title": "Store detection and Temporal",
+        "category": "CLI",
+        "badge": "Feature",
+        "description": "The analyzer binds RabbitMQ, MinIO, MongoDB, ClickHouse, ScyllaDB, Temporal, and Memcached clients to named resources, and follows Temporal registrations."
+      },
+      {
+        "title": "Redis version auto",
+        "category": "Deploy",
+        "badge": "Feature",
+        "description": "A binary Redis store uses the version the host package provides, and the deploy prints it. A pinned version is still checked."
+      }
+    ]
+  },
+  {
     "version": "v1.4.0",
     "date": "November 15, 2026",
     "tag": "v1.4.0",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Security and reliability release for the bare-metal deploy path: validated systemd units, a firewall for application ports, a dedicated deploy account, one-command rollback, and fail-loud deploys.",
     "highlights": [
       "Hardened deploy path: unit fields validated, application ports blocked from external interfaces and the rule saved across reboots.",
