@@ -7,7 +7,7 @@ import (
 )
 
 func TestLockfileIsIdenticalAcrossRuns(t *testing.T) {
-	dir, err := filepath.Abs("../../examples/retail-platform")
+	dir, err := filepath.Abs("testdata/storebind")
 	if err != nil {
 		t.Fatal(err)
 	}
