@@ -60,7 +60,7 @@ func TestDriverConnectionTemplates(t *testing.T) {
 	// 2. MySQL Connection Templates
 	mysql := reg.Resolve("mysql")
 	mysqlEnv := mysql.BuildConnectionEnv("users-db", "127.0.0.1", 3306, "users", "test-pass")
-	if mysqlEnv["DSN"] != "root:mysql@tcp(127.0.0.1:3306)/users?parseTime=true" {
+	if mysqlEnv["DSN"] != "root:test-pass@tcp(127.0.0.1:3306)/users?parseTime=true" {
 		t.Errorf("unexpected MySQL DSN template: %s", mysqlEnv["DSN"])
 	}
 

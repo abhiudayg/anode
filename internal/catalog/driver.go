@@ -19,6 +19,7 @@ type DriverSpec struct {
 	Security          SecuritySpec           `yaml:"security" json:"security"`
 	Networking        NetworkingSpec         `yaml:"networking" json:"networking"`
 	ConnectionEnv     map[string]string      `yaml:"connection_templates" json:"connection_templates"`
+	PrimaryConnection string                 `yaml:"primary_connection,omitempty" json:"primary_connection,omitempty"`
 	ReadinessProbe    ReadinessSpec          `yaml:"readiness_probe" json:"readiness_probe"`
 }
 
@@ -245,4 +246,15 @@ func (d *DriverSpec) ReadinessCommand(resName string) string {
 	}
 	return fmt.Sprintf("for i in $(seq 1 60); do docker exec 'anode-%s' %s >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1",
 		resName, strings.Join(d.ReadinessProbe.Command, " "))
+}
+
+func (d *DriverSpec) PrimaryConnectionValue(resName, host string, port int, dbName, password string) (string, error) {
+	if d.PrimaryConnection == "" {
+		return "", fmt.Errorf("catalog kind %s has no primary_connection", d.Kind)
+	}
+	value, ok := d.BuildConnectionEnv(resName, host, port, dbName, password)[d.PrimaryConnection]
+	if !ok {
+		return "", fmt.Errorf("catalog kind %s: primary_connection %s is not a connection template", d.Kind, d.PrimaryConnection)
+	}
+	return value, nil
 }

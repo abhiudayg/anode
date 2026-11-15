@@ -35,28 +35,28 @@ runtime = "docker"
 version = "16"
 
 [stores."redis-auth"]
-runtime = "binary"
-version = "auto"
+runtime = "docker"
+version = "7"
 
 [stores."redis-inventory-locks"]
-runtime = "binary"
-version = "auto"
+runtime = "docker"
+version = "7"
 
 [stores."redis-livechat"]
-runtime = "binary"
-version = "auto"
+runtime = "docker"
+version = "7"
 
 [stores."redis-loyalty"]
-runtime = "binary"
-version = "auto"
+runtime = "docker"
+version = "7"
 
 [stores."redis-pricing-valkey"]
 runtime = "docker"
 version = "7.2"
 
 [stores."redis-recs"]
-runtime = "binary"
-version = "auto"
+runtime = "docker"
+version = "7"
 
 [services."accounting"]
 runtime = "binary"
@@ -153,3 +153,87 @@ runtime = "binary"
 
 [services."workflows"]
 runtime = "binary"
+
+[stores."analytics-clickhouse"]
+runtime = "docker"
+version = "24.3"
+
+[stores."auditlog-clickhouse"]
+runtime = "docker"
+version = "24.3"
+
+[stores."catalog-mongo"]
+runtime = "docker"
+version = "7.0"
+
+[stores."cms-minio"]
+runtime = "docker"
+version = "RELEASE.2024-05-10T01-41-38Z"
+
+[stores."coupons-memcached"]
+runtime = "docker"
+version = "1.6-alpine"
+
+[stores."disputes-temporal"]
+runtime = "docker"
+version = "1.23.1"
+
+[stores."documents-minio"]
+runtime = "docker"
+version = "RELEASE.2024-05-10T01-41-38Z"
+
+[stores."documents-mongo"]
+runtime = "docker"
+version = "7.0"
+
+[stores."email-rabbitmq"]
+runtime = "docker"
+version = "3.13"
+
+[stores."fraud-scylla"]
+runtime = "docker"
+version = "5.4"
+
+[stores."media-minio"]
+runtime = "docker"
+version = "RELEASE.2024-05-10T01-41-38Z"
+
+[stores."metrics-clickhouse"]
+runtime = "docker"
+version = "24.3"
+
+[stores."notifications-rabbitmq"]
+runtime = "docker"
+version = "3.13"
+
+[stores."payments-scylla"]
+runtime = "docker"
+version = "5.4"
+
+[stores."recs-qdrant"]
+runtime = "docker"
+version = "v1.9.0"
+
+[stores."reviews-mongo"]
+runtime = "docker"
+version = "7.0"
+
+[stores."search-qdrant"]
+runtime = "docker"
+version = "v1.9.0"
+
+[stores."shipping-kafka"]
+runtime = "docker"
+version = "v24.1"
+
+[stores."warehouse-rabbitmq"]
+runtime = "docker"
+version = "3.13"
+
+[stores."webhooks-rabbitmq"]
+runtime = "docker"
+version = "3.13"
+
+[stores."workflows-temporal"]
+runtime = "docker"
+version = "1.23.1"
