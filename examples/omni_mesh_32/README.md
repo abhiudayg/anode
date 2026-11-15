@@ -36,7 +36,7 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 | `cms` | Postgres (pgx), MinIO | | |
 | `coupons` | Postgres (pgx), Memcached | | |
 | `crm` | | | Salesforce |
-| `disputes` | Temporal | `payments` | |
+| `disputes` | Temporal (worker) | `payments`, `auditlog` (from its activity) | |
 | `documents` | MinIO, MongoDB | | |
 | `email` | RabbitMQ | `auditlog` | |
 | `fraud` | ScyllaDB | | |
@@ -58,7 +58,7 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 | `users` | Postgres (pgx) | | |
 | `warehouse` | RabbitMQ | `shipping` | |
 | `webhooks` | RabbitMQ | | |
-| `workflows` | Temporal | | |
+| `workflows` | Temporal (worker) | `warehouse` (from its activity) | |
 
 `payments` also needs the Stripe secret key from the environment. `shipping` and `tax` need their own provider keys.
 
@@ -68,7 +68,8 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 
 ## Not included
 
-- No Temporal worker. `disputes` and `workflows` start workflows on the `disputes` and `workflows` task queues, and nothing in this mesh runs them.
+- Temporal workers run in the same process as the HTTP server of `disputes` (queue `disputes`) and `workflows` (queue `workflows`). Both need a Temporal server at `DISPUTES_TEMPORAL_ADDR` and `WORKFLOWS_TEMPORAL_ADDR`. The workflows are tested with Temporal's test suite, not run against a server.
+- Service calls made inside a workflow or activity are not in the lockfile. Temporal registers those functions, so the analyzer's call graph from `main` does not reach them. The `disputes` to `auditlog` and `workflows` to `warehouse` edges are missing for this reason.
 - No seed data, no docker-compose, and no provider accounts. The services are not run against live infrastructure in this repository.
 
 ## Tests

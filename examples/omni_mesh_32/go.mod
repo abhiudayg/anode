@@ -12,6 +12,7 @@ require (
 	github.com/rabbitmq/amqp091-go v1.16.0
 	github.com/redis/go-redis/v9 v9.23.0
 	github.com/segmentio/kafka-go v0.4.51
+	github.com/stretchr/testify v1.12.1
 	go.mongodb.org/mongo-driver/v2 v2.10.0
 	go.temporal.io/sdk v1.51.0
 	golang.org/x/crypto v0.59.0
@@ -51,7 +52,6 @@ require (
 	github.com/segmentio/asm v1.2.1 // indirect
 	github.com/shopspring/decimal v1.6.0 // indirect
 	github.com/stretchr/objx v0.5.3 // indirect
-	github.com/stretchr/testify v1.12.1 // indirect
 	github.com/tinylib/msgp v1.6.4 // indirect
 	github.com/xdg-go/scram v1.4.0 // indirect
 	github.com/xdg-go/stringprep v1.0.4 // indirect
