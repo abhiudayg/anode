@@ -334,10 +334,11 @@ func main() {
 			}
 		}
 		if domain == "" {
-			if !plainHTTP && deployer.IsIPTarget(host) {
-				log.Fatalf("%s is an IP address, so TLS cannot be issued. Pass --domain for TLS, or --plain-http to accept unencrypted HTTP.", host)
+			hostname := host[strings.LastIndex(host, "@")+1:]
+			if !plainHTTP && deployer.IsIPTarget(hostname) {
+				log.Fatalf("%s is an IP address, so TLS cannot be issued. Pass --domain for TLS, or --plain-http to accept unencrypted HTTP.", hostname)
 			}
-			domain = host
+			domain = hostname
 		}
 
 		fmt.Printf("⚡ Anode Production Deployer\nTarget: %s\n", host)

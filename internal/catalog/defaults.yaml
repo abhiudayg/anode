@@ -394,6 +394,9 @@ drivers:
     runtime:
       image_template: "rabbitmq:{{.Version}}-alpine"
       data_mount: "/var/lib/rabbitmq"
+      password_env: "RABBITMQ_DEFAULT_PASS"
+      default_env:
+        RABBITMQ_DEFAULT_USER: "anode"
     security:
       uid: 999
       gid: 999
@@ -408,7 +411,7 @@ drivers:
       bind_interface: "127.0.0.1"
       protocol: "amqp"
     connection_templates:
-      AMQP_URL: "amqp://guest:guest@{{.Host}}:{{.Port}}/"
+      AMQP_URL: "amqp://anode:{{.Password}}@{{.Host}}:{{.Port}}/"
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
 
@@ -788,7 +791,7 @@ drivers:
       data_mount: "/data"
       password_env: "MINIO_ROOT_PASSWORD"
       default_env:
-        MINIO_ROOT_USER: "minioadmin"
+        MINIO_ROOT_USER: "anode"
     security:
       uid: 1000
       gid: 1000
@@ -805,7 +808,7 @@ drivers:
     connection_templates:
       ENDPOINT: "http://{{.Host}}:9000"
       CONSOLE_URL: "http://{{.Host}}:9001"
-      ACCESS_KEY: "minioadmin"
+      ACCESS_KEY: "anode"
       SECRET_KEY: "{{.Password}}"
 
   temporal:

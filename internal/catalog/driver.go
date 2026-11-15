@@ -238,3 +238,11 @@ func cpusFromQuota(quota string) string {
 	}
 	return strconv.FormatFloat(percent/100, 'f', -1, 64)
 }
+
+func (d *DriverSpec) ReadinessCommand(resName string) string {
+	if len(d.ReadinessProbe.Command) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("for i in $(seq 1 60); do docker exec 'anode-%s' %s >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1",
+		resName, strings.Join(d.ReadinessProbe.Command, " "))
+}
