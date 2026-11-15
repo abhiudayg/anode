@@ -32,11 +32,13 @@ type VersionSpec struct {
 }
 
 type RuntimeSpec struct {
-	ImageTemplate string            `yaml:"image_template" json:"image_template"`
-	Command       []string          `yaml:"command,omitempty" json:"command,omitempty"`
-	DataMount     string            `yaml:"data_mount" json:"data_mount"`
-	DefaultEnv    map[string]string `yaml:"default_env,omitempty" json:"default_env,omitempty"`
-	PasswordEnv   string            `yaml:"password_env,omitempty" json:"password_env,omitempty"`
+	ImageTemplate  string            `yaml:"image_template" json:"image_template"`
+	Command        []string          `yaml:"command,omitempty" json:"command,omitempty"`
+	DataMount      string            `yaml:"data_mount" json:"data_mount"`
+	DefaultEnv     map[string]string `yaml:"default_env,omitempty" json:"default_env,omitempty"`
+	PasswordEnv    string            `yaml:"password_env,omitempty" json:"password_env,omitempty"`
+	ConfigFile     string            `yaml:"config_file,omitempty" json:"config_file,omitempty"`
+	ConfigTemplate string            `yaml:"config_template,omitempty" json:"config_template,omitempty"`
 }
 
 type SecuritySpec struct {
@@ -244,8 +246,16 @@ func (d *DriverSpec) ReadinessCommand(resName string) string {
 	if len(d.ReadinessProbe.Command) == 0 {
 		return ""
 	}
-	return fmt.Sprintf("for i in $(seq 1 60); do docker exec 'anode-%s' %s >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1",
-		resName, strings.Join(d.ReadinessProbe.Command, " "))
+	attempts := d.ReadinessProbe.TimeoutSec / 2
+	if attempts <= 0 {
+		attempts = 60
+	}
+	quoted := make([]string, 0, len(d.ReadinessProbe.Command))
+	for _, arg := range d.ReadinessProbe.Command {
+		quoted = append(quoted, "'"+strings.ReplaceAll(arg, "'", `'\''`)+"'")
+	}
+	return fmt.Sprintf("for i in $(seq 1 %d); do docker exec 'anode-%s' %s >/dev/null 2>&1 && exit 0; sleep 2; done; exit 1",
+		attempts, resName, strings.Join(quoted, " "))
 }
 
 func (d *DriverSpec) PrimaryConnectionValue(resName, host string, port int, dbName, password string) (string, error) {
@@ -257,4 +267,19 @@ func (d *DriverSpec) PrimaryConnectionValue(resName, host string, port int, dbNa
 		return "", fmt.Errorf("catalog kind %s: primary_connection %s is not a connection template", d.Kind, d.PrimaryConnection)
 	}
 	return value, nil
+}
+
+func (d *DriverSpec) RuntimeConfigFile(resName string, password string) (string, string, error) {
+	if d.Runtime.ConfigFile == "" {
+		return "", "", nil
+	}
+	tmpl, err := template.New("config").Parse(d.Runtime.ConfigTemplate)
+	if err != nil {
+		return "", "", fmt.Errorf("catalog kind %s: config_template: %w", d.Kind, err)
+	}
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, map[string]string{"Password": password}); err != nil {
+		return "", "", fmt.Errorf("catalog kind %s: config_template: %w", d.Kind, err)
+	}
+	return d.Runtime.ConfigFile, buf.String(), nil
 }
