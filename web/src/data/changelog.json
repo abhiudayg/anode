@@ -1,9 +1,48 @@
 [
   {
+    "version": "v1.6.0",
+    "date": "November 15, 2026",
+    "tag": "v1.6.0",
+    "isLatest": true,
+    "summary": "Automatic rollback, inferred Kafka topics, MinIO buckets and Qdrant collections, reviewed overrides, and ClickHouse and Scylla migrations, with a security pass on deploy inputs.",
+    "highlights": [
+      "A deploy that fails after it changes host units rolls back to the previous release, including its routes.",
+      "Kafka topics, MinIO buckets, and Qdrant collections are read from code into anode.lock.json and created at deploy.",
+      "anode migrate runs ClickHouse and ScyllaDB migrations and records what it applied.",
+      "Deploy names, routes, and domain are validated before any host is touched. Go 1.27.4."
+    ],
+    "updates": [
+      {
+        "title": "Automatic rollback",
+        "category": "Deploy",
+        "badge": "Feature",
+        "description": "Each release keeps a copy of its lockfile and Caddyfile on the host. A failed deploy restores the previous release, and rollback refuses a release whose lockfile copy does not match its hash."
+      },
+      {
+        "title": "Reviewed overrides",
+        "category": "CLI",
+        "badge": "Feature",
+        "description": "anode.overrides.json holds reviewed edits to inferred values. An override applies while the code still infers the same value; a changed value stops anode inspect with a conflict."
+      },
+      {
+        "title": "Store migrations",
+        "category": "Deploy",
+        "badge": "Feature",
+        "description": "ClickHouse SQL runs over HTTP and Scylla CQL runs through cqlsh from the pinned image. Both record applied files in anode_migrations, so a rerun applies only new files."
+      },
+      {
+        "title": "host_port moved to anode.state.json",
+        "category": "Config",
+        "badge": "Breaking",
+        "description": "Container host ports are deploy state now. An anode.toml that still sets host_port is refused with a pointer to the new file."
+      }
+    ]
+  },
+  {
     "version": "v1.5.0",
     "date": "November 15, 2026",
     "tag": "v1.5.0",
-    "isLatest": true,
+    "isLatest": false,
     "summary": "Live-tested stores and external providers, Temporal workers for workflows, and wider store detection in the analyzer.",
     "highlights": [
       "Live test suite: every store the mesh uses, plus Kafka, runs in Docker and the tests check each record.",
