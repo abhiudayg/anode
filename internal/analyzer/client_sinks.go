@@ -50,9 +50,10 @@ func storeKindFromEnv(envVar string) string {
 func ensureResource(graph *iag.Graph, id, kind, provenance string) {
 	if _, exists := graph.Resources[id]; !exists {
 		graph.Resources[id] = iag.Resource{
-			Kind:       iag.ResourceKind(kind),
-			Lifecycle:  iag.LifecycleStatefulRetain,
-			Provenance: provenance,
+			Kind:          iag.ResourceKind(kind),
+			Lifecycle:     iag.LifecycleStatefulRetain,
+			AutoProvision: true,
+			Provenance:    provenance,
 		}
 	}
 }

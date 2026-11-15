@@ -15,7 +15,7 @@ func TestAllCatalogDriversLeastPrivilege(t *testing.T) {
 
 	for _, kind := range kinds {
 		driver := reg.Resolve(kind)
-		cmd := driver.BuildProvisionCommand("test-res", driver.DefaultVersion, "/var/lib/anode/data/test-res", "/etc/anode/env/test-res.docker.env")
+		cmd := driver.BuildProvisionCommand("test-res", driver.DefaultVersion, "/var/lib/anode/data/test-res", "/etc/anode/env/test-res.docker.env", driver.Networking.PrimaryPort)
 
 		// 1. Must bind exclusively to loopback (127.0.0.1) for zero public exposure
 		if !strings.Contains(cmd, "127.0.0.1:") {
@@ -60,7 +60,7 @@ func TestDriverConnectionTemplates(t *testing.T) {
 	// 2. MySQL Connection Templates
 	mysql := reg.Resolve("mysql")
 	mysqlEnv := mysql.BuildConnectionEnv("users-db", "127.0.0.1", 3306, "users", "test-pass")
-	if mysqlEnv["DSN"] != "root:mysql@tcp(127.0.0.1:3306)/users?parseTime=true" {
+	if mysqlEnv["DSN"] != "root:test-pass@tcp(127.0.0.1:3306)/users?parseTime=true" {
 		t.Errorf("unexpected MySQL DSN template: %s", mysqlEnv["DSN"])
 	}
 

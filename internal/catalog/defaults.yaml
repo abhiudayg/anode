@@ -41,6 +41,7 @@ drivers:
       primary_port: 5432
       bind_interface: "127.0.0.1"
       protocol: "postgres"
+    primary_connection: "URL"
     connection_templates:
       URL: "postgres://{{.User}}:{{.Password}}@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
       HOST: "{{.Host}}"
@@ -83,8 +84,9 @@ drivers:
       primary_port: 3306
       bind_interface: "127.0.0.1"
       protocol: "mysql"
+    primary_connection: "DSN"
     connection_templates:
-      DSN: "root:mysql@tcp({{.Host}}:{{.Port}})/{{.Database}}?parseTime=true"
+      DSN: "root:{{.Password}}@tcp({{.Host}}:{{.Port}})/{{.Database}}?parseTime=true"
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
       ADDR: "{{.Host}}:{{.Port}}"
@@ -117,8 +119,9 @@ drivers:
       primary_port: 3306
       bind_interface: "127.0.0.1"
       protocol: "mysql"
+    primary_connection: "DSN"
     connection_templates:
-      DSN: "root:mysql@tcp({{.Host}}:{{.Port}})/{{.Database}}?parseTime=true"
+      DSN: "root:{{.Password}}@tcp({{.Host}}:{{.Port}})/{{.Database}}?parseTime=true"
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
 
@@ -148,6 +151,7 @@ drivers:
       primary_port: 26257
       bind_interface: "127.0.0.1"
       protocol: "postgres"
+    primary_connection: "URL"
     connection_templates:
       URL: "postgres://root@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
       HOST: "{{.Host}}"
@@ -182,6 +186,7 @@ drivers:
       primary_port: 5432
       bind_interface: "127.0.0.1"
       protocol: "postgres"
+    primary_connection: "URL"
     connection_templates:
       URL: "postgres://{{.User}}:{{.Password}}@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
       HOST: "{{.Host}}"
@@ -208,7 +213,7 @@ drivers:
       file_mode: "0700"
       no_new_privileges: true
       drop_capabilities: ["ALL"]
-      add_capabilities: ["SETGID", "SETUID"]
+      add_capabilities: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
       oom_score_adjust: -500
       cgroups:
         memory_max: "1G"
@@ -217,6 +222,7 @@ drivers:
       primary_port: 6379
       bind_interface: "127.0.0.1"
       protocol: "redis"
+    primary_connection: "ADDR"
     connection_templates:
       URL: "redis://{{.Host}}:{{.Port}}"
       ADDR: "{{.Host}}:{{.Port}}"
@@ -329,6 +335,7 @@ drivers:
       primary_port: 11211
       bind_interface: "127.0.0.1"
       protocol: "memcached"
+    primary_connection: "ADDR"
     connection_templates:
       ADDR: "{{.Host}}:{{.Port}}"
       HOST: "{{.Host}}"
@@ -357,11 +364,11 @@ drivers:
         - "--node-id=0"
         - "--check=false"
         - "--kafka-addr=PLAINTEXT://0.0.0.0:9092"
-        - "--advertise-kafka-addr=PLAINTEXT://127.0.0.1:9092"
+        - "--advertise-kafka-addr=PLAINTEXT://127.0.0.1:${HOST_PORT}"
       data_mount: "/var/lib/redpanda/data"
     security:
-      uid: 1000
-      gid: 1000
+      uid: 101
+      gid: 101
       file_mode: "0700"
       no_new_privileges: true
       oom_score_adjust: -500
@@ -372,6 +379,7 @@ drivers:
       primary_port: 9092
       bind_interface: "127.0.0.1"
       protocol: "kafka"
+    primary_connection: "BROKERS"
     connection_templates:
       BROKERS: "{{.Host}}:{{.Port}}"
       BOOTSTRAP_SERVERS: "{{.Host}}:{{.Port}}"
@@ -410,6 +418,7 @@ drivers:
       primary_port: 5672
       bind_interface: "127.0.0.1"
       protocol: "amqp"
+    primary_connection: "AMQP_URL"
     connection_templates:
       AMQP_URL: "amqp://anode:{{.Password}}@{{.Host}}:{{.Port}}/"
       HOST: "{{.Host}}"
@@ -471,6 +480,7 @@ drivers:
       primary_port: 9000
       bind_interface: "127.0.0.1"
       protocol: "clickhouse"
+    primary_connection: "NATIVE_ADDR"
     connection_templates:
       URL: "clickhouse://{{.Host}}:9000/{{.Database}}"
       HTTP_URL: "http://{{.Host}}:8123"
@@ -503,6 +513,7 @@ drivers:
       primary_port: 27017
       bind_interface: "127.0.0.1"
       protocol: "mongodb"
+    primary_connection: "URI"
     connection_templates:
       URI: "mongodb://{{.Host}}:{{.Port}}/{{.Database}}?directConnection=true"
       HOST: "{{.Host}}"
@@ -534,6 +545,7 @@ drivers:
       primary_port: 9042
       bind_interface: "127.0.0.1"
       protocol: "cql"
+    primary_connection: "HOSTS"
     connection_templates:
       HOSTS: "{{.Host}}"
       PORT: "{{.Port}}"
@@ -693,6 +705,7 @@ drivers:
       primary_port: 6333
       bind_interface: "127.0.0.1"
       protocol: "http"
+    primary_connection: "HTTP_URL"
     connection_templates:
       HTTP_URL: "http://{{.Host}}:{{.Port}}"
       GRPC_ADDR: "{{.Host}}:6334"
@@ -805,8 +818,10 @@ drivers:
       primary_port: 9000
       bind_interface: "127.0.0.1"
       protocol: "s3"
+    primary_connection: "ENDPOINT_ADDR"
     connection_templates:
       ENDPOINT: "http://{{.Host}}:9000"
+      ENDPOINT_ADDR: "{{.Host}}:{{.Port}}"
       CONSOLE_URL: "http://{{.Host}}:9001"
       ACCESS_KEY: "anode"
       SECRET_KEY: "{{.Password}}"
@@ -834,6 +849,7 @@ drivers:
       primary_port: 7233
       bind_interface: "127.0.0.1"
       protocol: "grpc"
+    primary_connection: "HOST_PORT"
     connection_templates:
       HOST_PORT: "{{.Host}}:{{.Port}}"
       HOST: "{{.Host}}"

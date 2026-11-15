@@ -41,7 +41,7 @@ web/
 │   │   ├── TopologyPipeline.tsx    # Interactive 4-Pillar pipeline node visualizer
 │   │   ├── DriftComparison.tsx     # Split-diff Docker Compose vs Anode engine
 │   │   ├── BentoPillars.tsx        # 4 Bento cards with cursor spotlight beam
-│   │   ├── BenchmarkSection.tsx    # 8ms cold starts vs 1420ms container metrics
+│   │   ├── BenchmarkSection.tsx    # Docker vs systemd startup comparison (no measured figures)
 │   │   ├── QuickstartSection.tsx   # 60-second copyable command walkthrough
 │   │   ├── SmoothScroll.tsx        # Responsive Lenis wrapper with height tracking
 │   │   ├── Icons.tsx               # Standard SVG components (GitHub, Go)
@@ -93,7 +93,7 @@ Visit [http://localhost:3000](http://localhost:3000) in your browser.
 * Long-form, publication-grade architectural essays:
   - *Why We Killed Dockerfiles: The 4-Pillar Proof of Topology*
   - *Solving Infrastructure-from-Code with SSA & Variable Type Analysis in Go*
-  - *Bare-Metal systemd vs Docker: Benchmarking Cold Starts & Memory Overhead*
+  - *Bare-Metal systemd vs Docker: how the two start and run services*
   - *Multi-Node Bin-Packing and Compiler-Generated Zero-Trust Firewalls (`nftables`)*
 
 ---

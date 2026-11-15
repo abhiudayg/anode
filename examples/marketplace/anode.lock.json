@@ -4,31 +4,31 @@
     "analytics-clickhouse": {
       "kind": "clickhouse",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/analytics/main.go:20"
     },
     "auditlog-clickhouse": {
       "kind": "clickhouse",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/auditlog/main.go:21"
     },
     "catalog-mongo": {
       "kind": "mongodb",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/catalog/main.go:26"
     },
     "cms-minio": {
       "kind": "minio",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/cms/main.go:31"
     },
     "coupons-memcached": {
       "kind": "memcached",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/coupons/main.go:30"
     },
     "db-accounting-timescale": {
@@ -122,61 +122,61 @@
     "disputes-temporal": {
       "kind": "temporal",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/disputes/main.go:27"
     },
     "documents-minio": {
       "kind": "minio",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/documents/main.go:37"
     },
     "documents-mongo": {
       "kind": "mongodb",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/documents/main.go:30"
     },
     "email-rabbitmq": {
       "kind": "rabbitmq",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/email/main.go:24"
     },
     "fraud-scylla": {
       "kind": "scylladb",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/fraud/main.go:26"
     },
     "media-minio": {
       "kind": "minio",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/media/main.go:16"
     },
     "metrics-clickhouse": {
       "kind": "clickhouse",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/metrics/main.go:19"
     },
     "notifications-rabbitmq": {
       "kind": "rabbitmq",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/notifications/main.go:26"
     },
     "payments-scylla": {
       "kind": "scylladb",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/payments/main.go:30"
     },
     "recs-qdrant": {
       "kind": "qdrant",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/recommendations/main.go:74"
     },
     "redis-auth": {
@@ -218,37 +218,37 @@
     "reviews-mongo": {
       "kind": "mongodb",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/reviews/main.go:27"
     },
     "search-qdrant": {
       "kind": "qdrant",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/search/main.go:83"
     },
     "shipping-kafka": {
       "kind": "kafka",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/shipping/main.go:30"
     },
     "warehouse-rabbitmq": {
       "kind": "rabbitmq",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/warehouse/main.go:26"
     },
     "webhooks-rabbitmq": {
       "kind": "rabbitmq",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/webhooks/main.go:23"
     },
     "workflows-temporal": {
       "kind": "temporal",
       "lifecycle": "stateful_retain",
-      "auto_provision": false,
+      "auto_provision": true,
       "provenance": "services/workflows/main.go:29"
     }
   },

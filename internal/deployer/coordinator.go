@@ -66,6 +66,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := cfg.Validate(d.lockfile); err != nil {
 		return err
 	}
+	hostPorts := containerHostPorts(d.lockfile, cfg)
 
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
@@ -150,16 +151,11 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					continue
 				}
 				driver := reg.Resolve(string(res.Kind))
-				connEnv := driver.BuildConnectionEnv(b.ResourceRef, "127.0.0.1", driver.Networking.PrimaryPort, b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
-				if connURL, ok := connEnv["URL"]; ok {
-					secretEnv[envKey] = connURL
-				} else if connURL, ok := connEnv["DSN"]; ok {
-					secretEnv[envKey] = connURL
-				} else if connURL, ok := connEnv["BROKERS"]; ok {
-					secretEnv[envKey] = connURL
-				} else {
-					secretEnv[envKey] = fmt.Sprintf("%s://127.0.0.1:%d/%s", res.Kind, driver.Networking.PrimaryPort, b.ResourceRef)
+				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", hostPorts[b.ResourceRef], b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
+				if err != nil {
+					return err
 				}
+				secretEnv[envKey] = value
 			} else {
 				return fmt.Errorf("service %s binds %s, which is not a declared resource", svc.Name, b.ResourceRef)
 			}

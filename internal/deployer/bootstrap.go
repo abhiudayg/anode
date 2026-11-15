@@ -58,6 +58,7 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 	}
 
 	// 2. Provision Auto-Provisioned Stateful Dependencies via Pluggable Least-Privilege Catalog
+	hostPorts := containerHostPorts(lockfile, cfg)
 	reg := catalog.NewRegistry()
 	for resID, res := range lockfile.Resources {
 		if !res.AutoProvision {
@@ -88,7 +89,7 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 		if err := b.writeContainerEnv(driver, resID, secrets[ContainerSecretKey(resID)], envFile); err != nil {
 			return err
 		}
-		provisionCmd := driver.BuildProvisionCommand(resID, store.Version, dataPath, envFile)
+		provisionCmd := driver.BuildProvisionCommand(resID, store.Version, dataPath, envFile, hostPorts[resID])
 
 		if _, err := b.ssh.Run(provisionCmd); err != nil {
 			return fmt.Errorf("failed to provision stateful resource %s: %w", resID, err)
