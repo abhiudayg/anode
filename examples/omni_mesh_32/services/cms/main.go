@@ -37,6 +37,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/pages", func(w http.ResponseWriter, r *http.Request) {
 		var p page
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil || p.Slug == "" {

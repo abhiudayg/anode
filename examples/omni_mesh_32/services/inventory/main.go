@@ -30,6 +30,9 @@ func main() {
 	defer locks.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/inventory/reserve", func(w http.ResponseWriter, r *http.Request) {
 		var res reservation
 		if err := json.NewDecoder(r.Body).Decode(&res); err != nil || res.SKU == "" || res.Quantity <= 0 {

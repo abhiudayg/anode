@@ -68,5 +68,5 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 - `runtime = "docker"` runs the store in a container at the pinned version. Every catalog kind supports it.
 - App services run as systemd binaries. `runtime = "docker"` is refused for services until the Docker path is designed for DynamicUser services.
 - Deploy stops before any host change when a store has no version, when a binary install is not available for its kind, or when the config does not match the lockfile. Nothing falls back to `latest`.
-- Native Redis checks the host's `redis-server` against the pinned version after install. If the distribution package is a different version, the deploy stops. Set the version to what the host provides, or use `runtime = "docker"`.
+- Native Redis uses `version = "auto"` by default. It takes the version the host's package provides, and the deploy prints it. A pinned version (for example `"8.0"`) is checked against the host after install, and the deploy stops on a mismatch. `auto` is only valid for a binary store. A Docker store needs an explicit version.
 - To upgrade, change `version` in `anode.toml` and deploy. Anode does not run migrations, so a breaking data change is your job.

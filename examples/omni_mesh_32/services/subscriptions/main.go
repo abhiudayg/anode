@@ -29,6 +29,9 @@ func main() {
 	defer pool.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/subscriptions", func(w http.ResponseWriter, r *http.Request) {
 		var s subscription
 		if err := json.NewDecoder(r.Body).Decode(&s); err != nil || s.ID == "" || s.CustomerID == "" || s.Plan == "" {

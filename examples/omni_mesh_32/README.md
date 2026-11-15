@@ -36,7 +36,7 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 | `cms` | Postgres (pgx), MinIO | | |
 | `coupons` | Postgres (pgx), Memcached | | |
 | `crm` | | | Salesforce |
-| `disputes` | Temporal | `payments` | |
+| `disputes` | Temporal (worker) | `payments`, `auditlog` | |
 | `documents` | MinIO, MongoDB | | |
 | `email` | RabbitMQ | `auditlog` | |
 | `fraud` | ScyllaDB | | |
@@ -58,7 +58,7 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 | `users` | Postgres (pgx) | | |
 | `warehouse` | RabbitMQ | `shipping` | |
 | `webhooks` | RabbitMQ | | |
-| `workflows` | Temporal | | |
+| `workflows` | Temporal (worker) | `warehouse` | |
 
 `payments` also needs the Stripe secret key from the environment. `shipping` and `tax` need their own provider keys.
 
@@ -68,8 +68,9 @@ The two Qdrant calls appear as diagnostics. Kafka is silent.
 
 ## Not included
 
-- No Temporal worker. `disputes` and `workflows` start workflows on the `disputes` and `workflows` task queues, and nothing in this mesh runs them.
-- No seed data, no docker-compose, and no provider accounts. The services are not run against live infrastructure in this repository.
+- Temporal workers run in the same process as the HTTP server of `disputes` (queue `disputes`) and `workflows` (queue `workflows`). Both need a Temporal server at `DISPUTES_TEMPORAL_ADDR` and `WORKFLOWS_TEMPORAL_ADDR`. The workflows are tested with Temporal's test suite, not run against a server.
+- No provider accounts. The external APIs (Stripe, SendGrid, Salesforce, EasyPost, Avalara) are reached through an env base URL (`*_API_URL`). The live tests point them at local stubs, and production uses the real provider when the variable is unset.
+- Live tests: `infra/live-test.sh` starts every store the mesh uses, in `infra/compose.yaml`, and runs `livetest/` and the two Temporal tests against it. The stores are real. The provider APIs are stubs.
 
 ## Tests
 

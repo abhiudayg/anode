@@ -112,3 +112,18 @@ func variadicElementValue(alloc *ssa.Alloc) ssa.Value {
 	}
 	return nil
 }
+
+// providerFallbackURL returns the literal fallback URL of a call such as providerURL(env, base, path), which builds an
+// external endpoint from an env override and a literal base. It returns "" for any other value.
+func providerFallbackURL(val ssa.Value) string {
+	call, ok := val.(*ssa.Call)
+	if !ok || call.Call.StaticCallee() == nil || call.Call.StaticCallee().Name() != "providerURL" || len(call.Call.Args) != 3 {
+		return ""
+	}
+	base := ResolveConstantString(call.Call.Args[1])
+	path := ResolveConstantString(call.Call.Args[2])
+	if base == "" {
+		return ""
+	}
+	return base + path
+}

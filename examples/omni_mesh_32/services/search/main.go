@@ -26,6 +26,9 @@ const collection = "products"
 
 func main() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/index", func(w http.ResponseWriter, r *http.Request) {
 		var req indexRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.SKU == "" || len(req.Vector) == 0 {

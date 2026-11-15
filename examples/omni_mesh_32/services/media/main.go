@@ -22,6 +22,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("PUT /v1/media/{name}", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := objects.PutObject(r.Context(), mediaBucket, r.PathValue("name"), r.Body, -1,
 			minio.PutObjectOptions{ContentType: r.Header.Get("Content-Type")}); err != nil {

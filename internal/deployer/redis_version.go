@@ -21,5 +21,13 @@ func checkRedisVersion(versionOutput, want string) error {
 	if got == want || strings.HasPrefix(got, want+".") {
 		return nil
 	}
-	return fmt.Errorf("the host's redis-server is %s, but anode.toml asks for %s; the distribution package does not match the pinned version", got, want)
+	return fmt.Errorf("the host has redis-server %s, but anode.toml asks for %s. Set version = %q in anode.toml to use what the host provides, or set runtime = \"docker\"", got, want, redisMajorMinor(got))
+}
+
+func redisMajorMinor(version string) string {
+	parts := strings.SplitN(version, ".", 3)
+	if len(parts) < 2 {
+		return version
+	}
+	return parts[0] + "." + parts[1]
 }
