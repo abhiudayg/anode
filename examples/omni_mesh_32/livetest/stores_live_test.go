@@ -148,6 +148,7 @@ func TestCatalogAndReviewsAgainstMongoDB(t *testing.T) {
 }
 
 func TestQueueServicesPublishToRabbitMQ(t *testing.T) {
+	waitRabbit(t)
 	conn, err := amqp.Dial(rabbitURL)
 	if err != nil {
 		t.Fatalf("rabbitmq: %v", err)

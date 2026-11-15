@@ -243,6 +243,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/ledger/entries",
             "GET /v1/ledger/balance/{account}"
           ]
@@ -269,6 +270,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/events",
             "GET /v1/events/count"
           ]
@@ -312,6 +314,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/audit",
             "GET /v1/audit/recent"
           ]
@@ -340,6 +343,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/auth/login",
             "GET /v1/auth/session/{token}"
           ]
@@ -368,6 +372,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/catalog/items",
             "GET /v1/catalog/items"
           ]
@@ -400,6 +405,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/pages",
             "GET /v1/pages/{slug}",
             "PUT /v1/assets/{name}"
@@ -425,6 +431,26 @@
       ],
       "secrets": [
         {
+          "env_var": "CMS_MINIO_ACCESS_KEY",
+          "provenance": "services/cms/main.go:32"
+        },
+        {
+          "env_var": "CMS_MINIO_SECRET_KEY",
+          "provenance": "services/cms/main.go:32"
+        },
+        {
+          "env_var": "MINIO_ROOT_PASSWORD",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
+        },
+        {
           "env_var": "AWS_ACCESS_KEY",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
         },
@@ -445,18 +471,6 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         },
         {
-          "env_var": "MINIO_ROOT_PASSWORD",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
-        },
-        {
-          "env_var": "MINIO_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
-        },
-        {
-          "env_var": "MINIO_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
-        },
-        {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
         },
@@ -475,14 +489,6 @@
         {
           "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
-        },
-        {
-          "env_var": "CMS_MINIO_ACCESS_KEY",
-          "provenance": "services/cms/main.go:32"
-        },
-        {
-          "env_var": "CMS_MINIO_SECRET_KEY",
-          "provenance": "services/cms/main.go:32"
         }
       ]
     },
@@ -494,6 +500,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/coupons",
             "GET /v1/coupons/{code}"
           ]
@@ -526,6 +533,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/crm/contacts"
           ]
         }
@@ -534,7 +542,7 @@
       "secrets": [
         {
           "env_var": "SALESFORCE_ACCESS_TOKEN",
-          "provenance": "services/crm/main.go:38"
+          "provenance": "services/crm/main.go:41"
         }
       ]
     },
@@ -553,17 +561,17 @@
       ],
       "bindings": [
         {
+          "resource_ref": "disputes-temporal",
+          "protocol": "temporal",
+          "inject_env": "DISPUTES_TEMPORAL_ADDR",
+          "provenance": "services/disputes/main.go:27"
+        },
+        {
           "service_ref": "auditlog",
           "protocol": "http",
           "interface": "/v1/audit",
           "inject_env": "AUDITLOG_SERVICE_URL",
           "provenance": "services/disputes/main.go:75"
-        },
-        {
-          "resource_ref": "disputes-temporal",
-          "protocol": "temporal",
-          "inject_env": "DISPUTES_TEMPORAL_ADDR",
-          "provenance": "services/disputes/main.go:27"
         }
       ],
       "secrets": []
@@ -576,6 +584,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "PUT /v1/documents/{id}",
             "GET /v1/documents/{id}"
           ]
@@ -597,16 +606,32 @@
       ],
       "secrets": [
         {
-          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
         },
         {
-          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
         },
         {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "MINIO_ROOT_PASSWORD",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
         },
         {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
@@ -629,40 +654,24 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
-          "env_var": "MINIO_ROOT_PASSWORD",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
-        },
-        {
-          "env_var": "MINIO_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
-        },
-        {
-          "env_var": "MINIO_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
-        },
-        {
-          "env_var": "AWS_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
-        },
-        {
-          "env_var": "AWS_SECRET_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
-        },
-        {
-          "env_var": "AWS_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
-        },
-        {
-          "env_var": "AWS_SESSION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
-        },
-        {
           "env_var": "DOCUMENTS_MINIO_ACCESS_KEY",
           "provenance": "services/documents/main.go:38"
         },
         {
           "env_var": "DOCUMENTS_MINIO_SECRET_KEY",
           "provenance": "services/documents/main.go:38"
+        },
+        {
+          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
+        },
+        {
+          "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         }
       ]
     },
@@ -674,6 +683,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/email/send"
           ]
         }
@@ -696,6 +706,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/fraud/check"
           ]
         }
@@ -718,6 +729,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/inventory/reserve"
           ]
         }
@@ -749,6 +761,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/livechat/rooms/{room}/messages",
             "GET /v1/livechat/rooms/{room}/history"
           ]
@@ -772,6 +785,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/loyalty/points",
             "GET /v1/loyalty/points/{customer}"
           ]
@@ -804,6 +818,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "PUT /v1/media/{name}",
             "GET /v1/media/{name}"
           ]
@@ -819,26 +834,6 @@
       ],
       "secrets": [
         {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
-        },
-        {
-          "env_var": "AWS_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
-        },
-        {
-          "env_var": "AWS_SECRET_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
-        },
-        {
-          "env_var": "AWS_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
-        },
-        {
-          "env_var": "AWS_SESSION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
-        },
-        {
           "env_var": "MINIO_ROOT_PASSWORD",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
         },
@@ -849,6 +844,14 @@
         {
           "env_var": "MINIO_SECRET_KEY",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
+        },
+        {
+          "env_var": "MEDIA_MINIO_ACCESS_KEY",
+          "provenance": "services/media/main.go:17"
+        },
+        {
+          "env_var": "MEDIA_MINIO_SECRET_KEY",
+          "provenance": "services/media/main.go:17"
         },
         {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
@@ -871,12 +874,24 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
-          "env_var": "MEDIA_MINIO_ACCESS_KEY",
-          "provenance": "services/media/main.go:17"
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         },
         {
-          "env_var": "MEDIA_MINIO_SECRET_KEY",
-          "provenance": "services/media/main.go:17"
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
         }
       ]
     },
@@ -888,6 +903,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/metrics",
             "GET /v1/metrics/{name}/avg"
           ]
@@ -916,6 +932,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/notifications"
           ]
         }
@@ -931,7 +948,7 @@
       "secrets": [
         {
           "env_var": "SENDGRID_API_KEY",
-          "provenance": "services/notifications/main.go:75"
+          "provenance": "services/notifications/main.go:78"
         }
       ]
     },
@@ -943,12 +960,27 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/orders",
             "GET /v1/orders/{id}"
           ]
         }
       ],
       "bindings": [
+        {
+          "service_ref": "inventory",
+          "protocol": "http",
+          "interface": "/v1/inventory/reserve",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:95"
+        },
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/charges",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:115"
+        },
         {
           "resource_ref": "db-orders-postgres",
           "protocol": "postgres",
@@ -957,20 +989,6 @@
             "ORDERS_POSTGRES_DSN"
           ],
           "provenance": "services/orders/main.go:28"
-        },
-        {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/charges",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:112"
-        },
-        {
-          "service_ref": "inventory",
-          "protocol": "http",
-          "interface": "/v1/inventory/reserve",
-          "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:92"
         }
       ],
       "secrets": []
@@ -983,6 +1001,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/charges",
             "POST /v1/payments/hold"
           ]
@@ -999,7 +1018,7 @@
       "secrets": [
         {
           "env_var": "STRIPE_SECRET_KEY",
-          "provenance": "services/payments/main.go:90"
+          "provenance": "services/payments/main.go:93"
         }
       ]
     },
@@ -1011,6 +1030,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "PUT /v1/pricing/{sku}",
             "GET /v1/pricing/{sku}"
           ]
@@ -1039,23 +1059,24 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "GET /v1/recommendations/{user}"
           ]
         }
       ],
       "bindings": [
         {
-          "service_ref": "RECS_QDRANT_URL",
-          "protocol": "http",
-          "interface": "/collections/products/points/search",
-          "inject_env": "RECS_QDRANT_URL",
-          "provenance": "services/recommendations/main.go:71"
-        },
-        {
           "resource_ref": "redis-recs",
           "protocol": "redis",
           "inject_env": "RECS_REDIS_ADDR",
           "provenance": "services/recommendations/main.go:24"
+        },
+        {
+          "service_ref": "RECS_QDRANT_URL",
+          "protocol": "http",
+          "interface": "/collections/products/points/search",
+          "inject_env": "RECS_QDRANT_URL",
+          "provenance": "services/recommendations/main.go:74"
         }
       ],
       "secrets": []
@@ -1068,6 +1089,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/reviews",
             "GET /v1/reviews"
           ]
@@ -1100,6 +1122,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/index",
             "POST /v1/search"
           ]
@@ -1110,7 +1133,7 @@
           "service_ref": "SEARCH_QDRANT_URL",
           "protocol": "http",
           "inject_env": "SEARCH_QDRANT_URL",
-          "provenance": "services/search/main.go:80"
+          "provenance": "services/search/main.go:83"
         }
       ],
       "secrets": []
@@ -1123,6 +1146,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/shipments"
           ]
         }
@@ -1131,7 +1155,7 @@
       "secrets": [
         {
           "env_var": "EASYPOST_API_KEY",
-          "provenance": "services/shipping/main.go:75"
+          "provenance": "services/shipping/main.go:78"
         }
       ]
     },
@@ -1143,6 +1167,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/subscriptions",
             "GET /v1/subscriptions/{id}"
           ]
@@ -1169,6 +1194,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "GET /v1/tax/rates"
           ]
         }
@@ -1177,7 +1203,7 @@
       "secrets": [
         {
           "env_var": "AVATAX_LICENSE_KEY",
-          "provenance": "services/tax/main.go:25"
+          "provenance": "services/tax/main.go:28"
         }
       ]
     },
@@ -1189,6 +1215,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/users",
             "POST /v1/users/verify",
             "GET /v1/users/{id}"
@@ -1216,6 +1243,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/warehouse/picks"
           ]
         }
@@ -1238,6 +1266,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/webhooks/dispatch"
           ]
         }
@@ -1267,17 +1296,17 @@
       ],
       "bindings": [
         {
+          "resource_ref": "workflows-temporal",
+          "protocol": "temporal",
+          "inject_env": "WORKFLOWS_TEMPORAL_ADDR",
+          "provenance": "services/workflows/main.go:29"
+        },
+        {
           "service_ref": "warehouse",
           "protocol": "http",
           "interface": "/v1/warehouse/picks",
           "inject_env": "WAREHOUSE_SERVICE_URL",
           "provenance": "services/workflows/main.go:78"
-        },
-        {
-          "resource_ref": "workflows-temporal",
-          "protocol": "temporal",
-          "inject_env": "WORKFLOWS_TEMPORAL_ADDR",
-          "provenance": "services/workflows/main.go:29"
         }
       ],
       "secrets": []
@@ -1324,13 +1353,13 @@
     {
       "level": "warn",
       "message": "Outbound HTTP call in service \"recommendations\" via env \"RECS_QDRANT_URL\" could not be matched to an internal service",
-      "provenance": "services/recommendations/main.go:71",
+      "provenance": "services/recommendations/main.go:74",
       "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
     },
     {
       "level": "warn",
       "message": "Outbound HTTP call in service \"search\" via env \"SEARCH_QDRANT_URL\" could not be matched to an internal service",
-      "provenance": "services/search/main.go:80",
+      "provenance": "services/search/main.go:83",
       "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
     }
   ]

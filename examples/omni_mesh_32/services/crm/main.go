@@ -32,7 +32,7 @@ func main() {
 			"Email":     c.Email,
 		})
 		req, err := http.NewRequestWithContext(r.Context(), http.MethodPost,
-			"https://api.salesforce.com/services/data/v58.0/sobjects/Contact", bytes.NewReader(body))
+			providerURL("SALESFORCE_API_URL", "https://api.salesforce.com", "/services/data/v58.0/sobjects/Contact"), bytes.NewReader(body))
 		if err != nil {
 			http.Error(w, "request failed", http.StatusInternalServerError)
 			return
@@ -57,4 +57,14 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// providerURL returns the endpoint of an external API. The env var lets tests point it at a local stub; production
+// leaves it unset and calls the provider.
+func providerURL(env, fallbackBase, path string) string {
+	base := os.Getenv(env)
+	if base == "" {
+		base = fallbackBase
+	}
+	return base + path
 }

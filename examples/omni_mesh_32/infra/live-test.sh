@@ -12,7 +12,7 @@ wait_port() {
 	echo "port $1 did not open" >&2
 	return 1
 }
-for port in 7233 15432 16379 16380 13306 27018 5673 9001 11212 16333 9100 15433 26258 9042; do wait_port "$port"; done
+for port in 7233 15432 16379 16380 13306 27018 5673 9001 11212 16333 9100 15433 26258 9042 19092; do wait_port "$port"; done
 export TEMPORAL_LIVE_ADDR=127.0.0.1:7233
 go test -count=1 -tags live -v ./services/disputes ./services/workflows -run AgainstTemporalServer
 go test -count=1 -tags live -v ./livetest -timeout 15m
