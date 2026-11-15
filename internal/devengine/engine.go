@@ -4,8 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os/exec"
 	"path/filepath"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -173,23 +176,70 @@ func (e *Engine) StartAll(ctx context.Context, envPlan map[string]map[string]str
 	return nil
 }
 
+// StopAll stops the services and removes the database containers this run started. They have no volumes, so
+// nothing is lost, and the next run starts from a clean database.
 func (e *Engine) StopAll() {
 	e.supervisor.StopAll()
+	for resID := range e.allocatedDBPorts {
+		e.containerMgr.Remove(context.Background(), containerName(resID))
+	}
 }
 
+// WaitForServices waits until every service with an HTTP ingress answers on its port.
+func (e *Engine) WaitForServices(ctx context.Context, timeout time.Duration) error {
+	var notReady []string
+	for name, svc := range e.lockfile.Services {
+		if !hasHTTPIngress(svc) {
+			continue
+		}
+		port := e.allocatedPorts[name]
+		if !WaitForHealth(ctx, fmt.Sprintf("http://127.0.0.1:%d%s", port, healthPath), timeout) {
+			notReady = append(notReady, fmt.Sprintf("%s (port %d)", name, port))
+		}
+	}
+	if len(notReady) > 0 {
+		sort.Strings(notReady)
+		return fmt.Errorf("services did not pass GET %s within %v: %s", healthPath, timeout, strings.Join(notReady, ", "))
+	}
+	return nil
+}
+
+func hasHTTPIngress(svc iag.Service) bool {
+	for _, ing := range svc.Ingress {
+		if ing.Protocol == "http" {
+			return true
+		}
+	}
+	return false
+}
+
+// healthPath is the route every HTTP service must serve, with a status below 400, before dev reports it up.
+const healthPath = "/healthz"
+
+// WaitForHealth reports whether GET url returns a status below 400 within timeout. A refused, reset, or dropped
+// connection, and an error status such as 404 or 500, are not ready.
 func WaitForHealth(ctx context.Context, url string, timeout time.Duration) bool {
+	client := &http.Client{Timeout: time.Second, CheckRedirect: func(*http.Request, []*http.Request) error {
+		return http.ErrUseLastResponse
+	}}
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
 		select {
 		case <-ctx.Done():
 			return false
 		default:
-			conn, err := net.DialTimeout("tcp", url, 200*time.Millisecond)
-			if err == nil {
-				_ = conn.Close()
-				return true
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+			if err != nil {
+				return false
 			}
-			time.Sleep(100 * time.Millisecond)
+			resp, err := client.Do(req)
+			if err == nil {
+				_ = resp.Body.Close()
+				if resp.StatusCode < http.StatusBadRequest {
+					return true
+				}
+			}
+			time.Sleep(200 * time.Millisecond)
 		}
 	}
 	return false
