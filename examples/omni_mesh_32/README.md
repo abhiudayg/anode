@@ -10,25 +10,18 @@ Run `anode inspect ./examples/omni_mesh_32`. The lockfile in this directory is i
 
 | Found by Anode | Count | Stores |
 | :--- | :---: | :--- |
-| Resources | 14 | Postgres 7 (`accounting` via TimescaleDB, `subscriptions` via CockroachDB, plus `cms`, `coupons`, `loyalty`, `orders`, `users`), Redis 5 (`auth`, `inventory`, `livechat`, `loyalty`, `recommendations`), Valkey 1 (`pricing`), MySQL protocol 1 (`inventory`, MariaDB) |
+| Resources | 32 | Postgres 7, Redis 5, MongoDB 3, RabbitMQ 4, MinIO 3, ClickHouse 3, ScyllaDB 2, Temporal 2, Memcached 1, Valkey 1, MySQL protocol 1 (MariaDB). See the lockfile for the env var and service of each |
 | External egress | 5 | Stripe, SendGrid, Salesforce, EasyPost, Avalara |
 | Diagnostics | 2 | Two Qdrant REST calls (`search`, `recommendations`) that Anode cannot match to an internal service. Qdrant is a real dependency; Anode simply has no sink for it |
 
-Anode does not detect the other 21 store connections in this mesh. It has no sink for these clients:
+Anode does not detect three store connections in this mesh:
 
-| Store | Services | Client library |
+| Store | Services | Why |
 | :--- | :--- | :--- |
-| MongoDB | `catalog`, `documents`, `reviews` | `go.mongodb.org/mongo-driver/v2` |
-| RabbitMQ | `email`, `notifications`, `warehouse`, `webhooks` | `github.com/rabbitmq/amqp091-go` |
-| MinIO | `cms`, `documents`, `media` | `github.com/minio/minio-go/v7` |
-| ClickHouse | `analytics`, `auditlog`, `metrics` | `github.com/ClickHouse/clickhouse-go/v2` |
-| ScyllaDB | `fraud`, `payments` | `github.com/gocql/gocql` |
-| Temporal | `disputes`, `workflows` | `go.temporal.io/sdk/client` |
-| Kafka | `shipping` | `github.com/segmentio/kafka-go` |
-| Memcached | `coupons` | `github.com/bradfitz/gomemcache/memcache` |
-| Qdrant | `search`, `recommendations` | plain HTTP (no SDK) |
+| Kafka | `shipping` | The broker list is set in a struct literal (`kafka.Writer{Addr: kafka.TCP(...)}`), not a constructor call the analyzer matches |
+| Qdrant | `search`, `recommendations` | Plain HTTP calls with no client library, so the analyzer cannot identify the store by type |
 
-So the lockfile is a partial map of this code, not a complete inventory of its stores.
+The two Qdrant calls appear as diagnostics. Kafka is silent.
 
 ## Services
 
