@@ -24,11 +24,15 @@ func redisEnvPath(resID string) string {
 }
 
 func validateRedisPassword(password string) error {
+	return validatePassword("redis password", password)
+}
+
+func validatePassword(label, password string) error {
 	if password == "" {
-		return fmt.Errorf("redis password is empty")
+		return fmt.Errorf("%s is empty", label)
 	}
 	if strings.ContainsAny(password, "\r\n\x00") {
-		return fmt.Errorf("redis password must not contain line breaks or NUL characters")
+		return fmt.Errorf("%s must not contain line breaks or NUL characters", label)
 	}
 	return nil
 }

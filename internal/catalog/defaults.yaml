@@ -22,13 +22,13 @@ drivers:
     runtime:
       image_template: "postgres:{{.Version}}-alpine"
       data_mount: "/var/lib/postgresql/data"
+      password_env: "POSTGRES_PASSWORD"
       default_env:
         POSTGRES_USER: "postgres"
-        POSTGRES_PASSWORD: "postgres"
         POSTGRES_DB: "${DB_NAME}"
     security:
-      uid: 999
-      gid: 999
+      uid: 70
+      gid: 70
       file_mode: "0700"
       no_new_privileges: true
       drop_capabilities: ["ALL"]
@@ -42,11 +42,11 @@ drivers:
       bind_interface: "127.0.0.1"
       protocol: "postgres"
     connection_templates:
-      URL: "postgres://postgres:postgres@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
+      URL: "postgres://{{.User}}:{{.Password}}@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
       USER: "postgres"
-      PASSWORD: "postgres"
+      PASSWORD: "{{.Password}}"
       DATABASE: "{{.Database}}"
       ADDR: "{{.Host}}:{{.Port}}"
     readiness_probe:
@@ -67,8 +67,8 @@ drivers:
     runtime:
       image_template: "mysql:{{.Version}}"
       data_mount: "/var/lib/mysql"
+      password_env: "MYSQL_ROOT_PASSWORD"
       default_env:
-        MYSQL_ROOT_PASSWORD: "mysql"
         MYSQL_DATABASE: "${DB_NAME}"
     security:
       uid: 999
@@ -101,8 +101,8 @@ drivers:
     runtime:
       image_template: "mariadb:{{.Version}}"
       data_mount: "/var/lib/mysql"
+      password_env: "MARIADB_ROOT_PASSWORD"
       default_env:
-        MARIADB_ROOT_PASSWORD: "mysql"
         MARIADB_DATABASE: "${DB_NAME}"
     security:
       uid: 999
@@ -165,9 +165,9 @@ drivers:
     runtime:
       image_template: "timescale/timescaledb:{{.Version}}"
       data_mount: "/var/lib/postgresql/data"
+      password_env: "POSTGRES_PASSWORD"
       default_env:
         POSTGRES_USER: "postgres"
-        POSTGRES_PASSWORD: "postgres"
         POSTGRES_DB: "${DB_NAME}"
     security:
       uid: 999
@@ -183,7 +183,7 @@ drivers:
       bind_interface: "127.0.0.1"
       protocol: "postgres"
     connection_templates:
-      URL: "postgres://postgres:postgres@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
+      URL: "postgres://{{.User}}:{{.Password}}@{{.Host}}:{{.Port}}/{{.Database}}?sslmode=disable"
       HOST: "{{.Host}}"
       PORT: "{{.Port}}"
 
@@ -786,9 +786,9 @@ drivers:
       image_template: "minio/minio:{{.Version}}"
       command: ["server", "/data", "--console-address", ":9001"]
       data_mount: "/data"
+      password_env: "MINIO_ROOT_PASSWORD"
       default_env:
         MINIO_ROOT_USER: "minioadmin"
-        MINIO_ROOT_PASSWORD: "minioadmin"
     security:
       uid: 1000
       gid: 1000
@@ -806,7 +806,7 @@ drivers:
       ENDPOINT: "http://{{.Host}}:9000"
       CONSOLE_URL: "http://{{.Host}}:9001"
       ACCESS_KEY: "minioadmin"
-      SECRET_KEY: "minioadmin"
+      SECRET_KEY: "{{.Password}}"
 
   temporal:
     kind: temporal

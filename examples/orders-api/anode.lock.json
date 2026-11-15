@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.0",
+  "resources": {
+    "db-orders-db": {
+      "kind": "postgres",
+      "lifecycle": "stateful_retain",
+      "auto_provision": true,
+      "provenance": "services/orders/main.go:14",
+      "migrations": {
+        "tool": "goose",
+        "path": "migrations/orders",
+        "execution": "pre_traffic_job"
+      }
+    }
+  },
+  "services": {
+    "orders": {
+      "name": "orders",
+      "entrypoint": "./services/orders",
+      "ingress": [
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": [
+            "GET /healthz",
+            "POST /v1/orders"
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "resource_ref": "db-orders-db",
+          "protocol": "postgres",
+          "inject_env": "ORDERS_DB_URL",
+          "expanded_env": [
+            "ORDERS_DB_URL"
+          ],
+          "provenance": "services/orders/main.go:14"
+        }
+      ],
+      "secrets": []
+    }
+  }
+}

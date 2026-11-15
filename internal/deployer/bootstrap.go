@@ -26,7 +26,7 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
                               /var/lib/anode/data \
                               /var/lib/anode/caddy \
                               /etc/systemd/system && \
-                     chown -R anode:anode /var/lib/anode`
+                     chown anode:anode /var/lib/anode && chown -R anode:anode /var/lib/anode/bin /var/lib/anode/releases /var/lib/anode/caddy`
 	if _, err := b.ssh.Run(setupDirsCmd); err != nil {
 		return fmt.Errorf("failed to create directory structure on host: %w", err)
 	}
@@ -84,7 +84,11 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 		dataPath := fmt.Sprintf("/var/lib/anode/data/%s", resID)
 
 		fmt.Printf("  ⚙ Bootstrapping production stateful %s (%s, version: %s, image: %s)...\n", resID, res.Kind, store.Version, image)
-		provisionCmd := driver.BuildProvisionCommand(resID, store.Version, dataPath)
+		envFile := fmt.Sprintf("/etc/anode/env/%s.docker.env", resID)
+		if err := b.writeContainerEnv(driver, resID, secrets[ContainerSecretKey(resID)], envFile); err != nil {
+			return err
+		}
+		provisionCmd := driver.BuildProvisionCommand(resID, store.Version, dataPath, envFile)
 
 		if _, err := b.ssh.Run(provisionCmd); err != nil {
 			return fmt.Errorf("failed to provision stateful resource %s: %w", resID, err)
@@ -110,4 +114,14 @@ func usesDockerStore(lockfile *iag.LockFile, cfg *projectconfig.File) bool {
 		}
 	}
 	return false
+}
+
+func (b *Bootstrapper) writeContainerEnv(driver *catalog.DriverSpec, resID, password, envFile string) error {
+	if _, err := b.ssh.Run(fmt.Sprintf("mkdir -p '%s'", filepath.Dir(envFile))); err != nil {
+		return fmt.Errorf("failed to create remote directory for %s: %w", envFile, err)
+	}
+	if err := b.ssh.StreamBytes([]byte(driver.RuntimeEnvFile(resID, password)), envFile, 0o600); err != nil {
+		return fmt.Errorf("failed to write container env for %s: %w", resID, err)
+	}
+	return nil
 }
