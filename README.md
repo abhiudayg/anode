@@ -219,7 +219,7 @@ Examples live in [`examples/`](examples/). Service counts are the number of `mai
 | [`sample-shop`](examples/sample-shop/README.md) | 2 | Two-service app with Postgres |
 | [`storefront`](examples/storefront/README.md) | 3 | Composite DSNs, Goose migrations, Stripe and SendGrid egress |
 | [`retail-platform`](examples/retail-platform/README.md) | 12 | Config indirection, HTTP and gRPC links, Redis and PostgreSQL; the analyzer's main test fixture |
-| [`marketplace`](examples/marketplace/README.md) | 32 | 32 store resources detected across 11 kinds; Kafka is not detected and Qdrant calls are reported as diagnostics |
+| [`marketplace`](examples/marketplace/README.md) | 32 | 35 store resources across 13 kinds, including Kafka and Qdrant; no diagnostics |
 
 Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
 

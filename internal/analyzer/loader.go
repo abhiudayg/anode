@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/types"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -113,6 +114,9 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 							inspector.InspectEnvCall(common, &svc)
 						}
 					}
+					if store, ok := instr.(*ssa.Store); ok {
+						inspector.InspectStore(store, &svc, lockfile)
+					}
 				}
 			}
 		}
@@ -122,6 +126,7 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 
 	// Link cross-service topologies and typed contracts (PILLAR 2)
 	l.linkServices(lockfile)
+	sortLockfile(lockfile)
 
 	l.stats = AnalysisStats{
 		PackageCount:  len(pkgs),
@@ -318,4 +323,22 @@ func (l *Loader) linkServices(graph *iag.LockFile) {
 		}
 		graph.Services[svcName] = svc
 	}
+}
+
+func sortLockfile(lock *iag.LockFile) {
+	for _, svc := range lock.Services {
+		sort.SliceStable(svc.Bindings, func(i, j int) bool {
+			return bindingSortKey(svc.Bindings[i]) < bindingSortKey(svc.Bindings[j])
+		})
+		sort.SliceStable(svc.Secrets, func(i, j int) bool {
+			return svc.Secrets[i].EnvVar+svc.Secrets[i].Provenance < svc.Secrets[j].EnvVar+svc.Secrets[j].Provenance
+		})
+	}
+	sort.SliceStable(lock.Diagnostics, func(i, j int) bool {
+		return lock.Diagnostics[i].Message+lock.Diagnostics[i].Provenance < lock.Diagnostics[j].Message+lock.Diagnostics[j].Provenance
+	})
+}
+
+func bindingSortKey(b iag.Binding) string {
+	return strings.Join([]string{b.ResourceRef, b.ServiceRef, b.Protocol, b.InjectEnv, b.Interface, b.Provenance}, "\x00")
 }

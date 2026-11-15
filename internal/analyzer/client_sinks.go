@@ -1,6 +1,7 @@
 package analyzer
 
 import (
+	"go/types"
 	"strings"
 
 	"golang.org/x/tools/go/ssa"
@@ -32,7 +33,68 @@ var clientSinks = []clientSink{
 	{pkgContains: "mongo-driver/v2/mongo", funcName: "Connect", kind: "mongodb", protocol: "mongodb", chainedMethod: "ApplyURI"},
 }
 
-var clientEnvSuffixes = []string{"_URL", "_URI", "_DSN", "_ADDR", "_ENDPOINT", "_HOSTS", "_ADDRS", "_HOST_PORT"}
+var clientEnvSuffixes = []string{"_URL", "_URI", "_DSN", "_ADDR", "_ENDPOINT", "_HOSTS", "_ADDRS", "_HOST_PORT", "_BROKERS"}
+
+// storeKindByEnvMarker maps an env var name fragment to the store kind it names, for stores reached over plain HTTP.
+var storeKindByEnvMarker = map[string]string{"QDRANT": "qdrant"}
+
+func storeKindFromEnv(envVar string) string {
+	for marker, kind := range storeKindByEnvMarker {
+		if strings.Contains(strings.ToUpper(envVar), marker) {
+			return kind
+		}
+	}
+	return ""
+}
+
+func ensureResource(graph *iag.Graph, id, kind, provenance string) {
+	if _, exists := graph.Resources[id]; !exists {
+		graph.Resources[id] = iag.Resource{
+			Kind:       iag.ResourceKind(kind),
+			Lifecycle:  iag.LifecycleStatefulRetain,
+			Provenance: provenance,
+		}
+	}
+}
+
+// InspectStore records a kafka.Writer whose Addr field is set from a broker list, as in
+// &kafka.Writer{Addr: kafka.TCP(splitHosts(os.Getenv("...")))...}.
+func (s *SinkInspector) InspectStore(store *ssa.Store, svc *iag.Service, graph *iag.Graph) {
+	fa, ok := store.Addr.(*ssa.FieldAddr)
+	if !ok || !isKafkaWriterField(fa, "Addr") {
+		return
+	}
+	call, ok := store.Val.(*ssa.Call)
+	if !ok || call.Call.StaticCallee() == nil || call.Call.StaticCallee().Name() != "TCP" || len(call.Call.Args) == 0 {
+		return
+	}
+	envVar := TraceToEnvVar(call.Call.Args[0])
+	if envVar == "" {
+		return
+	}
+	provenance := s.FormatPos(store.Pos())
+	id := resourceIDFromEnv(envVar)
+	ensureResource(graph, id, "kafka", provenance)
+	svc.Bindings = append(svc.Bindings, iag.Binding{
+		ResourceRef: id,
+		Protocol:    "kafka",
+		InjectEnv:   envVar,
+		Provenance:  provenance,
+	})
+}
+
+func isKafkaWriterField(fa *ssa.FieldAddr, field string) bool {
+	ptr, ok := fa.X.Type().(*types.Pointer)
+	if !ok {
+		return false
+	}
+	named, ok := ptr.Elem().(*types.Named)
+	if !ok || named.Obj().Name() != "Writer" || named.Obj().Pkg() == nil || !strings.Contains(named.Obj().Pkg().Path(), "segmentio/kafka-go") {
+		return false
+	}
+	st, ok := named.Underlying().(*types.Struct)
+	return ok && st.Field(fa.Field).Name() == field
+}
 
 // inspectClientSink records a binding for a store client constructor. It reports whether the call matched.
 func (s *SinkInspector) inspectClientSink(pkgPath, name string, call *ssa.CallCommon, svc *iag.Service, graph *iag.Graph, provenance string) bool {
@@ -59,13 +121,7 @@ func (s *SinkInspector) inspectClientSink(pkgPath, name string, call *ssa.CallCo
 		if envVar != "" {
 			resourceID = resourceIDFromEnv(envVar)
 		}
-		if _, exists := graph.Resources[resourceID]; !exists {
-			graph.Resources[resourceID] = iag.Resource{
-				Kind:       iag.ResourceKind(sink.kind),
-				Lifecycle:  iag.LifecycleStatefulRetain,
-				Provenance: provenance,
-			}
-		}
+		ensureResource(graph, resourceID, sink.kind, provenance)
 		svc.Bindings = append(svc.Bindings, iag.Binding{
 			ResourceRef: resourceID,
 			Protocol:    sink.protocol,
@@ -126,4 +182,21 @@ func providerFallbackURL(val ssa.Value) string {
 		return ""
 	}
 	return base + path
+}
+
+func bindStoreOverHTTP(svc *iag.Service, graph *iag.Graph, envVar, kind, routeSuffix, provenance string) {
+	id := resourceIDFromEnv(envVar)
+	ensureResource(graph, id, kind, provenance)
+	for _, b := range svc.Bindings {
+		if b.ResourceRef == id && b.InjectEnv == envVar && b.Interface == routeSuffix {
+			return
+		}
+	}
+	svc.Bindings = append(svc.Bindings, iag.Binding{
+		ResourceRef: id,
+		Protocol:    "http",
+		Interface:   routeSuffix,
+		InjectEnv:   envVar,
+		Provenance:  provenance,
+	})
 }

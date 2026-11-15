@@ -173,6 +173,12 @@
       "auto_provision": false,
       "provenance": "services/payments/main.go:30"
     },
+    "recs-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/recommendations/main.go:74"
+    },
     "redis-auth": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
@@ -214,6 +220,18 @@
       "lifecycle": "stateful_retain",
       "auto_provision": false,
       "provenance": "services/reviews/main.go:27"
+    },
+    "search-qdrant": {
+      "kind": "qdrant",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/search/main.go:83"
+    },
+    "shipping-kafka": {
+      "kind": "kafka",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/shipping/main.go:30"
     },
     "warehouse-rabbitmq": {
       "kind": "rabbitmq",
@@ -405,6 +423,12 @@
       ],
       "bindings": [
         {
+          "resource_ref": "cms-minio",
+          "protocol": "s3",
+          "inject_env": "CMS_MINIO_ENDPOINT",
+          "provenance": "services/cms/main.go:31"
+        },
+        {
           "resource_ref": "db-cms-postgres",
           "protocol": "postgres",
           "inject_env": "CMS_POSTGRES_DSN",
@@ -412,12 +436,6 @@
             "CMS_POSTGRES_DSN"
           ],
           "provenance": "services/cms/main.go:25"
-        },
-        {
-          "resource_ref": "cms-minio",
-          "protocol": "s3",
-          "inject_env": "CMS_MINIO_ENDPOINT",
-          "provenance": "services/cms/main.go:31"
         }
       ],
       "secrets": [
@@ -447,6 +465,12 @@
       ],
       "bindings": [
         {
+          "resource_ref": "coupons-memcached",
+          "protocol": "memcached",
+          "inject_env": "COUPONS_MEMCACHED_ADDR",
+          "provenance": "services/coupons/main.go:30"
+        },
+        {
           "resource_ref": "db-coupons-postgres",
           "protocol": "postgres",
           "inject_env": "COUPONS_POSTGRES_DSN",
@@ -454,12 +478,6 @@
             "COUPONS_POSTGRES_DSN"
           ],
           "provenance": "services/coupons/main.go:24"
-        },
-        {
-          "resource_ref": "coupons-memcached",
-          "protocol": "memcached",
-          "inject_env": "COUPONS_MEMCACHED_ADDR",
-          "provenance": "services/coupons/main.go:30"
         }
       ],
       "secrets": []
@@ -531,16 +549,16 @@
       ],
       "bindings": [
         {
-          "resource_ref": "documents-mongo",
-          "protocol": "mongodb",
-          "inject_env": "DOCUMENTS_MONGO_URI",
-          "provenance": "services/documents/main.go:30"
-        },
-        {
           "resource_ref": "documents-minio",
           "protocol": "s3",
           "inject_env": "DOCUMENTS_MINIO_ENDPOINT",
           "provenance": "services/documents/main.go:37"
+        },
+        {
+          "resource_ref": "documents-mongo",
+          "protocol": "mongodb",
+          "inject_env": "DOCUMENTS_MONGO_URI",
+          "provenance": "services/documents/main.go:30"
         }
       ],
       "secrets": [
@@ -795,6 +813,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "inventory",
+          "protocol": "http",
+          "interface": "/v1/inventory/reserve",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:95"
+        },
+        {
           "service_ref": "payments",
           "protocol": "http",
           "interface": "/v1/charges",
@@ -809,13 +834,6 @@
             "ORDERS_POSTGRES_DSN"
           ],
           "provenance": "services/orders/main.go:28"
-        },
-        {
-          "service_ref": "inventory",
-          "protocol": "http",
-          "interface": "/v1/inventory/reserve",
-          "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:95"
         }
       ],
       "secrets": []
@@ -893,7 +911,7 @@
       ],
       "bindings": [
         {
-          "service_ref": "RECS_QDRANT_URL",
+          "resource_ref": "recs-qdrant",
           "protocol": "http",
           "interface": "/collections/products/points/search",
           "inject_env": "RECS_QDRANT_URL",
@@ -948,7 +966,7 @@
       ],
       "bindings": [
         {
-          "service_ref": "SEARCH_QDRANT_URL",
+          "resource_ref": "search-qdrant",
           "protocol": "http",
           "inject_env": "SEARCH_QDRANT_URL",
           "provenance": "services/search/main.go:83"
@@ -969,7 +987,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "shipping-kafka",
+          "protocol": "kafka",
+          "inject_env": "SHIPPING_KAFKA_BROKERS",
+          "provenance": "services/shipping/main.go:30"
+        }
+      ],
       "secrets": [
         {
           "env_var": "EASYPOST_API_KEY",
@@ -1165,20 +1190,6 @@
       "port": 443,
       "protocol": "https",
       "is_external": true
-    }
-  ],
-  "diagnostics": [
-    {
-      "level": "warn",
-      "message": "Outbound HTTP call in service \"search\" via env \"SEARCH_QDRANT_URL\" could not be matched to an internal service",
-      "provenance": "services/search/main.go:83",
-      "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
-    },
-    {
-      "level": "warn",
-      "message": "Outbound HTTP call in service \"recommendations\" via env \"RECS_QDRANT_URL\" could not be matched to an internal service",
-      "provenance": "services/recommendations/main.go:74",
-      "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
     }
   ]
 }

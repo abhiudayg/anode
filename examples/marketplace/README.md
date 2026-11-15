@@ -19,21 +19,24 @@ It is the largest analyzer fixture in this repository. It is not a system to dep
 | Valkey | 1 | pricing |
 | MariaDB | 1 | inventory |
 | Memcached | 1 | coupons |
+| Kafka | 1 | shipping |
+| Qdrant | 2 | search, recommendations |
 
-Total: 32 store resources across 11 kinds.
+Total: 35 store resources across 13 kinds.
 
 ## What `anode inspect` records
 
 Run `anode inspect ./examples/marketplace`. The checked-in `anode.lock.json` is its output for this code.
 
-- 32 services and 32 store resources, all detected.
+- 32 services and 35 store resources, all bound to a service.
 - 5 external egress rules: Stripe, SendGrid, Salesforce, EasyPost, and Avalara. Each base URL comes from an environment variable (`STRIPE_API_URL`, `SENDGRID_API_URL`, and so on), and the lockfile records the production default.
-- 2 diagnostics for `search` and `recommendations`. Both call Qdrant over plain HTTP, and the analyzer cannot match that call to an internal service.
+- 0 diagnostics.
+- Kafka is bound through the broker list in `SHIPPING_KAFKA_BROKERS`, which the analyzer reads from the `kafka.Writer` literal. Qdrant is bound through the `*_QDRANT_URL` variables.
 
-## Known gaps
+## Limits of the analysis
 
-- **Kafka is not detected.** `shipping` publishes to Kafka, but the broker list is set in a struct literal that the analyzer does not read, so no Kafka resource appears in the lockfile.
-- **Qdrant calls are reported as diagnostics**, not as resources.
+- Only the `kafka.Writer` literal is read. A writer built with `kafka.NewWriter` or a reader is not yet recognized.
+- Qdrant is recognized by its env var name. A store reached through a variable with a different name is not detected.
 
 ## Running the tests
 

@@ -371,6 +371,8 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 						IsExternal:    true,
 					})
 				}
+			} else if envVar != "" && storeKindFromEnv(envVar) != "" {
+				bindStoreOverHTTP(svc, graph, envVar, storeKindFromEnv(envVar), routeSuffix, provenance)
 			} else if envVar != "" {
 				exists := false
 				for _, b := range svc.Bindings {
