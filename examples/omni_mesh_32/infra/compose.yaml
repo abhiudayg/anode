@@ -1,0 +1,8 @@
+# Live test infrastructure for the omni mesh. Only the Temporal dev server is here yet, because only the
+# disputes and workflows tests run against live infrastructure. Add each store with the test that uses it.
+services:
+  temporal:
+    image: temporalio/temporal:1.10.1
+    command: ["server", "start-dev", "--ip", "0.0.0.0", "--headless"]
+    ports:
+      - "127.0.0.1:7233:7233"

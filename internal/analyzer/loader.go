@@ -99,7 +99,10 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 			Secrets:    []iag.SecretRef{},
 		}
 
-		reachable := getReachableFunctions(cg, mainFn)
+		reachable := getReachableFunctions(cg, mainFn, nil)
+		if registered := temporalRegisteredFunctions(reachable); len(registered) > 0 {
+			reachable = getReachableFunctions(cg, mainFn, registered)
+		}
 
 		for fn := range reachable {
 			for _, b := range fn.Blocks {
@@ -159,7 +162,9 @@ func extractEntrypoint(rootDir string, mainFn *ssa.Function) string {
 	return "./"
 }
 
-func getReachableFunctions(cg *callgraph.Graph, root *ssa.Function) map[*ssa.Function]bool {
+// getReachableFunctions walks the call graph from root. Extra roots are functions the program hands to a runtime
+// rather than calling directly, such as Temporal workflows and activities.
+func getReachableFunctions(cg *callgraph.Graph, root *ssa.Function, extra []*ssa.Function) map[*ssa.Function]bool {
 	reachable := make(map[*ssa.Function]bool)
 	node := cg.Nodes[root]
 	if node == nil {
@@ -202,6 +207,15 @@ func getReachableFunctions(cg *callgraph.Graph, root *ssa.Function) map[*ssa.Fun
 		}
 	}
 	seedAnon(root)
+	for _, fn := range extra {
+		if !reachable[fn] {
+			reachable[fn] = true
+			if n := cg.Nodes[fn]; n != nil {
+				queue = append(queue, n)
+			}
+			seedAnon(fn)
+		}
+	}
 
 	for len(queue) > 0 {
 		curr := queue[0]
