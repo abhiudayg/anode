@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"path/filepath"
 
-	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
+
+	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 type MigrationRunner struct {
@@ -17,11 +19,14 @@ func NewMigrationRunner(rootDir string) *MigrationRunner {
 	return &MigrationRunner{rootDir: rootDir}
 }
 
-// RunGooseMigrations applies migrations from relative folder to the target database
 func (m *MigrationRunner) RunGooseMigrations(dsn string, relativePath string) (int, error) {
+	return m.RunGooseMigrationsFor("pgx", "postgres", dsn, relativePath)
+}
+
+func (m *MigrationRunner) RunGooseMigrationsFor(driver, dialect, dsn, relativePath string) (int, error) {
 	absPath := filepath.Join(m.rootDir, relativePath)
 
-	db, err := sql.Open("pgx", dsn)
+	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		return 0, fmt.Errorf("failed to open database for migrations: %w", err)
 	}
@@ -31,7 +36,7 @@ func (m *MigrationRunner) RunGooseMigrations(dsn string, relativePath string) (i
 		return 0, fmt.Errorf("database unreachable for migrations: %w", err)
 	}
 
-	if err := goose.SetDialect("postgres"); err != nil {
+	if err := goose.SetDialect(dialect); err != nil {
 		return 0, fmt.Errorf("failed to set goose dialect: %w", err)
 	}
 

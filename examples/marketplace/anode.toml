@@ -165,13 +165,11 @@ runtime = "binary"
 runtime = "binary"
 
 [stores."analytics-clickhouse"]
-runtime = "docker"
-host_port = 31000
+runtime = "external"
 version = "24.3"
 
 [stores."auditlog-clickhouse"]
-runtime = "docker"
-host_port = 31001
+runtime = "external"
 version = "24.3"
 
 [stores."catalog-mongo"]
@@ -218,8 +216,7 @@ host_port = 31017
 version = "3.68"
 
 [stores."metrics-clickhouse"]
-runtime = "docker"
-host_port = 31018
+runtime = "external"
 version = "24.3"
 
 [stores."notifications-rabbitmq"]

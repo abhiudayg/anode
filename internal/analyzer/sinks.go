@@ -445,6 +445,12 @@ func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
 		return
 	}
 	callee := call.StaticCallee()
+	if callee != nil && callee.Name() == "envOr" && len(call.Args) > 0 {
+		if name := ResolveConstantString(call.Args[0]); name != "" && !isSecretEnvName(strings.ToUpper(name)) {
+			svc.ConfigEnv = appendUnique(svc.ConfigEnv, name)
+		}
+		return
+	}
 	if callee != nil && callee.Name() == "providerURL" && len(call.Args) > 0 {
 		if name := ResolveConstantString(call.Args[0]); name != "" {
 			svc.ConfigEnv = appendUnique(svc.ConfigEnv, name)

@@ -280,7 +280,8 @@
       ],
       "secrets": [],
       "config_env": [
-        "ACCOUNTING_TIMESCALE_DSN"
+        "ACCOUNTING_TIMESCALE_DSN",
+        "PORT"
       ]
     },
     "analytics": {
@@ -313,7 +314,9 @@
       ],
       "config_env": [
         "ANALYTICS_CLICKHOUSE_ADDR",
-        "ANALYTICS_CLICKHOUSE_USER"
+        "ANALYTICS_CLICKHOUSE_DB",
+        "ANALYTICS_CLICKHOUSE_USER",
+        "PORT"
       ]
     },
     "apigateway": {
@@ -332,10 +335,11 @@
       "secrets": [],
       "config_env": [
         "AUTH_SERVICE_URL",
-        "USERS_SERVICE_URL",
-        "ORDERS_SERVICE_URL",
         "MEDIA_SERVICE_URL",
-        "SEARCH_SERVICE_URL"
+        "ORDERS_SERVICE_URL",
+        "PORT",
+        "SEARCH_SERVICE_URL",
+        "USERS_SERVICE_URL"
       ]
     },
     "auditlog": {
@@ -368,7 +372,9 @@
       ],
       "config_env": [
         "AUDITLOG_CLICKHOUSE_ADDR",
-        "AUDITLOG_CLICKHOUSE_USER"
+        "AUDITLOG_CLICKHOUSE_DB",
+        "AUDITLOG_CLICKHOUSE_USER",
+        "PORT"
       ]
     },
     "auth": {
@@ -400,8 +406,9 @@
         }
       ],
       "config_env": [
-        "USERS_SERVICE_URL",
-        "AUTH_REDIS_ADDR"
+        "AUTH_REDIS_ADDR",
+        "PORT",
+        "USERS_SERVICE_URL"
       ]
     },
     "catalog": {
@@ -428,8 +435,9 @@
       ],
       "secrets": [],
       "config_env": [
-        "SEARCH_SERVICE_URL",
-        "CATALOG_MONGO_URI"
+        "CATALOG_MONGO_URI",
+        "PORT",
+        "SEARCH_SERVICE_URL"
       ]
     },
     "cms": {
@@ -475,8 +483,9 @@
         }
       ],
       "config_env": [
+        "CMS_MINIO_ENDPOINT",
         "CMS_POSTGRES_DSN",
-        "CMS_MINIO_ENDPOINT"
+        "PORT"
       ]
     },
     "coupons": {
@@ -512,8 +521,9 @@
       ],
       "secrets": [],
       "config_env": [
+        "COUPONS_MEMCACHED_ADDR",
         "COUPONS_POSTGRES_DSN",
-        "COUPONS_MEMCACHED_ADDR"
+        "PORT"
       ]
     },
     "crm": {
@@ -537,6 +547,7 @@
         }
       ],
       "config_env": [
+        "PORT",
         "SALESFORCE_API_URL"
       ]
     },
@@ -570,9 +581,10 @@
       ],
       "secrets": [],
       "config_env": [
-        "PAYMENTS_SERVICE_URL",
+        "AUDITLOG_SERVICE_URL",
         "DISPUTES_TEMPORAL_ADDR",
-        "AUDITLOG_SERVICE_URL"
+        "PAYMENTS_SERVICE_URL",
+        "PORT"
       ]
     },
     "documents": {
@@ -614,8 +626,9 @@
         }
       ],
       "config_env": [
+        "DOCUMENTS_MINIO_ENDPOINT",
         "DOCUMENTS_MONGO_URI",
-        "DOCUMENTS_MINIO_ENDPOINT"
+        "PORT"
       ]
     },
     "email": {
@@ -642,7 +655,8 @@
       "secrets": [],
       "config_env": [
         "AUDITLOG_SERVICE_URL",
-        "EMAIL_RABBITMQ_URL"
+        "EMAIL_RABBITMQ_URL",
+        "PORT"
       ]
     },
     "fraud": {
@@ -668,7 +682,9 @@
       ],
       "secrets": [],
       "config_env": [
-        "FRAUD_SCYLLA_HOSTS"
+        "FRAUD_SCYLLA_HOSTS",
+        "FRAUD_SCYLLA_KEYSPACE",
+        "PORT"
       ]
     },
     "inventory": {
@@ -680,7 +696,8 @@
           "port_env": "PORT",
           "routes": [
             "GET /healthz",
-            "POST /v1/inventory/reserve"
+            "POST /v1/inventory/reserve",
+            "POST /v1/inventory/release"
           ]
         }
       ],
@@ -708,8 +725,9 @@
         }
       ],
       "config_env": [
+        "INVENTORY_LOCKS_REDIS_ADDR",
         "INVENTORY_MARIADB_DSN",
-        "INVENTORY_LOCKS_REDIS_ADDR"
+        "PORT"
       ]
     },
     "livechat": {
@@ -741,7 +759,8 @@
         }
       ],
       "config_env": [
-        "LIVECHAT_REDIS_ADDR"
+        "LIVECHAT_REDIS_ADDR",
+        "PORT"
       ]
     },
     "loyalty": {
@@ -783,7 +802,8 @@
       ],
       "config_env": [
         "LOYALTY_POSTGRES_DSN",
-        "LOYALTY_REDIS_ADDR"
+        "LOYALTY_REDIS_ADDR",
+        "PORT"
       ]
     },
     "media": {
@@ -819,7 +839,8 @@
         }
       ],
       "config_env": [
-        "MEDIA_MINIO_ENDPOINT"
+        "MEDIA_MINIO_ENDPOINT",
+        "PORT"
       ]
     },
     "metrics": {
@@ -852,7 +873,9 @@
       ],
       "config_env": [
         "METRICS_CLICKHOUSE_ADDR",
-        "METRICS_CLICKHOUSE_USER"
+        "METRICS_CLICKHOUSE_DB",
+        "METRICS_CLICKHOUSE_USER",
+        "PORT"
       ]
     },
     "notifications": {
@@ -883,8 +906,10 @@
         }
       ],
       "config_env": [
-        "SENDGRID_API_URL",
-        "NOTIFICATIONS_RABBITMQ_URL"
+        "NOTIFICATIONS_FROM_EMAIL",
+        "NOTIFICATIONS_RABBITMQ_URL",
+        "PORT",
+        "SENDGRID_API_URL"
       ]
     },
     "orders": {
@@ -905,16 +930,23 @@
         {
           "service_ref": "inventory",
           "protocol": "http",
+          "interface": "/v1/inventory/release",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:151"
+        },
+        {
+          "service_ref": "inventory",
+          "protocol": "http",
           "interface": "/v1/inventory/reserve",
           "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:95"
+          "provenance": "services/orders/main.go:98"
         },
         {
           "service_ref": "payments",
           "protocol": "http",
           "interface": "/v1/charges",
           "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:115"
+          "provenance": "services/orders/main.go:118"
         },
         {
           "resource_ref": "db-orders-postgres",
@@ -928,10 +960,11 @@
       ],
       "secrets": [],
       "config_env": [
-        "PAYMENTS_SERVICE_URL",
-        "ORDERS_POSTGRES_DSN",
         "ACCOUNTING_SERVICE_URL",
-        "INVENTORY_SERVICE_URL"
+        "INVENTORY_SERVICE_URL",
+        "ORDERS_POSTGRES_DSN",
+        "PAYMENTS_SERVICE_URL",
+        "PORT"
       ]
     },
     "payments": {
@@ -963,8 +996,10 @@
         }
       ],
       "config_env": [
-        "STRIPE_API_URL",
-        "PAYMENTS_SCYLLA_HOSTS"
+        "PAYMENTS_SCYLLA_HOSTS",
+        "PAYMENTS_SCYLLA_KEYSPACE",
+        "PORT",
+        "STRIPE_API_URL"
       ]
     },
     "pricing": {
@@ -996,6 +1031,7 @@
         }
       ],
       "config_env": [
+        "PORT",
         "PRICING_VALKEY_ADDR"
       ]
     },
@@ -1034,6 +1070,7 @@
         }
       ],
       "config_env": [
+        "PORT",
         "RECS_QDRANT_URL",
         "RECS_REDIS_ADDR"
       ]
@@ -1062,6 +1099,7 @@
       ],
       "secrets": [],
       "config_env": [
+        "PORT",
         "REVIEWS_MONGO_URI"
       ]
     },
@@ -1089,6 +1127,7 @@
       ],
       "secrets": [],
       "config_env": [
+        "PORT",
         "SEARCH_QDRANT_URL"
       ]
     },
@@ -1120,8 +1159,9 @@
         }
       ],
       "config_env": [
-        "SHIPPING_KAFKA_BROKERS",
-        "EASYPOST_API_URL"
+        "EASYPOST_API_URL",
+        "PORT",
+        "SHIPPING_KAFKA_BROKERS"
       ]
     },
     "subscriptions": {
@@ -1151,6 +1191,7 @@
       ],
       "secrets": [],
       "config_env": [
+        "PORT",
         "SUBSCRIPTIONS_COCKROACH_DSN"
       ]
     },
@@ -1176,7 +1217,8 @@
       ],
       "config_env": [
         "AVALARA_API_URL",
-        "AVATAX_ACCOUNT_ID"
+        "AVATAX_ACCOUNT_ID",
+        "PORT"
       ]
     },
     "users": {
@@ -1207,6 +1249,7 @@
       ],
       "secrets": [],
       "config_env": [
+        "PORT",
         "USERS_POSTGRES_DSN"
       ]
     },
@@ -1233,6 +1276,7 @@
       ],
       "secrets": [],
       "config_env": [
+        "PORT",
         "SHIPPING_SERVICE_URL",
         "WAREHOUSE_RABBITMQ_URL"
       ]
@@ -1260,6 +1304,7 @@
       ],
       "secrets": [],
       "config_env": [
+        "PORT",
         "WEBHOOKS_RABBITMQ_URL"
       ]
     },
@@ -1293,8 +1338,9 @@
       ],
       "secrets": [],
       "config_env": [
-        "WORKFLOWS_TEMPORAL_ADDR",
-        "WAREHOUSE_SERVICE_URL"
+        "PORT",
+        "WAREHOUSE_SERVICE_URL",
+        "WORKFLOWS_TEMPORAL_ADDR"
       ]
     }
   },

@@ -59,6 +59,19 @@ func main() {
 		w.WriteHeader(http.StatusCreated)
 	})
 
+	mux.HandleFunc("POST /v1/inventory/release", func(w http.ResponseWriter, r *http.Request) {
+		var res reservation
+		if err := json.NewDecoder(r.Body).Decode(&res); err != nil || res.SKU == "" || res.Quantity <= 0 {
+			http.Error(w, "invalid release", http.StatusBadRequest)
+			return
+		}
+		if _, err := db.ExecContext(r.Context(), `UPDATE stock SET on_hand = on_hand + ? WHERE sku = ?`, res.Quantity, res.SKU); err != nil {
+			http.Error(w, "release failed", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	})
+
 	log.Fatal(http.ListenAndServe(":"+envOr("PORT", "9014"), mux))
 }
 
