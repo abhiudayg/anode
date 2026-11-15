@@ -175,7 +175,7 @@ func TestPaymentsChargesThroughStripeStubAndStoresInScylla(t *testing.T) {
 	stripe := newProviderStub(t, http.StatusOK, `{"id":"ch_live_1"}`)
 	payments := startService(t, "payments", map[string]string{
 		"STRIPE_API_URL":           stripe.server.URL,
-		"STRIPE_SECRET_KEY":        "sk_live_test",
+		"STRIPE_SECRET_KEY":        "placeholder-stripe-secret",
 		"PAYMENTS_SCYLLA_HOSTS":    scyllaHost,
 		"PAYMENTS_SCYLLA_KEYSPACE": scyllaSpace,
 	})
@@ -269,7 +269,7 @@ func TestOrdersCheckoutRunsTheWholeChain(t *testing.T) {
 	})
 	payments := startService(t, "payments", map[string]string{
 		"STRIPE_API_URL":           stripe.server.URL,
-		"STRIPE_SECRET_KEY":        "sk_live_test",
+		"STRIPE_SECRET_KEY":        "placeholder-stripe-secret",
 		"PAYMENTS_SCYLLA_HOSTS":    scyllaHost,
 		"PAYMENTS_SCYLLA_KEYSPACE": scyllaSpace,
 	})
