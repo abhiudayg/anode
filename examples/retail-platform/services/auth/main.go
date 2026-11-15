@@ -14,7 +14,7 @@ func main() {
 		port = "8001"
 	}
 
-	redisAddr := os.Getenv("AUTH_REDIS_ADDR")
+	redisAddr := os.Getenv("CACHE_REDIS_ADDR")
 	jwtSecret := os.Getenv("JWT_SIGNING_SECRET_KEY")
 
 	rdb := redis.NewClient(&redis.Options{

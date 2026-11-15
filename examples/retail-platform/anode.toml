@@ -14,11 +14,7 @@ version = "16"
 runtime = "docker"
 version = "16"
 
-[stores."redis-auth"]
-runtime = "binary"
-version = "auto"
-
-[stores."redis-inventory"]
+[stores."cache-redis"]
 runtime = "binary"
 version = "auto"
 
@@ -57,3 +53,11 @@ runtime = "binary"
 
 [services."userprofile"]
 runtime = "binary"
+
+[stores."redis-redis"]
+runtime = "binary"
+version = "auto"
+
+[stores."redis-cache"]
+runtime = "binary"
+version = "auto"
