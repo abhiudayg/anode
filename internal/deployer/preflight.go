@@ -3,6 +3,7 @@ package deployer
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/abhiudayg/anode/internal/catalog"
@@ -38,6 +39,9 @@ func redisCountOf(lockfile *iag.LockFile) int {
 }
 
 func checkDeployInputs(lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string) error {
+	if err := checkLockNames(lockfile); err != nil {
+		return err
+	}
 	if err := CheckRedisLimit(lockfile, cfg); err != nil {
 		return err
 	}
@@ -118,4 +122,65 @@ func DeployInputs(lockfile *iag.LockFile, rootDir string) error {
 
 func ContainerSecretKey(resID string) string {
 	return strings.ToUpper(strings.ReplaceAll(resID, "-", "_")) + "_PASSWORD"
+}
+
+func checkLockNames(lockfile *iag.LockFile) error {
+	for id, res := range lockfile.Resources {
+		for _, topic := range res.Topics {
+			if err := iag.ValidateKafkaTopic(topic); err != nil {
+				return fmt.Errorf("resource %s: %w", id, err)
+			}
+		}
+		for _, bucket := range res.Buckets {
+			if err := iag.ValidateBucket(bucket); err != nil {
+				return fmt.Errorf("resource %s: %w", id, err)
+			}
+		}
+		for _, c := range res.Collections {
+			if err := iag.ValidateCollection(c.Name); err != nil {
+				return fmt.Errorf("resource %s: %w", id, err)
+			}
+			switch c.Distance {
+			case "", "Cosine", "Euclid", "Dot", "Manhattan":
+			default:
+				return fmt.Errorf("resource %s: vector distance %q must be Cosine, Euclid, Dot, or Manhattan", id, c.Distance)
+			}
+		}
+	}
+	for name, svc := range lockfile.Services {
+		for _, ing := range svc.Ingress {
+			for _, route := range ing.Routes {
+				if err := checkRoutePath(route); err != nil {
+					return fmt.Errorf("service %s: %w", name, err)
+				}
+			}
+		}
+		for _, env := range svc.ConfigEnv {
+			if err := iag.ValidateEnvName(env); err != nil {
+				return fmt.Errorf("service %s: %w", name, err)
+			}
+		}
+		for _, s := range svc.Secrets {
+			if err := iag.ValidateEnvName(s.EnvVar); err != nil {
+				return fmt.Errorf("service %s: %w", name, err)
+			}
+		}
+	}
+	return nil
+}
+
+var routePathPattern = regexp.MustCompile(`^(/[A-Za-z0-9._~/-]*)?$`)
+
+func checkRoutePath(route string) error {
+	path := route
+	if parts := strings.Split(route, " "); len(parts) == 2 {
+		path = parts[1]
+	}
+	if i := strings.Index(path, "{"); i >= 0 {
+		path = path[:i]
+	}
+	if !routePathPattern.MatchString(strings.TrimSpace(path)) {
+		return fmt.Errorf("route %q has characters that cannot appear in a Caddy path", route)
+	}
+	return nil
 }

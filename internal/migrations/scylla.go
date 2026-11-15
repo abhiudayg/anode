@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/abhiudayg/anode/internal/iag"
 )
 
 type Scylla struct {
@@ -18,6 +20,12 @@ type Scylla struct {
 }
 
 func (s Scylla) Apply(dir string) (int, error) {
+	if err := iag.ValidateKeyspace(s.Keyspace); err != nil {
+		return 0, err
+	}
+	if strings.ContainsAny(s.User+s.Password, "\r\n") {
+		return 0, fmt.Errorf("scylla credentials must be single-line values")
+	}
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
 		return 0, err

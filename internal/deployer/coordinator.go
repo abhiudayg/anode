@@ -35,6 +35,11 @@ func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFi
 
 // Deploy uploads a release, restarts each service in place with a health check, and reloads the Caddy edge on the remote VPS
 func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
+	if domain != "" {
+		if err := iag.ValidateDomain(domain); err != nil {
+			return err
+		}
+	}
 	err := d.deploy(ctx, domain)
 	if err == nil || !d.activated {
 		return err

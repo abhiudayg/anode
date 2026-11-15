@@ -45,3 +45,48 @@ func SafeResolvePath(rootDir string, relPath string) (string, error) {
 
 	return target, nil
 }
+
+var (
+	kafkaTopicPattern   = regexp.MustCompile(`^[A-Za-z0-9._-]{1,249}$`)
+	bucketNamePattern   = regexp.MustCompile(`^[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]$`)
+	collectionPattern   = regexp.MustCompile(`^[A-Za-z0-9_-]{1,255}$`)
+	envNamePattern      = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,127}$`)
+	domainNamePattern   = regexp.MustCompile(`^(?i)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$`)
+	linuxAccountPattern = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}$`)
+	keyspacePattern     = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,47}$`)
+)
+
+func ValidateKafkaTopic(name string) error {
+	return checkName("kafka topic", name, kafkaTopicPattern)
+}
+
+func ValidateBucket(name string) error {
+	return checkName("bucket", name, bucketNamePattern)
+}
+
+func ValidateCollection(name string) error {
+	return checkName("vector collection", name, collectionPattern)
+}
+
+func ValidateEnvName(name string) error {
+	return checkName("environment variable", name, envNamePattern)
+}
+
+func ValidateDomain(name string) error {
+	return checkName("domain", name, domainNamePattern)
+}
+
+func ValidateLinuxAccount(name string) error {
+	return checkName("account", name, linuxAccountPattern)
+}
+
+func ValidateKeyspace(name string) error {
+	return checkName("keyspace", name, keyspacePattern)
+}
+
+func checkName(kind, value string, pattern *regexp.Regexp) error {
+	if !pattern.MatchString(value) {
+		return fmt.Errorf("invalid %s %q", kind, value)
+	}
+	return nil
+}

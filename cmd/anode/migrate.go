@@ -59,6 +59,9 @@ func runMigrate(host, targetDir string) error {
 		if res.Migrations == nil || res.Migrations.Path == "" {
 			continue
 		}
+		if _, err := iag.SafeResolvePath(targetDir, res.Migrations.Path); err != nil {
+			return fmt.Errorf("migrations for %s: %w", id, err)
+		}
 		applied, err := applyResourceMigrations(targetDir, id, res, cfg, lockfile, secrets, remote, runner)
 		if err != nil {
 			return fmt.Errorf("migrations for %s: %w", id, err)
