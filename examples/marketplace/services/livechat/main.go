@@ -20,7 +20,7 @@ type chatMessage struct {
 const historyLimit = 100
 
 func main() {
-	rdb := redis.NewClient(&redis.Options{Addr: os.Getenv("LIVECHAT_REDIS_ADDR")})
+	rdb := redis.NewClient(&redis.Options{Addr: os.Getenv("LIVECHAT_REDIS_ADDR"), Password: os.Getenv("LIVECHAT_REDIS_PASSWORD")})
 	defer rdb.Close()
 
 	mux := http.NewServeMux()

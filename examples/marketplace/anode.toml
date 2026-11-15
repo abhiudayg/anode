@@ -191,8 +191,7 @@ runtime = "docker"
 version = "3.13"
 
 [stores."fraud-scylla"]
-runtime = "docker"
-version = "5.4"
+runtime = "external"
 
 [stores."media-minio"]
 runtime = "docker"
@@ -207,8 +206,7 @@ runtime = "docker"
 version = "3.13"
 
 [stores."payments-scylla"]
-runtime = "docker"
-version = "5.4"
+runtime = "external"
 
 [stores."recs-qdrant"]
 runtime = "docker"

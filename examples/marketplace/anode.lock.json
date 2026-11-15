@@ -648,7 +648,12 @@
           "provenance": "services/inventory/main.go:29"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "INVENTORY_LOCKS_REDIS_PASSWORD",
+          "provenance": "services/inventory/main.go:29"
+        }
+      ]
     },
     "livechat": {
       "name": "livechat",
@@ -672,7 +677,12 @@
           "provenance": "services/livechat/main.go:23"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "LIVECHAT_REDIS_PASSWORD",
+          "provenance": "services/livechat/main.go:23"
+        }
+      ]
     },
     "loyalty": {
       "name": "loyalty",
@@ -705,7 +715,12 @@
           "provenance": "services/loyalty/main.go:31"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "LOYALTY_REDIS_PASSWORD",
+          "provenance": "services/loyalty/main.go:31"
+        }
+      ]
     },
     "media": {
       "name": "media",
@@ -924,7 +939,12 @@
           "provenance": "services/recommendations/main.go:24"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "RECS_REDIS_PASSWORD",
+          "provenance": "services/recommendations/main.go:24"
+        }
+      ]
     },
     "reviews": {
       "name": "reviews",

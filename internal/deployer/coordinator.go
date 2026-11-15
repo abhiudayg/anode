@@ -137,7 +137,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			envKey := BindingEnvKey(svc.Name, b)
 
 			if res, exists := d.lockfile.Resources[b.ResourceRef]; exists {
-				if res.Kind == "redis" {
+				if res.Kind == "redis" && !strings.HasSuffix(envKey, "_ADDR") {
 					port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
 					secretEnv[envKey] = RedisConnectionURL(secrets[RedisPasswordKey()], port)
 					continue
@@ -151,7 +151,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					continue
 				}
 				driver := reg.Resolve(string(res.Kind))
-				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", hostPorts[b.ResourceRef], b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
+				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", hostPortFor(hostPorts, b.ResourceRef, driver), b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
 				if err != nil {
 					return err
 				}

@@ -26,7 +26,7 @@ func main() {
 	}
 	defer db.Close()
 
-	locks := redis.NewClient(&redis.Options{Addr: os.Getenv("INVENTORY_LOCKS_REDIS_ADDR")})
+	locks := redis.NewClient(&redis.Options{Addr: os.Getenv("INVENTORY_LOCKS_REDIS_ADDR"), Password: os.Getenv("INVENTORY_LOCKS_REDIS_PASSWORD")})
 	defer locks.Close()
 
 	mux := http.NewServeMux()

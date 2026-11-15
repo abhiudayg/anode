@@ -205,7 +205,10 @@ drivers:
         image: "redis:7.2-alpine"
     runtime:
       image_template: "redis:{{.Version}}-alpine"
-      command: ["redis-server", "--appendonly", "yes"]
+      command: ["redis-server", "/data/redis.conf"]
+      password_env: "REDISCLI_AUTH"
+      config_file: "redis.conf"
+      config_template: "requirepass {{.Password}}\nbind 0.0.0.0\nappendonly yes\n"
       data_mount: "/data"
     security:
       uid: 999

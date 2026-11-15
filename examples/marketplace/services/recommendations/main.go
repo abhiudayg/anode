@@ -21,7 +21,7 @@ type qdrantSearch struct {
 }
 
 func main() {
-	cache := redis.NewClient(&redis.Options{Addr: os.Getenv("RECS_REDIS_ADDR")})
+	cache := redis.NewClient(&redis.Options{Addr: os.Getenv("RECS_REDIS_ADDR"), Password: os.Getenv("RECS_REDIS_PASSWORD")})
 	defer cache.Close()
 
 	mux := http.NewServeMux()
