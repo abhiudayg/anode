@@ -65,7 +65,7 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 
 - `anode inspect` creates `anode.toml` if it is missing. It adds one `[stores.<name>]` section per store the code uses and one `[services.<name>]` section per service. Each store gets the catalog's default version. Review it before the first deploy.
 - `runtime = "binary"` installs the store as a host binary. Only Redis has a binary install today. A project may have one native Redis.
-- `runtime = "docker"` runs the store in a container at the pinned version. Every catalog kind supports it.
+- `runtime = "docker"` runs the store in a container at the pinned version. The container password is read from `.env` under `<RESOURCE>_PASSWORD` (for example `DB_ORDERS_DB_PASSWORD`), written to a `0600` env file on the host, and never put on the command line. Each catalog kind names its password variable in the catalog. Tested end to end for PostgreSQL (`examples/orders-api`). Other kinds are not yet tested. The deploy does not run migrations and does not wait for the database to accept connections.
 - App services run as systemd binaries. `runtime = "docker"` is refused for services until the Docker path is designed for DynamicUser services.
 - Deploy stops before any host change when a store has no version, when a binary install is not available for its kind, or when the config does not match the lockfile. Nothing falls back to `latest`.
 - Native Redis uses `version = "auto"` by default. It takes the version the host's package provides, and the deploy prints it. A pinned version (for example `"8.0"`) is checked against the host after install, and the deploy stops on a mismatch. `auto` is only valid for a binary store. A Docker store needs an explicit version.

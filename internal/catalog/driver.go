@@ -3,6 +3,8 @@ package catalog
 import (
 	"bytes"
 	"fmt"
+	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 )
@@ -33,6 +35,7 @@ type RuntimeSpec struct {
 	Command       []string          `yaml:"command,omitempty" json:"command,omitempty"`
 	DataMount     string            `yaml:"data_mount" json:"data_mount"`
 	DefaultEnv    map[string]string `yaml:"default_env,omitempty" json:"default_env,omitempty"`
+	PasswordEnv   string            `yaml:"password_env,omitempty" json:"password_env,omitempty"`
 }
 
 type SecuritySpec struct {
@@ -90,9 +93,8 @@ func (d *DriverSpec) ResolveImage(version string) string {
 	return fmt.Sprintf("%s:%s", d.Kind, targetVer)
 }
 
-
 // BuildProvisionCommand synthesizes the Docker/Podman execution command enforcing least privilege.
-func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataDir string) string {
+func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataDir string, envFile string) string {
 	image := d.ResolveImage(version)
 	containerName := fmt.Sprintf("anode-%s", resName)
 
@@ -101,11 +103,9 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 		bindAddr = "127.0.0.1" // Least privilege: always bind to loopback by default
 	}
 
-	var envFlags strings.Builder
-	for k, v := range d.Runtime.DefaultEnv {
-		val := strings.ReplaceAll(v, "${RESOURCE_ID}", resName)
-		val = strings.ReplaceAll(val, "${DB_NAME}", resName)
-		envFlags.WriteString(fmt.Sprintf(" -e %s=%s", k, val))
+	envFlags := ""
+	if envFile != "" {
+		envFlags = fmt.Sprintf(" --env-file '%s'", envFile)
 	}
 
 	// Build security hardening flags
@@ -127,7 +127,7 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 		secFlags.WriteString(fmt.Sprintf(" --memory=%s", d.Security.Cgroups.MemoryMax))
 	}
 	if d.Security.Cgroups.CPUQuota != "" {
-		secFlags.WriteString(fmt.Sprintf(" --cpus=%s", strings.TrimSuffix(d.Security.Cgroups.CPUQuota, "%")))
+		secFlags.WriteString(fmt.Sprintf(" --cpus=%s", cpusFromQuota(d.Security.Cgroups.CPUQuota)))
 	}
 	if d.Security.OOMScoreAdjust != 0 {
 		secFlags.WriteString(fmt.Sprintf(" --oom-score-adj=%d", d.Security.OOMScoreAdjust))
@@ -167,7 +167,7 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 		bindAddr, d.Networking.PrimaryPort, d.Networking.PrimaryPort,
 		dataDir, d.Runtime.DataMount,
 		secFlags.String(),
-		envFlags.String(),
+		envFlags,
 		image,
 		commandArgs,
 	)
@@ -176,7 +176,7 @@ func (d *DriverSpec) BuildProvisionCommand(resName string, version string, dataD
 }
 
 // BuildConnectionEnv evaluates templates to produce environment variables for a consuming service.
-func (d *DriverSpec) BuildConnectionEnv(resName string, host string, port int, dbName string) map[string]string {
+func (d *DriverSpec) BuildConnectionEnv(resName string, host string, port int, dbName string, password string) map[string]string {
 	if host == "" {
 		host = "127.0.0.1"
 	}
@@ -192,7 +192,7 @@ func (d *DriverSpec) BuildConnectionEnv(resName string, host string, port int, d
 		"Port":     fmt.Sprintf("%d", port),
 		"Database": dbName,
 		"User":     "postgres",
-		"Password": "postgres",
+		"Password": password,
 		"Protocol": d.Networking.Protocol,
 	}
 
@@ -208,4 +208,33 @@ func (d *DriverSpec) BuildConnectionEnv(resName string, host string, port int, d
 	}
 
 	return result
+}
+
+func (d *DriverSpec) RuntimeEnvFile(resName string, password string) string {
+	env := make(map[string]string, len(d.Runtime.DefaultEnv)+1)
+	for k, v := range d.Runtime.DefaultEnv {
+		v = strings.ReplaceAll(v, "${RESOURCE_ID}", resName)
+		env[k] = strings.ReplaceAll(v, "${DB_NAME}", resName)
+	}
+	if d.Runtime.PasswordEnv != "" {
+		env[d.Runtime.PasswordEnv] = password
+	}
+	keys := make([]string, 0, len(env))
+	for k := range env {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	var b strings.Builder
+	for _, k := range keys {
+		fmt.Fprintf(&b, "%s=%s\n", k, env[k])
+	}
+	return b.String()
+}
+
+func cpusFromQuota(quota string) string {
+	percent, err := strconv.ParseFloat(strings.TrimSuffix(quota, "%"), 64)
+	if err != nil {
+		return quota
+	}
+	return strconv.FormatFloat(percent/100, 'f', -1, 64)
 }

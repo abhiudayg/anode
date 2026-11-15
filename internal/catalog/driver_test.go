@@ -15,7 +15,7 @@ func TestAllCatalogDriversLeastPrivilege(t *testing.T) {
 
 	for _, kind := range kinds {
 		driver := reg.Resolve(kind)
-		cmd := driver.BuildProvisionCommand("test-res", driver.DefaultVersion, "/var/lib/anode/data/test-res")
+		cmd := driver.BuildProvisionCommand("test-res", driver.DefaultVersion, "/var/lib/anode/data/test-res", "/etc/anode/env/test-res.docker.env")
 
 		// 1. Must bind exclusively to loopback (127.0.0.1) for zero public exposure
 		if !strings.Contains(cmd, "127.0.0.1:") {
@@ -49,8 +49,8 @@ func TestDriverConnectionTemplates(t *testing.T) {
 
 	// 1. Postgres Connection Templates
 	pg := reg.Resolve("postgres")
-	pgEnv := pg.BuildConnectionEnv("orders-db", "127.0.0.1", 5432, "orders")
-	if pgEnv["URL"] != "postgres://postgres:postgres@127.0.0.1:5432/orders?sslmode=disable" {
+	pgEnv := pg.BuildConnectionEnv("orders-db", "127.0.0.1", 5432, "orders", "test-pass")
+	if pgEnv["URL"] != "postgres://postgres:test-pass@127.0.0.1:5432/orders?sslmode=disable" {
 		t.Errorf("unexpected Postgres URL template: %s", pgEnv["URL"])
 	}
 	if pgEnv["PORT"] != "5432" || pgEnv["HOST"] != "127.0.0.1" {
@@ -59,28 +59,28 @@ func TestDriverConnectionTemplates(t *testing.T) {
 
 	// 2. MySQL Connection Templates
 	mysql := reg.Resolve("mysql")
-	mysqlEnv := mysql.BuildConnectionEnv("users-db", "127.0.0.1", 3306, "users")
+	mysqlEnv := mysql.BuildConnectionEnv("users-db", "127.0.0.1", 3306, "users", "test-pass")
 	if mysqlEnv["DSN"] != "root:mysql@tcp(127.0.0.1:3306)/users?parseTime=true" {
 		t.Errorf("unexpected MySQL DSN template: %s", mysqlEnv["DSN"])
 	}
 
 	// 3. Redis Connection Templates
 	redis := reg.Resolve("redis")
-	redisEnv := redis.BuildConnectionEnv("cache", "127.0.0.1", 6379, "cache")
+	redisEnv := redis.BuildConnectionEnv("cache", "127.0.0.1", 6379, "cache", "test-pass")
 	if redisEnv["URL"] != "redis://127.0.0.1:6379" {
 		t.Errorf("unexpected Redis URL template: %s", redisEnv["URL"])
 	}
 
 	// 4. Kafka Connection Templates
 	kafka := reg.Resolve("kafka")
-	kafkaEnv := kafka.BuildConnectionEnv("events", "127.0.0.1", 9092, "events")
+	kafkaEnv := kafka.BuildConnectionEnv("events", "127.0.0.1", 9092, "events", "test-pass")
 	if kafkaEnv["BROKERS"] != "127.0.0.1:9092" || kafkaEnv["BOOTSTRAP_SERVERS"] != "127.0.0.1:9092" {
 		t.Errorf("unexpected Kafka bootstrap template: %v", kafkaEnv)
 	}
 
 	// 5. MinIO Connection Templates
 	minio := reg.Resolve("minio")
-	minioEnv := minio.BuildConnectionEnv("storage", "127.0.0.1", 9000, "storage")
+	minioEnv := minio.BuildConnectionEnv("storage", "127.0.0.1", 9000, "storage", "test-pass")
 	if minioEnv["ENDPOINT"] != "http://127.0.0.1:9000" {
 		t.Errorf("unexpected MinIO endpoint template: %s", minioEnv["ENDPOINT"])
 	}
