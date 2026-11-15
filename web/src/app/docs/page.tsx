@@ -933,7 +933,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               type="text"
                               value={devPath}
                               onChange={(e) => setDevPath(e.target.value)}
-                              placeholder=". (current repo) or ./examples/complex-ecommerce"
+                              placeholder=". (current repo) or ./examples/storefront"
                               className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
                             />
                           </div>
@@ -951,7 +951,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                               type="text"
                               value={inspectPath}
                               onChange={(e) => setInspectPath(e.target.value)}
-                              placeholder=". (current repo) or ./examples/omni-mesh-32"
+                              placeholder=". (current repo) or ./examples/marketplace"
                               className="w-full px-3 py-1.5 rounded-lg bg-black/60 border border-white/[0.1] text-white font-mono-code text-xs focus:outline-none focus:border-cyan-400"
                             />
                           </div>
@@ -1124,7 +1124,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-cyan-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode inspect .</div>
-                      <div className="pl-4 text-emerald-400">anode inspect ./examples/omni-mesh-32</div>
+                      <div className="pl-4 text-emerald-400">anode inspect ./examples/marketplace</div>
                       <div className="pl-4 text-emerald-400">anode inspect ./examples/realworld_benchmarks/glance</div>
                     </div>
                   </div>
@@ -1143,7 +1143,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-emerald-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode dev</div>
-                      <div className="pl-4 text-emerald-400">anode dev ./examples/complex-ecommerce</div>
+                      <div className="pl-4 text-emerald-400">anode dev ./examples/storefront</div>
                     </div>
                   </div>
 
@@ -1163,10 +1163,10 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4"><span className="text-purple-300">-h, --help</span> : Print command usage and syntax</div>
                       <div className="text-neutral-300 font-semibold mt-2 mb-1">Examples:</div>
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com .</div>
-                      <div className="pl-4 text-emerald-400">anode deploy root@192.168.1.50 ./examples/complex-ecommerce --domain api.example.com</div>
+                      <div className="pl-4 text-emerald-400">anode deploy root@192.168.1.50 ./examples/storefront --domain api.example.com</div>
                       <div className="pl-4 text-emerald-400">anode deploy root@my-vps.com --dry-run</div>
                       <div className="pl-4 text-neutral-400"># Docker CLI Parity: &apos;anode run&apos; is a drop-in alias for deploy</div>
-                      <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/omni-mesh-32</div>
+                      <div className="pl-4 text-emerald-400">anode run root@my-vps.com ./examples/marketplace</div>
                     </div>
                   </div>
 
@@ -1246,7 +1246,7 @@ Run 'anode COMMAND --help' for more information on a command.`}
                       <div className="pl-4 text-emerald-400">anode doctor</div>
                       <div className="pl-4 text-emerald-400">anode doctor ./examples/sample-shop</div>
                       <div className="pl-4 text-emerald-400">anode doctor root@my-vps.com</div>
-                      <div className="pl-4 text-emerald-400">anode doctor root@192.168.1.50 ./examples/omni-mesh-32 --strict</div>
+                      <div className="pl-4 text-emerald-400">anode doctor root@192.168.1.50 ./examples/marketplace --strict</div>
                     </div>
                   </div>
 

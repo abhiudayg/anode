@@ -87,7 +87,7 @@ const slide1Svg = `
         <polyline points="22 8.5 12 15.5 2 8.5"/>
       </g>
       <text x="44" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="700" fill="#38bdf8" letter-spacing="1.2">
-        ANODE v1.0 • PROOF-OF-TOPOLOGY
+        ANODE v1.5.0 • PROOF-OF-TOPOLOGY
       </text>
     </g>
 
@@ -107,38 +107,38 @@ const slide1Svg = `
       Anode inspects whole-program Go SSA call graphs to auto-discover
     </text>
     <text x="0" y="296" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="15.5" font-weight="400" fill="#94a3b8">
-      routes &amp; database drivers in ~60ms, synthesising hardened Linux services.
+      routes &amp; database drivers, synthesising hardened Linux services.
     </text>
 
     <!-- 3 Key Metric Badges -->
     <g transform="translate(0, 350)">
-      <!-- Metric 1: 8ms Cold Boot -->
+      <!-- Metric 1: container daemons -->
       <g>
         <rect width="155" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
         <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#22d3ee">
-          8 ms
+
         </text>
         <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
-          COLD BOOT TIME
+          CONTAINER DAEMONS
         </text>
       </g>
 
-      <!-- Metric 2: 4.8MB RAM -->
+      <!-- Metric 2: Dockerfiles -->
       <g transform="translate(175, 0)">
         <rect width="155" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
         <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#38bdf8">
-          4.8 MB
+
         </text>
         <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
-          RAM FOOTPRINT
+          DOCKERFILES NEEDED
         </text>
       </g>
 
-      <!-- Metric 3: 100% SSA -->
+      <!-- Metric 3: SSA + VTA -->
       <g transform="translate(350, 0)">
         <rect width="165" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
         <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#4ade80">
-          100% SSA
+          SSA + VTA
         </text>
         <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
           STATIC PROVENANCE
@@ -160,7 +160,7 @@ const slide1Svg = `
         github.com/abhiudayg/anode
       </text>
       <text x="445" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" fill="#a855f7">
-        APACHE 2.0
+        MIT
       </text>
     </g>
   </g>
@@ -203,7 +203,7 @@ const slide1Svg = `
 
       <text x="0" y="140" fill="#38bdf8" font-weight="700">✓</text>
       <text x="20" y="140" fill="#e2e8f0" font-weight="600">Dynamic Loopback:</text>
-      <text x="200" y="140" fill="#34d399">127.0.0.1:5432 (0% conflict)</text>
+      <text x="200" y="140" fill="#34d399">127.0.0.1:54329 (ephemeral)</text>
 
       <text x="0" y="174" fill="#38bdf8" font-weight="700">✓</text>
       <text x="20" y="174" fill="#e2e8f0" font-weight="600">Synthesized Service:</text>
@@ -215,8 +215,8 @@ const slide1Svg = `
       <g transform="translate(0, 230)">
         <rect width="458" height="92" rx="10" fill="#00add8" fill-opacity="0.08" stroke="#00add8" stroke-opacity="0.4" stroke-width="1.2"/>
         <circle cx="20" cy="28" r="5" fill="#22c55e"/>
-        <text x="34" y="32" font-size="13" fill="#38bdf8" font-weight="700">PRODUCTION RUNTIME CONFIRMED</text>
-        <text x="20" y="58" font-size="12" fill="#e2e8f0">Cold Boot: <tspan fill="#22d3ee" font-weight="700">8.2ms</tspan> • RAM: <tspan fill="#38bdf8" font-weight="700">4.8MB</tspan> • PID: 8192</text>
+        <text x="34" y="32" font-size="13" fill="#38bdf8" font-weight="700">ILLUSTRATIVE DEPLOY OUTPUT</text>
+        <text x="20" y="58" font-size="12" fill="#e2e8f0">Unit: <tspan fill="#22d3ee" font-weight="700">anode-api.service</tspan> • cgroups v2 • PID: 8192</text>
         <text x="20" y="78" font-size="11.5" fill="#94a3b8">Ingress Route: https://api.shop.com (cgroups v2 active)</text>
       </g>
 
@@ -277,7 +277,7 @@ const slide2Svg = `
         Go Source Code
       </text>
       <text x="18" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#94a3b8">
-        100% Unmodified
+        No Code Changes
       </text>
 
       <!-- Mini Visual Box -->
@@ -317,7 +317,7 @@ const slide2Svg = `
         SSA Call Graph
       </text>
       <text x="18" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#38bdf8">
-        Static Analysis (~60ms)
+        Static Analysis
       </text>
 
       <!-- Mini Visual Box -->
@@ -411,14 +411,14 @@ const slide2Svg = `
         <text x="14" y="52" font-family="'SF Mono', monospace" font-size="10" fill="#94a3b8">MemoryMax=256M</text>
         <text x="14" y="74" font-family="'SF Mono', monospace" font-size="10" fill="#94a3b8">CPUQuota=200%</text>
         <text x="14" y="98" font-family="'SF Mono', monospace" font-size="10" fill="#38bdf8">AmbientCaps=drop</text>
-        <text x="14" y="128" font-family="'SF Mono', monospace" font-size="11" fill="#22d3ee">● Active: 8.2ms</text>
+        <text x="14" y="128" font-family="'SF Mono', monospace" font-size="11" fill="#22d3ee">● Active (running)</text>
       </g>
 
       <text x="18" y="304" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" fill="#cbd5e1" font-weight="500">
-        • 8ms cold boot time
+        • No container daemon
       </text>
       <text x="18" y="328" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" fill="#cbd5e1" font-weight="500">
-        • 4.8MB RAM footprint
+        • cgroups v2 limits per service
       </text>
       <text x="18" y="352" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" fill="#cbd5e1" font-weight="500">
         • Direct Linux syscalls
@@ -436,7 +436,7 @@ const slide2Svg = `
       Go already compiles to static standalone machine code. Anode removes the 200MB container daemon tax and runs your binary natively with full cgroup isolation.
     </text>
     <text x="960" y="44" font-family="'SF Mono', monospace" font-size="13" font-weight="700" fill="#22c55e">
-      0% VIRTUAL TAX
+      NO CONTAINER RUNTIME
     </text>
   </g>
 </svg>
@@ -539,8 +539,7 @@ const slide3Svg = `
         <text x="0" y="28" fill="#64748b">⚡ Initializing Proof-of-Topology watcher...</text>
         
         <text x="0" y="60" fill="#34d399">✔</text>
-        <text x="20" y="60" fill="#ffffff">SSA call graph resolved in</text>
-        <text x="240" y="60" fill="#22d3ee" font-weight="700">48ms</text>
+        <text x="20" y="60" fill="#ffffff">SSA call graph resolved</text>
 
         <text x="0" y="88" fill="#34d399">✔</text>
         <text x="20" y="88" fill="#ffffff">Discovered Ingress:</text>
@@ -562,9 +561,8 @@ const slide3Svg = `
         <!-- Change detection trigger -->
         <text x="0" y="268" fill="#f59e0b">● [HOT-RELOAD]</text>
         <text x="125" y="268" fill="#cbd5e1">Modified cmd/api/main.go</text>
-        <text x="0" y="294" fill="#64748b">  └─ Delta SSA rebuilt in</text>
-        <text x="195" y="294" fill="#4ade80" font-weight="700">12ms</text>
-        <text x="0" y="318" fill="#64748b">  └─ PID 19280 restarted cleanly (4.9MB RAM)</text>
+        <text x="0" y="294" fill="#64748b">  └─ Delta SSA rebuilt</text>
+        <text x="0" y="318" fill="#64748b">  └─ PID 19280 restarted cleanly</text>
 
         <text x="0" y="360" fill="#4ade80">$</text>
         <text x="16" y="360" fill="#cbd5e1">curl http://localhost:8080/orders</text>
@@ -575,181 +573,11 @@ const slide3Svg = `
 </svg>
 `;
 
-// Slide 4: Real-World Benchmarks
-const slide4Svg = `
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1270 760" width="1270" height="760">
-  ${COMMON_DEFS}
-
-  <rect width="1270" height="760" fill="url(#bgGrad)"/>
-  <rect width="1270" height="760" fill="url(#grid)"/>
-
-  <circle cx="260" cy="200" r="280" fill="#059669" fill-opacity="0.10" filter="url(#glowCyan)"/>
-  <circle cx="1020" cy="460" r="300" fill="#00add8" fill-opacity="0.10" filter="url(#glowBlue)"/>
-
-  <!-- Header -->
-  <g transform="translate(80, 60)">
-    <rect width="250" height="32" rx="16" fill="#34d399" fill-opacity="0.12" stroke="#34d399" stroke-opacity="0.4" stroke-width="1"/>
-    <text x="32" y="20" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="700" fill="#34d399" letter-spacing="1">
-      HEAD-TO-HEAD BENCHMARKS
-    </text>
-
-    <text x="0" y="75" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="42" font-weight="800" fill="#ffffff" letter-spacing="-1.2">
-      Anode vs Docker vs Kubernetes
-    </text>
-    <text x="0" y="108" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="17" font-weight="400" fill="#94a3b8">
-      Measured on Ubuntu 24.04 LTS (AMD64 / ARM64) running identical Go microservices.
-    </text>
-  </g>
-
-  <!-- 3 Benchmark Comparison Cards -->
-  <g transform="translate(80, 190)">
-    <!-- Benchmark 1: Cold Boot Time -->
-    <g transform="translate(0, 0)">
-      <rect width="350" height="420" rx="14" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.5"/>
-      <rect x="20" y="20" width="110" height="26" rx="6" fill="#00add8" fill-opacity="0.15"/>
-      <text x="32" y="37" font-family="'SF Mono', monospace" font-size="11.5" font-weight="700" fill="#38bdf8">BENCHMARK 01</text>
-      
-      <text x="20" y="78" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700" fill="#ffffff">
-        Cold Boot Time
-      </text>
-      <text x="20" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#94a3b8">
-        Lower is better (Milliseconds)
-      </text>
-
-      <!-- Bar 1: Anode -->
-      <g transform="translate(20, 140)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">Anode (Bare Metal)</text>
-        <text x="260" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="800" fill="#22d3ee">8 ms</text>
-        <rect x="0" y="10" width="22" height="24" rx="4" fill="#00add8"/>
-      </g>
-
-      <!-- Bar 2: Docker -->
-      <g transform="translate(20, 205)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="500" fill="#94a3b8">Docker Engine</text>
-        <text x="245" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="700" fill="#f59e0b">450 ms</text>
-        <rect x="0" y="10" width="160" height="24" rx="4" fill="#f59e0b" fill-opacity="0.6"/>
-      </g>
-
-      <!-- Bar 3: Kubernetes -->
-      <g transform="translate(20, 270)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="500" fill="#94a3b8">Kubernetes Pod</text>
-        <text x="230" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="700" fill="#ef4444">2,100 ms</text>
-        <rect x="0" y="10" width="310" height="24" rx="4" fill="#ef4444" fill-opacity="0.6"/>
-      </g>
-
-      <!-- Bottom takeaway -->
-      <g transform="translate(20, 350)">
-        <rect width="310" height="46" rx="8" fill="#00add8" fill-opacity="0.1" stroke="#00add8" stroke-opacity="0.25"/>
-        <text x="14" y="28" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="#38bdf8">
-          🚀 56x Faster than Docker
-        </text>
-      </g>
-    </g>
-
-    <!-- Benchmark 2: Memory Footprint -->
-    <g transform="translate(380, 0)">
-      <rect width="350" height="420" rx="14" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.5"/>
-      <rect x="20" y="20" width="110" height="26" rx="6" fill="#34d399" fill-opacity="0.15"/>
-      <text x="32" y="37" font-family="'SF Mono', monospace" font-size="11.5" font-weight="700" fill="#34d399">BENCHMARK 02</text>
-      
-      <text x="20" y="78" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700" fill="#ffffff">
-        Memory Footprint
-      </text>
-      <text x="20" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#94a3b8">
-        Lower is better (Idle Megabytes)
-      </text>
-
-      <!-- Bar 1: Anode -->
-      <g transform="translate(20, 140)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="#34d399">Anode (systemd)</text>
-        <text x="250" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="800" fill="#34d399">4.8 MB</text>
-        <rect x="0" y="10" width="18" height="24" rx="4" fill="#34d399"/>
-      </g>
-
-      <!-- Bar 2: Docker -->
-      <g transform="translate(20, 205)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="500" fill="#94a3b8">Docker Engine</text>
-        <text x="245" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="700" fill="#f59e0b">210 MB</text>
-        <rect x="0" y="10" width="150" height="24" rx="4" fill="#f59e0b" fill-opacity="0.6"/>
-      </g>
-
-      <!-- Bar 3: Kubernetes -->
-      <g transform="translate(20, 270)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="500" fill="#94a3b8">Kubernetes Node</text>
-        <text x="245" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="700" fill="#ef4444">850 MB</text>
-        <rect x="0" y="10" width="310" height="24" rx="4" fill="#ef4444" fill-opacity="0.6"/>
-      </g>
-
-      <!-- Bottom takeaway -->
-      <g transform="translate(20, 350)">
-        <rect width="310" height="46" rx="8" fill="#34d399" fill-opacity="0.1" stroke="#34d399" stroke-opacity="0.25"/>
-        <text x="14" y="28" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="#34d399">
-          ⚡ 44x Less RAM Consumed
-        </text>
-      </g>
-    </g>
-
-    <!-- Benchmark 3: Infrastructure Maintenance -->
-    <g transform="translate(760, 0)">
-      <rect width="350" height="420" rx="14" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.5"/>
-      <rect x="20" y="20" width="110" height="26" rx="6" fill="#a855f7" fill-opacity="0.15"/>
-      <text x="32" y="37" font-family="'SF Mono', monospace" font-size="11.5" font-weight="700" fill="#a78bfa">BENCHMARK 03</text>
-      
-      <text x="20" y="78" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="22" font-weight="700" fill="#ffffff">
-        Config Complexity
-      </text>
-      <text x="20" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#94a3b8">
-        Files to write and maintain
-      </text>
-
-      <g transform="translate(20, 140)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">Anode</text>
-        <text x="250" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="800" fill="#a78bfa">0 files</text>
-        <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" fill="#cbd5e1">Go code is single source of truth</text>
-      </g>
-
-      <g transform="translate(20, 205)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="500" fill="#94a3b8">Docker</text>
-        <text x="250" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="700" fill="#f59e0b">2 files</text>
-        <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" fill="#94a3b8">Dockerfile + docker-compose.yml</text>
-      </g>
-
-      <g transform="translate(20, 270)">
-        <text x="0" y="0" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="500" fill="#94a3b8">Kubernetes</text>
-        <text x="240" y="0" font-family="'SF Mono', monospace" font-size="14" font-weight="700" fill="#ef4444">5+ YAMLs</text>
-        <text x="0" y="22" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="11.5" fill="#94a3b8">Deploy, Svc, Ingress, Config, Secret</text>
-      </g>
-
-      <!-- Bottom takeaway -->
-      <g transform="translate(20, 350)">
-        <rect width="310" height="46" rx="8" fill="#a855f7" fill-opacity="0.1" stroke="#a855f7" stroke-opacity="0.25"/>
-        <text x="14" y="28" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="700" fill="#a78bfa">
-          🛡️ Zero Config Drift Ever
-        </text>
-      </g>
-    </g>
-  </g>
-
-  <!-- Bottom Global Summary -->
-  <g transform="translate(80, 635)">
-    <rect width="1110" height="65" rx="10" fill="#0f172a" fill-opacity="0.8" stroke="#1e293b" stroke-width="1.2"/>
-    <circle cx="24" cy="32" r="5" fill="#22d3ee"/>
-    <text x="40" y="37" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="700" fill="#e2e8f0">
-      Key Takeaway:
-    </text>
-    <text x="155" y="37" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="14" font-weight="400" fill="#94a3b8">
-      You gain 56x lower latency, 44x lower memory costs, and zero configuration overhead without changing a single line of your Go backend.
-    </text>
-  </g>
-</svg>
-`;
-
 async function renderAll() {
   const slides = [
     { name: '01_hero_overview', svg: slide1Svg },
     { name: '02_architecture_pipeline', svg: slide2Svg },
-    { name: '03_developer_cockpit', svg: slide3Svg },
-    { name: '04_benchmark_comparison', svg: slide4Svg }
+    { name: '03_developer_cockpit', svg: slide3Svg }
   ];
 
   for (const slide of slides) {
