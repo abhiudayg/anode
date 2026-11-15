@@ -18,6 +18,9 @@ func Rollback(client Remote) (string, error) {
 		return "", fmt.Errorf("no previous release on this host to roll back to")
 	}
 	previous := ids[1]
+	if err := verifyReleaseRecord(client, previous); err != nil {
+		return "", err
+	}
 
 	unitsOut, err := client.Run(fmt.Sprintf("ls -1 %s/%s 2>/dev/null || true", releasesRoot, previous))
 	if err != nil {
@@ -43,5 +46,28 @@ func Rollback(client Remote) (string, error) {
 			return "", fmt.Errorf("rollback of %s to release %s failed: %w", unit, previous, err)
 		}
 	}
+
+	recordedCaddy := fmt.Sprintf("%s/%s/Caddyfile", releasesRoot, previous)
+	if _, err := client.Run(fmt.Sprintf("test -f '%s'", recordedCaddy)); err != nil {
+		return "", fmt.Errorf("release %s has no recorded Caddyfile: its service units were restored but its routes were not", previous)
+	}
+	restoreCaddy := fmt.Sprintf("cp '%s' /etc/caddy/Caddyfile && caddy validate --config /etc/caddy/Caddyfile && (systemctl reload caddy || systemctl restart caddy)", recordedCaddy)
+	if _, err := client.Run(restoreCaddy); err != nil {
+		return "", fmt.Errorf("restoring routes of release %s failed: %w", previous, err)
+	}
 	return previous, nil
+}
+
+func verifyReleaseRecord(client Remote, id string) error {
+	lockPath := fmt.Sprintf("%s/%s/anode.lock.json", releasesRoot, id)
+	hashPath := fmt.Sprintf("%s/%s.lock.sha256", releasesRoot, id)
+	out, err := client.Run(fmt.Sprintf("echo \"$(sha256sum '%s' | cut -d' ' -f1) $(cat '%s')\"", lockPath, hashPath))
+	if err != nil {
+		return fmt.Errorf("release %s has no verifiable lockfile record: %w", id, err)
+	}
+	fields := strings.Fields(out)
+	if len(fields) != 2 || fields[0] != fields[1] {
+		return fmt.Errorf("release %s: the recorded lockfile does not match its recorded hash; rollback refused", id)
+	}
+	return nil
 }

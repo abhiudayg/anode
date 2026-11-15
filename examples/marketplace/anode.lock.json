@@ -23,7 +23,10 @@
       "kind": "minio",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/cms/main.go:31"
+      "provenance": "services/cms/main.go:31",
+      "buckets": [
+        "cms-assets"
+      ]
     },
     "coupons-memcached": {
       "kind": "memcached",
@@ -32,7 +35,7 @@
       "provenance": "services/coupons/main.go:30"
     },
     "db-accounting-timescale": {
-      "kind": "postgres",
+      "kind": "timescaledb",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
       "provenance": "services/accounting/main.go:21",
@@ -98,7 +101,7 @@
       }
     },
     "db-subscriptions-cockroach": {
-      "kind": "postgres",
+      "kind": "cockroachdb",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
       "provenance": "services/subscriptions/main.go:25",
@@ -129,7 +132,10 @@
       "kind": "minio",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/documents/main.go:37"
+      "provenance": "services/documents/main.go:37",
+      "buckets": [
+        "documents"
+      ]
     },
     "documents-mongo": {
       "kind": "mongodb",
@@ -153,7 +159,10 @@
       "kind": "minio",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/media/main.go:16"
+      "provenance": "services/media/main.go:16",
+      "buckets": [
+        "media"
+      ]
     },
     "metrics-clickhouse": {
       "kind": "clickhouse",
@@ -177,7 +186,14 @@
       "kind": "qdrant",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/recommendations/main.go:74"
+      "provenance": "services/recommendations/main.go:74",
+      "collections": [
+        {
+          "name": "products",
+          "vector_size": 4,
+          "distance": "Cosine"
+        }
+      ]
     },
     "redis-auth": {
       "kind": "redis",
@@ -225,13 +241,23 @@
       "kind": "qdrant",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/search/main.go:83"
+      "provenance": "services/search/main.go:83",
+      "collections": [
+        {
+          "name": "products",
+          "vector_size": 4,
+          "distance": "Cosine"
+        }
+      ]
     },
     "shipping-kafka": {
       "kind": "kafka",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/shipping/main.go:30"
+      "provenance": "services/shipping/main.go:30",
+      "topics": [
+        "shipments.created"
+      ]
     },
     "warehouse-rabbitmq": {
       "kind": "rabbitmq",
@@ -270,7 +296,7 @@
       "bindings": [
         {
           "resource_ref": "db-accounting-timescale",
-          "protocol": "postgres",
+          "protocol": "timescaledb",
           "inject_env": "ACCOUNTING_TIMESCALE_DSN",
           "expanded_env": [
             "ACCOUNTING_TIMESCALE_DSN"
@@ -278,7 +304,11 @@
           "provenance": "services/accounting/main.go:21"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "ACCOUNTING_TIMESCALE_DSN",
+        "PORT"
+      ]
     },
     "analytics": {
       "name": "analytics",
@@ -307,6 +337,12 @@
           "env_var": "ANALYTICS_CLICKHOUSE_PASSWORD",
           "provenance": "services/analytics/main.go:25"
         }
+      ],
+      "config_env": [
+        "ANALYTICS_CLICKHOUSE_ADDR",
+        "ANALYTICS_CLICKHOUSE_DB",
+        "ANALYTICS_CLICKHOUSE_USER",
+        "PORT"
       ]
     },
     "apigateway": {
@@ -322,7 +358,15 @@
         }
       ],
       "bindings": [],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "AUTH_SERVICE_URL",
+        "MEDIA_SERVICE_URL",
+        "ORDERS_SERVICE_URL",
+        "PORT",
+        "SEARCH_SERVICE_URL",
+        "USERS_SERVICE_URL"
+      ]
     },
     "auditlog": {
       "name": "auditlog",
@@ -351,6 +395,12 @@
           "env_var": "AUDITLOG_CLICKHOUSE_PASSWORD",
           "provenance": "services/auditlog/main.go:26"
         }
+      ],
+      "config_env": [
+        "AUDITLOG_CLICKHOUSE_ADDR",
+        "AUDITLOG_CLICKHOUSE_DB",
+        "AUDITLOG_CLICKHOUSE_USER",
+        "PORT"
       ]
     },
     "auth": {
@@ -380,6 +430,11 @@
           "env_var": "AUTH_REDIS_PASSWORD",
           "provenance": "services/auth/main.go:25"
         }
+      ],
+      "config_env": [
+        "AUTH_REDIS_ADDR",
+        "PORT",
+        "USERS_SERVICE_URL"
       ]
     },
     "catalog": {
@@ -404,7 +459,12 @@
           "provenance": "services/catalog/main.go:26"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "CATALOG_MONGO_URI",
+        "PORT",
+        "SEARCH_SERVICE_URL"
+      ]
     },
     "cms": {
       "name": "cms",
@@ -447,6 +507,11 @@
           "env_var": "CMS_MINIO_SECRET_KEY",
           "provenance": "services/cms/main.go:32"
         }
+      ],
+      "config_env": [
+        "CMS_MINIO_ENDPOINT",
+        "CMS_POSTGRES_DSN",
+        "PORT"
       ]
     },
     "coupons": {
@@ -480,7 +545,12 @@
           "provenance": "services/coupons/main.go:24"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "COUPONS_MEMCACHED_ADDR",
+        "COUPONS_POSTGRES_DSN",
+        "PORT"
+      ]
     },
     "crm": {
       "name": "crm",
@@ -501,6 +571,10 @@
           "env_var": "SALESFORCE_ACCESS_TOKEN",
           "provenance": "services/crm/main.go:41"
         }
+      ],
+      "config_env": [
+        "PORT",
+        "SALESFORCE_API_URL"
       ]
     },
     "disputes": {
@@ -531,7 +605,13 @@
           "provenance": "services/disputes/main.go:27"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "AUDITLOG_SERVICE_URL",
+        "DISPUTES_TEMPORAL_ADDR",
+        "PAYMENTS_SERVICE_URL",
+        "PORT"
+      ]
     },
     "documents": {
       "name": "documents",
@@ -570,6 +650,11 @@
           "env_var": "DOCUMENTS_MINIO_SECRET_KEY",
           "provenance": "services/documents/main.go:38"
         }
+      ],
+      "config_env": [
+        "DOCUMENTS_MINIO_ENDPOINT",
+        "DOCUMENTS_MONGO_URI",
+        "PORT"
       ]
     },
     "email": {
@@ -593,7 +678,12 @@
           "provenance": "services/email/main.go:24"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "AUDITLOG_SERVICE_URL",
+        "EMAIL_RABBITMQ_URL",
+        "PORT"
+      ]
     },
     "fraud": {
       "name": "fraud",
@@ -616,7 +706,12 @@
           "provenance": "services/fraud/main.go:26"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "FRAUD_SCYLLA_HOSTS",
+        "FRAUD_SCYLLA_KEYSPACE",
+        "PORT"
+      ]
     },
     "inventory": {
       "name": "inventory",
@@ -627,7 +722,8 @@
           "port_env": "PORT",
           "routes": [
             "GET /healthz",
-            "POST /v1/inventory/reserve"
+            "POST /v1/inventory/reserve",
+            "POST /v1/inventory/release"
           ]
         }
       ],
@@ -648,7 +744,17 @@
           "provenance": "services/inventory/main.go:29"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "INVENTORY_LOCKS_REDIS_PASSWORD",
+          "provenance": "services/inventory/main.go:29"
+        }
+      ],
+      "config_env": [
+        "INVENTORY_LOCKS_REDIS_ADDR",
+        "INVENTORY_MARIADB_DSN",
+        "PORT"
+      ]
     },
     "livechat": {
       "name": "livechat",
@@ -672,7 +778,16 @@
           "provenance": "services/livechat/main.go:23"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "LIVECHAT_REDIS_PASSWORD",
+          "provenance": "services/livechat/main.go:23"
+        }
+      ],
+      "config_env": [
+        "LIVECHAT_REDIS_ADDR",
+        "PORT"
+      ]
     },
     "loyalty": {
       "name": "loyalty",
@@ -705,7 +820,17 @@
           "provenance": "services/loyalty/main.go:31"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "LOYALTY_REDIS_PASSWORD",
+          "provenance": "services/loyalty/main.go:31"
+        }
+      ],
+      "config_env": [
+        "LOYALTY_POSTGRES_DSN",
+        "LOYALTY_REDIS_ADDR",
+        "PORT"
+      ]
     },
     "media": {
       "name": "media",
@@ -738,6 +863,10 @@
           "env_var": "MEDIA_MINIO_SECRET_KEY",
           "provenance": "services/media/main.go:17"
         }
+      ],
+      "config_env": [
+        "MEDIA_MINIO_ENDPOINT",
+        "PORT"
       ]
     },
     "metrics": {
@@ -767,6 +896,12 @@
           "env_var": "METRICS_CLICKHOUSE_PASSWORD",
           "provenance": "services/metrics/main.go:24"
         }
+      ],
+      "config_env": [
+        "METRICS_CLICKHOUSE_ADDR",
+        "METRICS_CLICKHOUSE_DB",
+        "METRICS_CLICKHOUSE_USER",
+        "PORT"
       ]
     },
     "notifications": {
@@ -795,6 +930,12 @@
           "env_var": "SENDGRID_API_KEY",
           "provenance": "services/notifications/main.go:78"
         }
+      ],
+      "config_env": [
+        "NOTIFICATIONS_FROM_EMAIL",
+        "NOTIFICATIONS_RABBITMQ_URL",
+        "PORT",
+        "SENDGRID_API_URL"
       ]
     },
     "orders": {
@@ -815,16 +956,23 @@
         {
           "service_ref": "inventory",
           "protocol": "http",
+          "interface": "/v1/inventory/release",
+          "inject_env": "INVENTORY_SERVICE_URL",
+          "provenance": "services/orders/main.go:151"
+        },
+        {
+          "service_ref": "inventory",
+          "protocol": "http",
           "interface": "/v1/inventory/reserve",
           "inject_env": "INVENTORY_SERVICE_URL",
-          "provenance": "services/orders/main.go:95"
+          "provenance": "services/orders/main.go:98"
         },
         {
           "service_ref": "payments",
           "protocol": "http",
           "interface": "/v1/charges",
           "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:115"
+          "provenance": "services/orders/main.go:118"
         },
         {
           "resource_ref": "db-orders-postgres",
@@ -836,7 +984,14 @@
           "provenance": "services/orders/main.go:28"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "ACCOUNTING_SERVICE_URL",
+        "INVENTORY_SERVICE_URL",
+        "ORDERS_POSTGRES_DSN",
+        "PAYMENTS_SERVICE_URL",
+        "PORT"
+      ]
     },
     "payments": {
       "name": "payments",
@@ -865,6 +1020,12 @@
           "env_var": "STRIPE_SECRET_KEY",
           "provenance": "services/payments/main.go:93"
         }
+      ],
+      "config_env": [
+        "PAYMENTS_SCYLLA_HOSTS",
+        "PAYMENTS_SCYLLA_KEYSPACE",
+        "PORT",
+        "STRIPE_API_URL"
       ]
     },
     "pricing": {
@@ -894,6 +1055,10 @@
           "env_var": "PRICING_VALKEY_PASSWORD",
           "provenance": "services/pricing/main.go:22"
         }
+      ],
+      "config_env": [
+        "PORT",
+        "PRICING_VALKEY_ADDR"
       ]
     },
     "recommendations": {
@@ -924,7 +1089,17 @@
           "provenance": "services/recommendations/main.go:24"
         }
       ],
-      "secrets": []
+      "secrets": [
+        {
+          "env_var": "RECS_REDIS_PASSWORD",
+          "provenance": "services/recommendations/main.go:24"
+        }
+      ],
+      "config_env": [
+        "PORT",
+        "RECS_QDRANT_URL",
+        "RECS_REDIS_ADDR"
+      ]
     },
     "reviews": {
       "name": "reviews",
@@ -948,7 +1123,11 @@
           "provenance": "services/reviews/main.go:27"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "REVIEWS_MONGO_URI"
+      ]
     },
     "search": {
       "name": "search",
@@ -972,7 +1151,11 @@
           "provenance": "services/search/main.go:83"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "SEARCH_QDRANT_URL"
+      ]
     },
     "shipping": {
       "name": "shipping",
@@ -1000,6 +1183,11 @@
           "env_var": "EASYPOST_API_KEY",
           "provenance": "services/shipping/main.go:78"
         }
+      ],
+      "config_env": [
+        "EASYPOST_API_URL",
+        "PORT",
+        "SHIPPING_KAFKA_BROKERS"
       ]
     },
     "subscriptions": {
@@ -1019,7 +1207,7 @@
       "bindings": [
         {
           "resource_ref": "db-subscriptions-cockroach",
-          "protocol": "postgres",
+          "protocol": "cockroachdb",
           "inject_env": "SUBSCRIPTIONS_COCKROACH_DSN",
           "expanded_env": [
             "SUBSCRIPTIONS_COCKROACH_DSN"
@@ -1027,7 +1215,11 @@
           "provenance": "services/subscriptions/main.go:25"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "SUBSCRIPTIONS_COCKROACH_DSN"
+      ]
     },
     "tax": {
       "name": "tax",
@@ -1048,6 +1240,11 @@
           "env_var": "AVATAX_LICENSE_KEY",
           "provenance": "services/tax/main.go:28"
         }
+      ],
+      "config_env": [
+        "AVALARA_API_URL",
+        "AVATAX_ACCOUNT_ID",
+        "PORT"
       ]
     },
     "users": {
@@ -1076,7 +1273,11 @@
           "provenance": "services/users/main.go:33"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "USERS_POSTGRES_DSN"
+      ]
     },
     "warehouse": {
       "name": "warehouse",
@@ -1099,7 +1300,12 @@
           "provenance": "services/warehouse/main.go:26"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "SHIPPING_SERVICE_URL",
+        "WAREHOUSE_RABBITMQ_URL"
+      ]
     },
     "webhooks": {
       "name": "webhooks",
@@ -1122,7 +1328,11 @@
           "provenance": "services/webhooks/main.go:23"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "WEBHOOKS_RABBITMQ_URL"
+      ]
     },
     "workflows": {
       "name": "workflows",
@@ -1152,7 +1362,12 @@
           "provenance": "services/workflows/main.go:29"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "PORT",
+        "WAREHOUSE_SERVICE_URL",
+        "WORKFLOWS_TEMPORAL_ADDR"
+      ]
     }
   },
   "egress_rules": [

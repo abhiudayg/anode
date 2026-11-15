@@ -1,3 +1,4 @@
+-- +goose Up
 -- PostgreSQL: orders written by services/orders.
 CREATE TABLE IF NOT EXISTS orders (
     id           TEXT        PRIMARY KEY,
@@ -10,3 +11,6 @@ CREATE TABLE IF NOT EXISTS orders (
 );
 
 CREATE INDEX IF NOT EXISTS orders_customer_idx ON orders (customer_id);
+
+-- +goose Down
+-- No automatic rollback: restore from backup to undo this migration.

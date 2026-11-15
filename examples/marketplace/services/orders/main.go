@@ -51,6 +51,9 @@ func main() {
 			return
 		}
 		if err := charge(r.Context(), o); err != nil {
+			if err := releaseStock(r.Context(), o); err != nil {
+				log.Printf("release stock for %s: %v", o.ID, err)
+			}
 			o.Status = "payment_failed"
 			_ = saveOrder(r.Context(), pool, o)
 			http.Error(w, "payment declined", http.StatusPaymentRequired)
@@ -141,4 +144,22 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+func releaseStock(ctx context.Context, o order) error {
+	body, _ := json.Marshal(map[string]any{"sku": o.SKU, "quantity": o.Quantity})
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, os.Getenv("INVENTORY_SERVICE_URL")+"/v1/inventory/release", bytes.NewReader(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return errors.New("release rejected")
+	}
+	return nil
 }

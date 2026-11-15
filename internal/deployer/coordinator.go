@@ -2,6 +2,9 @@ package deployer
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -16,9 +19,10 @@ import (
 )
 
 type DeployCoordinator struct {
-	rootDir  string
-	ssh      Remote
-	lockfile *iag.LockFile
+	rootDir   string
+	ssh       Remote
+	lockfile  *iag.LockFile
+	activated bool
 }
 
 func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFile) *DeployCoordinator {
@@ -31,6 +35,18 @@ func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFi
 
 // Deploy uploads a release, restarts each service in place with a health check, and reloads the Caddy edge on the remote VPS
 func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
+	err := d.deploy(ctx, domain)
+	if err == nil || !d.activated {
+		return err
+	}
+	previous, rbErr := Rollback(d.ssh)
+	if rbErr != nil {
+		return fmt.Errorf("%w; automatic rollback also failed: %v", err, rbErr)
+	}
+	return fmt.Errorf("%w; the host was rolled back to release %s", err, previous)
+}
+
+func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 	bootstrapper := NewBootstrapper(d.ssh)
 	releaseID := fmt.Sprintf("%d", time.Now().Unix())
 
@@ -66,11 +82,18 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := cfg.Validate(d.lockfile); err != nil {
 		return err
 	}
-	hostPorts := containerHostPorts(d.lockfile, cfg)
+	state, err := LoadState(d.rootDir)
+	if err != nil {
+		return err
+	}
+	hostPorts := containerHostPorts(d.lockfile, cfg, &state)
+	if err := SaveState(d.rootDir, state); err != nil {
+		return err
+	}
 
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
-	if err := bootstrapper.BootstrapServer(d.lockfile, cfg, secrets); err != nil {
+	if err := bootstrapper.BootstrapServer(d.lockfile, cfg, secrets, hostPorts); err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 
@@ -140,7 +163,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			envKey := BindingEnvKey(svc.Name, b)
 
 			if res, exists := d.lockfile.Resources[b.ResourceRef]; exists {
-				if res.Kind == "redis" {
+				if res.Kind == "redis" && !strings.HasSuffix(envKey, "_ADDR") {
 					port := reg.Resolve(string(res.Kind)).Networking.PrimaryPort
 					secretEnv[envKey] = RedisConnectionURL(secrets[RedisPasswordKey()], port)
 					continue
@@ -154,7 +177,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					continue
 				}
 				driver := reg.Resolve(string(res.Kind))
-				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", hostPorts[b.ResourceRef], b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
+				value, err := driver.PrimaryConnectionValue(b.ResourceRef, "127.0.0.1", hostPortFor(hostPorts, b.ResourceRef, driver), b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
 				if err != nil {
 					return err
 				}
@@ -198,6 +221,14 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			}
 		}
 
+		for _, name := range svc.ConfigEnv {
+			if _, bound := envVars[name]; bound {
+				continue
+			}
+			if value := secrets[name]; value != "" {
+				secretEnv[name] = value
+			}
+		}
 		// Inject and isolate secrets into a secured 0600 environment file
 		for _, s := range svc.Secrets {
 			value := secrets[s.EnvVar]
@@ -243,6 +274,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			return fmt.Errorf("failed to record unit for %s: %w", svc.Name, err)
 		}
 		unitPath := fmt.Sprintf("/etc/systemd/system/anode-%s.service", svc.Name)
+		d.activated = true
 		if err := bootstrapper.WriteRemoteFile(unitContent, unitPath); err != nil {
 			return fmt.Errorf("failed to write systemd unit for %s: %w", svc.Name, err)
 		}
@@ -272,6 +304,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := bootstrapper.WriteRemoteFile(caddyContent, caddyPath); err != nil {
 		return fmt.Errorf("failed to write Caddyfile: %w", err)
 	}
+	if err := bootstrapper.WriteRemoteFile(caddyContent, remoteReleaseDir+"/Caddyfile"); err != nil {
+		return fmt.Errorf("failed to record Caddyfile for release %s: %w", releaseID, err)
+	}
 
 	if _, err := d.ssh.Run("caddy validate --config /etc/caddy/Caddyfile"); err != nil {
 		return fmt.Errorf("Caddyfile is invalid: %w", err)
@@ -290,6 +325,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 		}
 	}
 	if err := d.pruneHost(keepUnits); err != nil {
+		return err
+	}
+	if err := d.recordLockHash(releaseID); err != nil {
 		return err
 	}
 	fmt.Printf("\n🎉 Release %s deployed successfully!\n", releaseID)
@@ -343,4 +381,20 @@ func (d *DeployCoordinator) crossCompileService(ctx context.Context, svc iag.Ser
 	}
 
 	return binPath, nil
+}
+
+func (d *DeployCoordinator) recordLockHash(releaseID string) error {
+	data, err := json.MarshalIndent(d.lockfile, "", "  ")
+	if err != nil {
+		return fmt.Errorf("serialize lockfile for the release record: %w", err)
+	}
+	sum := sha256.Sum256(data)
+	if err := d.ssh.StreamBytes(data, fmt.Sprintf("/var/lib/anode/releases/%s/anode.lock.json", releaseID), 0o644); err != nil {
+		return fmt.Errorf("record lockfile for release %s: %w", releaseID, err)
+	}
+	path := fmt.Sprintf("/var/lib/anode/releases/%s.lock.sha256", releaseID)
+	if err := d.ssh.StreamBytes([]byte(hex.EncodeToString(sum[:])+"\n"), path, 0o644); err != nil {
+		return fmt.Errorf("record lockfile hash for release %s: %w", releaseID, err)
+	}
+	return nil
 }

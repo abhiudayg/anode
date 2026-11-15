@@ -3,8 +3,7 @@
 # runtime = "binary" installs a host binary; "docker" runs the store in a container.
 
 [stores."db-accounting-timescale"]
-runtime = "docker"
-version = "16"
+runtime = "external"
 
 [stores."db-cms-postgres"]
 runtime = "docker"
@@ -27,8 +26,7 @@ runtime = "docker"
 version = "16"
 
 [stores."db-subscriptions-cockroach"]
-runtime = "docker"
-version = "16"
+runtime = "external"
 
 [stores."db-users-postgres"]
 runtime = "docker"
@@ -155,11 +153,11 @@ runtime = "binary"
 runtime = "binary"
 
 [stores."analytics-clickhouse"]
-runtime = "docker"
+runtime = "external"
 version = "24.3"
 
 [stores."auditlog-clickhouse"]
-runtime = "docker"
+runtime = "external"
 version = "24.3"
 
 [stores."catalog-mongo"]
@@ -191,15 +189,14 @@ runtime = "docker"
 version = "3.13"
 
 [stores."fraud-scylla"]
-runtime = "docker"
-version = "5.4"
+runtime = "external"
 
 [stores."media-minio"]
 runtime = "docker"
 version = "3.68"
 
 [stores."metrics-clickhouse"]
-runtime = "docker"
+runtime = "external"
 version = "24.3"
 
 [stores."notifications-rabbitmq"]
@@ -207,8 +204,7 @@ runtime = "docker"
 version = "3.13"
 
 [stores."payments-scylla"]
-runtime = "docker"
-version = "5.4"
+runtime = "external"
 
 [stores."recs-qdrant"]
 runtime = "docker"

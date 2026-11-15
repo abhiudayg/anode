@@ -26,7 +26,7 @@ func main() {
 	}
 	defer db.Close()
 
-	locks := redis.NewClient(&redis.Options{Addr: os.Getenv("INVENTORY_LOCKS_REDIS_ADDR")})
+	locks := redis.NewClient(&redis.Options{Addr: os.Getenv("INVENTORY_LOCKS_REDIS_ADDR"), Password: os.Getenv("INVENTORY_LOCKS_REDIS_PASSWORD")})
 	defer locks.Close()
 
 	mux := http.NewServeMux()
@@ -57,6 +57,19 @@ func main() {
 			return
 		}
 		w.WriteHeader(http.StatusCreated)
+	})
+
+	mux.HandleFunc("POST /v1/inventory/release", func(w http.ResponseWriter, r *http.Request) {
+		var res reservation
+		if err := json.NewDecoder(r.Body).Decode(&res); err != nil || res.SKU == "" || res.Quantity <= 0 {
+			http.Error(w, "invalid release", http.StatusBadRequest)
+			return
+		}
+		if _, err := db.ExecContext(r.Context(), `UPDATE stock SET on_hand = on_hand + ? WHERE sku = ?`, res.Quantity, res.SKU); err != nil {
+			http.Error(w, "release failed", http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	})
 
 	log.Fatal(http.ListenAndServe(":"+envOr("PORT", "9014"), mux))

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"go/types"
+	"sort"
 	"strings"
 
 	"golang.org/x/tools/go/ssa"
@@ -200,4 +201,66 @@ func bindStoreOverHTTP(svc *iag.Service, graph *iag.Graph, envVar, kind, routeSu
 		InjectEnv:   envVar,
 		Provenance:  provenance,
 	})
+}
+
+func (s *SinkInspector) InspectKafkaTopic(store *ssa.Store, svc *iag.Service) {
+	fa, ok := store.Addr.(*ssa.FieldAddr)
+	if !ok || !isKafkaWriterField(fa, "Topic") {
+		return
+	}
+	if topic := ResolveConstantString(store.Val); topic != "" {
+		svc.Topics = appendUnique(svc.Topics, topic)
+	}
+}
+
+var minioBucketMethods = map[string]bool{
+	"PutObject": true, "GetObject": true, "StatObject": true, "RemoveObject": true,
+	"FPutObject": true, "FGetObject": true, "PresignedGetObject": true, "PresignedPutObject": true,
+	"MakeBucket": true, "BucketExists": true, "RemoveBucket": true, "ListObjects": true,
+}
+
+func (s *SinkInspector) InspectMinioBucket(call *ssa.CallCommon, svc *iag.Service) {
+	callee := call.StaticCallee()
+	if callee == nil || callee.Pkg == nil || callee.Pkg.Pkg == nil || !strings.Contains(callee.Pkg.Pkg.Path(), "minio/minio-go") {
+		return
+	}
+	if !minioBucketMethods[callee.Name()] || len(call.Args) < 3 {
+		return
+	}
+	if bucket := ResolveConstantString(call.Args[2]); bucket != "" {
+		svc.Buckets = appendUnique(svc.Buckets, bucket)
+	}
+}
+
+func attachInferredResources(lock *iag.LockFile) {
+	for _, svc := range lock.Services {
+		for _, b := range svc.Bindings {
+			res, ok := lock.Resources[b.ResourceRef]
+			if !ok {
+				continue
+			}
+			switch b.Protocol {
+			case "kafka":
+				res.Topics = unionSorted(res.Topics, svc.Topics)
+			case "s3":
+				res.Buckets = unionSorted(res.Buckets, svc.Buckets)
+			default:
+				continue
+			}
+			lock.Resources[b.ResourceRef] = res
+		}
+	}
+}
+
+func unionSorted(existing, added []string) []string {
+	seen := make(map[string]bool, len(existing)+len(added))
+	var out []string
+	for _, v := range append(append([]string{}, existing...), added...) {
+		if !seen[v] {
+			seen[v] = true
+			out = append(out, v)
+		}
+	}
+	sort.Strings(out)
+	return out
 }

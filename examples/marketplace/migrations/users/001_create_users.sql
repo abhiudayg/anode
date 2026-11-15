@@ -1,3 +1,4 @@
+-- +goose Up
 -- PostgreSQL: accounts served by services/users. Passwords are stored as bcrypt hashes.
 CREATE TABLE IF NOT EXISTS users (
     id            TEXT PRIMARY KEY,
@@ -5,3 +6,6 @@ CREATE TABLE IF NOT EXISTS users (
     name          TEXT NOT NULL DEFAULT '',
     password_hash TEXT NOT NULL
 );
+
+-- +goose Down
+-- No automatic rollback: restore from backup to undo this migration.

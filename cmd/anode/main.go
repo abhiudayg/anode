@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/abhiudayg/anode/internal/overrides"
 	"log"
 	"os"
 	"os/signal"
@@ -66,6 +67,9 @@ func main() {
 		lockfile, err := loader.LoadAndAnalyze("./...")
 		if err != nil {
 			log.Fatalf("Analysis failed: %v", err)
+		}
+		if err := overrides.ApplyFile(targetDir, lockfile); err != nil {
+			log.Fatalf("%v", err)
 		}
 
 		data, err := json.MarshalIndent(lockfile, "", "  ")
@@ -175,11 +179,15 @@ func main() {
 		}
 
 	case "migrate":
-		targetDir := "."
+		host, targetDir := "", "."
+		if len(os.Args) > 2 && strings.Contains(os.Args[2], "@") {
+			host = os.Args[2]
+			os.Args = append(os.Args[:2], os.Args[3:]...)
+		}
 		if len(os.Args) > 2 {
 			targetDir = os.Args[2]
 		}
-		if err := runMigrate(targetDir); err != nil {
+		if err := runMigrate(host, targetDir); err != nil {
 			log.Fatalf("Migration failed: %v", err)
 		}
 	case "rollback":

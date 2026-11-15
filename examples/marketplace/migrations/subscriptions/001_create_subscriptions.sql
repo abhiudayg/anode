@@ -1,3 +1,4 @@
+-- +goose Up
 -- CockroachDB: recurring plans served by services/subscriptions.
 CREATE TABLE IF NOT EXISTS subscriptions (
     id          STRING      PRIMARY KEY,
@@ -5,3 +6,6 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     plan        STRING      NOT NULL,
     renews_at   TIMESTAMPTZ NOT NULL
 );
+
+-- +goose Down
+-- No automatic rollback: restore from backup to undo this migration.

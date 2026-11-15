@@ -28,7 +28,7 @@ func main() {
 	}
 	defer pool.Close()
 
-	rdb := redis.NewClient(&redis.Options{Addr: os.Getenv("LOYALTY_REDIS_ADDR")})
+	rdb := redis.NewClient(&redis.Options{Addr: os.Getenv("LOYALTY_REDIS_ADDR"), Password: os.Getenv("LOYALTY_REDIS_PASSWORD")})
 	defer rdb.Close()
 
 	mux := http.NewServeMux()

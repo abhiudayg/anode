@@ -1,0 +1,16 @@
+{
+  "overrides": [
+    {
+      "path": "resources.search-qdrant.collections",
+      "inferred": null,
+      "value": [{ "name": "products", "vector_size": 4, "distance": "Cosine" }],
+      "note": "collection name is built at runtime in services/search; declared here for review"
+    },
+    {
+      "path": "resources.recs-qdrant.collections",
+      "inferred": null,
+      "value": [{ "name": "products", "vector_size": 4, "distance": "Cosine" }],
+      "note": "collection name is in the URL string in services/recommendations; declared here for review"
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package analyzer
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -47,4 +48,28 @@ func TestHyperMesh12Analysis(t *testing.T) {
 	for _, eg := range lockfile.EgressRules {
 		t.Logf("Egress: %s -> %s", eg.SourceService, eg.TargetHost)
 	}
+}
+
+func TestRuntimeBuiltEnvNameIsReportedNotRecordedAsSecret(t *testing.T) {
+	dir, err := filepath.Abs("../../testdata/retail-platform")
+	if err != nil {
+		t.Fatalf("failed to get abs path: %v", err)
+	}
+	lockfile, err := NewLoader(dir).LoadAndAnalyze("./...")
+	if err != nil {
+		t.Fatalf("LoadAndAnalyze failed: %v", err)
+	}
+	for _, svc := range lockfile.Services {
+		for _, s := range svc.Secrets {
+			if s.EnvVar == "_DB_PASSWORD" {
+				t.Fatalf("a name built from a prefix must not be recorded as a bare secret, got %q in %s", s.EnvVar, svc.Name)
+			}
+		}
+	}
+	for _, d := range lockfile.Diagnostics {
+		if strings.Contains(d.Message, "built at runtime") {
+			return
+		}
+	}
+	t.Fatalf("a runtime-built environment name must be reported as a diagnostic")
 }
