@@ -10,13 +10,16 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("GET /v1/tax/rates", func(w http.ResponseWriter, r *http.Request) {
 		postal := r.URL.Query().Get("postal_code")
 		if postal == "" {
 			http.Error(w, "postal_code is required", http.StatusBadRequest)
 			return
 		}
-		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, "https://rest.avatax.com/api/v2/tax/rates", nil)
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, providerURL("AVALARA_API_URL", "https://rest.avatax.com", "/api/v2/tax/rates"), nil)
 		if err != nil {
 			http.Error(w, "request failed", http.StatusInternalServerError)
 			return
@@ -42,4 +45,14 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// providerURL returns the endpoint of an external API. The env var lets tests point it at a local stub; production
+// leaves it unset and calls the provider.
+func providerURL(env, fallbackBase, path string) string {
+	base := os.Getenv(env)
+	if base == "" {
+		base = fallbackBase
+	}
+	return base + path
 }

@@ -33,6 +33,9 @@ func main() {
 	defer session.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/fraud/check", func(w http.ResponseWriter, r *http.Request) {
 		var c check
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil || c.ID == "" {
@@ -41,7 +44,7 @@ func main() {
 		}
 		v := score(c)
 		if err := session.Query(
-			`INSERT INTO checks (id, amount_cents, region, score, allow) VALUES (?, ?, ?, ?, ?)`,
+			`INSERT INTO checks (id, amount_cents, region, score, allowed) VALUES (?, ?, ?, ?, ?)`,
 			c.ID, c.Amount, c.Region, v.Score, v.Allow).WithContext(r.Context()).Exec(); err != nil {
 			http.Error(w, "write failed", http.StatusInternalServerError)
 			return

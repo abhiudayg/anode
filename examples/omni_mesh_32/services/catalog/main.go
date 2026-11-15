@@ -31,6 +31,9 @@ func main() {
 	items := client.Database("catalog").Collection("items")
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/catalog/items", func(w http.ResponseWriter, r *http.Request) {
 		var it item
 		if err := json.NewDecoder(r.Body).Decode(&it); err != nil || it.SKU == "" {

@@ -340,6 +340,9 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 		}
 		if len(call.Args) > urlArgIdx {
 			rawURL := ResolveConstantString(call.Args[urlArgIdx])
+			if rawURL == "" {
+				rawURL = providerFallbackURL(call.Args[urlArgIdx])
+			}
 			envVar, routeSuffix := TraceURL(call.Args[urlArgIdx])
 
 			// If it's a hardcoded external URL (e.g. https://api.stripe.com/...)

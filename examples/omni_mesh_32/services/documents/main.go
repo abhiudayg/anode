@@ -43,6 +43,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("PUT /v1/documents/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		contentType := r.Header.Get("Content-Type")

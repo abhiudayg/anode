@@ -38,6 +38,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/notifications", func(w http.ResponseWriter, r *http.Request) {
 		var n notification
 		if err := json.NewDecoder(r.Body).Decode(&n); err != nil || n.Email == "" {
@@ -67,7 +70,7 @@ func sendViaSendGrid(ctx context.Context, n notification) error {
 		"content":          []map[string]string{{"type": "text/plain", "value": n.Body}},
 	}
 	body, _ := json.Marshal(payload)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.sendgrid.com/v3/mail/send", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, providerURL("SENDGRID_API_URL", "https://api.sendgrid.com", "/v3/mail/send"), bytes.NewReader(body))
 	if err != nil {
 		return err
 	}
@@ -91,4 +94,14 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// providerURL returns the endpoint of an external API. The env var lets tests point it at a local stub; production
+// leaves it unset and calls the provider.
+func providerURL(env, fallbackBase, path string) string {
+	base := os.Getenv(env)
+	if base == "" {
+		base = fallbackBase
+	}
+	return base + path
 }

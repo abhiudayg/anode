@@ -1,8 +1,115 @@
-# Live test infrastructure for the omni mesh. Only the Temporal dev server is here yet, because only the
-# disputes and workflows tests run against live infrastructure. Add each store with the test that uses it.
+# Live test infrastructure for the omni mesh. Every store listens on loopback only, on a fixed port, with one
+# database per store. The live tests in ../livetest start the services they need against these stores.
 services:
   temporal:
     image: temporalio/temporal:1.10.1
     command: ["server", "start-dev", "--ip", "0.0.0.0", "--headless"]
     ports:
       - "127.0.0.1:7233:7233"
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mesh
+    ports:
+      - "127.0.0.1:15432:5432"
+
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:16379:6379"
+
+  valkey:
+    image: valkey/valkey:8
+    ports:
+      - "127.0.0.1:16380:6379"
+
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: mesh
+      MARIADB_DATABASE: mesh
+    ports:
+      - "127.0.0.1:13306:3306"
+
+  mongo:
+    image: mongo:7
+    ports:
+      - "127.0.0.1:27018:27017"
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "127.0.0.1:5673:5672"
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    environment:
+      CLICKHOUSE_USER: mesh
+      CLICKHOUSE_PASSWORD: mesh
+      CLICKHOUSE_DB: mesh
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    ports:
+      - "127.0.0.1:9001:9000"
+
+  memcached:
+    image: memcached:1.6
+    ports:
+      - "127.0.0.1:11212:11211"
+
+  qdrant:
+    image: qdrant/qdrant:v1.9.7
+    ports:
+      - "127.0.0.1:16333:6333"
+
+  # S3 API for the cms, media, and documents services. MinIO images are not pullable from Docker Hub or Quay in this
+  # environment, so SeaweedFS serves the same S3 protocol the services use.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: ["server", "-s3", "-s3.port=8333", "-dir=/data"]
+    ports:
+      - "127.0.0.1:9100:8333"
+
+  timescale:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mesh
+    ports:
+      - "127.0.0.1:15433:5432"
+
+  cockroach:
+    image: cockroachdb/cockroach:v24.1.0
+    command: ["start-single-node", "--insecure", "--listen-addr=:26257"]
+    ports:
+      - "127.0.0.1:26258:26257"
+
+  scylla:
+    image: scylladb/scylla:6.0
+    command: ["--smp", "1", "--memory", "1G", "--overprovisioned", "1", "--developer-mode", "1"]
+    ports:
+      - "127.0.0.1:9042:9042"
+
+  kafka:
+    image: apache/kafka:3.8.0
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:19092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_NUM_PARTITIONS: 1
+    ports:
+      - "127.0.0.1:19092:9092"

@@ -43,8 +43,8 @@ func TestEnsureCreatesTemplateThatValidates(t *testing.T) {
 	if got := cfg.Stores["db-orders"]; got.Runtime != RuntimeDocker || got.Version != "16" {
 		t.Errorf("postgres default = %+v, want docker runtime and version 16", got)
 	}
-	if got := cfg.Stores["cache-auth"]; got.Runtime != RuntimeBinary || got.Version != "7" {
-		t.Errorf("redis default = %+v, want binary runtime and version 7", got)
+	if got := cfg.Stores["cache-auth"]; got.Runtime != RuntimeBinary || got.Version != VersionAuto {
+		t.Errorf("redis default = %+v, want binary runtime and version auto", got)
 	}
 }
 
@@ -130,5 +130,29 @@ func TestOmniMeshConfigValidates(t *testing.T) {
 	}
 	if err := cfg.Validate(&lock); err != nil {
 		t.Fatalf("the committed omni mesh config must validate: %v", err)
+	}
+}
+
+func TestAutoVersionIsOnlyForBinaryStores(t *testing.T) {
+	lock := testLock()
+	ok := &File{
+		Stores: map[string]Store{
+			"db-orders":  {Runtime: RuntimeDocker, Version: "16"},
+			"cache-auth": {Runtime: RuntimeBinary, Version: VersionAuto},
+		},
+		Services: map[string]Service{"orders": {Runtime: RuntimeBinary}},
+	}
+	if err := ok.Validate(lock); err != nil {
+		t.Fatalf("auto is valid for a binary redis store: %v", err)
+	}
+	bad := &File{
+		Stores: map[string]Store{
+			"db-orders":  {Runtime: RuntimeDocker, Version: VersionAuto},
+			"cache-auth": {Runtime: RuntimeBinary, Version: VersionAuto},
+		},
+		Services: map[string]Service{"orders": {Runtime: RuntimeBinary}},
+	}
+	if err := bad.Validate(lock); err == nil || !strings.Contains(err.Error(), "only for runtime") {
+		t.Fatalf("auto must be rejected for a docker store, got %v", err)
 	}
 }

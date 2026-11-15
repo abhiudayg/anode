@@ -36,19 +36,19 @@ version = "16"
 
 [stores."redis-auth"]
 runtime = "binary"
-version = "7"
+version = "auto"
 
 [stores."redis-inventory-locks"]
 runtime = "binary"
-version = "7"
+version = "auto"
 
 [stores."redis-livechat"]
 runtime = "binary"
-version = "7"
+version = "auto"
 
 [stores."redis-loyalty"]
 runtime = "binary"
-version = "7"
+version = "auto"
 
 [stores."redis-pricing-valkey"]
 runtime = "docker"
@@ -56,7 +56,7 @@ version = "7.2"
 
 [stores."redis-recs"]
 runtime = "binary"
-version = "7"
+version = "auto"
 
 [services."accounting"]
 runtime = "binary"

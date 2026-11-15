@@ -34,6 +34,9 @@ func main() {
 	defer writer.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/shipments", func(w http.ResponseWriter, r *http.Request) {
 		var req shipmentRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.OrderID == "" || req.ToZip == "" {
@@ -67,7 +70,7 @@ func createEasyPostShipment(ctx context.Context, req shipmentRequest) (string, e
 			"parcel":       map[string]int{"weight": req.WeightOunce},
 		},
 	})
-	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.easypost.com/v2/shipments", bytes.NewReader(payload))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, providerURL("EASYPOST_API_URL", "https://api.easypost.com", "/v2/shipments"), bytes.NewReader(payload))
 	if err != nil {
 		return "", err
 	}
@@ -109,4 +112,14 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// providerURL returns the endpoint of an external API. The env var lets tests point it at a local stub; production
+// leaves it unset and calls the provider.
+func providerURL(env, fallbackBase, path string) string {
+	base := os.Getenv(env)
+	if base == "" {
+		base = fallbackBase
+	}
+	return base + path
 }

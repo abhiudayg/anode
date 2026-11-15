@@ -37,6 +37,9 @@ func main() {
 	defer session.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/charges", func(w http.ResponseWriter, r *http.Request) {
 		var c chargeRequest
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil || c.OrderID == "" || c.AmountCents <= 0 {
@@ -81,7 +84,7 @@ func createStripeCharge(ctx context.Context, c chargeRequest) (string, error) {
 	form.Set("description", "order "+c.OrderID)
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://api.stripe.com/v1/charges",
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, providerURL("STRIPE_API_URL", "https://api.stripe.com", "/v1/charges"),
 		bytes.NewBufferString(form.Encode()))
 	if err != nil {
 		return "", err
@@ -112,4 +115,14 @@ func envOr(key, fallback string) string {
 		return v
 	}
 	return fallback
+}
+
+// providerURL returns the endpoint of an external API. The env var lets tests point it at a local stub; production
+// leaves it unset and calls the provider.
+func providerURL(env, fallbackBase, path string) string {
+	base := os.Getenv(env)
+	if base == "" {
+		base = fallbackBase
+	}
+	return base + path
 }

@@ -24,6 +24,9 @@ func main() {
 	defer valkey.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("PUT /v1/pricing/{sku}", func(w http.ResponseWriter, r *http.Request) {
 		var p price
 		if err := json.NewDecoder(r.Body).Decode(&p); err != nil || p.AmountCent < 0 {

@@ -32,6 +32,9 @@ func main() {
 	defer rdb.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/loyalty/points", func(w http.ResponseWriter, r *http.Request) {
 		var g pointsGrant
 		if err := json.NewDecoder(r.Body).Decode(&g); err != nil || g.CustomerID == "" || g.Points <= 0 {
