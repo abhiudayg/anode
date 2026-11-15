@@ -598,7 +598,7 @@ export default function SsaVisualizerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
@@ -610,13 +610,13 @@ export default function SsaVisualizerPage() {
           <span>/</span>
           <span className="text-neutral-500">Developer Tools</span>
           <span>/</span>
-          <span className="text-cyan-400">Live SSA Call Graph Visualizer</span>
+          <span className="text-white">Live SSA Call Graph Visualizer</span>
         </div>
 
         {/* Hero Section */}
         <div className="max-w-3xl mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-500/30 text-cyan-400 text-xs font-mono-code mb-4">
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.12] text-white text-xs font-mono-code mb-4">
+            <Sparkles className="w-3.5 h-3.5 text-white" />
             <span>Interactive Tool • Zero Server Execution • 100% Client-Side AST</span>
           </div>
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
@@ -630,7 +630,7 @@ export default function SsaVisualizerPage() {
         {/* Preset Selector */}
         <div className="flex flex-wrap items-center gap-2 mb-6">
           <span className="text-xs font-mono-code text-neutral-400 mr-2 flex items-center gap-1.5">
-            <Code2 className="w-4 h-4 text-cyan-400" />
+            <Code2 className="w-4 h-4 text-white" />
             <span>Try Framework Preset:</span>
           </span>
           {PRESETS.map((preset) => (
@@ -639,12 +639,12 @@ export default function SsaVisualizerPage() {
               onClick={() => handleSelectPreset(preset)}
               className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono-code transition-all ${
                 selectedPresetId === preset.id
-                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 shadow-[0_0_15px_rgba(0,173,216,0.2)] font-semibold"
+                  ? "bg-white/[0.08] text-neutral-200 border border-white/[0.12] shadow-none font-semibold"
                   : "bg-white/[0.03] text-neutral-400 border border-white/[0.08] hover:text-white hover:bg-white/[0.06]"
               }`}
             >
               <span>{preset.name}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40">
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/[0.04] text-white border border-white/[0.1]">
                 {preset.badge}
               </span>
             </button>
@@ -654,13 +654,13 @@ export default function SsaVisualizerPage() {
         {/* Main Grid: Left Code Editor, Right Topology Output (Equal Heights, No Clutter) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
           {/* Left Column: Go Code Editor with Line Numbers and Error Handling */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden shadow-2xl flex flex-col justify-between h-full min-h-[600px]">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] overflow-hidden shadow-2xl flex flex-col justify-between h-full min-h-[600px]">
             {/* Editor Header Bar */}
             <div className="px-4 py-3 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between min-h-[49px]">
               <div className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
-                <FileCode2 className="w-4 h-4 text-cyan-400" />
+                <FileCode2 className="w-4 h-4 text-white" />
                 <span className="font-semibold text-neutral-200">main.go</span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950/60 text-cyan-400 border border-cyan-800/40">
+                <span className="text-[10px] px-1.5 py-0.2 rounded bg-white/[0.04] text-white border border-white/[0.1]">
                   AST Target
                 </span>
               </div>
@@ -672,7 +672,7 @@ export default function SsaVisualizerPage() {
                 className="inline-flex items-center gap-1.5 text-[11px] font-mono-code text-neutral-400 hover:text-white transition-colors px-2 py-1 rounded-lg hover:bg-white/[0.05]"
                 title="Reset to selected preset code"
               >
-                <RefreshCw className="w-3 h-3 text-cyan-400" />
+                <RefreshCw className="w-3 h-3 text-white" />
                 <span>Reset</span>
               </button>
             </div>
@@ -698,7 +698,7 @@ export default function SsaVisualizerPage() {
             )}
 
             {/* Editor Area with Line Numbers */}
-            <div className="flex-1 flex bg-[#08090b] overflow-hidden min-h-[460px]">
+            <div className="flex-1 flex bg-[#000000] overflow-hidden min-h-[460px]">
               {/* Line Numbers Gutter */}
               <div className="select-none py-4 px-3 text-right font-mono-code text-xs text-neutral-600 bg-black/25 border-r border-white/[0.04] shrink-0">
                 {codeLines.map((_, i) => {
@@ -724,7 +724,7 @@ export default function SsaVisualizerPage() {
                   setCode(e.target.value);
                   setSelectedPresetId("custom");
                 }}
-                className="flex-1 w-full bg-transparent p-4 text-xs font-mono-code text-neutral-200 outline-none resize-none leading-relaxed selection:bg-cyan-500/30 font-medium overflow-y-auto"
+                className="flex-1 w-full bg-transparent p-4 text-xs font-mono-code text-neutral-200 outline-none resize-none leading-relaxed selection:bg-white/[0.08] font-medium overflow-y-auto"
                 placeholder="// Paste arbitrary Go code here..."
                 spellCheck={false}
               />
@@ -749,7 +749,7 @@ export default function SsaVisualizerPage() {
               )}
               <div className="text-[11px] font-mono-code">
                 {validation.isValid ? (
-                  <span className="text-cyan-400">SSA Sweep Latency: varies by project</span>
+                  <span className="text-white">SSA Sweep Latency: varies by project</span>
                 ) : (
                   <span className="text-rose-400/80">Compilation Suspended</span>
                 )}
@@ -758,7 +758,7 @@ export default function SsaVisualizerPage() {
           </div>
 
           {/* Right Column: Visualizer & Contract Inspector (Equal Height, Clean Tab Layout) */}
-          <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] overflow-hidden shadow-2xl flex flex-col justify-between h-full min-h-[600px]">
+          <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] overflow-hidden shadow-2xl flex flex-col justify-between h-full min-h-[600px]">
             {/* Output Tabs Header (No Wrapping) */}
             <div className="px-3.5 py-2.5 bg-white/[0.03] border-b border-white/[0.06] flex items-center justify-between gap-2 min-h-[49px]">
               <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto no-scrollbar shrink-0">
@@ -766,7 +766,7 @@ export default function SsaVisualizerPage() {
                   onClick={() => setActiveOutputTab("graph")}
                   className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "graph"
-                      ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
+                      ? "bg-white/[0.08] text-neutral-200 font-semibold border border-white/[0.12]"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
@@ -778,7 +778,7 @@ export default function SsaVisualizerPage() {
                   onClick={() => setActiveOutputTab("lockfile")}
                   className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "lockfile"
-                      ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
+                      ? "bg-white/[0.08] text-neutral-200 font-semibold border border-white/[0.12]"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
@@ -791,7 +791,7 @@ export default function SsaVisualizerPage() {
                   onClick={() => setActiveOutputTab("systemd")}
                   className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "systemd"
-                      ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
+                      ? "bg-white/[0.08] text-neutral-200 font-semibold border border-white/[0.12]"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
@@ -803,7 +803,7 @@ export default function SsaVisualizerPage() {
                   onClick={() => setActiveOutputTab("cli")}
                   className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-mono-code transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                     activeOutputTab === "cli"
-                      ? "bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/40"
+                      ? "bg-white/[0.08] text-neutral-200 font-semibold border border-white/[0.12]"
                       : "text-neutral-400 hover:text-white"
                   }`}
                 >
@@ -843,7 +843,7 @@ export default function SsaVisualizerPage() {
             </div>
 
             {/* Output Body Container */}
-            <div className="flex-1 flex flex-col bg-[#08090b]">
+            <div className="flex-1 flex flex-col bg-[#000000]">
               {!validation.isValid ? (
                 /* Compiler Syntax Error State */
                 <div className="p-6 space-y-5 flex-1 flex flex-col justify-center">
@@ -867,7 +867,7 @@ export default function SsaVisualizerPage() {
 
                     {/* Compiler Choke Terminal Output */}
                     <div className="p-3.5 rounded-xl bg-black/60 border border-white/[0.06] font-mono-code text-xs space-y-2">
-                      <div className="text-cyan-400 font-bold flex items-center gap-2">
+                      <div className="text-white font-bold flex items-center gap-2">
                         <Terminal className="w-3.5 h-3.5" />
                         <span>~ anode inspect .</span>
                       </div>
@@ -892,7 +892,7 @@ export default function SsaVisualizerPage() {
                       }}
                       className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-mono-code text-neutral-200 border border-white/[0.1] transition-all"
                     >
-                      <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+                      <RefreshCw className="w-3.5 h-3.5 text-white" />
                       <span>Reset Code to Valid Syntax</span>
                     </button>
                   </div>
@@ -906,13 +906,13 @@ export default function SsaVisualizerPage() {
                       {/* Visual Pipeline Stages */}
                       <div className="space-y-3.5">
                         {/* Stage 1: Package & Root Node */}
-                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-1.5">
+                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c] space-y-1.5">
                           <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
-                            <span className="flex items-center gap-2 text-cyan-400 font-semibold">
+                            <span className="flex items-center gap-2 text-white font-semibold">
                               <Terminal className="w-4 h-4" />
                               <span>Package Root: {analysis.packageName}.main()</span>
                             </span>
-                            <span className="px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/40 text-[10px]">
+                            <span className="px-2 py-0.5 rounded bg-white/[0.04] text-white border border-white/[0.1] text-[10px]">
                               Entrypoint Proven
                             </span>
                           </div>
@@ -927,7 +927,7 @@ export default function SsaVisualizerPage() {
                         </div>
 
                         {/* Stage 2: Discovered Inbound Routes */}
-                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-1.5">
+                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c] space-y-1.5">
                           <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
                             <span className="flex items-center gap-2 text-emerald-400 font-semibold">
                               <Globe className="w-4 h-4" />
@@ -958,7 +958,7 @@ export default function SsaVisualizerPage() {
                         </div>
 
                         {/* Stage 3: Outbound State Choke Points */}
-                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14] space-y-1.5">
+                        <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c] space-y-1.5">
                           <div className="flex items-center justify-between text-xs font-mono-code text-neutral-400">
                             <span className="flex items-center gap-2 text-amber-400 font-semibold">
                               <Database className="w-4 h-4" />
@@ -999,13 +999,13 @@ export default function SsaVisualizerPage() {
                         </div>
 
                         {/* Stage 4: Immutable Provenance Contract */}
-                        <div className="p-4 rounded-xl border border-cyan-500/40 bg-cyan-950/20 space-y-1.5">
+                        <div className="p-4 rounded-xl border border-white/[0.12] bg-white/[0.04] space-y-1.5">
                           <div className="flex items-center justify-between text-xs font-mono-code">
-                            <span className="flex items-center gap-2 text-cyan-300 font-semibold">
+                            <span className="flex items-center gap-2 text-neutral-200 font-semibold">
                               <ShieldCheck className="w-4 h-4" />
                               <span>Proof of Topology: 4/4 Pillars Satisfied</span>
                             </span>
-                            <span className="text-[10px] text-cyan-400 font-mono-code">
+                            <span className="text-[10px] text-white font-mono-code">
                               SHA256: {analysis.sha256Hex}
                             </span>
                           </div>
@@ -1020,7 +1020,7 @@ export default function SsaVisualizerPage() {
                   {/* Tab 2: Synthesized Lockfile */}
                   {activeOutputTab === "lockfile" && (
                     <div className="p-4 flex-1">
-                      <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-cyan-200 overflow-x-auto leading-relaxed h-full max-h-[520px]">
+                      <pre className="p-4 rounded-xl bg-[#050507] border border-white/[0.06] text-xs font-mono-code text-neutral-300 overflow-x-auto leading-relaxed h-full max-h-[520px]">
                         <code>{analysis.lockfileJson}</code>
                       </pre>
                     </div>
@@ -1029,7 +1029,7 @@ export default function SsaVisualizerPage() {
                   {/* Tab 3: Synthesized Systemd Unit */}
                   {activeOutputTab === "systemd" && (
                     <div className="p-4 flex-1">
-                      <pre className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-200 overflow-x-auto leading-relaxed h-full max-h-[520px]">
+                      <pre className="p-4 rounded-xl bg-[#050507] border border-white/[0.06] text-xs font-mono-code text-neutral-200 overflow-x-auto leading-relaxed h-full max-h-[520px]">
                         <code>{analysis.systemdUnit}</code>
                       </pre>
                     </div>
@@ -1038,8 +1038,8 @@ export default function SsaVisualizerPage() {
                   {/* Tab 4: Terminal CLI Output */}
                   {activeOutputTab === "cli" && (
                     <div className="p-4 flex-1">
-                      <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 overflow-x-auto leading-relaxed space-y-3 h-full max-h-[520px]">
-                        <div className="text-cyan-400 font-bold">
+                      <div className="p-4 rounded-xl bg-[#050507] border border-white/[0.06] text-xs font-mono-code text-neutral-300 overflow-x-auto leading-relaxed space-y-3 h-full max-h-[520px]">
+                        <div className="text-white font-bold">
                           ~ anode inspect .
                         </div>
                         <div className="text-neutral-400">
@@ -1084,8 +1084,8 @@ export default function SsaVisualizerPage() {
             <div className="px-4 py-3 bg-white/[0.02] border-t border-white/[0.06] flex items-center justify-between text-xs font-mono-code text-neutral-400 min-h-[46px]">
               {validation.isValid ? (
                 <>
-                  <div className="flex items-center gap-2 text-cyan-400">
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                  <div className="flex items-center gap-2 text-white">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>Proof of Topology: 4/4 Pillars Satisfied</span>
                   </div>
                   <div className="text-[11px] text-neutral-400">
@@ -1109,8 +1109,8 @@ export default function SsaVisualizerPage() {
 
         {/* Feature Highlights Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16 pt-12 border-t border-white/[0.08]">
-          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]/60 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold">
+          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c]/60 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold">
               1
             </div>
             <h2 className="text-base font-bold text-white">
@@ -1121,8 +1121,8 @@ export default function SsaVisualizerPage() {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]/60 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center font-bold">
+          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c]/60 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold">
               2
             </div>
             <h2 className="text-base font-bold text-white">
@@ -1133,7 +1133,7 @@ export default function SsaVisualizerPage() {
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]/60 space-y-3">
+          <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c]/60 space-y-3">
             <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
               3
             </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Copy, Check, ArrowRight, BookOpen } from "lucide-react";
+import { Copy, ArrowRight, BookOpen, Terminal, CheckCircle2, Play, Server } from "lucide-react";
 import { GithubIcon } from "./Icons";
 import confetti from "canvas-confetti";
 
@@ -12,21 +12,35 @@ export function QuickstartSection() {
   const steps = [
     {
       num: "01",
-      title: "Install Anode CLI",
-      desc: "Install via official Homebrew tap or curl binary installer.",
+      badge: "Step 01",
+      title: "Install",
+      desc: "Install the CLI binary via official Homebrew tap or curl.",
       cmd: "brew install abhiudayg/tap/anode",
+      icon: Terminal,
     },
     {
       num: "02",
-      title: "Inspect Any Go Project",
-      desc: "Extract proof of topology directly from your Go codebase.",
+      badge: "Step 02",
+      title: "Inspect",
+      desc: "Extract proof of topology directly from Go AST and emit anode.lock.json.",
       cmd: "anode inspect ./cmd/api",
+      icon: CheckCircle2,
     },
     {
       num: "03",
-      title: "Run Local Dev Without Fixed Ports",
-      desc: "Spin up isolated DBs on dynamic ephemeral ports with sub-second reload.",
+      badge: "Step 03",
+      title: "Dev",
+      desc: "Spin up isolated DBs on dynamic ephemeral loopback ports with sub-second reload.",
       cmd: "anode dev",
+      icon: Play,
+    },
+    {
+      num: "04",
+      badge: "Step 04",
+      title: "Deploy",
+      desc: "Synthesize systemd units, DynamicUser sandboxing, and automated Caddy TLS.",
+      cmd: "anode deploy user@vps",
+      icon: Server,
     },
   ];
 
@@ -37,59 +51,66 @@ export function QuickstartSection() {
       particleCount: 25,
       spread: 50,
       origin: { y: 0.8 },
-      colors: ["#00ADD8", "#8B5CF6"],
+      colors: ["#00ADD8", "#8B5CF6", "#10B981"],
     });
     setTimeout(() => setCopiedIndex(null), 2000);
   };
 
   return (
-    <section id="quickstart" className="py-24 relative overflow-hidden bg-[#07080a] border-t border-white/[0.06]">
+    <section id="quickstart" className="py-24 relative overflow-hidden bg-[#000000] border-t border-white/[0.08]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-mono-code uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-3 py-1 rounded-full inline-block mb-3">
-            Get Running
+          <span className="text-xs font-mono-code uppercase tracking-wider text-neutral-400 font-semibold block mb-2">
+            02 / Execution Loop
           </span>
           <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white">
-            Ready to Drop Dockerfiles?
+            Four steps. Each one leaves evidence.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-neutral-400">
-            Works out of the box on standard Go backends. Zero configuration changes required.
+            A complete bare-metal lifecycle with compiler-verified topology.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          {steps.map((s, idx) => (
-            <div
-              key={idx}
-              className="rounded-2xl border border-white/[0.08] bg-[#0c0e14] p-6 flex flex-col justify-between hover:border-cyan-500/30 transition-all"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-mono-code text-cyan-400 font-bold bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
-                    Step {s.num}
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-white mb-2">{s.title}</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed mb-6">{s.desc}</p>
-              </div>
-
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-6xl mx-auto">
+          {steps.map((s, idx) => {
+            const Icon = s.icon;
+            return (
               <div
-                onClick={() => handleCopy(s.cmd, idx)}
-                className="flex items-center justify-between gap-2 p-3 rounded-xl bg-[#06070a] border border-white/[0.06] hover:border-cyan-500/40 cursor-pointer group transition-all"
+                key={idx}
+                className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] yc-card yc-card-glow p-5 sm:p-6 flex flex-col justify-between hover:border-white/[0.18] transition-all"
               >
-                <code className="text-[11px] font-mono-code text-neutral-300 truncate group-hover:text-white">
-                  {s.cmd}
-                </code>
-                <button type="button" className="text-neutral-500 group-hover:text-cyan-400 shrink-0">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-mono-code text-white font-semibold bg-white/[0.08] border border-white/[0.12] px-2 py-0.5 rounded">
+                      {s.badge}
+                    </span>
+                    <Icon className="w-4 h-4 text-neutral-400" />
+                  </div>
+                  <h3 className="text-base font-bold text-white mb-2">{s.title}</h3>
+                  <p className="text-xs text-neutral-400 leading-relaxed mb-6">{s.desc}</p>
+                </div>
+
+                <div
+                  onClick={() => handleCopy(s.cmd, idx)}
+                  className="flex items-center justify-between gap-2 p-2.5 sm:p-3 rounded-xl bg-[#050507] border border-white/[0.08] hover:border-white/[0.2] cursor-pointer group transition-all"
+                >
+                  <div className="flex items-center gap-2 min-w-0 truncate">
+                    <span className="text-emerald-400 font-bold select-none font-mono-code">$</span>
+                    <code className="text-[11px] font-mono-code text-neutral-300 truncate group-hover:text-white">
+                      {s.cmd}
+                    </code>
+                  </div>
                   {copiedIndex === idx ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-[10px] font-mono-code font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 shrink-0">
+                      Copied
+                    </span>
                   ) : (
-                    <Copy className="w-3.5 h-3.5" />
+                    <Copy className="w-3.5 h-3.5 text-neutral-500 group-hover:text-white shrink-0" />
                   )}
-                </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Secondary Links Banner */}

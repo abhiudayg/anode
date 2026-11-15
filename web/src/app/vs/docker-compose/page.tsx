@@ -10,7 +10,6 @@ import {
   ArrowRight, 
   Cpu, 
   Sparkles,
-  ChevronRight,
   GitCompare,
   AlertTriangle
 } from "lucide-react";
@@ -155,7 +154,7 @@ export default function DockerComposeVsAnodePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -173,26 +172,26 @@ export default function DockerComposeVsAnodePage() {
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
               <li>
-                <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+                <Link href="/" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li><span>/</span></li>
               <li>
                 <span className="text-neutral-500">Comparisons</span>
               </li>
               <li><span>/</span></li>
-              <li className="text-cyan-300 font-medium">Docker Compose vs Anode</li>
+              <li className="text-neutral-200 font-medium">Docker Compose vs Anode</li>
             </ol>
           </nav>
 
           <div className="text-center max-w-4xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 text-xs font-mono-code mb-6">
-              <GitCompare className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/[0.12] bg-white/[0.04] text-neutral-200 text-xs font-mono-code mb-6">
+              <GitCompare className="w-3.5 h-3.5 text-white" />
               <span>Technical Architecture Comparison</span>
             </div>
 
             <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
               The Docker Compose Alternative for{" "}
-              <span className="bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+              <span className="text-white">
                 Go Backends.
               </span>
             </h1>
@@ -202,12 +201,12 @@ export default function DockerComposeVsAnodePage() {
             </p>
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-mono-code">
-              <div className="px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 flex items-center gap-2">
-                <Zap className="w-4 h-4 text-cyan-400" />
+              <div className="px-4 py-2 rounded-xl bg-white/[0.08] border border-white/[0.12] text-neutral-200 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-white" />
                 <span>No Container Runtime</span>
               </div>
-              <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 flex items-center gap-2">
-                <Cpu className="w-4 h-4 text-purple-400" />
+              <div className="px-4 py-2 rounded-xl bg-white/[0.08] border border-white/[0.12] text-neutral-200 flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-white" />
                 <span>Less Memory Overhead</span>
               </div>
               <div className="px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 flex items-center gap-2">
@@ -243,23 +242,23 @@ export default function DockerComposeVsAnodePage() {
             </div>
 
             {/* The Anode Way */}
-            <div className="p-8 rounded-2xl border border-cyan-500/30 bg-cyan-950/10 relative overflow-hidden">
-              <div className="text-xs font-mono-code text-cyan-400 font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
-                <Check className="w-4 h-4 text-cyan-400" />
+            <div className="p-8 rounded-2xl border border-white/[0.12] bg-white/[0.04] relative overflow-hidden">
+              <div className="text-xs font-mono-code text-white font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
+                <Check className="w-4 h-4 text-white" />
                 <span>The Anode Bare-Metal Way</span>
               </div>
               <h2 className="text-xl font-bold text-white mb-3">The Compiler Is The Orchestrator</h2>
               <ul className="space-y-3 text-sm text-neutral-300 leading-relaxed">
                 <li className="flex items-start gap-2">
-                  <span className="text-cyan-400 mt-1 font-bold">✓</span>
+                  <span className="text-white mt-1 font-bold">✓</span>
                   <span><strong>Zero YAML:</strong> Anode extracts routes and database drivers directly from Go AST using SSA call graphs.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-cyan-400 mt-1 font-bold">✓</span>
+                  <span className="text-white mt-1 font-bold">✓</span>
                   <span><strong>Local ports:</strong> Backing services get ephemeral local port proxy (<code>127.0.0.1:0</code>). Run 10 copies safely.</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-cyan-400 mt-1 font-bold">✓</span>
+                  <span className="text-white mt-1 font-bold">✓</span>
                   <span><strong>Bare-Metal:</strong> Native Linux systemd units with cgroups v2 quotas and automated Caddy reverse proxying.</span>
                 </li>
               </ul>
@@ -277,7 +276,7 @@ export default function DockerComposeVsAnodePage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/[0.08] bg-[#0c0e14]/80 overflow-hidden shadow-2xl">
+            <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c]/80 overflow-hidden shadow-2xl">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
@@ -285,7 +284,7 @@ export default function DockerComposeVsAnodePage() {
                       <th className="py-4 px-6 text-xs font-mono-code uppercase tracking-wider text-neutral-400">
                         Feature / Capability
                       </th>
-                      <th className="py-4 px-6 text-xs font-mono-code uppercase tracking-wider text-cyan-400 bg-cyan-500/5">
+                      <th className="py-4 px-6 text-xs font-mono-code uppercase tracking-wider text-white bg-white/[0.08]">
                         Anode (Bare Metal)
                       </th>
                       <th className="py-4 px-6 text-xs font-mono-code uppercase tracking-wider text-neutral-400">
@@ -299,7 +298,7 @@ export default function DockerComposeVsAnodePage() {
                         <td className="py-4 px-6 font-medium text-white">
                           {row.feature}
                         </td>
-                        <td className="py-4 px-6 text-cyan-300 font-semibold bg-cyan-500/5">
+                        <td className="py-4 px-6 text-neutral-200 font-semibold bg-white/[0.08]">
                           {row.anode}
                         </td>
                         <td className="py-4 px-6 text-neutral-400">
@@ -325,8 +324,8 @@ export default function DockerComposeVsAnodePage() {
             </div>
 
             <div className="space-y-6">
-              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14] flex gap-4">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] flex gap-4">
+                <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm shrink-0">
                   1
                 </div>
                 <div>
@@ -339,15 +338,15 @@ export default function DockerComposeVsAnodePage() {
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14] flex gap-4">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] flex gap-4">
+                <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm shrink-0">
                   2
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white mb-1">
                     Run local development without fixed port numbers
                   </h3>
-                  <div className="mt-2 p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-cyan-300">
+                  <div className="mt-2 p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-neutral-200">
                     $ anode dev
                   </div>
                   <p className="mt-2 text-sm text-neutral-400 leading-relaxed">
@@ -356,15 +355,15 @@ export default function DockerComposeVsAnodePage() {
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14] flex gap-4">
-                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-sm shrink-0">
+              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] flex gap-4">
+                <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm shrink-0">
                   3
                 </div>
                 <div>
                   <h3 className="text-base font-semibold text-white mb-1">
                     Deploy to any bare-metal Linux VPS with 1 command
                   </h3>
-                  <div className="mt-2 p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-cyan-300">
+                  <div className="mt-2 p-3 rounded-lg bg-black/60 border border-white/[0.06] font-mono-code text-xs text-neutral-200">
                     $ anode deploy user@your-vps.com
                   </div>
                   <p className="mt-2 text-sm text-neutral-400 leading-relaxed">
@@ -423,64 +422,23 @@ export default function DockerComposeVsAnodePage() {
             </ul>
           </div>
 
-          {/* Frequently Asked Questions */}
-          <div className="mt-24 max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                Frequently Asked Questions
-              </h2>
-            </div>
-
-            <div className="space-y-4">
-              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]">
-                <h3 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
-                  <ChevronRight className="w-4 h-4 text-cyan-400" />
-                  <span>Why use Anode instead of Docker Compose for Go backends?</span>
-                </h3>
-                <p className="text-sm text-neutral-400 pl-6 leading-relaxed">
-                  Go compiles to self-contained, statically linked machine code. Running it inside Docker Compose introduces container daemon overhead, slow image builds, and fragile YAML manifests that drift from code. Anode inspects your Go SSA call graph directly to infer service topology, eliminates port collisions via ephemeral local ports, and executes natively on Linux systemd with fast cold starts and small RAM footprint.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]">
-                <h3 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
-                  <ChevronRight className="w-4 h-4 text-cyan-400" />
-                  <span>How does Anode prevent local port collisions without Docker?</span>
-                </h3>
-                <p className="text-sm text-neutral-400 pl-6 leading-relaxed">
-                  Docker Compose binds containers to fixed host ports (e.g. 5432 or 8080), leading to clashes when multiple projects run concurrently. Anode uses ephemeral local port multiplexing (127.0.0.1:0) and ephemeral socket proxies to ensure every service and database binding has an isolated, conflict-free virtual address.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-2xl border border-white/[0.08] bg-[#0c0e14]">
-                <h3 className="text-base font-semibold text-white mb-2 flex items-center gap-2">
-                  <ChevronRight className="w-4 h-4 text-cyan-400" />
-                  <span>Can I migrate from Docker Compose to Anode without rewriting Go code?</span>
-                </h3>
-                <p className="text-sm text-neutral-400 pl-6 leading-relaxed">
-                  Yes, 100%. Anode requires zero proprietary SDK imports, code modifications, or annotations. It statically inspects standard net/http, database/sql, pgx, redis-go, and gRPC drivers straight from your existing AST.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* CTA Box */}
-          <div className="mt-24 max-w-4xl mx-auto p-10 rounded-3xl border border-cyan-500/30 bg-gradient-to-b from-[#0f172a] to-[#08090b] text-center relative overflow-hidden">
-            <h2 className="text-3xl font-bold text-white mb-4">
-              Ready to Ditch Dockerfile & YAML Drift?
+          <div className="mt-20 max-w-4xl mx-auto p-10 rounded-2xl border border-white/[0.1] bg-[#0a0a0c] yc-card text-center relative overflow-hidden">
+            <h2 className="text-3xl font-black text-white mb-3">
+              Ready to Ditch Dockerfile &amp; YAML Drift?
             </h2>
-            <p className="text-neutral-400 text-sm sm:text-base max-w-2xl mx-auto mb-8">
-              Install Anode via Homebrew and run your first zero-docker bare-metal deployment in seconds.
+            <p className="text-neutral-400 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
+              Install Anode via Homebrew and run your first bare-metal Go deployment directly to Linux systemd.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <div className="px-4 py-2.5 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-cyan-300">
+              <div className="px-4 py-2.5 rounded-full bg-black/60 border border-white/[0.1] font-mono-code text-xs text-neutral-300">
                 brew install abhiudayg/tap/anode
               </div>
               <Link
-                href="/docs#quickstart"
-                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black font-semibold text-sm transition-all"
+                href="/docs"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white hover:bg-neutral-200 text-black font-semibold text-sm transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)]"
               >
-                <span>Read the Quickstart</span>
+                <span>Read the docs</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>

@@ -94,7 +94,7 @@ const howToJsonLd = {
 
 export default function HetznerDeployPage() {
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -111,21 +111,21 @@ export default function HetznerDeployPage() {
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
               <li>
-                <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+                <Link href="/" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li><span>/</span></li>
               <li>
                 <span className="text-neutral-500">Deploy Guides</span>
               </li>
               <li><span>/</span></li>
-              <li className="text-cyan-300 font-medium">Hetzner Cloud VPS</li>
+              <li className="text-neutral-200 font-medium">Hetzner Cloud VPS</li>
             </ol>
           </nav>
 
           {/* Header */}
           <header className="mb-14">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 text-xs font-mono-code mb-4">
-              <Server className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.12] bg-white/[0.04] text-neutral-200 text-xs font-mono-code mb-4">
+              <Server className="w-3.5 h-3.5 text-white" />
               <span>Hetzner Cloud Deployment Guide</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
@@ -159,7 +159,7 @@ export default function HetznerDeployPage() {
           {/* Step 1 */}
           <section id="step-1" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 1
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -171,15 +171,15 @@ export default function HetznerDeployPage() {
             </p>
             <ul className="space-y-2 text-sm text-neutral-300 mb-4">
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 mt-0.5" />
+                <Check className="w-4 h-4 text-white mt-0.5" />
                 <span><strong>Server Type:</strong> any Hetzner Cloud server with 2 vCPU and 2 GB RAM or more, such as CPX11.</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 mt-0.5" />
+                <Check className="w-4 h-4 text-white mt-0.5" />
                 <span><strong>OS:</strong> Ubuntu 24.04 LTS (AMD64 or ARM64) or Debian 12.</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 mt-0.5" />
+                <Check className="w-4 h-4 text-white mt-0.5" />
                 <span><strong>SSH Key:</strong> Add your local public key (<code>~/.ssh/id_ed25519.pub</code>).</span>
               </li>
             </ul>
@@ -188,7 +188,7 @@ export default function HetznerDeployPage() {
           {/* Step 2 */}
           <section id="step-2" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 2
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -196,20 +196,20 @@ export default function HetznerDeployPage() {
               </h2>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              In your Go project folder, run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>:
+              In your Go project folder, run <code className="text-neutral-200 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code>:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect<br />
               <span className="text-neutral-500">→ SSA static sweep: done</span><br />
               <span className="text-emerald-400">✓ Ingress: POST /orders (:8080)</span><br />
-              <span className="text-purple-400">✓ Inferred Drivers: pgx/v5 (Postgres)</span>
+              <span className="text-white">✓ Inferred Drivers: pgx/v5 (Postgres)</span>
             </div>
           </section>
 
           {/* Step 3 */}
           <section id="step-3" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 3
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -219,7 +219,7 @@ export default function HetznerDeployPage() {
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
               Deploy directly to your Hetzner server over SSH:
             </p>
-            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-cyan-300">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-200">
               $ anode deploy root@&lt;YOUR_HETZNER_IP&gt;
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mt-4">
@@ -228,18 +228,18 @@ export default function HetznerDeployPage() {
           </section>
 
           {/* Bottom CTA */}
-          <div className="mt-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0c0e14] text-center">
+          <div className="mt-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] text-center">
             <h3 className="text-xl font-bold text-white mb-2">Ready to Deploy?</h3>
             <p className="text-sm text-neutral-400 mb-6">
               Install Anode via Homebrew and deploy your Go microservice to Hetzner today.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-4">
-              <div className="px-4 py-2 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-cyan-300">
+              <div className="px-4 py-2 rounded-xl bg-black/60 border border-white/[0.1] font-mono-code text-xs text-neutral-200">
                 brew install abhiudayg/tap/anode
               </div>
               <Link
                 href="/vs/docker-compose"
-                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-mono-code font-bold transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Compare vs Docker Compose</span>
                 <ArrowRight className="w-3.5 h-3.5" />

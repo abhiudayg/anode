@@ -94,7 +94,7 @@ const howToJsonLd = {
 
 export default function DeployGoWithoutDockerGuide() {
   return (
-    <div className="min-h-screen bg-[#08090b] text-[#f3f4f6]">
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
@@ -111,21 +111,21 @@ export default function DeployGoWithoutDockerGuide() {
           <nav aria-label="Breadcrumb" className="mb-8">
             <ol className="flex items-center gap-2 text-xs font-mono-code text-neutral-400">
               <li>
-                <Link href="/" className="hover:text-cyan-400 transition-colors">Home</Link>
+                <Link href="/" className="hover:text-white transition-colors">Home</Link>
               </li>
               <li><span>/</span></li>
               <li>
                 <span className="text-neutral-500">Guides</span>
               </li>
               <li><span>/</span></li>
-              <li className="text-cyan-300 font-medium">Deploy Go Without Docker</li>
+              <li className="text-neutral-200 font-medium">Deploy Go Without Docker</li>
             </ol>
           </nav>
 
           {/* Guide Header */}
           <header className="mb-14">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-cyan-500/30 bg-cyan-950/30 text-cyan-300 text-xs font-mono-code mb-4">
-              <BookOpen className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.12] bg-white/[0.04] text-neutral-200 text-xs font-mono-code mb-4">
+              <BookOpen className="w-3.5 h-3.5 text-white" />
               <span>Production Deployment Guide</span>
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
@@ -139,21 +139,21 @@ export default function DeployGoWithoutDockerGuide() {
               <span>•</span>
               <span>Read time: 3 min</span>
               <span>•</span>
-              <span className="text-cyan-400 font-medium">Verified for Go 1.27+</span>
+              <span className="text-white font-medium">Verified for Go 1.27+</span>
             </div>
           </header>
 
           {/* Quick Metrics Callout */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
-            <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
-              <div className="text-2xl font-bold text-cyan-400 font-mono-code">systemd</div>
+            <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c]">
+              <div className="text-2xl font-bold text-white font-mono-code">systemd</div>
               <div className="text-xs text-neutral-400 mt-1">Process manager</div>
             </div>
-            <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
-              <div className="text-2xl font-bold text-purple-400 font-mono-code">Small</div>
+            <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c]">
+              <div className="text-2xl font-bold text-white font-mono-code">Small</div>
               <div className="text-xs text-neutral-400 mt-1">RAM Footprint</div>
             </div>
-            <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
+            <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c]">
               <div className="text-2xl font-bold text-emerald-400 font-mono-code">Zero</div>
               <div className="text-xs text-neutral-400 mt-1">Container Daemons</div>
             </div>
@@ -162,7 +162,7 @@ export default function DeployGoWithoutDockerGuide() {
           {/* Step 1 */}
           <section id="step-1" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 1
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -172,7 +172,7 @@ export default function DeployGoWithoutDockerGuide() {
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
               Anode is available as a standalone pre-compiled binary via Homebrew or a one-line curl installer:
             </p>
-            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-cyan-300">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-200">
               # macOS & Linux via Homebrew<br />
               brew install abhiudayg/tap/anode<br /><br />
               # Or direct installer script<br />
@@ -183,7 +183,7 @@ export default function DeployGoWithoutDockerGuide() {
           {/* Step 2 */}
           <section id="step-2" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 2
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -191,14 +191,14 @@ export default function DeployGoWithoutDockerGuide() {
               </h2>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
-              Run <code className="text-cyan-300 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code> from the root of your Go project. Anode uses compiler-level Static Single Assignment (SSA) to trace call graphs starting at <code>func main()</code>:
+              Run <code className="text-neutral-200 bg-white/[0.05] px-1.5 py-0.5 rounded">anode inspect</code> from the root of your Go project. Anode uses compiler-level Static Single Assignment (SSA) to trace call graphs starting at <code>func main()</code>:
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300 space-y-1">
-              <div className="text-cyan-400">$ anode inspect</div>
+              <div className="text-white">$ anode inspect</div>
               <div className="text-neutral-500">→ Tracing SSA call graphs... </div>
               <div className="text-emerald-400">✓ Ingress: POST /v1/orders (:8080)</div>
               <div className="text-emerald-400">✓ Inferred DB: pgx/v5 (PostgreSQL 16)</div>
-              <div className="text-purple-300">✓ Synthesized: anode.lock.json (hash: 4f9e2b10)</div>
+              <div className="text-neutral-200">✓ Synthesized: anode.lock.json (hash: 4f9e2b10)</div>
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mt-4">
               Notice that you did not write a single line of Dockerfile or compose YAML. Anode automatically inferred your database drivers and ingress listeners.
@@ -208,7 +208,7 @@ export default function DeployGoWithoutDockerGuide() {
           {/* Step 3 */}
           <section id="step-3" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 flex items-center justify-center font-bold text-sm">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.08] border border-white/[0.12] text-white flex items-center justify-center font-bold text-sm">
                 3
               </div>
               <h2 className="text-xl sm:text-2xl font-bold text-white">
@@ -218,7 +218,7 @@ export default function DeployGoWithoutDockerGuide() {
             <p className="text-sm text-neutral-400 leading-relaxed mb-4">
               Deploy your binary directly to any bare-metal Linux server (Hetzner, DigitalOcean, OVH, AWS EC2) over SSH:
             </p>
-            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-cyan-300">
+            <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-200">
               $ anode deploy user@your-server-ip.com
             </div>
             <p className="text-sm text-neutral-400 leading-relaxed mt-4">
@@ -226,26 +226,26 @@ export default function DeployGoWithoutDockerGuide() {
             </p>
             <ul className="mt-3 space-y-2 text-sm text-neutral-300">
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <Check className="w-4 h-4 text-white shrink-0 mt-0.5" />
                 <span>Compiles the standalone static Go binary for the target architecture (AMD64 / ARM64).</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <Check className="w-4 h-4 text-white shrink-0 mt-0.5" />
                 <span>Writes a production systemd service with <code>DynamicUser=yes</code> and cgroups v2 memory limits.</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <Check className="w-4 h-4 text-white shrink-0 mt-0.5" />
                 <span>Configures automated Caddy reverse proxying with auto-renewing Let&apos;s Encrypt TLS certificates.</span>
               </li>
               <li className="flex items-start gap-2">
-                <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
+                <Check className="w-4 h-4 text-white shrink-0 mt-0.5" />
                 <span>Restarts the service with systemctl restart.</span>
               </li>
             </ul>
           </section>
 
           {/* Bottom Navigation & CTA */}
-          <div className="mt-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0c0e14] text-center">
+          <div className="mt-16 p-8 rounded-2xl border border-white/[0.08] bg-[#0a0a0c] text-center">
             <h3 className="text-xl font-bold text-white mb-2">Next Steps</h3>
             <p className="text-sm text-neutral-400 mb-6">
               Compare Anode head-to-head with Docker Compose or explore the full CLI specification.
@@ -256,11 +256,11 @@ export default function DeployGoWithoutDockerGuide() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] border border-white/[0.1] text-xs font-mono-code text-white transition-all"
               >
                 <span>Docker Compose vs Anode</span>
-                <ArrowRight className="w-3.5 h-3.5 text-cyan-400" />
+                <ArrowRight className="w-3.5 h-3.5 text-white" />
               </Link>
               <Link
                 href="/docs#overview"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-black text-xs font-mono-code font-bold transition-all"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Architecture Deep Dive</span>
                 <ArrowRight className="w-3.5 h-3.5" />

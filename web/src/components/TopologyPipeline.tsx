@@ -90,7 +90,7 @@ http.ListenAndServe(":" + cfg.Port, mux)`
       icon: Server,
       badge: "Runtime",
       details: {
-        description: "Local dev runs isolated ephemeral containers on dynamic ports without host collisions. Production generates hardened Linux systemd units and cgroups v2.",
+        description: "Local dev runs isolated ephemeral databases on dynamic loopback ports without host collisions. Production compiles static Linux ELF binaries running under systemd with cgroups v2 resource limits and automated Caddy TLS.",
         points: [
           "Zero port collisions (Postgres on 54329, Redis on 63792)",
           "systemd supervisor with automatic crash restarts",
@@ -113,15 +113,12 @@ Restart=always`
   const currentStep = steps.find((s) => s.id === activeStep) || steps[1];
 
   return (
-    <section id="topology" className="py-24 relative overflow-hidden border-t border-white/[0.06] bg-[#07080b]">
-      {/* Background Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[300px] bg-cyan-600/10 blur-[130px] rounded-full pointer-events-none" />
-
+    <section id="topology" className="py-24 relative overflow-hidden border-t border-white/[0.08] bg-[#000000]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-mono-code uppercase tracking-wider text-cyan-400 bg-cyan-950/60 border border-cyan-800/40 px-3 py-1 rounded-full inline-block mb-3">
-            Proof of Topology
+          <span className="text-xs font-mono-code uppercase tracking-wider text-neutral-400 font-semibold block mb-2">
+            01 / Proof of Topology
           </span>
           <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white">
             How Anode Eliminates Infrastructure Drift
@@ -140,18 +137,18 @@ Restart=always`
               <div
                 key={step.id}
                 onClick={() => setActiveStep(step.id)}
-                className={`relative p-5 rounded-xl cursor-pointer transition-all duration-300 text-left border ${
+                className={`relative p-5 rounded-xl cursor-pointer transition-all duration-200 text-left border ${
                   isSelected
-                    ? "bg-[#11141d] border-cyan-500/50 shadow-[0_0_30px_rgba(0,173,216,0.2)]"
-                    : "bg-[#0b0d13]/60 border-white/[0.08] hover:border-white/[0.18] hover:bg-[#0e111a]"
+                    ? "bg-[#141418] border-white/[0.3] shadow-lg yc-card-glow"
+                    : "bg-[#0a0a0c] border-white/[0.08] hover:border-white/[0.18] hover:bg-[#0f0f13]"
                 }`}
               >
                 <div className="flex items-center justify-between mb-3">
                   <div
                     className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                       isSelected
-                        ? "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
-                        : "bg-white/[0.05] text-neutral-400"
+                        ? "bg-white text-black"
+                        : "bg-white/[0.06] text-neutral-400"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -159,7 +156,7 @@ Restart=always`
                   <span
                     className={`text-[10px] font-mono-code px-2 py-0.5 rounded-full border ${
                       isSelected
-                        ? "bg-cyan-950/80 border-cyan-700/50 text-cyan-300"
+                        ? "bg-white/[0.15] border-white/[0.3] text-white"
                         : "bg-neutral-900 border-neutral-800 text-neutral-500"
                     }`}
                   >
@@ -169,7 +166,7 @@ Restart=always`
 
                 <h3 className="text-sm font-semibold text-white mb-1 flex items-center gap-1.5">
                   <span>{step.title}</span>
-                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />}
+                  {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
                 </h3>
                 <p className="text-xs text-neutral-400 leading-relaxed">{step.subtitle}</p>
               </div>
@@ -178,12 +175,12 @@ Restart=always`
         </div>
 
         {/* Detail Panel */}
-        <div className="rounded-2xl border border-white/[0.1] bg-[#0c0e14] p-6 lg:p-8 backdrop-blur-xl shadow-2xl">
+        <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-6 lg:p-8 backdrop-blur-xl shadow-2xl yc-card-glow">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             {/* Left description */}
             <div className="lg:col-span-5 space-y-5">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono-code px-2.5 py-0.5 rounded bg-cyan-950/70 text-cyan-400 border border-cyan-800/40">
+                <span className="text-xs font-mono-code px-2 py-0.5 rounded bg-white/[0.08] text-white border border-white/[0.12]">
                   Stage Details
                 </span>
                 <span className="text-neutral-500 font-mono-code text-xs">
@@ -211,7 +208,7 @@ Restart=always`
 
             {/* Right code artifact */}
             <div className="lg:col-span-7">
-              <div className="rounded-xl border border-white/[0.08] bg-[#06070a] p-4 overflow-x-auto shadow-inner">
+              <div className="rounded-xl border border-white/[0.08] bg-[#050507] p-4 overflow-x-auto shadow-inner">
                 <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06] text-xs font-mono-code text-neutral-400">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-cyan-400 inline-block" />

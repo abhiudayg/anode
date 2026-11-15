@@ -1,21 +1,23 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { TopologyPipeline } from "@/components/TopologyPipeline";
+import { EcosystemBar } from "@/components/EcosystemBar";
+import { BenchmarkCharts } from "@/components/BenchmarkCharts";
 import { DriftComparison } from "@/components/DriftComparison";
 import { BentoPillars } from "@/components/BentoPillars";
-import { QuickstartSection } from "@/components/QuickstartSection";
 import { FAQSection } from "@/components/FAQSection";
 import { Footer } from "@/components/Footer";
+import { MainOrangeArrow } from "@/components/MainOrangeArrow";
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#08090b] text-[#f3f4f6] selection:bg-cyan-500/30 selection:text-white relative bg-grid-pattern">
+    <main className="min-h-screen bg-[#000000] text-white selection:bg-white/20 selection:text-white relative bg-grid-pattern">
       <Navbar />
+      <MainOrangeArrow />
       <Hero />
-      <TopologyPipeline />
+      <EcosystemBar />
+      <BenchmarkCharts />
       <DriftComparison />
       <BentoPillars />
-      <QuickstartSection />
       <FAQSection />
       <Footer />
     </main>
