@@ -5,7 +5,7 @@
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/catalog/main.go:37",
+      "provenance": "services/catalog/main.go:39",
       "migrations": {
         "tool": "goose",
         "path": "migrations/catalog",
@@ -16,7 +16,7 @@
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/orders/main.go:42",
+      "provenance": "services/orders/main.go:44",
       "migrations": {
         "tool": "goose",
         "path": "migrations/orders",
@@ -33,6 +33,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "GET /v1/products"
           ]
         }
@@ -45,7 +46,7 @@
           "expanded_env": [
             "CATALOG_DB_URL"
           ],
-          "provenance": "services/catalog/main.go:37"
+          "provenance": "services/catalog/main.go:39"
         }
       ],
       "secrets": []
@@ -58,6 +59,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/notifications/email"
           ]
         }
@@ -82,6 +84,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/orders"
           ]
         }
@@ -91,13 +94,13 @@
           "resource_ref": "db-orders",
           "protocol": "postgres",
           "inject_env": "",
-          "provenance": "services/orders/main.go:42"
+          "provenance": "services/orders/main.go:44"
         }
       ],
       "secrets": [
         {
           "env_var": "STRIPE_SECRET_KEY",
-          "provenance": "services/orders/main.go:33"
+          "provenance": "services/orders/main.go:35"
         }
       ]
     }

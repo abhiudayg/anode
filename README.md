@@ -90,10 +90,10 @@ go build -o /usr/local/bin/anode ./cmd/anode
 ### 2. Inspect a Go Repository
 
 ```bash
-anode inspect ./examples/complex_ecommerce
+anode inspect ./examples/storefront
 ```
 
-This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
+This writes `anode.lock.json`. An excerpt from the storefront example's lockfile, for the `orders` service and its database:
 
 ```json
 {
@@ -103,7 +103,7 @@ This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
       "kind": "postgres",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/orders/main.go:42",
+      "provenance": "services/orders/main.go:44",
       "migrations": {
         "tool": "goose",
         "path": "migrations/orders",
@@ -116,14 +116,21 @@ This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
       "name": "orders",
       "entrypoint": "./services/orders",
       "ingress": [
-        { "protocol": "http", "port_env": "PORT", "routes": ["POST /v1/orders"] }
+        {
+          "protocol": "http",
+          "port_env": "PORT",
+          "routes": ["GET /healthz", "POST /v1/orders"]
+        }
       ],
       "bindings": [
         {
           "resource_ref": "db-orders",
           "protocol": "postgres",
-          "expanded_env": ["ORDERS_DB_USER", "ORDERS_DB_HOST", "ORDERS_DB_PORT", "ORDERS_DB_NAME"]
+          "provenance": "services/orders/main.go:44"
         }
+      ],
+      "secrets": [
+        { "env_var": "STRIPE_SECRET_KEY", "provenance": "services/orders/main.go:35" }
       ]
     }
   }
@@ -133,7 +140,7 @@ This writes `anode.lock.json`. An excerpt from the example's generated lockfile:
 ### 3. Run Locally
 
 ```bash
-anode dev ./examples/complex_ecommerce
+anode dev ./examples/storefront
 ```
 
 `anode dev` allocates free loopback ports, starts the stateful services your code uses in Docker or Podman containers, reads external database values from `.env`, and streams service logs. It reloads after a 300ms debounce when files change.
@@ -141,14 +148,14 @@ anode dev ./examples/complex_ecommerce
 ### 4. Deploy to a Linux Host
 
 ```bash
-anode deploy root@my-box.example.com ./examples/complex_ecommerce
+anode deploy root@my-box.example.com ./examples/storefront
 ```
 
 Deploying as root works. For day-to-day use, create a deploy account first:
 
 ```bash
 anode host-setup root@my-box.example.com --disable-root-login
-anode deploy anode-deploy@my-box.example.com ./examples/complex_ecommerce
+anode deploy anode-deploy@my-box.example.com ./examples/storefront
 ```
 
 What a deploy does:
@@ -157,7 +164,7 @@ What a deploy does:
 - **Units:** writes one systemd unit per service, with `DynamicUser=yes`, `CPUQuota=200%`, `MemoryMax=1G`, and the hardening listed under [Security Model](#security-model).
 - **Redis:** when a service uses Redis, runs it natively under systemd, bound to `127.0.0.1`, with its password read from `.env`. Other catalog kinds run in containers on the host; that path is not yet tested end to end.
 - **Caddy:** validates the Caddyfile with `caddy validate` before reloading. With `--domain`, Caddy issues a Let's Encrypt certificate. With an IP address, the site is served over plain HTTP, and you must pass `--plain-http` to accept that.
-- **Health:** checks each HTTP service over the network after it starts. A failed check stops the deploy.
+- **Health:** each HTTP service must serve `GET /healthz` and return a status from 200 to 399. A failed check stops the deploy. Services without the route fail, so add it before deploying.
 - **Firewall:** an iptables rule drops external traffic to application ports `21040`–`21999`. The rule is saved with `netfilter-persistent`.
 - **Retention:** keeps the newest three releases. `anode rollback <user@host>` restores the previous release's recorded units.
 
@@ -175,7 +182,7 @@ The catalog (`internal/catalog/defaults.yaml`) defines 26 built-in kinds:
 * **Vector:** Qdrant, Chroma, Milvus, Weaviate.
 * **Object storage and workflow:** MinIO, Temporal.
 
-Only Redis and the Postgres path have been exercised end to end. The rest are declared but not tested.
+Anode provisions only two kinds itself: Redis on the host at deploy time, and PostgreSQL in containers at `anode dev`. The other kinds are declared in the catalog but are not provisioned or tested end to end. The `examples/marketplace` live suite starts most of them and checks the example services against them; that tests the application code, not Anode's provisioning.
 
 Repository overrides in `anode.catalog.yaml` or `.anode/catalog/` add or change kinds without Go changes. Image versions are resolved in four tiers, from the lockfile's `engine_version` down to a certified LTS default. See [`docs/catalog.md`](docs/catalog.md).
 
@@ -189,7 +196,7 @@ Repository overrides in `anode.catalog.yaml` or `.anode/catalog/` add or change 
 | **Privilege** | `NoNewPrivileges=true` on services. Containers for catalog kinds use `--security-opt no-new-privileges`. |
 | **Filesystem and sandbox** | `ProtectSystem=strict`, `ProtectHome=true`, `PrivateTmp=true`, `PrivateDevices=true`, `ProtectKernelTunables`, `ProtectKernelModules`, `ProtectKernelLogs`, `ProtectControlGroups`, `RestrictSUIDSGID`, `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6`, and an empty `CapabilityBoundingSet`. |
 | **Data directories** | Catalog data directories are created with `install -d`, using the mode and the UID/GID the driver requires. |
-| **OOM priority** | Database kinds set `oom_score_adj` to `-900`, `-800`, `-700`, or `-600`; caches and brokers to `-500` or `-400`. Application services do not set an OOM score. |
+| **OOM priority** | Catalog kinds set `oom_score_adjust` between `-400` and `-900`, so the database is killed last. Application services do not set an OOM score. |
 | **Network** | Redis binds to `127.0.0.1`. Catalog containers bind to `127.0.0.1` by default. The iptables rule blocks external traffic to application ports. |
 | **Secrets** | Values come from `.env`, which must be mode `600`; deploys refuse a `.env` readable by other users. Secret env files are written to `/etc/anode/env` with mode `0600`, not into unit files. |
 | **Edge** | Caddy terminates TLS when `--domain` is set. Without a domain, the site is plain HTTP and must be accepted with `--plain-http`. |
@@ -210,9 +217,9 @@ Examples live in [`examples/`](examples/). Service counts are the number of `mai
 | Example | Services | What it covers |
 | :--- | :---: | :--- |
 | [`sample-shop`](examples/sample-shop/README.md) | 2 | Two-service app with Postgres |
-| [`complex_ecommerce`](examples/complex_ecommerce/README.md) | 3 | Composite DSN unpacking, pre-traffic migrations, SendGrid egress |
-| [`hyper_mesh_12`](examples/hyper_mesh_12/README.md) | 12 | Config indirection, composite DSNs, gRPC and REST links; analyzer test fixture |
-| [`omni_mesh_32`](examples/omni_mesh_32/README.md) | 32 | 14 of 35 store connections detected by Anode; 21 undetected; used by the `anode cluster` example |
+| [`storefront`](examples/storefront/README.md) | 3 | Composite DSNs, Goose migrations, Stripe and SendGrid egress |
+| [`retail-platform`](examples/retail-platform/README.md) | 12 | Config indirection, HTTP and gRPC links, Redis and PostgreSQL; the analyzer's main test fixture |
+| [`marketplace`](examples/marketplace/README.md) | 32 | 35 store resources across 13 kinds, including Kafka and Qdrant; no diagnostics |
 
 Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
 
@@ -263,6 +270,7 @@ Docker is not installed by these scripts.
 
 * Unit and integration tests: `go vet ./...` and `go test ./...`. The integration tests in `internal/deployer` run the deploy coordinator against a fake host.
 * Live checks were run against test VMs for the deploy, firewall, and rollback paths. They are not part of CI.
+* Live store tests: `examples/marketplace/infra/live-test.sh` starts the stores in Docker and runs the marketplace services against them. It needs Docker and is not part of CI.
 
 ---
 

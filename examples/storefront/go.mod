@@ -1,4 +1,4 @@
-module complex_ecommerce
+module storefront
 
 go 1.22
 

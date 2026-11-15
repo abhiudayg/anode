@@ -73,7 +73,7 @@
         <polyline points="22 8.5 12 15.5 2 8.5"/>
       </g>
       <text x="44" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="700" fill="#38bdf8" letter-spacing="1.2">
-        ANODE v1.0 • PROOF-OF-TOPOLOGY
+        ANODE v1.5.0 • PROOF-OF-TOPOLOGY
       </text>
     </g>
 
@@ -93,38 +93,38 @@
       Anode inspects whole-program Go SSA call graphs to auto-discover
     </text>
     <text x="0" y="296" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="15.5" font-weight="400" fill="#94a3b8">
-      routes &amp; database drivers in ~60ms, synthesising hardened Linux services.
+      routes &amp; database drivers, synthesising hardened Linux services.
     </text>
 
     <!-- 3 Key Metric Badges -->
     <g transform="translate(0, 350)">
-      <!-- Metric 1: 8ms Cold Boot -->
+      <!-- Metric 1: container daemons -->
       <g>
         <rect width="155" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
         <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#22d3ee">
-          8 ms
+
         </text>
         <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
-          COLD BOOT TIME
+          CONTAINER DAEMONS
         </text>
       </g>
 
-      <!-- Metric 2: 4.8MB RAM -->
+      <!-- Metric 2: Dockerfiles -->
       <g transform="translate(175, 0)">
         <rect width="155" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
         <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#38bdf8">
-          4.8 MB
+
         </text>
         <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
-          RAM FOOTPRINT
+          DOCKERFILES NEEDED
         </text>
       </g>
 
-      <!-- Metric 3: 100% SSA -->
+      <!-- Metric 3: SSA + VTA -->
       <g transform="translate(350, 0)">
         <rect width="165" height="74" rx="12" fill="url(#cardGrad)" stroke="#1e293b" stroke-width="1.2"/>
         <text x="18" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="24" font-weight="800" fill="#4ade80">
-          100% SSA
+          SSA + VTA
         </text>
         <text x="18" y="56" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="600" fill="#64748b" letter-spacing="0.5">
           STATIC PROVENANCE
@@ -146,7 +146,7 @@
         github.com/abhiudayg/anode
       </text>
       <text x="445" y="26" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="11.5" font-weight="700" fill="#a855f7">
-        APACHE 2.0
+        MIT
       </text>
     </g>
   </g>
@@ -189,7 +189,7 @@
 
       <text x="0" y="140" fill="#38bdf8" font-weight="700">✓</text>
       <text x="20" y="140" fill="#e2e8f0" font-weight="600">Dynamic Loopback:</text>
-      <text x="200" y="140" fill="#34d399">127.0.0.1:5432 (0% conflict)</text>
+      <text x="200" y="140" fill="#34d399">127.0.0.1:54329 (ephemeral)</text>
 
       <text x="0" y="174" fill="#38bdf8" font-weight="700">✓</text>
       <text x="20" y="174" fill="#e2e8f0" font-weight="600">Synthesized Service:</text>
@@ -201,8 +201,8 @@
       <g transform="translate(0, 230)">
         <rect width="458" height="92" rx="10" fill="#00add8" fill-opacity="0.08" stroke="#00add8" stroke-opacity="0.4" stroke-width="1.2"/>
         <circle cx="20" cy="28" r="5" fill="#22c55e"/>
-        <text x="34" y="32" font-size="13" fill="#38bdf8" font-weight="700">PRODUCTION RUNTIME CONFIRMED</text>
-        <text x="20" y="58" font-size="12" fill="#e2e8f0">Cold Boot: <tspan fill="#22d3ee" font-weight="700">8.2ms</tspan> • RAM: <tspan fill="#38bdf8" font-weight="700">4.8MB</tspan> • PID: 8192</text>
+        <text x="34" y="32" font-size="13" fill="#38bdf8" font-weight="700">ILLUSTRATIVE DEPLOY OUTPUT</text>
+        <text x="20" y="58" font-size="12" fill="#e2e8f0">Unit: <tspan fill="#22d3ee" font-weight="700">anode-api.service</tspan> • cgroups v2 • PID: 8192</text>
         <text x="20" y="78" font-size="11.5" fill="#94a3b8">Ingress Route: https://api.shop.com (cgroups v2 active)</text>
       </g>
 

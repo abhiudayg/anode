@@ -1,4 +1,4 @@
-module omni_mesh_32
+module marketplace
 
 go 1.26.0
 

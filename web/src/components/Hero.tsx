@@ -51,7 +51,7 @@ export function Hero() {
             >
               <span className="flex h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
               <span className="text-xs font-mono-code text-cyan-300 font-medium">
-                Anode 1.4.0 — Hardened Deploys &amp; One-Command Rollback
+                Anode 1.5.0 — Live-Tested Stores &amp; Temporal Workers
               </span>
               <span className="text-neutral-500">•</span>
               <span className="text-xs text-neutral-300 flex items-center gap-1 group-hover:text-white transition-colors">
@@ -211,7 +211,7 @@ export function Hero() {
           >
             <div className="flex items-center gap-2">
               <Zap className="w-3.5 h-3.5 text-cyan-400" />
-              <span>Sub-second Cold Boots</span>
+              <span>Sub-second Hot Reload</span>
             </div>
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />

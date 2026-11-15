@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/guides/deploy-chi-without-docker",
     title: "Deploy Chi to Linux VPS Without Docker",
     description:
-      "Run your Chi Go backend directly on Linux bare metal with fast cold starts and zero container overhead.",
+      "Run your Chi Go backend directly on Linux bare metal without container overhead.",
     images: [
       {
         url: "/og-image.png",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Chi to Linux VPS Without Docker",
     description:
-      "Run your Chi Go backend directly on Linux bare metal with fast cold starts.",
+      "Run your Chi Go backend directly on Linux bare metal with systemd.",
     images: ["/og-image.png"],
   },
 };
@@ -131,7 +131,7 @@ export default function DeployChiGuide() {
               Deploy Chi (Go) to a Linux VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Chi is beloved for its 100% compatibility with standard <code className="text-neutral-300">net/http</code>. Anode compiles your Chi application directly into hardened Linux systemd units with fast cold starts and small RAM footprint.
+              Chi is built on the standard <code className="text-neutral-300">net/http</code> package. Anode compiles your Chi application directly into hardened Linux systemd units.
             </p>
           </header>
 
@@ -187,7 +187,7 @@ export default function DeployChiGuide() {
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect .<br />
-              <span className="text-emerald-400">✔ SSA AST Resolved in 49ms</span><br />
+              <span className="text-emerald-400">✔ SSA AST resolved</span><br />
               <span className="text-cyan-400">✔ Detected Router: go-chi/chi/v5 (GET /)</span><br />
               <span className="text-purple-400">✔ Port Binding: :PORT env choke point (default 8080)</span><br />
               <span className="text-emerald-400">✔ Emitted immutable contract: anode.lock.json</span>

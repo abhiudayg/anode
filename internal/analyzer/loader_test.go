@@ -6,12 +6,12 @@ import (
 )
 
 func TestHyperMesh12Analysis(t *testing.T) {
-	hyperMeshDir, err := filepath.Abs("../../testdata/hyper_mesh_12")
+	retailPlatformDir, err := filepath.Abs("../../testdata/retail-platform")
 	if err != nil {
 		t.Fatalf("failed to get abs path: %v", err)
 	}
 
-	loader := NewLoader(hyperMeshDir)
+	loader := NewLoader(retailPlatformDir)
 	lockfile, err := loader.LoadAndAnalyze("./...")
 	if err != nil {
 		t.Fatalf("LoadAndAnalyze failed: %v", err)

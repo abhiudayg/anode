@@ -201,7 +201,7 @@ export default function BlogPage() {
                   <span>Try Anode On Your Go Codebase</span>
                 </h3>
                 <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
-                  Inspect your existing Go microservices in under 20ms and deploy directly to any Linux VPS without Dockerfiles or YAML.
+                  Inspect your existing Go microservices and deploy directly to any Linux VPS without Dockerfiles or YAML.
                 </p>
                 <div className="flex items-center gap-3">
                   <Link

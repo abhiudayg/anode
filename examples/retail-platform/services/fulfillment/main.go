@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 
-	"hyper_mesh_12/pkg/config"
+	"retail-platform/pkg/config"
 )
 
 func main() {

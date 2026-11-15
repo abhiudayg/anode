@@ -156,7 +156,7 @@ export function CommandPalette() {
     {
       id: "guide-hetzner",
       title: "Hetzner Cloud VPS Deployment Guide",
-      description: "Run compiled Go microservices on $4/month Hetzner CX22 instances",
+      description: "Run compiled Go microservices on Hetzner Cloud instances",
       category: "Guides",
       href: "/deploy/hetzner-vps",
       icon: Server,
@@ -189,8 +189,8 @@ export function CommandPalette() {
     },
     {
       id: "doc-changelog",
-      title: "Changelog & Release Notes (v1.4.0 & v1.0.0)",
-      description: "Timeline of releases: hardened deploys and rollback in v1.4.0, anode ps, anode doctor, systemd confinement, and v1.0.0 GA",
+      title: "Changelog & Release Notes (v1.5.0 & v1.0.0)",
+      description: "Timeline of releases: hardened deploys and rollback in v1.5.0, anode ps, anode doctor, systemd confinement, and v1.0.0 GA",
       category: "Documentation",
       href: "/changelog",
       icon: Sparkles,
@@ -261,7 +261,7 @@ export function CommandPalette() {
     {
       id: "comp-compose",
       title: "Docker Compose vs Anode",
-      description: "Deep technical comparison of developer workflows, memory, and cold boot",
+      description: "Deep technical comparison of developer workflows and deployment steps",
       category: "Comparisons",
       href: "/vs/docker-compose",
       icon: GitCompare,

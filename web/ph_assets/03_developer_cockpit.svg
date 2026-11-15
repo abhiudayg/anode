@@ -145,8 +145,7 @@
         <text x="0" y="28" fill="#64748b">⚡ Initializing Proof-of-Topology watcher...</text>
         
         <text x="0" y="60" fill="#34d399">✔</text>
-        <text x="20" y="60" fill="#ffffff">SSA call graph resolved in</text>
-        <text x="240" y="60" fill="#22d3ee" font-weight="700">48ms</text>
+        <text x="20" y="60" fill="#ffffff">SSA call graph resolved</text>
 
         <text x="0" y="88" fill="#34d399">✔</text>
         <text x="20" y="88" fill="#ffffff">Discovered Ingress:</text>
@@ -168,9 +167,8 @@
         <!-- Change detection trigger -->
         <text x="0" y="268" fill="#f59e0b">● [HOT-RELOAD]</text>
         <text x="125" y="268" fill="#cbd5e1">Modified cmd/api/main.go</text>
-        <text x="0" y="294" fill="#64748b">  └─ Delta SSA rebuilt in</text>
-        <text x="195" y="294" fill="#4ade80" font-weight="700">12ms</text>
-        <text x="0" y="318" fill="#64748b">  └─ PID 19280 restarted cleanly (4.9MB RAM)</text>
+        <text x="0" y="294" fill="#64748b">  └─ Delta SSA rebuilt</text>
+        <text x="0" y="318" fill="#64748b">  └─ PID 19280 restarted cleanly</text>
 
         <text x="0" y="360" fill="#4ade80">$</text>
         <text x="16" y="360" fill="#cbd5e1">curl http://localhost:8080/orders</text>

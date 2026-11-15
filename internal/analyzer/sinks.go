@@ -36,6 +36,14 @@ func (s *SinkInspector) FormatPos(pos token.Pos) string {
 	return fmt.Sprintf("%s:%d", filepath.Base(position.Filename), position.Line)
 }
 
+func (s *SinkInspector) inProject(pos token.Pos) bool {
+	if !pos.IsValid() || s.fset == nil {
+		return false
+	}
+	rel, err := filepath.Rel(s.rootDir, s.fset.Position(pos).Filename)
+	return err == nil && !strings.HasPrefix(rel, "..")
+}
+
 func hasMigrationFiles(dir string) bool {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -363,6 +371,8 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 						IsExternal:    true,
 					})
 				}
+			} else if envVar != "" && storeKindFromEnv(envVar) != "" {
+				bindStoreOverHTTP(svc, graph, envVar, storeKindFromEnv(envVar), routeSuffix, provenance)
 			} else if envVar != "" {
 				exists := false
 				for _, b := range svc.Bindings {
@@ -429,6 +439,9 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 
 // InspectEnvCall tracks secret usage
 func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
+	if !s.inProject(call.Pos()) {
+		return
+	}
 	callee := call.StaticCallee()
 	if callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&
 		callee.Pkg.Pkg.Path() == "os" && callee.Name() == "Getenv" && len(call.Args) > 0 {

@@ -231,6 +231,14 @@ func traceToEnvVarWithDepth(val ssa.Value, visited map[ssa.Value]bool, depth int
 		}
 	}
 
+	// 1d. A call into project code carries the environment variable of its first argument, as in splitHosts(os.Getenv(...)).
+	if call, ok := val.(*ssa.Call); ok {
+		if callee := call.Common().StaticCallee(); callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&
+			!isStdlib(callee.Pkg.Pkg.Path()) && len(call.Common().Args) > 0 {
+			return traceToEnvVarWithDepth(call.Common().Args[0], visited, depth+1)
+		}
+	}
+
 	// 2. FreeVar captured in closure: e.g. paymentsAddr captured in http handler closure
 	if fv, ok := val.(*ssa.FreeVar); ok {
 		return TraceCapturedVar(fv)

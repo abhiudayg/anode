@@ -105,20 +105,20 @@ const faqJsonLd = {
 export default function DockerComposeVsAnodePage() {
   const comparisonRows = [
     {
-      feature: "Cold Boot Latency",
-      anode: "8.2 ms (Instant systemd exec)",
-      docker: "450 ms (Container namespace & bridge init)",
+      feature: "Container Runtime",
+      anode: "None (systemd runs the binary)",
+      docker: "A container engine runs and wires each service",
       winner: "anode",
     },
     {
-      feature: "Memory Overhead (Idle)",
-      anode: "Small (Pure Go runtime)",
-      docker: "210 MB (dockerd, containerd, shim-v2)",
+      feature: "Daemon Overhead",
+      anode: "No container daemon",
+      docker: "dockerd, containerd, shim-v2",
       winner: "anode",
     },
     {
       feature: "Config Maintenance",
-      anode: "0 files (Go AST is single source of truth)",
+      anode: "anode.toml plus a generated anode.lock.json",
       docker: "Dockerfile + docker-compose.yml (2+ files)",
       winner: "anode",
     },
@@ -130,7 +130,7 @@ export default function DockerComposeVsAnodePage() {
     },
     {
       feature: "Local Dev Hot Reload",
-      anode: "< 15 ms delta compilation",
+      anode: "Polls for source changes every 300 ms",
       docker: "Slow image rebuilds or volume bind-mount lag",
       winner: "anode",
     },
@@ -148,7 +148,7 @@ export default function DockerComposeVsAnodePage() {
     },
     {
       feature: "Architecture Drift",
-      anode: "Impossible (compiler verified lockfile)",
+      anode: "Lockfile regenerated from the code on inspect",
       docker: "Common when code & compose.yml diverge",
       winner: "anode",
     },
@@ -204,7 +204,7 @@ export default function DockerComposeVsAnodePage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4 text-xs font-mono-code">
               <div className="px-4 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 flex items-center gap-2">
                 <Zap className="w-4 h-4 text-cyan-400" />
-                <span>Faster Cold Boot</span>
+                <span>No Container Runtime</span>
               </div>
               <div className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-300 flex items-center gap-2">
                 <Cpu className="w-4 h-4 text-purple-400" />

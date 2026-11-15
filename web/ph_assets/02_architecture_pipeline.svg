@@ -87,7 +87,7 @@
         Go Source Code
       </text>
       <text x="18" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#94a3b8">
-        100% Unmodified
+        No Code Changes
       </text>
 
       <!-- Mini Visual Box -->
@@ -127,7 +127,7 @@
         SSA Call Graph
       </text>
       <text x="18" y="104" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="13" font-weight="400" fill="#38bdf8">
-        Static Analysis (~60ms)
+        Static Analysis
       </text>
 
       <!-- Mini Visual Box -->
@@ -221,14 +221,14 @@
         <text x="14" y="52" font-family="'SF Mono', monospace" font-size="10" fill="#94a3b8">MemoryMax=256M</text>
         <text x="14" y="74" font-family="'SF Mono', monospace" font-size="10" fill="#94a3b8">CPUQuota=200%</text>
         <text x="14" y="98" font-family="'SF Mono', monospace" font-size="10" fill="#38bdf8">AmbientCaps=drop</text>
-        <text x="14" y="128" font-family="'SF Mono', monospace" font-size="11" fill="#22d3ee">● Active: 8.2ms</text>
+        <text x="14" y="128" font-family="'SF Mono', monospace" font-size="11" fill="#22d3ee">● Active (running)</text>
       </g>
 
       <text x="18" y="304" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" fill="#cbd5e1" font-weight="500">
-        • 8ms cold boot time
+        • No container daemon
       </text>
       <text x="18" y="328" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" fill="#cbd5e1" font-weight="500">
-        • 4.8MB RAM footprint
+        • cgroups v2 limits per service
       </text>
       <text x="18" y="352" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="12.5" fill="#cbd5e1" font-weight="500">
         • Direct Linux syscalls
@@ -246,7 +246,7 @@
       Go already compiles to static standalone machine code. Anode removes the 200MB container daemon tax and runs your binary natively with full cgroup isolation.
     </text>
     <text x="960" y="44" font-family="'SF Mono', monospace" font-size="13" font-weight="700" fill="#22c55e">
-      0% VIRTUAL TAX
+      NO CONTAINER RUNTIME
     </text>
   </g>
 </svg>

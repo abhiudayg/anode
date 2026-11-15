@@ -6,7 +6,7 @@ Allow: /
 # Agent & LLM Information
 Site: https://anode.abhiudayg.dev
 Product: Anode
-Description: Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Eliminates Docker & Kubernetes with 8ms cold starts and 4.8MB RAM.
+Description: Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Eliminates Docker & Kubernetes from the deploy path.
 Docs: https://anode.abhiudayg.dev/docs
 Blog: https://anode.abhiudayg.dev/blog
 Repository: https://github.com/abhiudayg/anode

@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/guides/deploy-go-without-docker",
     title: "Deploy Go to Linux Without Docker",
     description:
-      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with fast cold starts and zero Docker daemons.",
+      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal without Docker daemons.",
     images: [
       {
         url: "/og-image.png",
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Go to Linux Without Docker",
     description:
-      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal with fast cold starts and zero Docker daemons.",
+      "Deploy unmodified Go backends directly to Ubuntu/Debian bare metal without Docker daemons.",
     images: ["/og-image.png"],
   },
 };
@@ -146,8 +146,8 @@ export default function DeployGoWithoutDockerGuide() {
           {/* Quick Metrics Callout */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
-              <div className="text-2xl font-bold text-cyan-400 font-mono-code">8.2 ms</div>
-              <div className="text-xs text-neutral-400 mt-1">Cold Boot Time</div>
+              <div className="text-2xl font-bold text-cyan-400 font-mono-code">systemd</div>
+              <div className="text-xs text-neutral-400 mt-1">Process manager</div>
             </div>
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0c0e14]">
               <div className="text-2xl font-bold text-purple-400 font-mono-code">Small</div>
@@ -239,7 +239,7 @@ export default function DeployGoWithoutDockerGuide() {
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-                <span>Performs rolling restart via systemd socket activation.</span>
+                <span>Restarts the service with systemctl restart.</span>
               </li>
             </ul>
           </section>

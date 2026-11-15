@@ -293,6 +293,13 @@
       ],
       "bindings": [
         {
+          "service_ref": "ledger",
+          "protocol": "grpc",
+          "interface": "RegisterLedgerServiceServer",
+          "inject_env": "LEDGER_GRPC_ADDR",
+          "provenance": "services/orders/main.go:21"
+        },
+        {
           "service_ref": "payments",
           "protocol": "http",
           "interface": "/v1/payments/charge",
@@ -311,13 +318,6 @@
             "ORDERS_SSLMODE"
           ],
           "provenance": "services/orders/main.go:16"
-        },
-        {
-          "service_ref": "ledger",
-          "protocol": "grpc",
-          "interface": "RegisterLedgerServiceServer",
-          "inject_env": "LEDGER_GRPC_ADDR",
-          "provenance": "services/orders/main.go:21"
         }
       ],
       "secrets": [

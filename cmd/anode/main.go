@@ -30,7 +30,7 @@ import (
 
 const LockFileName = "anode.lock.json"
 
-var Version = "1.4.0"
+var Version = "1.5.0"
 
 func main() {
 	if len(os.Args) < 2 {
@@ -195,6 +195,10 @@ func main() {
 		if len(os.Args) < 3 {
 			fmt.Println("Usage: anode host-setup root@host [--user NAME] [--disable-root-login]")
 			os.Exit(1)
+		}
+		if os.Args[2] == "-h" || os.Args[2] == "--help" {
+			fmt.Println("Usage: anode host-setup root@host [--user NAME] [--disable-root-login]")
+			os.Exit(0)
 		}
 		deployUser := "anode-deploy"
 		disableRoot := false
@@ -849,7 +853,7 @@ func printClusterUsage() {
 	fmt.Println("  anode cluster                               # Inspect cluster nodes and service placement")
 	fmt.Println("  anode cluster init                          # Generate starter anode.cluster.yaml template")
 	fmt.Println("  anode cluster --firewall                    # View synthesized zero-trust nftables rules")
-	fmt.Println("  anode cluster ./examples/omni_mesh_32       # Plan placement for a 32-service mesh")
+	fmt.Println("  anode cluster ./examples/marketplace       # Plan placement for a 32-service mesh")
 	fmt.Println("  anode cluster --json                        # Machine-readable output for CI/CD pipelines")
 }
 

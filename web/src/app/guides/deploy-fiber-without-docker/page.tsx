@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     url: "https://anode.abhiudayg.dev/guides/deploy-fiber-without-docker",
     title: "Deploy Fiber to Linux VPS Without Docker",
     description:
-      "Run your Go Fiber backend directly on Linux bare metal with fast cold starts and zero container overhead.",
+      "Run your Go Fiber backend directly on Linux bare metal without container overhead.",
     images: [
       {
         url: "/og-image.png",
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Deploy Fiber to Linux VPS Without Docker",
     description:
-      "Run your Go Fiber backend directly on Linux bare metal with fast cold starts.",
+      "Run your Go Fiber backend directly on Linux bare metal with systemd.",
     images: ["/og-image.png"],
   },
 };
@@ -131,7 +131,7 @@ export default function DeployFiberGuide() {
               Deploy Fiber (Go) to a Linux VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              Fiber is built on Fasthttp for extreme raw throughput with zero memory allocation. Running Fiber inside a heavy Docker container undermines its performance. Anode deploys Fiber directly to bare-metal systemd with fast cold starts and small RAM footprint.
+              Fiber is built on Fasthttp. Running Fiber inside a Docker container adds a container layer. Anode deploys Fiber directly to bare-metal systemd.
             </p>
           </header>
 
@@ -183,7 +183,7 @@ export default function DeployFiberGuide() {
             </p>
             <div className="p-4 rounded-xl bg-black/60 border border-white/[0.08] font-mono-code text-xs text-neutral-300">
               $ anode inspect .<br />
-              <span className="text-emerald-400">✔ SSA AST Resolved in 51ms</span><br />
+              <span className="text-emerald-400">✔ SSA AST resolved</span><br />
               <span className="text-cyan-400">✔ Detected Router: gofiber/fiber/v2 (GET /)</span><br />
               <span className="text-purple-400">✔ Port Binding: :PORT env choke point (default 8080)</span><br />
               <span className="text-emerald-400">✔ Emitted immutable contract: anode.lock.json</span>

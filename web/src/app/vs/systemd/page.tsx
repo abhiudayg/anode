@@ -96,7 +96,7 @@ export default function AnodeVsSystemdPage() {
     },
     {
       feature: "Local Development Workflow",
-      anode: "anode dev with <15ms hot reload",
+      anode: "anode dev with sub-second hot reload",
       manual: "Must run manual background processes",
     },
     {

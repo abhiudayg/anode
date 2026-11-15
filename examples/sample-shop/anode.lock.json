@@ -23,6 +23,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/orders"
           ]
         }
@@ -50,6 +51,7 @@
           "protocol": "http",
           "port_env": "PORT",
           "routes": [
+            "GET /healthz",
             "POST /v1/charges"
           ]
         }

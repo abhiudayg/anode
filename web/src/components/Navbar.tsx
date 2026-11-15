@@ -55,7 +55,7 @@ export function Navbar() {
                 Anode
               </span>
               <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 font-medium">
-                v1.4
+                v1.5
               </span>
             </div>
           </Link>
@@ -141,7 +141,7 @@ export function Navbar() {
                           Hetzner Cloud VPS Guide
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Run on €3.79/mo servers
+                          Run on Hetzner VPS
                         </div>
                       </div>
                     </Link>
@@ -159,7 +159,7 @@ export function Navbar() {
                           DigitalOcean Droplet Guide
                         </div>
                         <div className="text-[11px] text-neutral-400 leading-tight mt-0.5">
-                          Deploy Go APIs to $4/mo droplets
+                          Deploy Go APIs to DigitalOcean droplets
                         </div>
                       </div>
                     </Link>
@@ -547,7 +547,7 @@ export function Navbar() {
                 <span>Changelog &amp; Releases</span>
               </div>
               <span className="text-[10px] font-mono-code px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
-                v1.4.0
+                v1.5.0
               </span>
             </Link>
             <div className="pt-2 border-t border-white/[0.08] flex items-center justify-between">
