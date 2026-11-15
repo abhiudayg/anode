@@ -66,3 +66,32 @@ services:
     image: qdrant/qdrant:v1.9.7
     ports:
       - "127.0.0.1:16333:6333"
+
+  # S3 API for the cms, media, and documents services. MinIO images are not pullable from Docker Hub or Quay in this
+  # environment, so SeaweedFS serves the same S3 protocol the services use.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: ["server", "-s3", "-s3.port=8333", "-dir=/data"]
+    ports:
+      - "127.0.0.1:9100:8333"
+
+  timescale:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mesh
+    ports:
+      - "127.0.0.1:15433:5432"
+
+  cockroach:
+    image: cockroachdb/cockroach:v24.1.0
+    command: ["start-single-node", "--insecure", "--listen-addr=:26257"]
+    ports:
+      - "127.0.0.1:26258:26257"
+
+  scylla:
+    image: scylladb/scylla:6.0
+    command: ["--smp", "1", "--memory", "1G", "--overprovisioned", "1", "--developer-mode", "1"]
+    ports:
+      - "127.0.0.1:9042:9042"

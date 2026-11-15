@@ -210,7 +210,13 @@ func openClickhouse(t *testing.T) clickhouse.Conn {
 // applySQLFiles runs every statement of every .sql file in dir. Comment lines are dropped.
 func applySQLFiles(t *testing.T, dir string, exec func(stmt string) error) {
 	t.Helper()
-	files, err := filepath.Glob(filepath.Join(dir, "*.sql"))
+	applySQLFilesWithSuffix(t, dir, ".sql", exec)
+}
+
+// applySQLFilesWithSuffix runs the statements of every file in dir whose name ends with suffix.
+func applySQLFilesWithSuffix(t *testing.T, dir, suffix string, exec func(stmt string) error) {
+	t.Helper()
+	files, err := filepath.Glob(filepath.Join(dir, "*"+suffix))
 	if err != nil {
 		t.Fatal(err)
 	}

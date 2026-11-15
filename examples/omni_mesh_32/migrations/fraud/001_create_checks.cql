@@ -4,5 +4,5 @@ CREATE TABLE IF NOT EXISTS checks (
     amount_cents bigint,
     region       text,
     score        int,
-    allow        boolean
+    allowed      boolean
 );
