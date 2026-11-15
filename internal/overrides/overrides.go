@@ -17,6 +17,7 @@ const FileName = "anode.overrides.json"
 
 type Override struct {
 	Path     string          `json:"path"`
+	Anchor   string          `json:"anchor,omitempty"`
 	Value    json.RawMessage `json:"value"`
 	Inferred json.RawMessage `json:"inferred"`
 	Note     string          `json:"note,omitempty"`
@@ -38,7 +39,43 @@ func ApplyFile(rootDir string, lock *iag.LockFile) error {
 	if err := json.Unmarshal(data, &f); err != nil {
 		return fmt.Errorf("invalid %s: %w", FileName, err)
 	}
+	if reanchor(lock, &f) {
+		out, err := json.MarshalIndent(f, "", "  ")
+		if err != nil {
+			return err
+		}
+		if err := os.WriteFile(filepath.Join(rootDir, FileName), append(out, '\n'), 0o644); err != nil {
+			return err
+		}
+	}
 	return Apply(lock, f)
+}
+
+// reanchor moves an override to a resource that was renamed, when exactly one resource in the lockfile has the same
+// source file as the override's anchor. It reports whether any override changed.
+func reanchor(lock *iag.LockFile, f *File) bool {
+	changed := false
+	for i, o := range f.Overrides {
+		kind, id, field, err := parse(o.Path)
+		if err != nil || kind != "resources" || o.Anchor == "" {
+			continue
+		}
+		if _, ok := lock.Resources[id]; ok {
+			continue
+		}
+		var matches []string
+		for newID, res := range lock.Resources {
+			if strings.SplitN(res.Provenance, ":", 2)[0] == o.Anchor {
+				matches = append(matches, newID)
+			}
+		}
+		if len(matches) != 1 {
+			continue
+		}
+		f.Overrides[i].Path = "resources." + matches[0] + "." + field
+		changed = true
+	}
+	return changed
 }
 
 func Apply(lock *iag.LockFile, f File) error {
@@ -96,6 +133,8 @@ func read(lock *iag.LockFile, path string) (json.RawMessage, error) {
 			return json.Marshal(res.Buckets)
 		case "kind":
 			return json.Marshal(res.Kind)
+		case "collections":
+			return json.Marshal(res.Collections)
 		}
 	} else {
 		svc, ok := lock.Services[id]
@@ -123,6 +162,10 @@ func write(lock *iag.LockFile, path string, value json.RawMessage) error {
 			}
 		case "buckets":
 			if err := json.Unmarshal(value, &res.Buckets); err != nil {
+				return err
+			}
+		case "collections":
+			if err := json.Unmarshal(value, &res.Collections); err != nil {
 				return err
 			}
 		case "kind":

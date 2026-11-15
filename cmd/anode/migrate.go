@@ -61,7 +61,7 @@ func runMigrate(host, targetDir string) error {
 		if !ok {
 			return fmt.Errorf("%s: anode migrate has no migration engine for kind %s", id, res.Kind)
 		}
-		dsn, cleanup, err := migrationDSN(id, res, lockfile, cfg, secrets, remote)
+		dsn, cleanup, err := migrationDSN(targetDir, id, res, lockfile, cfg, secrets, remote)
 		if err != nil {
 			return err
 		}
@@ -75,7 +75,7 @@ func runMigrate(host, targetDir string) error {
 	return nil
 }
 
-func migrationDSN(id string, res iag.Resource, lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string, remote *ssh.Client) (string, func(), error) {
+func migrationDSN(rootDir, id string, res iag.Resource, lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string, remote *ssh.Client) (string, func(), error) {
 	noop := func() {}
 	if cfg.Stores[id].Runtime == projectconfig.RuntimeExternal {
 		key := connectionKeyFor(lockfile, id)
@@ -91,9 +91,13 @@ func migrationDSN(id string, res iag.Resource, lockfile *iag.LockFile, cfg *proj
 	if remote == nil {
 		return "", noop, fmt.Errorf("%s runs on the host; pass the target: anode migrate root@<host> [path]", id)
 	}
-	hostPort := cfg.Stores[id].HostPort
+	state, err := deployer.LoadState(rootDir)
+	if err != nil {
+		return "", noop, err
+	}
+	hostPort := state.HostPorts[id]
 	if hostPort == 0 {
-		return "", noop, fmt.Errorf("%s has no host_port in anode.toml; deploy once to assign it", id)
+		return "", noop, fmt.Errorf("%s has no host port in %s; deploy once to assign it", id, deployer.StateFileName)
 	}
 	localPort, cleanup, err := forwardLocal(remote, fmt.Sprintf("127.0.0.1:%d", hostPort))
 	if err != nil {

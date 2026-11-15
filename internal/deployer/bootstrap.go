@@ -18,7 +18,7 @@ func NewBootstrapper(sshClient Remote) *Bootstrapper {
 }
 
 // BootstrapServer idempotently sets up /var/lib/anode, Caddy, and stateful databases
-func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string) error {
+func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfig.File, secrets map[string]string, hostPorts map[string]int) error {
 	fmt.Println("  ⚙ Verifying remote host directories...")
 	setupDirsCmd := `id -u anode &>/dev/null || useradd -r -s /bin/false anode && \
                      mkdir -p /var/lib/anode/bin \
@@ -58,7 +58,6 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 	}
 
 	// 2. Provision Auto-Provisioned Stateful Dependencies via Pluggable Least-Privilege Catalog
-	hostPorts := containerHostPorts(lockfile, cfg)
 	reg := catalog.NewRegistry()
 	for resID, res := range lockfile.Resources {
 		if !cfg.Managed(resID, res) {

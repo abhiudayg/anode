@@ -2,6 +2,9 @@ package deployer
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -66,11 +69,18 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := cfg.Validate(d.lockfile); err != nil {
 		return err
 	}
-	hostPorts := containerHostPorts(d.lockfile, cfg)
+	state, err := LoadState(d.rootDir)
+	if err != nil {
+		return err
+	}
+	hostPorts := containerHostPorts(d.lockfile, cfg, &state)
+	if err := SaveState(d.rootDir, state); err != nil {
+		return err
+	}
 
 	// 1. Remote Host Bootstrap
 	fmt.Println("🚀 Step 1: Bootstrapping remote host...")
-	if err := bootstrapper.BootstrapServer(d.lockfile, cfg, secrets); err != nil {
+	if err := bootstrapper.BootstrapServer(d.lockfile, cfg, secrets, hostPorts); err != nil {
 		return fmt.Errorf("bootstrap failed: %w", err)
 	}
 
@@ -300,6 +310,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	if err := d.pruneHost(keepUnits); err != nil {
 		return err
 	}
+	if err := d.recordLockHash(releaseID); err != nil {
+		return err
+	}
 	fmt.Printf("\n🎉 Release %s deployed successfully!\n", releaseID)
 	fmt.Printf("   Public URL: https://%s\n", domain)
 
@@ -351,4 +364,17 @@ func (d *DeployCoordinator) crossCompileService(ctx context.Context, svc iag.Ser
 	}
 
 	return binPath, nil
+}
+
+func (d *DeployCoordinator) recordLockHash(releaseID string) error {
+	data, err := json.MarshalIndent(d.lockfile, "", "  ")
+	if err != nil {
+		return fmt.Errorf("serialize lockfile for the release record: %w", err)
+	}
+	sum := sha256.Sum256(data)
+	path := fmt.Sprintf("/var/lib/anode/releases/%s.lock.sha256", releaseID)
+	if err := d.ssh.StreamBytes([]byte(hex.EncodeToString(sum[:])+"\n"), path, 0o644); err != nil {
+		return fmt.Errorf("record lockfile hash for release %s: %w", releaseID, err)
+	}
+	return nil
 }

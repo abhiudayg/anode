@@ -66,3 +66,35 @@ func TestOverrideRejectsUnsupportedField(t *testing.T) {
 		t.Fatalf("a field that is not inferred must not be overridable")
 	}
 }
+
+func TestOverrideReanchorsWhenResourceIsRenamed(t *testing.T) {
+	lock := &iag.LockFile{Resources: map[string]iag.Resource{
+		"events-kafka": {Kind: "kafka", Topics: []string{"shipments.created"}, Provenance: "services/shipping/main.go:30"},
+	}}
+	f := File{Overrides: []Override{{
+		Path:     "resources.shipping-kafka.topics",
+		Anchor:   "services/shipping/main.go",
+		Value:    raw(t, []string{"shipments.v2"}),
+		Inferred: raw(t, []string{"shipments.created"}),
+	}}}
+	if !reanchor(lock, &f) {
+		t.Fatalf("a single resource in the same source file must be re-anchored")
+	}
+	if f.Overrides[0].Path != "resources.events-kafka.topics" {
+		t.Fatalf("path not re-anchored: %s", f.Overrides[0].Path)
+	}
+	if err := Apply(lock, f); err != nil {
+		t.Fatalf("re-anchored override must apply: %v", err)
+	}
+}
+
+func TestOverrideNotReanchoredWhenAmbiguous(t *testing.T) {
+	lock := &iag.LockFile{Resources: map[string]iag.Resource{
+		"a": {Kind: "kafka", Provenance: "services/shipping/main.go:30"},
+		"b": {Kind: "kafka", Provenance: "services/shipping/main.go:44"},
+	}}
+	f := File{Overrides: []Override{{Path: "resources.gone.topics", Anchor: "services/shipping/main.go", Value: raw(t, []string{"x"}), Inferred: raw(t, []string{"y"})}}}
+	if reanchor(lock, &f) {
+		t.Fatalf("two candidates must not be re-anchored by guess")
+	}
+}

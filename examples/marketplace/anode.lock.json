@@ -234,7 +234,14 @@
       "kind": "qdrant",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/search/main.go:83"
+      "provenance": "services/search/main.go:83",
+      "collections": [
+        {
+          "name": "products",
+          "vector_size": 4,
+          "distance": "Cosine"
+        }
+      ]
     },
     "shipping-kafka": {
       "kind": "kafka",

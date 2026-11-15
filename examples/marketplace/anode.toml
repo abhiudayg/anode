@@ -7,27 +7,22 @@ runtime = "external"
 
 [stores."db-cms-postgres"]
 runtime = "docker"
-host_port = 31006
 version = "16"
 
 [stores."db-coupons-postgres"]
 runtime = "docker"
-host_port = 31007
 version = "16"
 
 [stores."db-inventory-mariadb"]
 runtime = "docker"
-host_port = 31008
 version = "8.4"
 
 [stores."db-loyalty-postgres"]
 runtime = "docker"
-host_port = 31009
 version = "16"
 
 [stores."db-orders-postgres"]
 runtime = "docker"
-host_port = 31010
 version = "16"
 
 [stores."db-subscriptions-cockroach"]
@@ -35,37 +30,30 @@ runtime = "external"
 
 [stores."db-users-postgres"]
 runtime = "docker"
-host_port = 31012
 version = "16"
 
 [stores."redis-auth"]
 runtime = "docker"
-host_port = 31021
 version = "7"
 
 [stores."redis-inventory-locks"]
 runtime = "docker"
-host_port = 31022
 version = "7"
 
 [stores."redis-livechat"]
 runtime = "docker"
-host_port = 31023
 version = "7"
 
 [stores."redis-loyalty"]
 runtime = "docker"
-host_port = 31024
 version = "7"
 
 [stores."redis-pricing-valkey"]
 runtime = "docker"
-host_port = 31025
 version = "7.2"
 
 [stores."redis-recs"]
 runtime = "docker"
-host_port = 31026
 version = "7"
 
 [services."accounting"]
@@ -174,37 +162,30 @@ version = "24.3"
 
 [stores."catalog-mongo"]
 runtime = "docker"
-host_port = 31002
 version = "7.0"
 
 [stores."cms-minio"]
 runtime = "docker"
-host_port = 31003
 version = "3.68"
 
 [stores."coupons-memcached"]
 runtime = "docker"
-host_port = 31004
 version = "1.6-alpine"
 
 [stores."disputes-temporal"]
 runtime = "docker"
-host_port = 31013
 version = "1.10.1"
 
 [stores."documents-minio"]
 runtime = "docker"
-host_port = 31014
 version = "3.68"
 
 [stores."documents-mongo"]
 runtime = "docker"
-host_port = 31015
 version = "7.0"
 
 [stores."email-rabbitmq"]
 runtime = "docker"
-host_port = 31016
 version = "3.13"
 
 [stores."fraud-scylla"]
@@ -212,7 +193,6 @@ runtime = "external"
 
 [stores."media-minio"]
 runtime = "docker"
-host_port = 31017
 version = "3.68"
 
 [stores."metrics-clickhouse"]
@@ -221,7 +201,6 @@ version = "24.3"
 
 [stores."notifications-rabbitmq"]
 runtime = "docker"
-host_port = 31019
 version = "3.13"
 
 [stores."payments-scylla"]
@@ -229,35 +208,28 @@ runtime = "external"
 
 [stores."recs-qdrant"]
 runtime = "docker"
-host_port = 31020
 version = "v1.9.0"
 
 [stores."reviews-mongo"]
 runtime = "docker"
-host_port = 31027
 version = "7.0"
 
 [stores."search-qdrant"]
 runtime = "docker"
-host_port = 31028
 version = "v1.9.0"
 
 [stores."shipping-kafka"]
 runtime = "docker"
-host_port = 31029
 version = "v24.1"
 
 [stores."warehouse-rabbitmq"]
 runtime = "docker"
-host_port = 31030
 version = "3.13"
 
 [stores."webhooks-rabbitmq"]
 runtime = "docker"
-host_port = 31031
 version = "3.13"
 
 [stores."workflows-temporal"]
 runtime = "docker"
-host_port = 31032
 version = "1.10.1"

@@ -18,6 +18,8 @@ func (b *Bootstrapper) ensureInferredResources(resID string, res iag.Resource, d
 				return err
 			}
 		}
+	case "qdrant":
+		return b.ensureQdrantCollections(resID, hostPort, res.Collections)
 	case "minio":
 		if len(res.Buckets) == 0 {
 			return nil
@@ -51,6 +53,24 @@ func (b *Bootstrapper) ensureBuckets(resID string, hostPort int, secret string, 
 		cmd := fmt.Sprintf("docker run --rm --network host --env-file '%s' --entrypoint /bin/sh %s -c '%s'", envFile, awsCLIImage, script)
 		if _, err := b.ssh.Run(cmd); err != nil {
 			return fmt.Errorf("create bucket %s on %s: %w", bucket, resID, err)
+		}
+	}
+	return nil
+}
+
+const curlImage = "curlimages/curl:8.10.1"
+
+func (b *Bootstrapper) ensureQdrantCollections(resID string, hostPort int, collections []iag.Collection) error {
+	for _, c := range collections {
+		distance := c.Distance
+		if distance == "" {
+			distance = "Cosine"
+		}
+		body := fmt.Sprintf(`{"vectors":{"size":%d,"distance":"%s"}}`, c.VectorSize, distance)
+		cmd := fmt.Sprintf("docker run --rm --network host %s -sS -o /dev/null -w '%%{http_code}' -X PUT -H 'content-type: application/json' -d '%s' http://127.0.0.1:%d/collections/%s | grep -qE '^(2|409)' ",
+			curlImage, body, hostPort, c.Name)
+		if _, err := b.ssh.Run(cmd); err != nil {
+			return fmt.Errorf("create collection %s on %s: %w", c.Name, resID, err)
 		}
 	}
 	return nil

@@ -38,8 +38,9 @@ type Resource struct {
 	AutoProvision bool              `json:"auto_provision"` // True ONLY if proven via migration assets/contracts
 	Provenance    string            `json:"provenance"`
 	Migrations    *MigrationSpec    `json:"migrations,omitempty"`
-	Topics        []string          `json:"topics,omitempty"`  // Kafka topics the code writes to, inferred from the code
-	Buckets       []string          `json:"buckets,omitempty"` // object-storage buckets the code uses, inferred from the code
+	Topics        []string          `json:"topics,omitempty"`      // Kafka topics the code writes to, inferred from the code
+	Buckets       []string          `json:"buckets,omitempty"`     // object-storage buckets the code uses, inferred from the code
+	Collections   []Collection      `json:"collections,omitempty"` // vector collections the code uses; declared in anode.overrides.json when the name is built at runtime
 }
 
 // MigrationSpec details schema migrations attached to a resource.
@@ -108,3 +109,10 @@ type Diagnostic struct {
 
 // Graph alias for backwards compatibility
 type Graph = LockFile
+
+// Collection is a vector collection in a vector store.
+type Collection struct {
+	Name       string `json:"name"`
+	VectorSize int    `json:"vector_size"`
+	Distance   string `json:"distance,omitempty"`
+}
