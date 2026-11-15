@@ -1,6 +1,36 @@
 {
   "schema_version": "1.0",
   "resources": {
+    "analytics-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/analytics/main.go:20"
+    },
+    "auditlog-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/auditlog/main.go:21"
+    },
+    "catalog-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/catalog/main.go:26"
+    },
+    "cms-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/cms/main.go:31"
+    },
+    "coupons-memcached": {
+      "kind": "memcached",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/coupons/main.go:30"
+    },
     "db-accounting-timescale": {
       "kind": "postgres",
       "lifecycle": "stateful_retain",
@@ -89,6 +119,60 @@
         "execution": "pre_traffic_job"
       }
     },
+    "disputes-temporal": {
+      "kind": "temporal",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/disputes/main.go:20"
+    },
+    "documents-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/documents/main.go:37"
+    },
+    "documents-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/documents/main.go:30"
+    },
+    "email-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/email/main.go:24"
+    },
+    "fraud-scylla": {
+      "kind": "scylladb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/fraud/main.go:26"
+    },
+    "media-minio": {
+      "kind": "minio",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/media/main.go:16"
+    },
+    "metrics-clickhouse": {
+      "kind": "clickhouse",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/metrics/main.go:19"
+    },
+    "notifications-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/notifications/main.go:26"
+    },
+    "payments-scylla": {
+      "kind": "scylladb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/payments/main.go:30"
+    },
     "redis-auth": {
       "kind": "redis",
       "lifecycle": "stateful_retain",
@@ -124,6 +208,30 @@
       "lifecycle": "stateful_retain",
       "auto_provision": true,
       "provenance": "services/recommendations/main.go:24"
+    },
+    "reviews-mongo": {
+      "kind": "mongodb",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/reviews/main.go:27"
+    },
+    "warehouse-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/warehouse/main.go:26"
+    },
+    "webhooks-rabbitmq": {
+      "kind": "rabbitmq",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/webhooks/main.go:23"
+    },
+    "workflows-temporal": {
+      "kind": "temporal",
+      "lifecycle": "stateful_retain",
+      "auto_provision": false,
+      "provenance": "services/workflows/main.go:15"
     }
   },
   "services": {
@@ -166,7 +274,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "analytics-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "ANALYTICS_CLICKHOUSE_ADDR",
+          "provenance": "services/analytics/main.go:20"
+        }
+      ],
       "secrets": [
         {
           "env_var": "ANALYTICS_CLICKHOUSE_PASSWORD",
@@ -202,7 +317,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "auditlog-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "AUDITLOG_CLICKHOUSE_ADDR",
+          "provenance": "services/auditlog/main.go:21"
+        }
+      ],
       "secrets": [
         {
           "env_var": "AUDITLOG_CLICKHOUSE_PASSWORD",
@@ -251,7 +373,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "catalog-mongo",
+          "protocol": "mongodb",
+          "inject_env": "CATALOG_MONGO_URI",
+          "provenance": "services/catalog/main.go:26"
+        }
+      ],
       "secrets": [
         {
           "env_var": "AZURE_FEDERATED_TOKEN_FILE",
@@ -286,17 +415,15 @@
             "CMS_POSTGRES_DSN"
           ],
           "provenance": "services/cms/main.go:25"
+        },
+        {
+          "resource_ref": "cms-minio",
+          "protocol": "s3",
+          "inject_env": "CMS_MINIO_ENDPOINT",
+          "provenance": "services/cms/main.go:31"
         }
       ],
       "secrets": [
-        {
-          "env_var": "CMS_MINIO_ACCESS_KEY",
-          "provenance": "services/cms/main.go:32"
-        },
-        {
-          "env_var": "CMS_MINIO_SECRET_KEY",
-          "provenance": "services/cms/main.go:32"
-        },
         {
           "env_var": "AWS_ACCESS_KEY",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
@@ -312,6 +439,30 @@
         {
           "env_var": "AWS_SESSION_TOKEN",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
+        },
+        {
+          "env_var": "CMS_MINIO_ACCESS_KEY",
+          "provenance": "services/cms/main.go:32"
+        },
+        {
+          "env_var": "CMS_MINIO_SECRET_KEY",
+          "provenance": "services/cms/main.go:32"
+        },
+        {
+          "env_var": "MINIO_ROOT_PASSWORD",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
+        },
+        {
+          "env_var": "MINIO_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
+        },
+        {
+          "env_var": "MINIO_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
         },
         {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
@@ -332,22 +483,6 @@
         {
           "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
-        },
-        {
-          "env_var": "MINIO_ROOT_PASSWORD",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
-        },
-        {
-          "env_var": "MINIO_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:49"
-        },
-        {
-          "env_var": "MINIO_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
-        },
-        {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         }
       ]
     },
@@ -373,6 +508,12 @@
             "COUPONS_POSTGRES_DSN"
           ],
           "provenance": "services/coupons/main.go:24"
+        },
+        {
+          "resource_ref": "coupons-memcached",
+          "protocol": "memcached",
+          "inject_env": "COUPONS_MEMCACHED_ADDR",
+          "provenance": "services/coupons/main.go:30"
         }
       ],
       "secrets": []
@@ -409,7 +550,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "disputes-temporal",
+          "protocol": "temporal",
+          "inject_env": "DISPUTES_TEMPORAL_ADDR",
+          "provenance": "services/disputes/main.go:20"
+        }
+      ],
       "secrets": []
     },
     "documents": {
@@ -425,19 +573,40 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "documents-mongo",
+          "protocol": "mongodb",
+          "inject_env": "DOCUMENTS_MONGO_URI",
+          "provenance": "services/documents/main.go:30"
+        },
+        {
+          "resource_ref": "documents-minio",
+          "protocol": "s3",
+          "inject_env": "DOCUMENTS_MINIO_ENDPOINT",
+          "provenance": "services/documents/main.go:37"
+        }
+      ],
       "secrets": [
         {
-          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
+        },
+        {
+          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:128"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:133"
+        },
+        {
+          "env_var": "AWS_CONTAINER_CREDENTIALS_FULL_URI",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:138"
         },
         {
           "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
-        },
-        {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
           "env_var": "AWS_ACCESS_KEY",
@@ -476,24 +645,16 @@
           "provenance": "services/documents/main.go:38"
         },
         {
-          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:123"
-        },
-        {
-          "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:128"
-        },
-        {
-          "env_var": "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:133"
-        },
-        {
-          "env_var": "AWS_CONTAINER_CREDENTIALS_FULL_URI",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:138"
+          "env_var": "AZURE_FEDERATED_TOKEN_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:383"
         },
         {
           "env_var": "AWS_WEB_IDENTITY_TOKEN_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/go.mongodb.org/mongo-driver/v2@v2.10.0/x/mongo/driver/auth/oidc.go:385"
+        },
+        {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         }
       ]
     },
@@ -509,7 +670,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "email-rabbitmq",
+          "protocol": "amqp",
+          "inject_env": "EMAIL_RABBITMQ_URL",
+          "provenance": "services/email/main.go:24"
+        }
+      ],
       "secrets": []
     },
     "fraud": {
@@ -524,7 +692,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "fraud-scylla",
+          "protocol": "cql",
+          "inject_env": "FRAUD_SCYLLA_HOSTS",
+          "provenance": "services/fraud/main.go:26"
+        }
+      ],
       "secrets": []
     },
     "inventory": {
@@ -626,8 +801,31 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "media-minio",
+          "protocol": "s3",
+          "inject_env": "MEDIA_MINIO_ENDPOINT",
+          "provenance": "services/media/main.go:16"
+        }
+      ],
       "secrets": [
+        {
+          "env_var": "AWS_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
+        },
+        {
+          "env_var": "AWS_SECRET_ACCESS_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
+        },
+        {
+          "env_var": "AWS_SECRET_KEY",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
+        },
+        {
+          "env_var": "AWS_SESSION_TOKEN",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
+        },
         {
           "env_var": "MINIO_ROOT_PASSWORD",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:45"
@@ -639,10 +837,6 @@
         {
           "env_var": "MINIO_SECRET_KEY",
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_minio.go:50"
-        },
-        {
-          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
         },
         {
           "env_var": "AWS_CONTAINER_AUTHORIZATION_TOKEN",
@@ -665,28 +859,16 @@
           "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/iam_aws.go:143"
         },
         {
+          "env_var": "AWS_SHARED_CREDENTIALS_FILE",
+          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/file_aws_credentials.go:427"
+        },
+        {
           "env_var": "MEDIA_MINIO_ACCESS_KEY",
           "provenance": "services/media/main.go:17"
         },
         {
           "env_var": "MEDIA_MINIO_SECRET_KEY",
           "provenance": "services/media/main.go:17"
-        },
-        {
-          "env_var": "AWS_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:45"
-        },
-        {
-          "env_var": "AWS_SECRET_ACCESS_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:48"
-        },
-        {
-          "env_var": "AWS_SECRET_KEY",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:50"
-        },
-        {
-          "env_var": "AWS_SESSION_TOKEN",
-          "provenance": "../../../../../../../Users/abhiuday/go/pkg/mod/github.com/minio/minio-go/v7@v7.4.1/pkg/credentials/env_aws.go:62"
         }
       ]
     },
@@ -703,7 +885,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "metrics-clickhouse",
+          "protocol": "clickhouse",
+          "inject_env": "METRICS_CLICKHOUSE_ADDR",
+          "provenance": "services/metrics/main.go:19"
+        }
+      ],
       "secrets": [
         {
           "env_var": "METRICS_CLICKHOUSE_PASSWORD",
@@ -723,7 +912,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "notifications-rabbitmq",
+          "protocol": "amqp",
+          "inject_env": "NOTIFICATIONS_RABBITMQ_URL",
+          "provenance": "services/notifications/main.go:26"
+        }
+      ],
       "secrets": [
         {
           "env_var": "SENDGRID_API_KEY",
@@ -746,13 +942,6 @@
       ],
       "bindings": [
         {
-          "service_ref": "payments",
-          "protocol": "http",
-          "interface": "/v1/charges",
-          "inject_env": "PAYMENTS_SERVICE_URL",
-          "provenance": "services/orders/main.go:112"
-        },
-        {
           "resource_ref": "db-orders-postgres",
           "protocol": "postgres",
           "inject_env": "ORDERS_POSTGRES_DSN",
@@ -760,6 +949,13 @@
             "ORDERS_POSTGRES_DSN"
           ],
           "provenance": "services/orders/main.go:28"
+        },
+        {
+          "service_ref": "payments",
+          "protocol": "http",
+          "interface": "/v1/charges",
+          "inject_env": "PAYMENTS_SERVICE_URL",
+          "provenance": "services/orders/main.go:112"
         },
         {
           "service_ref": "inventory",
@@ -784,7 +980,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "payments-scylla",
+          "protocol": "cql",
+          "inject_env": "PAYMENTS_SCYLLA_HOSTS",
+          "provenance": "services/payments/main.go:30"
+        }
+      ],
       "secrets": [
         {
           "env_var": "STRIPE_SECRET_KEY",
@@ -862,7 +1065,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "reviews-mongo",
+          "protocol": "mongodb",
+          "inject_env": "REVIEWS_MONGO_URI",
+          "provenance": "services/reviews/main.go:27"
+        }
+      ],
       "secrets": [
         {
           "env_var": "AZURE_FEDERATED_TOKEN_FILE",
@@ -1002,7 +1212,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "warehouse-rabbitmq",
+          "protocol": "amqp",
+          "inject_env": "WAREHOUSE_RABBITMQ_URL",
+          "provenance": "services/warehouse/main.go:26"
+        }
+      ],
       "secrets": []
     },
     "webhooks": {
@@ -1017,7 +1234,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "webhooks-rabbitmq",
+          "protocol": "amqp",
+          "inject_env": "WEBHOOKS_RABBITMQ_URL",
+          "provenance": "services/webhooks/main.go:23"
+        }
+      ],
       "secrets": []
     },
     "workflows": {
@@ -1032,7 +1256,14 @@
           ]
         }
       ],
-      "bindings": [],
+      "bindings": [
+        {
+          "resource_ref": "workflows-temporal",
+          "protocol": "temporal",
+          "inject_env": "WORKFLOWS_TEMPORAL_ADDR",
+          "provenance": "services/workflows/main.go:15"
+        }
+      ],
       "secrets": []
     }
   },
@@ -1076,14 +1307,14 @@
   "diagnostics": [
     {
       "level": "warn",
-      "message": "Outbound HTTP call in service \"recommendations\" via env \"RECS_QDRANT_URL\" could not be matched to an internal service",
-      "provenance": "services/recommendations/main.go:71",
+      "message": "Outbound HTTP call in service \"search\" via env \"SEARCH_QDRANT_URL\" could not be matched to an internal service",
+      "provenance": "services/search/main.go:80",
       "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
     },
     {
       "level": "warn",
-      "message": "Outbound HTTP call in service \"search\" via env \"SEARCH_QDRANT_URL\" could not be matched to an internal service",
-      "provenance": "services/search/main.go:80",
+      "message": "Outbound HTTP call in service \"recommendations\" via env \"RECS_QDRANT_URL\" could not be matched to an internal service",
+      "provenance": "services/recommendations/main.go:71",
       "suggestion": "If this targets an external API, confirm the host and path. Otherwise verify that a service route in this workspace matches the call."
     }
   ]

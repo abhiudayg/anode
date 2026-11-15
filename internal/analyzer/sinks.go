@@ -253,6 +253,10 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 		})
 	}
 
+	if s.inspectClientSink(pkgPath, name, call, svc, graph, provenance) {
+		return
+	}
+
 	// 3. Network Ingress Sinks:
 	// - net/http.ListenAndServe
 	// - net.Listen("tcp", addr)

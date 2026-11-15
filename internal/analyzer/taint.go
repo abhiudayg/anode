@@ -214,6 +214,23 @@ func traceToEnvVarWithDepth(val ssa.Value, visited map[ssa.Value]bool, depth int
 		}
 	}
 
+	// 1b. strings.Split(value, sep) carries the environment variable of its first argument
+	if call, ok := val.(*ssa.Call); ok {
+		if callee := call.Common().StaticCallee(); callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&
+			callee.Pkg.Pkg.Path() == "strings" && callee.Name() == "Split" && len(call.Common().Args) > 0 {
+			return traceToEnvVarWithDepth(call.Common().Args[0], visited, depth+1)
+		}
+	}
+
+	// 1c. A variadic argument list is packed into an array; the element stores carry the environment variable
+	if sl, ok := val.(*ssa.Slice); ok {
+		if alloc, ok := sl.X.(*ssa.Alloc); ok {
+			if v := variadicElementValue(alloc); v != nil {
+				return traceToEnvVarWithDepth(v, visited, depth+1)
+			}
+		}
+	}
+
 	// 2. FreeVar captured in closure: e.g. paymentsAddr captured in http handler closure
 	if fv, ok := val.(*ssa.FreeVar); ok {
 		return TraceCapturedVar(fv)
