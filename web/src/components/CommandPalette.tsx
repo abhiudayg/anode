@@ -189,8 +189,8 @@ export function CommandPalette() {
     },
     {
       id: "doc-changelog",
-      title: "Changelog & Release Notes (v1.5.0 & v1.0.0)",
-      description: "Timeline of releases: hardened deploys and rollback in v1.5.0, anode ps, anode doctor, systemd confinement, and v1.0.0 GA",
+      title: "Changelog & Release Notes (v1.6.0 & v1.0.0)",
+      description: "Timeline of releases: automatic rollback and store migrations in v1.6.0, hardened deploys in v1.5.0, anode ps, anode doctor, systemd confinement, and v1.0.0 GA",
       category: "Documentation",
       href: "/changelog",
       icon: Sparkles,

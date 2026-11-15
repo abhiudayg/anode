@@ -87,7 +87,7 @@ const slide1Svg = `
         <polyline points="22 8.5 12 15.5 2 8.5"/>
       </g>
       <text x="44" y="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, sans-serif" font-size="12" font-weight="700" fill="#38bdf8" letter-spacing="1.2">
-        ANODE v1.5.0 • PROOF-OF-TOPOLOGY
+        ANODE v1.6.0 • PROOF-OF-TOPOLOGY
       </text>
     </g>
 
