@@ -1,0 +1,10 @@
+# Anode project configuration.
+# Versions and runtimes are written by `anode inspect`. Edit them here, then redeploy.
+# runtime = "binary" installs a host binary; "docker" runs the store in a container.
+
+[stores."db-orders-db"]
+runtime = "docker"
+version = "16"
+
+[services."orders"]
+runtime = "binary"

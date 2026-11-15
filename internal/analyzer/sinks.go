@@ -155,7 +155,7 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 			kind = "scylladb"
 		} else if driverStr == "sqlite3" || driverStr == "sqlite" {
 			kind = "sqlite"
-		} else if driverStr != "" {
+		} else if driverStr != "" && driverStr != "pgx" && driverStr != "postgres" {
 			kind = iag.ResourceKind(driverStr)
 		}
 

@@ -150,15 +150,15 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 					continue
 				}
 				driver := reg.Resolve(string(res.Kind))
-				connEnv := driver.BuildConnectionEnv(b.ResourceRef, "127.0.0.1", driver.Networking.PrimaryPort, b.ResourceRef)
+				connEnv := driver.BuildConnectionEnv(b.ResourceRef, "127.0.0.1", driver.Networking.PrimaryPort, b.ResourceRef, secrets[ContainerSecretKey(b.ResourceRef)])
 				if connURL, ok := connEnv["URL"]; ok {
-					envVars[envKey] = connURL
+					secretEnv[envKey] = connURL
 				} else if connURL, ok := connEnv["DSN"]; ok {
-					envVars[envKey] = connURL
+					secretEnv[envKey] = connURL
 				} else if connURL, ok := connEnv["BROKERS"]; ok {
-					envVars[envKey] = connURL
+					secretEnv[envKey] = connURL
 				} else {
-					envVars[envKey] = fmt.Sprintf("%s://127.0.0.1:%d/%s", res.Kind, driver.Networking.PrimaryPort, b.ResourceRef)
+					secretEnv[envKey] = fmt.Sprintf("%s://127.0.0.1:%d/%s", res.Kind, driver.Networking.PrimaryPort, b.ResourceRef)
 				}
 			} else {
 				return fmt.Errorf("service %s binds %s, which is not a declared resource", svc.Name, b.ResourceRef)
@@ -221,11 +221,8 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 				return fmt.Errorf("failed to create env directory: %w", err)
 			}
 			remoteEnvPath := fmt.Sprintf("/etc/anode/env/%s.%s", releaseID, svc.Name)
-			if err := bootstrapper.WriteRemoteFile(envFileContent.String(), remoteEnvPath); err != nil {
+			if err := d.ssh.StreamBytes([]byte(envFileContent.String()), remoteEnvPath, 0o600); err != nil {
 				return fmt.Errorf("failed to write env file for %s: %w", svc.Name, err)
-			}
-			if _, err := d.ssh.Run(fmt.Sprintf("chmod 0600 '%s'", remoteEnvPath)); err != nil {
-				return fmt.Errorf("failed to lock down env file for %s: %w", svc.Name, err)
 			}
 			envFilePath = remoteEnvPath
 		}

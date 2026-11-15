@@ -3,14 +3,13 @@ package deployer
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/abhiudayg/anode/internal/catalog"
 	"github.com/abhiudayg/anode/internal/iag"
 	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
-// CheckRedisLimit rejects a project that would install more than one native Redis on the host. Redis in a container
-// is not limited.
 func CheckRedisLimit(lockfile *iag.LockFile, cfg *projectconfig.File) error {
 	if n := nativeRedisCount(lockfile, cfg); n > 1 {
 		return fmt.Errorf("a project supports one native Redis install, found %d; run the others with runtime = \"docker\"", n)
@@ -45,6 +44,15 @@ func checkDeployInputs(lockfile *iag.LockFile, cfg *projectconfig.File, secrets 
 	if redisCountOf(lockfile) == 1 {
 		if err := validateRedisPassword(secrets[RedisPasswordKey()]); err != nil {
 			return fmt.Errorf("%s in .env: %w", RedisPasswordKey(), err)
+		}
+	}
+	for id, res := range lockfile.Resources {
+		if !res.AutoProvision || cfg.Stores[id].Runtime != projectconfig.RuntimeDocker || catalog.NewRegistry().Resolve(string(res.Kind)).Runtime.PasswordEnv == "" {
+			continue
+		}
+		key := ContainerSecretKey(id)
+		if err := validatePassword(key, secrets[key]); err != nil {
+			return fmt.Errorf("%s in .env: %w", key, err)
 		}
 	}
 
@@ -106,4 +114,8 @@ func DeployInputs(lockfile *iag.LockFile, rootDir string) error {
 		return err
 	}
 	return checkDeployInputs(lockfile, cfg, secrets)
+}
+
+func ContainerSecretKey(resID string) string {
+	return strings.ToUpper(strings.ReplaceAll(resID, "-", "_")) + "_PASSWORD"
 }
