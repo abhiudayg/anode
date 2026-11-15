@@ -2,6 +2,7 @@ package deployer
 
 import (
 	"fmt"
+	"github.com/abhiudayg/anode/internal/iag"
 	"regexp"
 	"strings"
 )
@@ -9,6 +10,9 @@ import (
 var deployUserPattern = regexp.MustCompile(`^[a-z_][a-z0-9_-]{0,31}$`)
 
 func HostSetup(root *SSHClient, deployUser string, publicKey string) error {
+	if err := iag.ValidateLinuxAccount(deployUser); err != nil {
+		return err
+	}
 	if !deployUserPattern.MatchString(deployUser) {
 		return fmt.Errorf("invalid deploy user name %q", deployUser)
 	}

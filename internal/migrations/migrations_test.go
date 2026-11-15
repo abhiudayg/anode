@@ -43,7 +43,7 @@ func (f *fakeClickHouse) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.statement = append(f.statement, sql)
 	switch {
 	case strings.HasPrefix(sql, "SELECT name FROM anode_migrations"):
-		fmt.Fprint(w, strings.Join(f.applied, "\n"))
+		_, _ = fmt.Fprint(w, strings.Join(f.applied, "\n"))
 	case strings.HasPrefix(sql, "INSERT INTO anode_migrations"):
 		start := strings.Index(sql, "VALUES ('") + len("VALUES ('")
 		f.applied = append(f.applied, strings.TrimSuffix(sql[start:], "')"))
@@ -125,5 +125,15 @@ func TestScyllaCredentialsStayOutOfTheCommandLine(t *testing.T) {
 	}
 	if (Scylla{}).cqlshrc() != "" {
 		t.Fatalf("no user means no authentication section")
+	}
+}
+
+func TestScyllaRejectsAKeyspaceOrCredentialThatWouldBreakTheConfig(t *testing.T) {
+	dir := t.TempDir()
+	if _, err := (Scylla{Image: "scylladb/scylla:5.4", Host: "127.0.0.1", Port: "9042", Keyspace: "fraud; DROP"}).Apply(dir); err == nil {
+		t.Fatalf("a keyspace with punctuation must be refused")
+	}
+	if _, err := (Scylla{Image: "scylladb/scylla:5.4", Host: "127.0.0.1", Port: "9042", Keyspace: "fraud", User: "anode", Password: "x\npassword = y"}).Apply(dir); err == nil {
+		t.Fatalf("a multi-line password must be refused")
 	}
 }
