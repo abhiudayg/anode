@@ -93,6 +93,11 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 		if _, err := b.ssh.Run(provisionCmd); err != nil {
 			return fmt.Errorf("failed to provision stateful resource %s: %w", resID, err)
 		}
+		if readiness := driver.ReadinessCommand(resID); readiness != "" {
+			if _, err := b.ssh.Run(readiness); err != nil {
+				return fmt.Errorf("stateful resource %s did not accept connections: %w", resID, err)
+			}
+		}
 	}
 
 	return nil

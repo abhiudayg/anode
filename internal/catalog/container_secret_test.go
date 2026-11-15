@@ -29,7 +29,7 @@ func TestConnectionEnvUsesPassedPassword(t *testing.T) {
 }
 
 func TestNoDefaultPasswordLiteralsRemain(t *testing.T) {
-	for _, kind := range []string{"postgres", "timescaledb", "mysql", "mariadb", "minio"} {
+	for _, kind := range []string{"postgres", "timescaledb", "mysql", "mariadb", "minio", "rabbitmq"} {
 		spec := NewRegistry().Resolve(kind)
 		if spec.Runtime.PasswordEnv == "" {
 			t.Errorf("%s must name its password variable", kind)
@@ -45,5 +45,12 @@ func TestContainerCPUQuotaIsConvertedToCPUs(t *testing.T) {
 	cmd := pg.BuildProvisionCommand("db-orders", "16", "/var/lib/anode/data/db-orders", "/etc/anode/env/db-orders.docker.env")
 	if !strings.Contains(cmd, "--cpus=2 ") {
 		t.Fatalf("a 200%% quota must become --cpus=2, got:\n%s", cmd)
+	}
+}
+
+func TestReadinessCommandWaitsForContainer(t *testing.T) {
+	cmd := NewRegistry().Resolve("postgres").ReadinessCommand("db-orders")
+	if !strings.Contains(cmd, "docker exec 'anode-db-orders' pg_isready") || !strings.Contains(cmd, "seq 1 60") {
+		t.Fatalf("readiness must retry pg_isready inside the container, got: %s", cmd)
 	}
 }
