@@ -74,7 +74,7 @@ const howToJsonLd = {
     {
       "@type": "HowToStep",
       "name": "Spin up a Hetzner Cloud Server",
-      "text": "Create an Ubuntu 24.04 or Debian 12 server on Hetzner Cloud (e.g., CX22) and add your SSH public key.",
+      "text": "Create an Ubuntu 24.04 or Debian 12 server on Hetzner Cloud (a 2 vCPU, 4 GB server) and add your SSH public key.",
       "url": "https://anode.abhiudayg.dev/deploy/hetzner-vps#step-1"
     },
     {
@@ -132,7 +132,7 @@ export default function HetznerDeployPage() {
               Deploy Go Backends to Hetzner VPS Without Docker
             </h1>
             <p className="mt-4 text-base sm:text-lg text-neutral-400 leading-relaxed">
-              A Hetzner CX22 server can run a Go backend without a container runtime. Here is how to deploy one with Anode.
+              A 2 vCPU, 4 GB Hetzner Cloud server can run a Go backend without a container runtime. Here is how to deploy one with Anode.
             </p>
           </header>
 
@@ -148,7 +148,7 @@ export default function HetznerDeployPage() {
                 </div>
               </div>
               <div className="text-2xl font-bold text-emerald-400 font-mono-code">
-                CX22 <span className="text-xs font-normal text-neutral-400">Hetzner Cloud VPS</span>
+                2 vCPU · 4 GB <span className="text-xs font-normal text-neutral-400">Hetzner Cloud VPS</span>
               </div>
             </div>
             <p className="mt-3 text-sm text-neutral-300 leading-relaxed">
@@ -172,7 +172,7 @@ export default function HetznerDeployPage() {
             <ul className="space-y-2 text-sm text-neutral-300 mb-4">
               <li className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-cyan-400 mt-0.5" />
-                <span><strong>Server Type:</strong> CX22 (2 vCPU, 4GB RAM) or CPX11 (2 vCPU, 2GB RAM).</span>
+                <span><strong>Server Type:</strong> any Hetzner Cloud server with 2 vCPU and 2 GB RAM or more, such as CPX11.</span>
               </li>
               <li className="flex items-start gap-2">
                 <Check className="w-4 h-4 text-cyan-400 mt-0.5" />

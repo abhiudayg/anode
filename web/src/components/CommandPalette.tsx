@@ -156,7 +156,7 @@ export function CommandPalette() {
     {
       id: "guide-hetzner",
       title: "Hetzner Cloud VPS Deployment Guide",
-      description: "Run compiled Go microservices on Hetzner CX22 instances",
+      description: "Run compiled Go microservices on Hetzner Cloud instances",
       category: "Guides",
       href: "/deploy/hetzner-vps",
       icon: Server,

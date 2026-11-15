@@ -32,7 +32,7 @@ Synthesizes an immutable, cryptographically verifiable `anode.lock.json` manifes
 | **sample-shop** | 2 services • 2 stores | PostgreSQL, HTTP Ingress |
 | **storefront** | 3 services • 2 stores | PostgreSQL, external egress (Stripe, SendGrid) |
 | **retail-platform** | 12 services • 7 stores | Postgres, Redis, ClickHouse, gRPC |
-| **marketplace** | 32 services • 32 store resources | 11 store kinds, including Temporal, MinIO, ScyllaDB |
+| **marketplace** | 32 services • 35 store resources | 13 store kinds, including Temporal, MinIO, ScyllaDB, Kafka, Qdrant |
 
 ---
 
