@@ -330,6 +330,7 @@ func sortLockfile(lock *iag.LockFile) {
 		sort.SliceStable(svc.Bindings, func(i, j int) bool {
 			return bindingSortKey(svc.Bindings[i]) < bindingSortKey(svc.Bindings[j])
 		})
+		sort.Strings(svc.ConfigEnv)
 		sort.SliceStable(svc.Secrets, func(i, j int) bool {
 			return svc.Secrets[i].EnvVar+svc.Secrets[i].Provenance < svc.Secrets[j].EnvVar+svc.Secrets[j].Provenance
 		})
