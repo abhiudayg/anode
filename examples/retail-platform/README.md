@@ -26,7 +26,7 @@ Run `anode inspect ./examples/retail-platform`. The checked-in `anode.lock.json`
 - 12 services, 7 store resources (PostgreSQL 4, Redis 2, ClickHouse 1), 2 external egress rules, 0 diagnostics.
 - Calls between services are linked by route or by gRPC interface: `apigateway` to `orders` and `auth`, `orders` to `payments` and `ledger`, and `fulfillment` to `notifications`.
 - `analytics` contains a helper, `deadAnalyticsHelper`, that nothing calls. Its `UNUSED_SQLITE_PATH` variable does not appear in the lockfile, so the analysis skips unreachable code.
-- The lockfile records a secret named `_DB_PASSWORD` with no service prefix. It comes from a dynamic environment name and is a known analyzer gap.
+- `pkg/config/loader.go` builds its database variable names at runtime (`servicePrefix + "_DB_PASSWORD"`). Anode cannot resolve those names, so it does not record them as secrets. It reports each one as a warning diagnostic in the lockfile instead. Declare the names in `anode.overrides.json` to include them.
 
 ## Try it
 

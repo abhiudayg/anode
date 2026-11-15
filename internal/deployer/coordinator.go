@@ -19,9 +19,10 @@ import (
 )
 
 type DeployCoordinator struct {
-	rootDir  string
-	ssh      Remote
-	lockfile *iag.LockFile
+	rootDir   string
+	ssh       Remote
+	lockfile  *iag.LockFile
+	activated bool
 }
 
 func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFile) *DeployCoordinator {
@@ -34,6 +35,18 @@ func NewDeployCoordinator(rootDir string, sshClient Remote, lockfile *iag.LockFi
 
 // Deploy uploads a release, restarts each service in place with a health check, and reloads the Caddy edge on the remote VPS
 func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
+	err := d.deploy(ctx, domain)
+	if err == nil || !d.activated {
+		return err
+	}
+	previous, rbErr := Rollback(d.ssh)
+	if rbErr != nil {
+		return fmt.Errorf("%w; automatic rollback also failed: %v", err, rbErr)
+	}
+	return fmt.Errorf("%w; the host was rolled back to release %s", err, previous)
+}
+
+func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 	bootstrapper := NewBootstrapper(d.ssh)
 	releaseID := fmt.Sprintf("%d", time.Now().Unix())
 
@@ -261,6 +274,7 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 			return fmt.Errorf("failed to record unit for %s: %w", svc.Name, err)
 		}
 		unitPath := fmt.Sprintf("/etc/systemd/system/anode-%s.service", svc.Name)
+		d.activated = true
 		if err := bootstrapper.WriteRemoteFile(unitContent, unitPath); err != nil {
 			return fmt.Errorf("failed to write systemd unit for %s: %w", svc.Name, err)
 		}
@@ -289,6 +303,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 	caddyPath := "/etc/caddy/Caddyfile"
 	if err := bootstrapper.WriteRemoteFile(caddyContent, caddyPath); err != nil {
 		return fmt.Errorf("failed to write Caddyfile: %w", err)
+	}
+	if err := bootstrapper.WriteRemoteFile(caddyContent, remoteReleaseDir+"/Caddyfile"); err != nil {
+		return fmt.Errorf("failed to record Caddyfile for release %s: %w", releaseID, err)
 	}
 
 	if _, err := d.ssh.Run("caddy validate --config /etc/caddy/Caddyfile"); err != nil {
@@ -372,6 +389,9 @@ func (d *DeployCoordinator) recordLockHash(releaseID string) error {
 		return fmt.Errorf("serialize lockfile for the release record: %w", err)
 	}
 	sum := sha256.Sum256(data)
+	if err := d.ssh.StreamBytes(data, fmt.Sprintf("/var/lib/anode/releases/%s/anode.lock.json", releaseID), 0o644); err != nil {
+		return fmt.Errorf("record lockfile for release %s: %w", releaseID, err)
+	}
 	path := fmt.Sprintf("/var/lib/anode/releases/%s.lock.sha256", releaseID)
 	if err := d.ssh.StreamBytes([]byte(hex.EncodeToString(sum[:])+"\n"), path, 0o644); err != nil {
 		return fmt.Errorf("record lockfile hash for release %s: %w", releaseID, err)

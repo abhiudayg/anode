@@ -111,7 +111,9 @@ func (l *Loader) LoadAndAnalyze(pattern string) (*iag.LockFile, error) {
 					if call, ok := instr.(ssa.CallInstruction); ok {
 						if common := call.Common(); common != nil {
 							inspector.InspectCall(fn, common, &svc, lockfile)
-							inspector.InspectEnvCall(common, &svc)
+							if d := inspector.InspectEnvCall(common, &svc); d != nil {
+								appendDiagnostic(lockfile, *d)
+							}
 							inspector.InspectMinioBucket(common, &svc)
 						}
 					}
@@ -345,4 +347,13 @@ func sortLockfile(lock *iag.LockFile) {
 
 func bindingSortKey(b iag.Binding) string {
 	return strings.Join([]string{b.ResourceRef, b.ServiceRef, b.Protocol, b.InjectEnv, b.Interface, b.Provenance}, "\x00")
+}
+
+func appendDiagnostic(lock *iag.LockFile, d iag.Diagnostic) {
+	for _, existing := range lock.Diagnostics {
+		if existing == d {
+			return
+		}
+	}
+	lock.Diagnostics = append(lock.Diagnostics, d)
 }

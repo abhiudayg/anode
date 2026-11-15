@@ -93,3 +93,20 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 - Git history is the version history of the lockfile and the overrides file. There are no numbered versions.
 - `anode.state.json` holds deploy state, currently the host port of each container store. Deploy writes it; the config does not carry ports.
 - Each successful release records the SHA-256 of the lockfile it deployed at `/var/lib/anode/releases/<release>.lock.sha256` on the host.
+
+## Rollback and failed deploys
+
+- A deploy that fails after it changes host units restores the previous release automatically: its service units, and its Caddyfile.
+- Each release keeps a copy of its lockfile and its Caddyfile on the host. `anode rollback` checks that the lockfile copy matches the recorded hash before it changes anything, and refuses a release whose record does not match.
+- A release deployed before this change has no lockfile copy or Caddyfile record, so it cannot be restored. Deploy the current version once to create the records.
+- Rollback restores units and routes. It does not undo database migrations, and it does not undo data written while the new release was running.
+
+## Known limits
+
+- Migrations are forward-only. Goose `Down` sections are empty, so `anode migrate` cannot reverse a schema change. Write a corrective migration instead.
+- ClickHouse and ScyllaDB migrations are not run by `anode migrate`. Apply their schema by hand until a runner is chosen; the marketplace README lists the steps.
+- The Temporal store runs the Temporal dev server. It is for development and rehearsal, not for production workflow history.
+- SeaweedFS (the `minio` kind) runs as one node with no replication.
+- The analyzer resolves an environment name only when the whole name is a constant or a constant-only concatenation. A name built at runtime is reported as a warning diagnostic. Declare such names in `anode.overrides.json`.
+- Qdrant collections are created only when they are declared in the lockfile; the analyzer does not infer them from code that builds the name at runtime.
+- Store kinds fall back to `postgres` when the environment name has no engine keyword. Set the kind in `anode.overrides.json` (`resources.<id>.kind`) when that happens.

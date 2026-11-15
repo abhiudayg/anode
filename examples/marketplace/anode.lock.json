@@ -186,7 +186,14 @@
       "kind": "qdrant",
       "lifecycle": "stateful_retain",
       "auto_provision": true,
-      "provenance": "services/recommendations/main.go:74"
+      "provenance": "services/recommendations/main.go:74",
+      "collections": [
+        {
+          "name": "products",
+          "vector_size": 4,
+          "distance": "Cosine"
+        }
+      ]
     },
     "redis-auth": {
       "kind": "redis",

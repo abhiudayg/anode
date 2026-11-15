@@ -440,32 +440,43 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 }
 
 // InspectEnvCall tracks secret usage
-func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
+func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) *iag.Diagnostic {
 	if !s.inProject(call.Pos()) {
-		return
+		return nil
 	}
 	callee := call.StaticCallee()
 	if callee != nil && callee.Name() == "envOr" && len(call.Args) > 0 {
-		if name := ResolveConstantString(call.Args[0]); name != "" && !isSecretEnvName(strings.ToUpper(name)) {
+		if name := completeConstantString(call.Args[0]); name != "" && !isSecretEnvName(strings.ToUpper(name)) {
 			svc.ConfigEnv = appendUnique(svc.ConfigEnv, name)
 		}
-		return
+		return nil
 	}
 	if callee != nil && callee.Name() == "providerURL" && len(call.Args) > 0 {
-		if name := ResolveConstantString(call.Args[0]); name != "" {
+		if name := completeConstantString(call.Args[0]); name != "" {
 			svc.ConfigEnv = appendUnique(svc.ConfigEnv, name)
 		}
-		return
+		return nil
 	}
 	if callee != nil && callee.Pkg != nil && callee.Pkg.Pkg != nil &&
 		callee.Pkg.Pkg.Path() == "os" && callee.Name() == "Getenv" && len(call.Args) > 0 {
-		envName := ResolveConstantString(call.Args[0])
+		envName := completeConstantString(call.Args[0])
+		if envName == "" {
+			if _, forwarded := call.Args[0].(*ssa.Parameter); forwarded {
+				return nil
+			}
+			return &iag.Diagnostic{
+				Level:      "warn",
+				Message:    "environment variable name is built at runtime and was not recorded",
+				Provenance: s.FormatPos(call.Pos()),
+				Suggestion: "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets",
+			}
+		}
 		upper := strings.ToUpper(envName)
-		if envName != "" && upper != "PORT" && !isSecretEnvName(upper) {
+		if upper != "PORT" && !isSecretEnvName(upper) {
 			svc.ConfigEnv = appendUnique(svc.ConfigEnv, envName)
 		}
 		if strings.HasSuffix(upper, "_URL") || strings.HasSuffix(upper, "_ADDR") || strings.HasSuffix(upper, "_HOST") || strings.HasSuffix(upper, "_PORT") {
-			return
+			return nil
 		}
 		if strings.Contains(upper, "SECRET") ||
 			strings.Contains(upper, "TOKEN") ||
@@ -482,6 +493,19 @@ func (s *SinkInspector) InspectEnvCall(call *ssa.CallCommon, svc *iag.Service) {
 			})
 		}
 	}
+	return nil
+}
+
+func completeConstantString(val ssa.Value) string {
+	if binOp, ok := val.(*ssa.BinOp); ok && binOp.Op == token.ADD {
+		left := completeConstantString(binOp.X)
+		right := completeConstantString(binOp.Y)
+		if left == "" || right == "" {
+			return ""
+		}
+		return left + right
+	}
+	return ResolveStringValue(val)
 }
 
 func engineFromEnvName(kind iag.ResourceKind, envVar string) iag.ResourceKind {

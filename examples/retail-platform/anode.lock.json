@@ -98,7 +98,11 @@
           "provenance": "services/apigateway/main.go:26"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "AUTH_SERVICE_URL",
+        "ORDERS_SERVICE_URL"
+      ]
     },
     "auditlog": {
       "name": "auditlog",
@@ -123,7 +127,10 @@
           "provenance": "services/auditlog/main.go:17"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "CLICKHOUSE_AUDIT_URL"
+      ]
     },
     "auth": {
       "name": "auth",
@@ -150,6 +157,9 @@
           "env_var": "JWT_SIGNING_SECRET_KEY",
           "provenance": "services/auth/main.go:18"
         }
+      ],
+      "config_env": [
+        "CACHE_REDIS_ADDR"
       ]
     },
     "catalog": {
@@ -175,7 +185,10 @@
           "provenance": "services/catalog/main.go:17"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "EXTERNAL_CATALOG_DB_URL"
+      ]
     },
     "fulfillment": {
       "name": "fulfillment",
@@ -211,11 +224,9 @@
           "provenance": "services/fulfillment/main.go:15"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "_DB_PASSWORD",
-          "provenance": "pkg/config/loader.go:40"
-        }
+      "secrets": [],
+      "config_env": [
+        "NOTIFICATIONS_SERVICE_URL"
       ]
     },
     "inventory": {
@@ -238,7 +249,10 @@
           "provenance": "services/inventory/main.go:17"
         }
       ],
-      "secrets": []
+      "secrets": [],
+      "config_env": [
+        "CACHE_REDIS_ADDR"
+      ]
     },
     "ledger": {
       "name": "ledger",
@@ -314,11 +328,10 @@
           "provenance": "services/orders/main.go:16"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "_DB_PASSWORD",
-          "provenance": "pkg/config/loader.go:40"
-        }
+      "secrets": [],
+      "config_env": [
+        "LEDGER_GRPC_ADDR",
+        "PAYMENTS_SERVICE_URL"
       ]
     },
     "payments": {
@@ -368,12 +381,7 @@
           "provenance": "services/userprofile/main.go:14"
         }
       ],
-      "secrets": [
-        {
-          "env_var": "_DB_PASSWORD",
-          "provenance": "pkg/config/loader.go:40"
-        }
-      ]
+      "secrets": []
     }
   },
   "egress_rules": [
@@ -390,6 +398,44 @@
       "port": 443,
       "protocol": "https",
       "is_external": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "level": "warn",
+      "message": "environment variable name is built at runtime and was not recorded",
+      "provenance": "pkg/config/loader.go:39",
+      "suggestion": "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets"
+    },
+    {
+      "level": "warn",
+      "message": "environment variable name is built at runtime and was not recorded",
+      "provenance": "pkg/config/loader.go:40",
+      "suggestion": "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets"
+    },
+    {
+      "level": "warn",
+      "message": "environment variable name is built at runtime and was not recorded",
+      "provenance": "pkg/config/loader.go:41",
+      "suggestion": "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets"
+    },
+    {
+      "level": "warn",
+      "message": "environment variable name is built at runtime and was not recorded",
+      "provenance": "pkg/config/loader.go:42",
+      "suggestion": "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets"
+    },
+    {
+      "level": "warn",
+      "message": "environment variable name is built at runtime and was not recorded",
+      "provenance": "pkg/config/loader.go:43",
+      "suggestion": "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets"
+    },
+    {
+      "level": "warn",
+      "message": "environment variable name is built at runtime and was not recorded",
+      "provenance": "pkg/config/loader.go:45",
+      "suggestion": "read the variable by a constant name, or declare it in anode.overrides.json under config_env or secrets"
     }
   ]
 }
