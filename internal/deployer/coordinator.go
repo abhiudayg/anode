@@ -134,6 +134,9 @@ func (d *DeployCoordinator) Deploy(ctx context.Context, domain string) error {
 				configValues[b.ConfigKey] = value
 				continue
 			}
+			if b.ResourceRef == "" {
+				continue
+			}
 			envKey := BindingEnvKey(svc.Name, b)
 
 			if res, exists := d.lockfile.Resources[b.ResourceRef]; exists {
