@@ -10,6 +10,9 @@ import (
 
 func main() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("GET /v1/tax/rates", func(w http.ResponseWriter, r *http.Request) {
 		postal := r.URL.Query().Get("postal_code")
 		if postal == "" {

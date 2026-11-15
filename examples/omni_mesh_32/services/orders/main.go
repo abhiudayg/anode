@@ -32,6 +32,9 @@ func main() {
 	defer pool.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/orders", func(w http.ResponseWriter, r *http.Request) {
 		var o order
 		if err := json.NewDecoder(r.Body).Decode(&o); err != nil || o.ID == "" || o.Quantity <= 0 {

@@ -38,6 +38,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/notifications", func(w http.ResponseWriter, r *http.Request) {
 		var n notification
 		if err := json.NewDecoder(r.Body).Decode(&n); err != nil || n.Email == "" {

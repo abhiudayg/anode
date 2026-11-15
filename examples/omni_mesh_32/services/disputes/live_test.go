@@ -20,7 +20,7 @@ import (
 func TestDisputeWorkflowAgainstTemporalServer(t *testing.T) {
 	addr := os.Getenv("TEMPORAL_LIVE_ADDR")
 	if addr == "" {
-		t.Skip("TEMPORAL_LIVE_ADDR is not set")
+		t.Fatal("TEMPORAL_LIVE_ADDR is not set: run infra/live-test.sh")
 	}
 	var audited atomic.Int32
 	audit := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -30,10 +30,7 @@ func TestDisputeWorkflowAgainstTemporalServer(t *testing.T) {
 	defer audit.Close()
 	t.Setenv("AUDITLOG_SERVICE_URL", audit.URL)
 
-	c, err := client.Dial(client.Options{HostPort: addr})
-	if err != nil {
-		t.Fatalf("dial temporal: %v", err)
-	}
+	c := dialWithRetry(t, addr)
 	defer c.Close()
 
 	queue := "disputes-live-" + time.Now().Format("20060102150405.000000000")
@@ -57,5 +54,21 @@ func TestDisputeWorkflowAgainstTemporalServer(t *testing.T) {
 	}
 	if audited.Load() != 1 {
 		t.Fatalf("audit log received %d records, want 1", audited.Load())
+	}
+}
+
+// dialWithRetry waits for the Temporal server to answer gRPC. The port can accept TCP before the server is ready.
+func dialWithRetry(t *testing.T, addr string) client.Client {
+	t.Helper()
+	deadline := time.Now().Add(90 * time.Second)
+	for {
+		c, err := client.Dial(client.Options{HostPort: addr})
+		if err == nil {
+			return c
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("temporal is not ready: %v", err)
+		}
+		time.Sleep(time.Second)
 	}
 }

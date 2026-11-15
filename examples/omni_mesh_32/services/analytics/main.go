@@ -31,6 +31,9 @@ func main() {
 	defer conn.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/events", func(w http.ResponseWriter, r *http.Request) {
 		var ev event
 		if err := json.NewDecoder(r.Body).Decode(&ev); err != nil || ev.Name == "" {

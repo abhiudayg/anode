@@ -35,6 +35,9 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/webhooks/dispatch", func(w http.ResponseWriter, r *http.Request) {
 		var d dispatch
 		if err := json.NewDecoder(r.Body).Decode(&d); err != nil || d.EventType == "" || d.TargetURL == "" {

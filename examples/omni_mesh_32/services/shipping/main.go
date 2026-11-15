@@ -34,6 +34,9 @@ func main() {
 	defer writer.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/shipments", func(w http.ResponseWriter, r *http.Request) {
 		var req shipmentRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil || req.OrderID == "" || req.ToZip == "" {

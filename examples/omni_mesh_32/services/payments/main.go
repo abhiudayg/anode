@@ -37,6 +37,9 @@ func main() {
 	defer session.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/charges", func(w http.ResponseWriter, r *http.Request) {
 		var c chargeRequest
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil || c.OrderID == "" || c.AmountCents <= 0 {

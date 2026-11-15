@@ -17,6 +17,9 @@ type contact struct {
 
 func main() {
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/crm/contacts", func(w http.ResponseWriter, r *http.Request) {
 		var c contact
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil || c.Email == "" {

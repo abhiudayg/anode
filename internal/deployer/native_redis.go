@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+
+	"github.com/abhiudayg/anode/internal/projectconfig"
 )
 
 const redisStartScript = `#!/bin/sh
@@ -75,7 +77,9 @@ func (b *Bootstrapper) provisionNativeRedis(resID string, port int, password, ve
 	if err != nil {
 		return fmt.Errorf("could not read the redis version on the host: %w", err)
 	}
-	if err := checkRedisVersion(installed, version); err != nil {
+	if version == projectconfig.VersionAuto {
+		fmt.Printf("  ✓ redis %s uses the host's version: %s\n", resID, strings.TrimSpace(installed))
+	} else if err := checkRedisVersion(installed, version); err != nil {
 		return fmt.Errorf("stores.%q: %w", resID, err)
 	}
 

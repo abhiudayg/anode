@@ -25,6 +25,9 @@ func main() {
 	defer cache.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("GET /v1/recommendations/{user}", func(w http.ResponseWriter, r *http.Request) {
 		user := r.PathValue("user")
 		key := "recs:" + user

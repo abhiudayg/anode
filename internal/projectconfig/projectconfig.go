@@ -22,6 +22,9 @@ const (
 	RuntimeDocker = "docker"
 )
 
+// VersionAuto is for binary stores: the version is whatever the host's package provides, read at deploy time.
+const VersionAuto = "auto"
+
 type File struct {
 	Stores   map[string]Store   `toml:"stores"`
 	Services map[string]Service `toml:"services"`
@@ -79,6 +82,9 @@ func (f *File) Validate(lock *iag.LockFile) error {
 				return fmt.Errorf("stores.%q: %s has no binary install; set runtime = %q", id, res.Kind, RuntimeDocker)
 			}
 		case RuntimeDocker:
+			if store.Version == VersionAuto {
+				return fmt.Errorf("stores.%q: version = %q is only for runtime = %q; set an explicit version for docker", id, VersionAuto, RuntimeBinary)
+			}
 		default:
 			return fmt.Errorf("stores.%q.runtime must be %q or %q, got %q", id, RuntimeBinary, RuntimeDocker, store.Runtime)
 		}
@@ -138,12 +144,14 @@ func Ensure(rootDir string, lock *iag.LockFile, defaultVersion func(kind string)
 			continue
 		}
 		runtime := RuntimeDocker
+		version := defaultVersion(string(res.Kind))
 		if HasNativeInstall(string(res.Kind)) {
 			runtime = RuntimeBinary
+			version = VersionAuto
 		}
 		fmt.Fprintf(&b, "\n[stores.%s]\n", strconv.Quote(id))
 		fmt.Fprintf(&b, "runtime = %s\n", strconv.Quote(runtime))
-		fmt.Fprintf(&b, "version = %s\n", strconv.Quote(defaultVersion(string(res.Kind))))
+		fmt.Fprintf(&b, "version = %s\n", strconv.Quote(version))
 		added = append(added, "stores."+id)
 	}
 

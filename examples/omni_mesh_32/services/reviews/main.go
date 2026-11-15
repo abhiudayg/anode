@@ -32,6 +32,9 @@ func main() {
 	reviews := client.Database("reviews").Collection("reviews")
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/reviews", func(w http.ResponseWriter, r *http.Request) {
 		var rv review
 		if err := json.NewDecoder(r.Body).Decode(&rv); err != nil || rv.SKU == "" || rv.Stars < 1 || rv.Stars > 5 {

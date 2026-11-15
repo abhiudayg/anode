@@ -20,7 +20,7 @@ import (
 func TestReturnWorkflowAgainstTemporalServer(t *testing.T) {
 	addr := os.Getenv("TEMPORAL_LIVE_ADDR")
 	if addr == "" {
-		t.Skip("TEMPORAL_LIVE_ADDR is not set")
+		t.Fatal("TEMPORAL_LIVE_ADDR is not set: run infra/live-test.sh")
 	}
 	var picks atomic.Int32
 	warehouse := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -30,10 +30,7 @@ func TestReturnWorkflowAgainstTemporalServer(t *testing.T) {
 	defer warehouse.Close()
 	t.Setenv("WAREHOUSE_SERVICE_URL", warehouse.URL)
 
-	c, err := client.Dial(client.Options{HostPort: addr})
-	if err != nil {
-		t.Fatalf("dial temporal: %v", err)
-	}
+	c := dialWithRetry(t, addr)
 	defer c.Close()
 
 	queue := "workflows-live-" + time.Now().Format("20060102150405.000000000")
@@ -57,5 +54,21 @@ func TestReturnWorkflowAgainstTemporalServer(t *testing.T) {
 	}
 	if picks.Load() != 1 {
 		t.Fatalf("warehouse received %d picks, want 1", picks.Load())
+	}
+}
+
+// dialWithRetry waits for the Temporal server to answer gRPC. The port can accept TCP before the server is ready.
+func dialWithRetry(t *testing.T, addr string) client.Client {
+	t.Helper()
+	deadline := time.Now().Add(90 * time.Second)
+	for {
+		c, err := client.Dial(client.Options{HostPort: addr})
+		if err == nil {
+			return c
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("temporal is not ready: %v", err)
+		}
+		time.Sleep(time.Second)
 	}
 }

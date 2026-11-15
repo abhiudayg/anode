@@ -30,6 +30,9 @@ func main() {
 	cache := memcache.New(os.Getenv("COUPONS_MEMCACHED_ADDR"))
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/coupons", func(w http.ResponseWriter, r *http.Request) {
 		var c coupon
 		if err := json.NewDecoder(r.Body).Decode(&c); err != nil || c.Code == "" || c.PercentOff <= 0 || c.PercentOff > 100 {

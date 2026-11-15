@@ -25,6 +25,9 @@ func main() {
 	defer pool.Close()
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
 	mux.HandleFunc("POST /v1/ledger/entries", func(w http.ResponseWriter, r *http.Request) {
 		var e ledgerEntry
 		if err := json.NewDecoder(r.Body).Decode(&e); err != nil || e.Account == "" {
