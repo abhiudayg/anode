@@ -50,7 +50,24 @@ func TestContainerCPUQuotaIsConvertedToCPUs(t *testing.T) {
 
 func TestReadinessCommandWaitsForContainer(t *testing.T) {
 	cmd := NewRegistry().Resolve("postgres").ReadinessCommand("db-orders")
-	if !strings.Contains(cmd, "docker exec 'anode-db-orders' pg_isready") || !strings.Contains(cmd, "seq 1 60") {
+	if !strings.HasPrefix(cmd, "for i in $(seq 1 60); do docker exec 'anode-db-orders' 'pg_isready' '-U' 'postgres' '-h' '127.0.0.1' >/dev/null") {
 		t.Fatalf("readiness must retry pg_isready inside the container, got: %s", cmd)
+	}
+}
+
+func TestReadinessCommandQuotesEachArgument(t *testing.T) {
+	cmd := NewRegistry().Resolve("scylladb").ReadinessCommand("payments-scylla")
+	if !strings.Contains(cmd, "'cqlsh' '-e' 'describe keyspaces'") {
+		t.Fatalf("a readiness argument with spaces must stay one argument, got: %s", cmd)
+	}
+}
+
+func TestMinioConfigCarriesPasswordNotLiteral(t *testing.T) {
+	name, content, err := NewRegistry().Resolve("minio").RuntimeConfigFile("cms-minio", "placeholder-minio-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if name != "anode-s3.json" || !strings.Contains(content, `"secretKey":"placeholder-minio-secret"`) || !strings.Contains(content, `"accessKey":"anode"`) {
+		t.Fatalf("identity file must use the .env secret, got %s: %s", name, content)
 	}
 }

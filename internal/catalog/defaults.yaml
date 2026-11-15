@@ -409,14 +409,16 @@ drivers:
       default_env:
         RABBITMQ_DEFAULT_USER: "anode"
     security:
-      uid: 999
-      gid: 999
+      uid: 100
+      gid: 101
       file_mode: "0700"
       no_new_privileges: true
       oom_score_adjust: -500
       cgroups:
         memory_max: "1G"
         cpu_quota: "100%"
+    readiness_probe:
+      command: ["rabbitmq-diagnostics", "-q", "ping"]
     networking:
       primary_port: 5672
       bind_interface: "127.0.0.1"
@@ -544,13 +546,16 @@ drivers:
       cgroups:
         memory_max: "4G"
         cpu_quota: "200%"
+    readiness_probe:
+      command: ["cqlsh", "-e", "describe keyspaces"]
+      timeout_sec: 900
     networking:
       primary_port: 9042
       bind_interface: "127.0.0.1"
       protocol: "cql"
     primary_connection: "HOSTS"
     connection_templates:
-      HOSTS: "{{.Host}}"
+      HOSTS: "{{.Host}}:{{.Port}}"
       PORT: "{{.Port}}"
 
   cassandra:
@@ -579,7 +584,7 @@ drivers:
       bind_interface: "127.0.0.1"
       protocol: "cql"
     connection_templates:
-      HOSTS: "{{.Host}}"
+      HOSTS: "{{.Host}}:{{.Port}}"
       PORT: "{{.Port}}"
 
   elasticsearch:
@@ -800,50 +805,57 @@ drivers:
   minio:
     kind: minio
     category: storage
-    default_version: "RELEASE.2024-05-10T01-41-38Z"
+    default_version: "3.68"
+    supported_versions:
+      "3.68":
+        image: "chrislusf/seaweedfs:3.68"
+        notes: "SeaweedFS S3 gateway; serves the S3 API the services use"
     runtime:
-      image_template: "minio/minio:{{.Version}}"
-      command: ["server", "/data", "--console-address", ":9001"]
+      image_template: "chrislusf/seaweedfs:{{.Version}}"
+      command: ["server", "-s3", "-s3.port=8333", "-dir=/data", "-s3.config=/data/anode-s3.json"]
       data_mount: "/data"
       password_env: "MINIO_ROOT_PASSWORD"
-      default_env:
-        MINIO_ROOT_USER: "anode"
+      config_file: "anode-s3.json"
+      config_template: '{"identities":[{"name":"anode","credentials":[{"accessKey":"anode","secretKey":"{{.Password}}"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
     security:
-      uid: 1000
-      gid: 1000
+      uid: 999
+      gid: 999
       file_mode: "0700"
       no_new_privileges: true
+      drop_capabilities: ["ALL"]
+      add_capabilities: ["CHOWN", "DAC_OVERRIDE", "FOWNER", "SETGID", "SETUID"]
       oom_score_adjust: -500
       cgroups:
         memory_max: "1G"
         cpu_quota: "100%"
     networking:
-      primary_port: 9000
+      primary_port: 8333
       bind_interface: "127.0.0.1"
       protocol: "s3"
     primary_connection: "ENDPOINT_ADDR"
     connection_templates:
-      ENDPOINT: "http://{{.Host}}:9000"
+      ENDPOINT: "http://{{.Host}}:{{.Port}}"
       ENDPOINT_ADDR: "{{.Host}}:{{.Port}}"
-      CONSOLE_URL: "http://{{.Host}}:9001"
       ACCESS_KEY: "anode"
       SECRET_KEY: "{{.Password}}"
-
   temporal:
     kind: temporal
     category: workflow_engine
-    default_version: "1.23.1"
+    default_version: "1.10.1"
+    supported_versions:
+      "1.10.1":
+        image: "temporalio/temporal:1.10.1"
+        notes: "Temporal dev server with a persistent SQLite file; the image the live tests use"
     runtime:
-      image_template: "temporalio/auto-setup:{{.Version}}"
-      data_mount: "/etc/temporal/schema"
-      default_env:
-        DB: "sqlite"
-        SQLITE_DB: "/etc/temporal/schema/temporal.db"
+      image_template: "temporalio/temporal:{{.Version}}"
+      command: ["server", "start-dev", "--ip", "0.0.0.0", "--headless", "--db-filename", "/data/temporal.db"]
+      data_mount: "/data"
     security:
       uid: 1000
       gid: 1000
       file_mode: "0700"
       no_new_privileges: true
+      drop_capabilities: ["ALL"]
       oom_score_adjust: -500
       cgroups:
         memory_max: "1G"

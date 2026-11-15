@@ -85,6 +85,13 @@ func (b *Bootstrapper) BootstrapServer(lockfile *iag.LockFile, cfg *projectconfi
 		dataPath := fmt.Sprintf("/var/lib/anode/data/%s", resID)
 
 		fmt.Printf("  ⚙ Bootstrapping production stateful %s (%s, version: %s, image: %s)...\n", resID, res.Kind, store.Version, image)
+		if name, content, err := driver.RuntimeConfigFile(resID, secrets[ContainerSecretKey(resID)]); err != nil {
+			return err
+		} else if name != "" {
+			if err := b.writeContainerConfig(driver, dataPath, name, content); err != nil {
+				return err
+			}
+		}
 		envFile := fmt.Sprintf("/etc/anode/env/%s.docker.env", resID)
 		if err := b.writeContainerEnv(driver, resID, secrets[ContainerSecretKey(resID)], envFile); err != nil {
 			return err
@@ -128,6 +135,21 @@ func (b *Bootstrapper) writeContainerEnv(driver *catalog.DriverSpec, resID, pass
 	}
 	if err := b.ssh.StreamBytes([]byte(driver.RuntimeEnvFile(resID, password)), envFile, 0o600); err != nil {
 		return fmt.Errorf("failed to write container env for %s: %w", resID, err)
+	}
+	return nil
+}
+
+func (b *Bootstrapper) writeContainerConfig(driver *catalog.DriverSpec, dataPath, name, content string) error {
+	owner := fmt.Sprintf("%d:%d", driver.Security.UID, driver.Security.GID)
+	if _, err := b.ssh.Run(fmt.Sprintf("install -d -m 0700 -o %d -g %d '%s'", driver.Security.UID, driver.Security.GID, dataPath)); err != nil {
+		return fmt.Errorf("failed to create data directory %s: %w", dataPath, err)
+	}
+	file := filepath.Join(dataPath, name)
+	if err := b.ssh.StreamBytes([]byte(content), file, 0o600); err != nil {
+		return fmt.Errorf("failed to write %s: %w", file, err)
+	}
+	if _, err := b.ssh.Run(fmt.Sprintf("chown %s '%s' && chmod 0600 '%s'", owner, file, file)); err != nil {
+		return fmt.Errorf("failed to set owner on %s: %w", file, err)
 	}
 	return nil
 }

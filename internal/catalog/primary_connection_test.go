@@ -10,7 +10,7 @@ func TestPrimaryConnectionValueMatchesServiceFormat(t *testing.T) {
 		want string
 	}{
 		{"kafka", 19092, "127.0.0.1:19092"},
-		{"scylladb", 9042, "127.0.0.1"},
+		{"scylladb", 9042, "127.0.0.1:9042"},
 		{"mongodb", 27017, "mongodb://127.0.0.1:27017/db-x?directConnection=true"},
 		{"rabbitmq", 5672, "amqp://anode:test-pass@127.0.0.1:5672/"},
 		{"qdrant", 6333, "http://127.0.0.1:6333"},
