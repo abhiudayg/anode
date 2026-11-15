@@ -59,3 +59,13 @@ The live tests start real stores and run the services against them. They also ne
 - `migrations/<service>/`: SQL for PostgreSQL, MariaDB, ClickHouse, and TimescaleDB, plus CQL for ScyllaDB
 - `infra/`: the live-test stack
 - `livetest/`: live tests for the stores and the external-API services
+
+## Deploying it with dummy provider values
+
+`.env.example` lists every value the deploy needs. Every secret is a placeholder. The provider base URLs point at local stubs, which return fixed responses, so the routes that call a provider answer without real accounts. Replace the placeholders and URLs with real values before a live deploy.
+
+One-time steps the deploy does not do yet:
+
+- Create the Kafka topic `shipments.created` on the store host.
+- Create the MinIO buckets `documents`, `cms-assets`, and `media` on each SeaweedFS store.
+- Apply the migrations with `anode migrate root@<host> <path>`. ClickHouse and Scylla schemas are not covered by that command yet and are applied with their own clients.

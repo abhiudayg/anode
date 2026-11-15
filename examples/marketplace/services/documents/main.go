@@ -49,13 +49,14 @@ func main() {
 	mux.HandleFunc("PUT /v1/documents/{id}", func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		contentType := r.Header.Get("Content-Type")
-		if _, err := objects.PutObject(r.Context(), docBucket, id, r.Body, -1,
+		r.Body = http.MaxBytesReader(w, r.Body, 64<<20)
+		if _, err := objects.PutObject(r.Context(), docBucket, id, r.Body, r.ContentLength,
 			minio.PutObjectOptions{ContentType: contentType}); err != nil {
 			http.Error(w, "upload failed", http.StatusInternalServerError)
 			return
 		}
 		doc := document{ID: id, Title: r.URL.Query().Get("title"), ContentType: contentType, UploadedAt: time.Now().UTC()}
-		if _, err := meta.InsertOne(r.Context(), doc); err != nil {
+		if _, err := meta.ReplaceOne(r.Context(), bson.M{"_id": id}, doc, options.Replace().SetUpsert(true)); err != nil {
 			http.Error(w, "metadata write failed", http.StatusInternalServerError)
 			return
 		}
