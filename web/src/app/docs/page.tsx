@@ -1990,10 +1990,75 @@ terraform -chdir=infra/terraform apply`}</code>
                   </table>
                 </div>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  Public round-trip from a Mac in India to the VM, GET /healthz through Caddy, 20 requests: median 507 ms. Ping to the same address is about 255 ms, so the HTTP figure is roughly two round-trips with little server time. This VM has about a third of the laptop VM&apos;s vCPUs and a quarter of its memory, and it reads the binary from a network disk on every cold start, which explains the slower cold start compared with section 1.
+                  The VM has about a third of the laptop VM&apos;s vCPUs and a quarter of its memory, and it reads the binary from a network disk on every cold start, which explains the slower cold start compared with section 1.
                 </p>
                 <p className="text-sm text-neutral-300 leading-relaxed">
                   Host preparation: anode host-setup needs a root login, and GCE disables root SSH. We did not change that setting. The same three steps host-setup performs were run as the sudo-capable user: create the anode user, install the deploy key, and add a passwordless sudo rule for it. The firewall rule was limited to the operator&apos;s address.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">7. Caddy route-swap time</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  One service that returns its version. Each redeploy is a restart in place. A probe on the GCE VM requests /version through Caddy every 50 ms and records every response. Three redeploys, v4 to v5, v5 to v6, v6 to v7.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Run</th><th className="p-3 text-right">Requests sampled</th><th className="p-3 text-right">Last old to first new response</th><th className="p-3 text-right">Failed (502)</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">1, v4 to v5</td><td className="p-3 text-right">625</td><td className="p-3 text-right text-white">148 ms</td><td className="p-3 text-right">1</td></tr>
+                      <tr><td className="p-3">2, v5 to v6</td><td className="p-3 text-right">908</td><td className="p-3 text-right text-white">152 ms</td><td className="p-3 text-right">1</td></tr>
+                      <tr><td className="p-3">3, v6 to v7</td><td className="p-3 text-right">909</td><td className="p-3 text-right text-white">143 ms</td><td className="p-3 text-right">1</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  No connection failures in any run. The systemd journal for run 1 shows the process was down for about 12 ms; the failed request came about 20 ms after the new process started, before Caddy routed to it. Accurate to about 50 ms, the probe interval. This is one service under a steady request stream, not concurrent load.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">8. Two services and PostgreSQL 15, on GCE</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  The sample-shop stack on the same VM: orders and payments, one PostgreSQL 15 server with two databases. Ready means both health checks return 200 and pg_isready succeeds. Median of 10 interleaved runs.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">anode</th><th className="p-3 text-right">Docker</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">Ready (median)</td><td className="p-3 text-right text-white">4,463 ms</td><td className="p-3 text-right">4,132 ms</td></tr>
+                      <tr><td className="p-3">Idle, services plus PostgreSQL</td><td className="p-3 text-right text-white">83.7 MB</td><td className="p-3 text-right">79.4 MB plus 194.5 MB of daemons</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  On this VM the database start dominates both arms, so the gap is small. Caddy adds 45 MB on the anode side and is excluded.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">9. Twelve services with their own databases, on GCE</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Synthetic services, not a real application: 12 Go services, each with its own PostgreSQL database, each health check pings that database. One PostgreSQL 15 server and the same binaries in both arms. Median of 5 runs.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">anode</th><th className="p-3 text-right">Docker</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">Ready, all 12 (median)</td><td className="p-3 text-right text-white">10.9 s</td><td className="p-3 text-right">8.9 s</td></tr>
+                      <tr><td className="p-3">Idle, services plus PostgreSQL</td><td className="p-3 text-right text-white">337 MB</td><td className="p-3 text-right">315 MB plus 339 MB of daemons</td></tr>
+                      <tr><td className="p-3">Deploy wall time, 12 services</td><td className="p-3 text-right text-white">201 s</td><td className="p-3 text-right">not applicable</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Two things to know. Docker was faster to ready on this run. And with 12 services that all declare GET /healthz, Caddy&apos;s generated config sends that path to one service only, so the other 11 are not reachable through the public route. That is a gap in the edge configuration; it did not affect these readiness numbers, which hit each service&apos;s own port. The deploy time includes compiling 12 binaries; the first build also downloaded lib/pq.
                 </p>
               </div>
 
@@ -2004,7 +2069,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   <li>One service in the single-service tests, with no database. The multi-service test uses a fixture whose handlers never query the database; readiness checks the database separately with pg_isready and a manual SELECT 1.</li>
                   <li>The Docker arm uses default docker run settings. The anode unit has its memory and CPU limits and hardening.</li>
                   <li>anode deploy did not install PostgreSQL. The databases on the anode arm were installed by hand, so the anode arm has one manual step the deploy does not cover.</li>
-                  <li>Not measured: the Caddy route-swap time, the multi-service stack on GCE, or larger service counts with a database.</li>
+                  <li>Not measured: concurrent load during a redeploy, service counts beyond 12, and the public round-trip time (the earlier figure was invalid and has been removed).</li>
                 </ul>
               </div>
 

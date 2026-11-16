@@ -166,9 +166,9 @@ export function BenchmarkSections() {
         <div className="text-center mt-12">
           <p className="text-sm text-neutral-400 max-w-2xl mx-auto">
             Measured on a local OrbStack VM and on a public Google Compute Engine VM (e2-small, us-central1, Debian 12).
-            On GCE the anode cold start was 489 ms against 1,670 ms for Docker, and idle service memory was 5.6 MB against
-            6.5 MB plus 147.5 MB of Docker daemons. Not measured yet: Caddy&apos;s route-swap time, and the multi-service stack
-            on GCE.
+            On GCE: a redeploy is a restart in place, with a window of about 150 ms and one failed request per deploy; the
+            anode cold start was 489 ms against 1,670 ms for Docker; 12 services with their own databases were ready in
+            10.9 s against 8.9 s for Docker. Not measured yet: concurrent load during a redeploy.
           </p>
           <Link
             href="/docs#benchmarks-analysis"

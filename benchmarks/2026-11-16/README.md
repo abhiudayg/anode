@@ -125,7 +125,7 @@ Deploy: `anode deploy anode@<public-ip> . --plain-http`, after the host preparat
 | Idle daemons RSS (dockerd, containerd, shims) | none | 147.5 MB |
 | Caddy edge RSS (anode arm only) | 48.7 MB | not applicable |
 
-Public round-trip from a Mac in India to the VM, `GET /healthz` through Caddy, 20 requests: median 507 ms (min 498 ms). ICMP ping to the same address: median RTT about 255 ms, so the HTTP figure is about two round-trips plus negligible server time.
+Public round-trip: retracted. The 507 ms figure from the first GCE run measured Caddy's empty fallback response, not the service, because the route was not declared in the lockfile (see section 9). It is not a valid result and has been removed from the site.
 
 Compared with the laptop VM in section 2, the anode cold start is about 14 times slower on this host. This VM is a shared-core instance with a network-attached disk, and the page cache is dropped before every run, so each start reads the binary and runtime from disk. We did not profile the cause further.
 
@@ -133,3 +133,58 @@ How the host was prepared:
 
 - `anode host-setup` requires a root login. GCE disables root SSH (`PermitRootLogin no`), and we did not change that setting. We reproduced the three steps `host-setup` performs as the sudo-capable user: create the `anode` user, install the deploy key, and add `anode ALL=(root) NOPASSWD: ALL` in `/etc/sudoers.d/anode-deploy`.
 - The public firewall rule was limited to the operator's address. Both the VM and the rule were removed after the run.
+
+## 9. Caddy route-swap time (GCE, one service)
+
+Scripts: `scripts/gcp/route_swap_probe.sh` (polls `/version` through Caddy every 50 ms from the VM), and the deploy command on the operator's Mac. Results: `results/gcp/route-swap/` (probe logs for three deploys, plus the systemd journal for one of them).
+
+Setup: one service that returns its version string, deployed with `anode deploy`. Each deploy replaces the release with the next version (v4 to v5, v5 to v6, v6 to v7). The probe records every response with its version or failure.
+
+| Run | Requests sampled | Last old-version response to first new-version response | Failed requests (502) |
+|---|---:|---:|---:|
+| 1 (v4 to v5) | 625 | 148 ms | 1 |
+| 2 (v5 to v6) | 908 | 152 ms | 1 |
+| 3 (v6 to v7) | 909 | 143 ms | 1 |
+
+Connection failures to Caddy: none in any run. In run 1 the journal shows the service stopped at .2955 and started again at .3073 (about 12 ms with no process), and the 502 came about 20 ms after the new process started, before the new version was reachable through Caddy. The probe samples every 50 ms, so the window is accurate to about ±50 ms.
+
+What this means: a redeploy is a restart in place, as the architecture page says. A client sees a failed request and a window of roughly 150 ms during which the old and new versions are not served. This was measured with one service and one probe at 50 ms intervals, with a steady request stream. It does not cover concurrent load, long-running requests, or multi-service restarts.
+
+## 10. Multi-service stack on GCE (sample-shop, two services and PostgreSQL 15)
+
+Script: `scripts/stack_bench.sh` (section 4), run on the VM. Results: `results/gcp/stack_2svc_postgres.txt`.
+
+Ready means both health checks return 200 and `pg_isready` succeeds. Median of 10 interleaved runs.
+
+| Arm | Ready (median) | Range |
+|---|---:|---:|
+| anode: apt PostgreSQL and two anode units | 4,463 ms | 4,166 to 4,646 ms |
+| Docker: postgres:15 container and two containers | 4,132 ms | 3,991 to 4,433 ms |
+
+Idle memory after 20 s: anode 83.6 MB (PostgreSQL 67.8 MB, orders 6.9 MB, payments 8.9 MB). Docker 274 MB (PostgreSQL 62.7 MB, services 16.7 MB, daemons 194.5 MB). Caddy adds 45.1 MB on the anode side and is excluded from the total.
+
+On this VM the database start dominates both arms, and the gap is small. The laptop VM result in section 4 is much larger for the anode arm, because apt PostgreSQL starts more slowly here than on the laptop.
+
+## 11. Larger service count with a database (GCE, 12 services)
+
+Scripts: `scripts/gcp/many_bench.sh`. Results: `results/gcp/many12_postgres.txt`.
+
+The services are synthetic, not a real application. Each one is a Go `net/http` service that opens its own PostgreSQL database with `database/sql` and `lib/pq`, and its `GET /healthz` pings that database. Every service runs `anode inspect` and `anode deploy` as a separate unit. There are 12 services, 12 databases, one PostgreSQL 15 server, and the same binaries in both arms.
+
+Deploy: `anode deploy` for all 12 services took 201 seconds of wall time, including cross-compiling each binary. The first build of the module had to download `lib/pq`; a later deploy would be shorter, but we did not measure that.
+
+Ready means all 12 health checks return 200. Each check pings its own database. Median of 5 runs.
+
+| Arm | Ready (median) | Range |
+|---|---:|---:|
+| anode: apt PostgreSQL and 12 anode units | 10.9 s | 10.4 to 11.2 s |
+| Docker: postgres:15 container and 12 containers | 8.9 s | 8.7 to 9.1 s |
+
+Idle memory after 20 s: anode 112 MB across the 12 services, plus PostgreSQL 226 MB. Docker 101 MB across the 12 containers, plus PostgreSQL 214 MB, plus 339 MB of daemons. Caddy adds 52 MB on the anode side and is excluded.
+
+Two findings from this run:
+
+- Docker was faster to ready here. The anode arm's extra time is mostly PostgreSQL startup and unit start-up order; we did not profile it further.
+- With 12 services, all declaring `GET /healthz`, Caddy's generated config sends `/healthz` to a single service. The other services are not reachable through the public route. This is a routing gap in the generated edge configuration, and it did not affect the readiness measurements, which hit each service's own port.
+
+Notes on this run: the first Docker arm did not become ready because the Postgres container had been created earlier for a smaller stack and never received the 12 new databases. That run is excluded. The results above come from a rerun after the roles and databases were created.
