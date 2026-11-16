@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { EcosystemBar } from "@/components/EcosystemBar";
-import { BenchmarkCharts } from "@/components/BenchmarkCharts";
+import { BenchmarkSections } from "@/components/BenchmarkSections";
 import { DriftComparison } from "@/components/DriftComparison";
 import { BentoPillars } from "@/components/BentoPillars";
 import { FAQSection } from "@/components/FAQSection";
@@ -15,7 +15,7 @@ export default function Home() {
       <MainOrangeArrow />
       <Hero />
       <EcosystemBar />
-      <BenchmarkCharts />
+      <BenchmarkSections />
       <DriftComparison />
       <BentoPillars />
       <FAQSection />

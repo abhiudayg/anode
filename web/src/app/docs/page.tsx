@@ -1803,7 +1803,44 @@ terraform -chdir=infra/terraform apply`}</code>
             {/* 9. BENCHMARKS ANALYSIS */}
               <div className={effectiveDoc === "benchmarks-analysis" ? "block space-y-6 leading-relaxed" : "hidden"}>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  No benchmark results are published yet. Earlier figures on this site were not backed by recorded runs, so they have been removed. Measurements will be published only with the hardware, the command, and the raw output that produced them.
+                  Measured on one Go service with no database. Hardware: OrbStack Debian 12 VM on Apple Silicon (arm64), 7 vCPU, 8 GB RAM, Docker 20.10.24, anode 1.6.0. Both arms run the same static Linux binary that anode deploy produced. Earlier figures on this site were not backed by recorded runs and have been replaced with these.
+                </p>
+                <div className="overflow-x-auto my-6">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400 border-b border-white/[0.08]">
+                      <tr>
+                        <th className="p-3 text-left">Measure</th>
+                        <th className="p-3 text-left text-white">Anode (systemd unit)</th>
+                        <th className="p-3 text-left">Docker (container)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] bg-[#0a0a0c]/50">
+                      <tr>
+                        <td className="p-3 font-semibold text-white">Cold start to /healthz 200 (median of 10, page cache dropped)</td>
+                        <td className="p-3 text-emerald-400 font-bold">35 ms (range 32 to 37 ms)</td>
+                        <td className="p-3 text-neutral-400">607 ms (range 592 to 914 ms)</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-semibold text-white">Idle service process RSS (20 s after health check)</td>
+                        <td className="p-3 text-emerald-400 font-bold">5.5 MB</td>
+                        <td className="p-3 text-neutral-400">5.8 MB</td>
+                      </tr>
+                      <tr>
+                        <td className="p-3 font-semibold text-white">Idle total including runtime daemons</td>
+                        <td className="p-3 text-emerald-400 font-bold">5.5 MB</td>
+                        <td className="p-3 text-neutral-400">102.4 MB (dockerd, containerd and shims 96.6 MB)</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Config: the anode unit runs with DynamicUser, MemoryMax=1G and CPUQuota=200%. The Docker container uses plain docker run defaults, with no memory limit or extra hardening. Cold start is measured from systemctl start or docker run until a TCP connection returns HTTP 200 on /healthz, timed with a microsecond clock, with page caches dropped before each run. Running the same binary directly with no supervisor reaches a 200 in a median of 4.7 ms (range 3.7 to 6.9 ms). Where the anode time goes, from the same session with 10 runs per variant: a bare systemd unit takes 11 ms, and the anode unit without DynamicUser takes 12 ms, so the sandbox directives add about 1 ms. The full anode unit takes 32 ms, so DynamicUser adds about 20 ms per start. Anode keeps DynamicUser because its isolation policy requires it, so that cost is part of the anode cold start.
+                </p>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Analyzer timing (anode inspect, median of 5 runs, Apple Silicon Mac): sample-shop 1.10 s, storefront 1.19 s, retail-platform 2.21 s, marketplace 8.81 s. Each run produced an identical lockfile hash. Peak analyzer memory is 0.7 to 2.8 GB, which is build-time memory and is not comparable to service memory.
+                </p>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Not measured yet: multi-service stacks with PostgreSQL, and a live deploy to a remote host. The Docker comparison ran on a local VM, not a production server.
                 </p>
               </div>
 
