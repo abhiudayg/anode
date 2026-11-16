@@ -1971,14 +1971,40 @@ terraform -chdir=infra/terraform apply`}</code>
                 </p>
               </div>
 
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">6. Remote host: Google Compute Engine</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  A public VM, not a laptop: Debian 12 on an e2-small (2 shared vCPU, 2 GB RAM), 10 GB standard persistent disk, Spot provisioning, us-central1-a. The same anode release binary runs in both arms. Median of 10 runs; page cache dropped before each. The VM was created for the run and deleted afterwards.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">anode unit</th><th className="p-3 text-right">Docker container</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">Cold start to /healthz 200 (median of 10)</td><td className="p-3 text-right text-white">489 ms (188 to 744 ms)</td><td className="p-3 text-right">1,670 ms (1,474 to 2,368 ms)</td></tr>
+                      <tr><td className="p-3">Idle service RSS, 20 s after ready</td><td className="p-3 text-right text-white">5.6 MB</td><td className="p-3 text-right">6.5 MB</td></tr>
+                      <tr><td className="p-3">Idle daemons RSS (dockerd, containerd, shims)</td><td className="p-3 text-right">none</td><td className="p-3 text-right">147.5 MB</td></tr>
+                      <tr><td className="p-3">Caddy edge RSS (anode only)</td><td className="p-3 text-right">48.7 MB</td><td className="p-3 text-right">not applicable</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Public round-trip from a Mac in India to the VM, GET /healthz through Caddy, 20 requests: median 507 ms. Ping to the same address is about 255 ms, so the HTTP figure is roughly two round-trips with little server time. This VM has about a third of the laptop VM&apos;s vCPUs and a quarter of its memory, and it reads the binary from a network disk on every cold start, which explains the slower cold start compared with section 1.
+                </p>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Host preparation: anode host-setup needs a root login, and GCE disables root SSH. We did not change that setting. The same three steps host-setup performs were run as the sudo-capable user: create the anode user, install the deploy key, and add a passwordless sudo rule for it. The firewall rule was limited to the operator&apos;s address.
+                </p>
+              </div>
+
               <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-5 space-y-3">
                 <h3 className="text-sm font-bold text-amber-300">What these numbers do not show</h3>
                 <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
-                  <li>One laptop and one VM. The VM sits on the same Mac, so it is not a public VPS and has no real network latency.</li>
+                  <li>Two hosts: a local OrbStack VM on the same Mac, and a public Google Compute Engine VM (e2-small, shared core, Spot). The GCE VM is much smaller than the laptop VM, so its numbers are not interchangeable with the local ones.</li>
                   <li>One service in the single-service tests, with no database. The multi-service test uses a fixture whose handlers never query the database; readiness checks the database separately with pg_isready and a manual SELECT 1.</li>
                   <li>The Docker arm uses default docker run settings. The anode unit has its memory and CPU limits and hardening.</li>
                   <li>anode deploy did not install PostgreSQL. The databases on the anode arm were installed by hand, so the anode arm has one manual step the deploy does not cover.</li>
-                  <li>Not measured: a remote VPS, the Caddy route-swap time, or larger service counts with a database.</li>
+                  <li>Not measured: the Caddy route-swap time, the multi-service stack on GCE, or larger service counts with a database.</li>
                 </ul>
               </div>
 
