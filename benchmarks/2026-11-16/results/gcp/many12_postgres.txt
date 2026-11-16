@@ -1,0 +1,21 @@
+trial	arm	ready_us
+1	anode-12	11030002
+1	docker-12	8848431
+2	anode-12	11204601
+2	docker-12	8703895
+3	anode-12	10354219
+3	docker-12	9078780
+4	anode-12	10741818
+4	docker-12	8862073
+5	anode-12	10937605
+5	docker-12	8815973
+===
+anode-12	services_rss_kb	111668
+anode-12	postgres_rss_kb	225532
+anode-12	cgroup_services_bytes	138330112
+anode-12	caddy_edge_rss_kb	51760
+docker-12	services_rss_kb	100820
+docker-12	postgres_rss_kb	214164
+docker-12	daemons_rss_kb	339428
+===
+0
