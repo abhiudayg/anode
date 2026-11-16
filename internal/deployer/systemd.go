@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"sort"
 	"strings"
 	"text/template"
 
@@ -130,35 +131,66 @@ func GenerateCaddyfile(domain string, lockfile *iag.LockFile, servicePortMap map
 	sb.WriteString(fmt.Sprintf("%s {\n", siteAddress))
 	sb.WriteString("  encode gzip zstd\n")
 
-	for _, svc := range lockfile.Services {
-		port := servicePortMap[svc.Name]
+	names := make([]string, 0, len(lockfile.Services))
+	for name := range lockfile.Services {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	claimed := make(map[string]bool)
+	for _, name := range names {
+		svc := lockfile.Services[name]
+		port := servicePortMap[name]
 		if port == 0 {
 			port = 8080
 		}
+		seen := make(map[string]bool)
 		for _, ing := range svc.Ingress {
 			for _, r := range ing.Routes {
-				parts := strings.Split(r, " ")
-				path := r
-				if len(parts) == 2 {
-					path = parts[1]
-				}
-				cleanPath := strings.TrimSpace(path)
-				if strings.ContainsAny(cleanPath, "\r\n") {
+				path := caddyRoutePath(r)
+				if path == "" || seen[path] {
 					continue
 				}
-				if i := strings.Index(cleanPath, "{"); i >= 0 {
-					cleanPath = cleanPath[:i]
-				}
-				if cleanPath == "" || cleanPath == "/" {
+				seen[path] = true
+				if !claimed[path] {
+					claimed[path] = true
+					writeCaddyRoute(&sb, path, "", port)
 					continue
 				}
-				sb.WriteString(fmt.Sprintf("  handle %s* {\n", cleanPath))
-				sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d\n", port))
-				sb.WriteString("  }\n")
+				prefix := "/" + name
+				writeCaddyRoute(&sb, prefix+path, prefix, port)
 			}
 		}
 	}
 
 	sb.WriteString("}\n")
 	return sb.String()
+}
+
+// caddyRoutePath returns the static path of a route such as "POST /v1/orders", or "" if the route has none.
+func caddyRoutePath(route string) string {
+	path := route
+	if parts := strings.Split(route, " "); len(parts) == 2 {
+		path = parts[1]
+	}
+	path = strings.TrimSpace(path)
+	if strings.ContainsAny(path, "\r\n") {
+		return ""
+	}
+	if i := strings.Index(path, "{"); i >= 0 {
+		path = path[:i]
+	}
+	if path == "" || path == "/" {
+		return ""
+	}
+	return path
+}
+
+// writeCaddyRoute writes one handle block. A non-empty strip removes the service prefix before proxying.
+func writeCaddyRoute(sb *strings.Builder, public, strip string, port int) {
+	sb.WriteString(fmt.Sprintf("  handle %s* {\n", public))
+	if strip != "" {
+		sb.WriteString(fmt.Sprintf("    uri strip_prefix %s\n", strip))
+	}
+	sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d\n", port))
+	sb.WriteString("  }\n")
 }
