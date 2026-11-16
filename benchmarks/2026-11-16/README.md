@@ -217,3 +217,20 @@ Two findings about the example as shipped:
 - None of the HTTP services has a `GET /healthz` route, and `anode deploy` refuses to activate a release without one. The patch adds it.
 
 Not run in this section: the Docker arm for these 12 services, and the marketplace example (35 stores across 15 kinds, many of them images). Section 11's 12-service numbers were measured on the older Caddy config.
+
+## 13. Marketplace (32 services, 35 stores) on GCE, e2-standard-8
+
+Results: `results/gcp/marketplace/SUMMARY.txt`. Raw 502 timestamps are in the same folder.
+
+| Measure | Result |
+|---|---|
+| Cold start, 32 service units restarted together (3 trials, stores running) | 3.2 to 3.4 s |
+| Idle service memory, 32 units | 390 MB |
+| Idle Docker daemons (32 containers) | 908 MB |
+| Store containers | ~3.6 GB |
+| Redeploy under load: 50 clients, 15 min, whole project redeployed, requests / errors / 502 | 10,969,942 / 0 / 3,127 (0.028%) |
+| Failure window | 299 ms, all 502s inside the restart gap |
+
+Seven stores are `runtime = "external"` in the example's `anode.toml`, so the operator provides them. We ran them by hand as four containers (TimescaleDB, CockroachDB, ClickHouse, Scylla). The services accept placeholder values for external APIs, which means the API-dependent paths are not exercised.
+
+The Docker arm for these services and the OrbStack run were not done in this section.
