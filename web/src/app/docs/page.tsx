@@ -1390,93 +1390,88 @@ Run 'anode COMMAND --help' for more information on a command.`}
 
             {/* 4. SSA & VTA */}
             <div className={effectiveDoc === "ssa-vta" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
-                  Compiler Pipeline
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                  SSA & Variable Type Analysis (VTA)
-                </h2>
-                <p className="text-sm text-neutral-300">
-                  How Anode eliminates false positives and constructs a provably sound infrastructure topology.
-                </p>
+              <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
+                Compiler pipeline
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">SSA and Variable Type Analysis (VTA)</h2>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                Anode decides what a service can reach by looking at the code that <code className="text-neutral-200">main()</code> can actually call. Only that code can contribute infrastructure: a database driver used only by a test, or a helper nothing calls, does not appear in the lockfile. The analysis lives in <code className="text-neutral-200">internal/analyzer/</code>.
+              </p>
 
-                <h3 className="text-base font-bold text-white">Why Class Hierarchy Analysis (CHA) Fails</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Traditional dead-code pruning relies on Class Hierarchy Analysis (CHA). CHA is fundamentally unsound for infrastructure deduction because it assumes that if a struct satisfies an interface, it can be called anywhere that interface is accepted. When projects import SQLite or in-memory mocks for testing, CHA falsely links those databases into the production topology.
-                </p>
+              <h3 className="text-lg font-bold text-white mt-8">Why not class hierarchy analysis</h3>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                Class hierarchy analysis (CHA) treats any type that satisfies an interface as a possible target of every call through that interface. In a service with a production Postgres driver and a SQLite test double, CHA would count both, and the test double would appear in the topology. VTA tracks which concrete types can flow into each interface value, so the test double is excluded unless it reaches <code className="text-neutral-200">main()</code>.
+              </p>
+              <pre className="rounded-xl border border-white/[0.08] bg-[#050507] p-4 text-xs font-mono-code text-neutral-300 overflow-x-auto whitespace-pre">{`type Database interface { Query(...) }
+type SQLiteMock struct{ ... }     // used only by *_test.go
+type PostgresDriver struct{ ... } // used by main()
+// CHA: both types are candidates for Database.Query
+// VTA: only PostgresDriver flows from main(), so only it is kept`}</pre>
 
-                <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 space-y-2">
-                  <div className="text-neutral-500">{"// Problem with CHA:"}</div>
-                  <div className="text-red-400">type Database interface {'{'} Query(...) {'}'}</div>
-                  <div className="text-red-400">type SQLiteMock struct {'{...}'} {"// test helper"}</div>
-                  <div className="text-red-400">type PostgresDriver struct {'{...}'} {"// production"}</div>
-                  <div className="text-neutral-400">↳ CHA cannot distinguish which struct actually flows into `main()`!</div>
-                </div>
+              <h3 className="text-lg font-bold text-white mt-8">What the analyzer does, in order</h3>
+              <ol className="list-decimal list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
+                <li>Loads the workspace with <code className="text-neutral-200">golang.org/x/tools/go/packages</code> and builds SSA with <code className="text-neutral-200">ssa.InstantiateGenerics</code>. Expressions and branches become explicit SSA instructions such as <code className="text-neutral-200">Call</code>, <code className="text-neutral-200">Store</code> and <code className="text-neutral-200">FieldAddr</code>.</li>
+                <li>Builds a VTA call graph (<code className="text-neutral-200">golang.org/x/tools/go/callgraph/vta</code>) rooted at <code className="text-neutral-200">func main()</code>.</li>
+                <li>Runs the sink checks (the <a href="#choke-points" className="underline underline-offset-4 hover:text-white">choke points</a>) only on reachable functions.</li>
+                <li>Traces configuration values backwards from each sink (taint tracking), then links services to each other and to external hosts.</li>
+              </ol>
 
-                <h3 className="text-base font-bold text-white pt-2">The Solution: Variable Type Analysis (VTA)</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  Anode uses Variable Type Analysis (<code className="text-neutral-300">golang.org/x/tools/go/callgraph/vta</code>):
-                </p>
-                <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-white/[0.15]">
-                  <p>1. Type propagation is calculated strictly through <strong>explicit assignment edges</strong>.</p>
-                  <p>2. The reachability graph is rooted strictly at <code className="text-neutral-200">func main()</code>.</p>
-                  <p>3. Any helper function, test suite, or uncalled database driver is mathematically excluded from the final lockfile.</p>
-                </div>
-              </div>
+              <h3 className="text-lg font-bold text-white mt-8">What this does not cover</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
+                <li>Go&apos;s call-graph analyses do not follow reflection or plugin-loaded code. Infrastructure reached only through those paths is not found by the analysis.</li>
+                <li>The analysis reads source, not runtime configuration. A DSN assembled from a value that only exists at runtime is traced only as far as the code shows where each part comes from.</li>
+                <li>Results depend on the Go toolchain and module versions used. Re-run <code className="text-neutral-200">anode inspect</code> after upgrading either.</li>
+              </ul>
+              <p className="text-xs font-mono-code text-neutral-500">Source: docs/architecture.md, section 2; internal/analyzer/</p>
+            </div>
 
             {/* 5. STDLIB CHOKE POINTS */}
             <div className={effectiveDoc === "choke-points" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
-                  Static Analysis Sinks
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                  Standard Library Choke Points
-                </h2>
-                <p className="text-sm text-neutral-300">
-                  Instead of tracking 500 third-party web frameworks, Anode hooks into Go standard library and foundational networking choke points.
-                </p>
+              <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
+                Static analysis sinks
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Standard-library choke points</h2>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                Anode does not keep a list of third-party libraries. It looks for a small set of calls that a service has to make to open a port, open a database, or reach another service. These are the sinks. Each sink in reachable code becomes a lockfile entry with a file and line.
+              </p>
 
-                <div className="space-y-4">
-                  <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h3 className="text-xs font-bold text-white font-mono-code">1. Ingress Network Listeners</h3>
-                    <p className="text-xs text-neutral-300">
-                      Anode inspects calls to <code className="text-neutral-200">net/http.ListenAndServe</code>, <code className="text-neutral-200">net.Listen</code>, and popular routers (<code className="text-neutral-200">chi</code>, <code className="text-neutral-200">gin</code>, <code className="text-neutral-200">echo</code>, stdlib 1.27+ <code className="text-neutral-200">http.ServeMux</code>).
-                    </p>
-                    <pre className="p-3 rounded-lg bg-black/50 border border-white/[0.04] text-[11px] font-mono-code text-neutral-200">
-                      <code>{`// Automatically deduces listen port env and route endpoints
-mux.HandleFunc("POST /v1/orders", handlers.CreateOrder)
-http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
-                    </pre>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h3 className="text-xs font-bold text-emerald-400 font-mono-code">2. Database Drivers & Connection Pools</h3>
-                    <p className="text-xs text-neutral-300">
-                      Hooks into <code className="text-neutral-200">database/sql.Open(driverName, dsn)</code> and <code className="text-neutral-200">github.com/jackc/pgx/v5/pgxpool.New</code>.
-                    </p>
-                    <p className="text-xs text-neutral-400">
-                      If the driver is postgres or mysql, Anode checks for schema assets in <code className="text-neutral-200">./migrations/*.sql</code>. If present, it marks <code className="text-emerald-400">auto_provision: true</code>.
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h3 className="text-xs font-bold text-white font-mono-code">3. Typed gRPC Stubs & Route Linker</h3>
-                    <p className="text-xs text-neutral-300">
-                      Matches generated Protobuf constructors (<code className="text-neutral-200">New&lt;Service&gt;Client</code>) with server registrations (<code className="text-neutral-200">Register&lt;Service&gt;Server</code>) 1:1, wiring cross-service addresses automatically.
-                    </p>
-                  </div>
-
-                  <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06] space-y-2">
-                    <h3 className="text-xs font-bold text-yellow-400 font-mono-code">4. Recursive Backward Taint Tracking</h3>
-                    <p className="text-xs text-neutral-300">
-                      Real-world services construct connection strings dynamically via structs or <code className="text-neutral-200">fmt.Sprintf</code>.
-                    </p>
-                    <p className="text-xs text-neutral-400">
-                      In <code className="text-neutral-200 font-mono-code">internal/analyzer/taint.go</code>, Anode traces backwards through <code className="text-neutral-300">ssa.Store</code>, <code className="text-neutral-300">ssa.FieldAddr</code>, and varargs slices to discover constituent variables: <code className="text-yellow-300 font-mono-code">DB_HOST</code>, <code className="text-yellow-300 font-mono-code">DB_PORT</code>, <code className="text-yellow-300 font-mono-code">DB_USER</code>.
-                    </p>
-                  </div>
-                </div>
+              <h3 className="text-lg font-bold text-white mt-8">The sinks the analyzer recognises</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                  <thead className="bg-[#07080a] text-neutral-400">
+                    <tr><th className="p-3 text-left">Kind</th><th className="p-3 text-left">Calls matched</th><th className="p-3 text-left">Lockfile output</th></tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                    <tr><td className="p-3">Ingress</td><td className="p-3"><code>ServeMux.HandleFunc</code> (with a method and path pattern); chi <code>Get</code>, <code>Post</code>, <code>Put</code>, <code>Delete</code></td><td className="p-3">Route patterns such as <code>POST /v1/orders</code>, and the port variable (<code>PORT</code>)</td></tr>
+                    <tr><td className="p-3">Database</td><td className="p-3"><code>database/sql.Open</code>, <code>pgxpool.New</code></td><td className="p-3">A postgres resource, the DSN source, and whether migrations exist</td></tr>
+                    <tr><td className="p-3">Cache</td><td className="p-3">go-redis <code>NewClient</code></td><td className="p-3">A redis resource and its address source</td></tr>
+                    <tr><td className="p-3">Typed RPC</td><td className="p-3"><code>Register&lt;X&gt;Server</code> and <code>New&lt;X&gt;Client</code></td><td className="p-3">A binding from the calling service to the serving service</td></tr>
+                    <tr><td className="p-3">Outbound HTTP</td><td className="p-3">Request URLs built from configuration plus a route path</td><td className="p-3">A binding to the service that serves the route, or an egress rule for an external host</td></tr>
+                  </tbody>
+                </table>
               </div>
+
+              <h3 className="text-lg font-bold text-white mt-8">What it looks like in sample-shop</h3>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                In <code className="text-neutral-200">examples/sample-shop/orders/main.go</code>, the database sink is the <code className="text-neutral-200">sql.Open</code> call at line 49 and the route sink is <code className="text-neutral-200">POST /v1/orders</code> at line 59. The lockfile records both, with the environment variable for the DSN (<code className="text-neutral-200">ORDERS_DB_URL</code>) and the port variable.
+              </p>
+              <pre className="rounded-xl border border-white/[0.08] bg-[#050507] p-4 text-xs font-mono-code text-neutral-300 overflow-x-auto whitespace-pre">{`db, err := sql.Open("postgres", cfg.DatabaseURL)   // sink: database
+mux.HandleFunc("POST /v1/orders", ...)             // sink: ingress route
+req, _ := http.NewRequestWithContext(ctx, "POST",
+    cfg.PaymentService+"/v1/charges", nil)         // outbound: matched to payments`}</pre>
+
+              <h3 className="text-lg font-bold text-white mt-8">Migrations decide auto-provisioning</h3>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                A database is marked <code className="text-neutral-200">auto_provision: true</code> only when migration files exist. The analyzer looks in <code className="text-neutral-200">migrations/&lt;service&gt;/</code> first, then in a root <code className="text-neutral-200">migrations/</code> directory. Without migrations, the database is treated as an external dependency that someone else manages. The sample apps have no migration files, so both of their databases are external.
+              </p>
+
+              <h3 className="text-lg font-bold text-white mt-8">Known gaps</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
+                <li>Route detection works for <code className="text-neutral-200">ServeMux</code> methods and chi. A package-level <code className="text-neutral-200">http.HandleFunc</code> call is not detected, so its routes are missing from the lockfile. We hit this while measuring: the service ran, but the edge had no route to it.</li>
+                <li>gin, echo and fiber routes are not recognised, so their routes will not appear in the ingress table.</li>
+              </ul>
+              <p className="text-xs font-mono-code text-neutral-500">Source: docs/architecture.md, section 2 (phase 3); internal/analyzer/sinks.go, client_sinks.go, taint.go; examples/sample-shop/orders/main.go</p>
+            </div>
 
             {/* 6. LOCKFILE SPEC */}
             <div className={effectiveDoc === "lockfile-spec" ? "block space-y-6 leading-relaxed" : "hidden"}>
@@ -1548,43 +1543,38 @@ http.ListenAndServe(":" + os.Getenv("PORT"), mux)`}</code>
 
             {/* 7. DEV ENGINE */}
             <div className={effectiveDoc === "dev-engine" ? "block space-y-6 leading-relaxed" : "hidden"}>
-                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40">
-                  Local Orchestration
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-                  Dynamic Port Allocator & Local Engine
-                </h2>
-                <p className="text-sm text-neutral-300">
-                  How Anode completely eliminates Docker Compose port collisions on developer workstations.
-                </p>
+              <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
+                Local orchestration
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Dynamic ports and the local engine</h2>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                <code className="text-neutral-200">anode dev</code> runs the services from the lockfile on your machine. It is implemented in <code className="text-neutral-200">internal/devengine/</code>. Its job is to avoid fixed host ports, so two projects, or a local PostgreSQL, cannot collide.
+              </p>
 
-                <h3 className="text-base font-bold text-white">The Ephemeral Kernel Bind Strategy</h3>
-                <p className="text-xs text-neutral-400 leading-relaxed">
-                  In Docker Compose, services declare fixed host ports like <code className="text-neutral-200">5432:5432</code> or <code className="text-neutral-200">8080:8080</code>. When developers work on multiple microservices or have a local PostgreSQL daemon running, startup crashes with <code className="text-red-400">bind: address already in use</code>.
-                </p>
+              <h3 className="text-lg font-bold text-white mt-8">Free-port allocation</h3>
+              <p className="text-sm text-neutral-300 leading-relaxed">
+                Each service and each database container gets a loopback port that the OS chooses: the engine asks for a free port on 127.0.0.1 (port 0). The port is free when it is read, and nothing reserves it afterwards. Redis is the one exception: dev uses the fixed address 127.0.0.1:6379.
+              </p>
+              <pre className="rounded-xl border border-white/[0.08] bg-[#050507] p-4 text-xs font-mono-code text-neutral-300 overflow-x-auto whitespace-pre">{`// internal/devengine/engine.go (simplified)
+l, _ := net.ListenTCP("tcp", &net.TCPAddr{IP: net.ParseIP("127.0.0.1"), Port: 0})
+port := l.Addr().(*net.TCPAddr).Port`}</pre>
 
-                <div className="p-4 rounded-xl bg-[#06070a] border border-white/[0.06] text-xs font-mono-code text-neutral-300 space-y-2">
-                  <div className="text-white">{"// internal/devengine/engine.go"}</div>
-                  <div>l, err := net.ListenTCP(&quot;tcp&quot;, &amp;net.TCPAddr{`{IP: net.ParseIP("127.0.0.1"), Port: 0}`})</div>
-                  <div>assignedPort := l.Addr().(*net.TCPAddr).Port</div>
-                  <div className="text-neutral-500">{"// Returns free port from kernel ephemeral range: e.g. 54329"}</div>
-                </div>
+              <h3 className="text-lg font-bold text-white mt-8">What each service receives</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
+                <li>A database DSN for each binding, using fixed development credentials (<code className="text-neutral-200">postgres:postgres</code>). Do not reuse these outside dev.</li>
+                <li>The components listed in the binding&apos;s <code className="text-neutral-200">expanded_env</code>, such as <code className="text-neutral-200">DB_HOST=127.0.0.1</code> and <code className="text-neutral-200">DB_PORT</code> set to the container&apos;s host port.</li>
+                <li>For each service it calls, that service&apos;s loopback URL, in the environment variable named by the lockfile binding.</li>
+                <li>Its own listen port, in the variable named by <code className="text-neutral-200">port_env</code> (for example <code className="text-neutral-200">PORT</code>).</li>
+              </ul>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06]">
-                    <h3 className="text-xs font-bold text-white mb-1">Dual Credential Injection</h3>
-                    <p className="text-xs text-neutral-400">
-                      Anode simultaneously injects both unified DSNs (<code className="text-neutral-200">DATABASE_URL</code>) and decomposed credentials (<code className="text-neutral-200">DB_HOST</code>, <code className="text-neutral-200">DB_PORT=54329</code>) based on the application&apos;s discovered <code className="text-neutral-300">expanded_env</code>.
-                    </p>
-                  </div>
-                  <div className="p-4 rounded-xl bg-[#07080a] border border-white/[0.06]">
-                    <h3 className="text-xs font-bold text-white mb-1">Loopback Reverse Proxy</h3>
-                    <p className="text-xs text-neutral-400">
-                      Exposes user-friendly entrypoints (e.g. <code className="text-emerald-300">http://localhost:8080</code>) while transparently mapping behind the scenes to dynamic process IDs.
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <h3 className="text-lg font-bold text-white mt-8">What dev does not do</h3>
+              <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
+                <li>It does not put a proxy in front of your services. Each service listens on the loopback port assigned to it.</li>
+                <li>It does not match production. Stores run in containers on your machine (Docker or Podman), and the credentials are the fixed dev ones.</li>
+                <li>Database containers need a container engine. Without one, the database has to be provided another way.</li>
+              </ul>
+              <p className="text-xs font-mono-code text-neutral-500">Source: docs/architecture.md, section 4 (local engine); internal/devengine/engine.go, container.go</p>
+            </div>
 
             {/* 8. SYSTEMD VPS */}
             <div className={effectiveDoc === "systemd-vps" ? "block space-y-6 leading-relaxed" : "hidden"}>
