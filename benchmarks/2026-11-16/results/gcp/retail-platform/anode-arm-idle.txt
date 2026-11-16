@@ -1,0 +1,3 @@
+anode services_rss_kb=90252
+anode daemons_rss_kb_stores_only=215064
+caddy_rss_kb=46112

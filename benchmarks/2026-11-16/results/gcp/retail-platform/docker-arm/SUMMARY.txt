@@ -1,0 +1,8 @@
+retail-platform, GCE e2-standard-4 (Spot, us-central1-a, Debian 12). Same release binaries and the same environment for both arms.
+anode arm: services as systemd units. Docker arm: the same binaries as containers (host networking), env from the unit's EnvironmentFile and Environment=.
+Stores (anode-managed Postgres, Redis) run the same way in both arms. Median of 5 cold starts.
+
+cold start (12 services, ready = 11 HTTP 200 + ledger TCP): anode 733 ms (632 to 754) | Docker 2.00 s (1.998 to 2.242)
+idle service RSS: anode 90.3 MB | Docker 95.6 MB
+daemons, stores only: 215.1 MB; with 12 service containers: 408.4 MB, so about 193 MB extra under Docker
+caddy RSS (anode arm, excluded): 46.1 MB

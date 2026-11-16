@@ -1,0 +1,5 @@
+retail-platform on a local OrbStack machine (Debian 12, arm64, the same Mac). Same method as the GCE run.
+anode arm cold start (median of 5): 175 ms (145 to 481; the first trial was cold-cache)
+anode arm idle: services 70.1 MB; daemons (stores only) 151.3 MB; Caddy 20.2 MB (excluded)
+Docker arm cold start (median of 5): 5.65 s (5.55 to 6.44)
+Docker arm idle: services 73.3 MB; daemons with 12 service containers 283.5 MB, so about 132 MB extra under Docker

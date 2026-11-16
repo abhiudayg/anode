@@ -1,0 +1,8 @@
+trial	ready_us
+1	6270549
+2	5581220
+3	6439006
+4	5650153
+5	5550619
+docker	services_rss_kb	73292
+docker	daemons_rss_kb_with_service_containers	283452
