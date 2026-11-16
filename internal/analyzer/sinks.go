@@ -309,7 +309,11 @@ func (s *SinkInspector) InspectCall(fn *ssa.Function, call *ssa.CallCommon, svc 
 	}
 
 	if isRouterMethod && len(call.Args) >= 2 {
-		routePattern := ResolveConstantString(call.Args[1])
+		patternArg := 1
+		if callee.Signature.Recv() == nil {
+			patternArg = 0
+		}
+		routePattern := ResolveConstantString(call.Args[patternArg])
 		if routePattern != "" {
 			if name != "HandleFunc" {
 				routePattern = strings.ToUpper(name) + " " + routePattern
