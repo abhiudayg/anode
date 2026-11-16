@@ -2055,6 +2055,29 @@ terraform -chdir=infra/terraform apply`}</code>
                 </p>
               </div>
 
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">10. Repository example: retail-platform on GCE</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  The repository&apos;s own 12-service example, deployed with anode on an e2-standard-4 Spot VM (4 vCPU, 16 GB, Debian 12), with the fixed build. Stores: three anode-managed PostgreSQL containers, Redis, and an external catalog PostgreSQL and ClickHouse audit store started by hand.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">Result</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">Cold start, 12 services restarted together (median of 5)</td><td className="p-3 text-right text-white">695 ms (631 to 769 ms)</td></tr>
+                      <tr><td className="p-3">Idle service memory, 12 units</td><td className="p-3 text-right text-white">101 MB</td></tr>
+                      <tr><td className="p-3">Idle Docker daemons (stores run in containers by default)</td><td className="p-3 text-right text-white">232 MB</td></tr>
+                      <tr><td className="p-3">Redeploy under 50 clients: requests / connection errors / failed (502)</td><td className="p-3 text-right text-white">1,876,238 / 0 / 830, all inside a 156 ms window</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  The example needed two changes to deploy as shipped: a GET /healthz route on each HTTP service (anode requires it to activate a release), and an accept loop in ledger, which never calls Serve. Both are in the patch in the repository. The Docker arm for these services and the 32-service marketplace example were not run.
+                </p>
+              </div>
+
               <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-5 space-y-3">
                 <h3 className="text-sm font-bold text-amber-300">What these numbers do not show</h3>
                 <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
