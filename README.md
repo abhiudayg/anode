@@ -221,7 +221,7 @@ Examples live in [`examples/`](examples/). Service counts are the number of `mai
 | [`retail-platform`](examples/retail-platform/README.md) | 12 | Config indirection, HTTP and gRPC links, Redis and PostgreSQL; the analyzer's main test fixture |
 | [`marketplace`](examples/marketplace/README.md) | 32 | 35 store resources across 13 kinds, including Kafka and Qdrant; no diagnostics |
 
-Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Analysis timings are not published; an earlier timing table had no reproducible source in the repository.
+Other example projects, including third-party applications that were copied into this repository, were removed in v1.4.0. They remain in git history. Measured analysis times for these examples are in [Benchmarks](#benchmarks).
 
 ---
 
@@ -263,6 +263,31 @@ Docker is not installed by these scripts.
 * [Security audit](docs/security-audit.md): findings, their status, and accepted risks.
 * [Supported profile](docs/supported-profile.md): what is in and out of scope, and the `.env` contract.
 * [Deployment](docs/deployment.md) and [Catalog](docs/catalog.md).
+
+---
+
+## Benchmarks
+
+Measured on 2026-11-16 on an Apple Silicon Mac, and on an OrbStack Debian 12 VM (arm64) with Docker 20.10.24 and PostgreSQL 15. Full scripts, raw results, and environment notes are in [`benchmarks/2026-11-16`](benchmarks/2026-11-16/README.md).
+
+| Measure | anode | Comparison |
+| :--- | ---: | ---: |
+| Cold start to `/healthz` 200, one service (median of 10) | 35 ms (systemd unit) | 607 ms (Docker container); 4.7 ms run directly with no supervisor |
+| Idle memory, one service | 5.5 MB, no daemon | about 102 to 106 MB with Docker daemons |
+| Cold start to ready, two services plus PostgreSQL 15 (median of 10) | 2.4 s (apt PostgreSQL) | 1.6 s (`postgres:15` container) |
+| Idle memory, two services plus PostgreSQL 15 | 88 MB | 202 MB, including 120 MB of Docker daemons |
+| `anode inspect`, sample-shop / storefront / retail-platform / marketplace (median of 5) | 1.1 s / 1.2 s / 2.2 s / 8.8 s | not applicable |
+| Deploy, 5 runs | 5.1 s (`anode deploy`) | 2.0 s (`docker build` of both images, no cache; not like-for-like) |
+
+What the numbers mean:
+
+* The anode cold start includes the `DynamicUser=yes` setting that anode's isolation model requires. That accounts for about 20 ms of the 35 ms. The bare systemd unit takes about 11 ms.
+* The two-service cold start is dominated by PostgreSQL startup. Debian's `postgresql` takes 2.4 s to accept connections in this setup; the container takes 0.6 s.
+* Lockfile hashes were identical across all 20 analysis runs (4 fixtures, 5 runs each).
+* Caddy's edge proxy is included in the anode deploy but not in the memory totals.
+* Not measured: a remote VPS host, Caddy route-swap time, and larger service counts with a database.
+
+To rerun, see [`benchmarks/2026-11-16/scripts`](benchmarks/2026-11-16/scripts/). The stack benchmark needs `BENCH_ORDERS_PW`, `BENCH_PAYMENTS_PW`, `BENCH_PG_SUPER_PW`, and `BENCH_STRIPE_KEY` set in the environment. None of the credentials are stored in the repository.
 
 ---
 
