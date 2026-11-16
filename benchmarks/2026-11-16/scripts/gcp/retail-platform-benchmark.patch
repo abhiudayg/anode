@@ -1,0 +1,133 @@
+Only in /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform: .verify
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/analytics/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/analytics/main.go
+--- examples/retail-platform/services/analytics/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/analytics/main.go	2026-11-16 19:40:15
+@@ -19,6 +19,7 @@
+ 	}
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("GET /v1/analytics/summary", func(w http.ResponseWriter, r *http.Request) {
+ 		fmt.Fprintln(w, `{"daily_volume":98432}`)
+ 	})
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/apigateway/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/apigateway/main.go
+--- examples/retail-platform/services/apigateway/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/apigateway/main.go	2026-11-16 19:40:15
+@@ -16,6 +16,7 @@
+ 	ordersAddr := os.Getenv("ORDERS_SERVICE_URL")
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("GET /api/v1/auth/verify", func(w http.ResponseWriter, r *http.Request) {
+ 		req, _ := http.NewRequestWithContext(r.Context(), "GET", authAddr+"/v1/auth/token", nil)
+ 		_, _ = http.DefaultClient.Do(req)
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/auditlog/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/auditlog/main.go
+--- examples/retail-platform/services/auditlog/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/auditlog/main.go	2026-11-16 19:40:15
+@@ -18,6 +18,7 @@
+ 	defer db.Close()
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("POST /v1/audit/log", func(w http.ResponseWriter, r *http.Request) {
+ 		fmt.Fprintln(w, `{"audit_logged":true}`)
+ 	})
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/auth/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/auth/main.go
+--- examples/retail-platform/services/auth/main.go	2026-11-15 13:22:27
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/auth/main.go	2026-11-16 19:40:15
+@@ -23,6 +23,7 @@
+ 	defer rdb.Close()
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("GET /v1/auth/token", func(w http.ResponseWriter, r *http.Request) {
+ 		_ = jwtSecret
+ 		fmt.Fprintln(w, `{"token":"jwt.mock.token"}`)
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/catalog/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/catalog/main.go
+--- examples/retail-platform/services/catalog/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/catalog/main.go	2026-11-16 19:40:15
+@@ -18,6 +18,7 @@
+ 	defer db.Close()
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("GET /v1/catalog/items", func(w http.ResponseWriter, r *http.Request) {
+ 		fmt.Fprintln(w, `[{"item":"laptop","stock":15}]`)
+ 	})
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/fulfillment/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/fulfillment/main.go
+--- examples/retail-platform/services/fulfillment/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/fulfillment/main.go	2026-11-16 19:40:15
+@@ -18,6 +18,7 @@
+ 	notifAddr := os.Getenv("NOTIFICATIONS_SERVICE_URL")
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("POST /v1/fulfillment/dispatch", func(w http.ResponseWriter, r *http.Request) {
+ 		req, _ := http.NewRequestWithContext(r.Context(), "POST", notifAddr+"/v1/notify/shipment", nil)
+ 		_, _ = http.DefaultClient.Do(req)
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/inventory/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/inventory/main.go
+--- examples/retail-platform/services/inventory/main.go	2026-11-15 13:22:27
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/inventory/main.go	2026-11-16 19:40:15
+@@ -20,6 +20,7 @@
+ 	defer rdb.Close()
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("POST /v1/inventory/reserve", func(w http.ResponseWriter, r *http.Request) {
+ 		fmt.Fprintln(w, `{"reserved":true}`)
+ 	})
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/ledger/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/ledger/main.go
+--- examples/retail-platform/services/ledger/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/ledger/main.go	2026-11-16 19:36:38
+@@ -24,6 +24,6 @@
+ 	defer lis.Close()
+ 
+ 	// Register gRPC server
+-	ledgerv1.RegisterLedgerServiceServer(nil, &ledgerServer{})
++	_ = ledgerv1.RegisterLedgerServiceServer; _ = &ledgerServer{}; for { c, err := lis.Accept(); if err != nil { return }; _ = c.Close() }
+ 	fmt.Printf("Ledger gRPC server listening on :%s\n", port)
+ }
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/notifications/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/notifications/main.go
+--- examples/retail-platform/services/notifications/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/notifications/main.go	2026-11-16 19:40:15
+@@ -15,6 +15,7 @@
+ 	sendgridKey := os.Getenv("SENDGRID_API_KEY")
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("POST /v1/notify/shipment", func(w http.ResponseWriter, r *http.Request) {
+ 		req, _ := http.NewRequestWithContext(r.Context(), "POST", "https://api.sendgrid.com/v3/mail/send", nil)
+ 		req.Header.Set("Authorization", "Bearer "+sendgridKey)
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/orders/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/orders/main.go
+--- examples/retail-platform/services/orders/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/orders/main.go	2026-11-16 19:40:15
+@@ -23,6 +23,7 @@
+ 	paymentsAddr := os.Getenv("PAYMENTS_SERVICE_URL")
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("POST /v1/orders", func(w http.ResponseWriter, r *http.Request) {
+ 		_ = ledgerClient.RecordTransaction(1500)
+ 
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/payments/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/payments/main.go
+--- examples/retail-platform/services/payments/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/payments/main.go	2026-11-16 19:40:15
+@@ -15,6 +15,7 @@
+ 	stripeKey := os.Getenv("STRIPE_SECRET_KEY")
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("POST /v1/payments/charge", func(w http.ResponseWriter, r *http.Request) {
+ 		// External HTTPS call to Stripe
+ 		req, _ := http.NewRequestWithContext(r.Context(), "POST", "https://api.stripe.com/v1/charges", nil)
+diff -ru -x .env -x anode.lock.json -x anode.state.json -x anode.toml -x go.sum examples/retail-platform/services/userprofile/main.go /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/userprofile/main.go
+--- examples/retail-platform/services/userprofile/main.go	2026-11-15 12:03:52
++++ /private/tmp/claude-501/-Volumes-Seagate-developer-personal/3df1ea25-725e-436d-9665-e1cd82567ae8/scratchpad/ex/retail-platform/services/userprofile/main.go	2026-11-16 19:40:15
+@@ -15,6 +15,7 @@
+ 	defer db.Close()
+ 
+ 	mux := http.NewServeMux()
++	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+ 	mux.HandleFunc("GET /v1/users/profile", func(w http.ResponseWriter, r *http.Request) {
+ 		fmt.Fprintln(w, `{"user_id":42,"tier":"premium"}`)
+ 	})

@@ -196,3 +196,24 @@ Two findings from this run:
 - With 12 services, all declaring `GET /healthz`, Caddy's generated config sends `/healthz` to a single service. The other services are not reachable through the public route. This is a routing gap in the generated edge configuration, and it did not affect the readiness measurements, which hit each service's own port.
 
 Notes on this run: the first Docker arm did not become ready because the Postgres container had been created earlier for a smaller stack and never received the 12 new databases. That run is excluded. The results above come from a rerun after the roles and databases were created.
+
+## 12. Repository example on GCE: retail-platform (fixed build)
+
+Results and method: `results/gcp/retail-platform/SUMMARY.txt`. Scripts: `scripts/gcp/retail_cold_start.sh`, `scripts/gcp/retail-platform-benchmark.patch` (the scratch patch applied to the example for this run).
+
+This run replaces the synthetic 12-service workload of section 11 with the repository's own `retail-platform` example, which has 12 services. It ran on an e2-standard-4 Spot VM with the fixed analyzer and Caddy generator.
+
+| Measure | Result |
+|---|---|
+| Cold start, 12 services restarted together, median of 5 | 695 ms (631 to 769 ms) |
+| Idle service memory, 12 units | 101 MB |
+| Idle Docker daemons (anode-managed stores run in containers) | 232 MB |
+| Redeploy under load: 50 clients, catalog route, whole project redeployed | 1,876,238 requests, 0 connection errors, 830 failed (502), all inside a 156 ms window |
+| Redeploy wall time | 207 s |
+
+Two findings about the example as shipped:
+
+- `ledger` never calls `Serve`, so its `main` returns immediately and the unit restarts until the rollback fails. It needed an accept loop to stay up.
+- None of the HTTP services has a `GET /healthz` route, and `anode deploy` refuses to activate a release without one. The patch adds it.
+
+Not run in this section: the Docker arm for these 12 services, and the marketplace example (35 stores across 15 kinds, many of them images). Section 11's 12-service numbers were measured on the older Caddy config.

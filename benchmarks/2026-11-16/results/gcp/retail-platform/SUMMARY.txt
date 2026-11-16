@@ -1,0 +1,24 @@
+retail-platform on GCE (e2-standard-4, Spot, us-central1-a), anode 1.6.0 built from master
+(includes the package-level http.HandleFunc and Caddy collision fixes).
+
+Deploy: 12 services + anode-managed Postgres (3, docker), Redis (binary), external catalog Postgres
+and ClickHouse audit store (both started by hand as containers for this run).
+Patched copy: /scripts/gcp/retail-platform-benchmark.patch adds GET /healthz to the 11 HTTP services
+and replaces ledger's missing Serve call with an accept loop. ledger has no HTTP server.
+
+Cold start, 12 anode service units restarted together, stores running, median of 5:
+  695 ms (range 631 to 769 ms). Ready = 11 HTTP services 200 on /healthz + ledger TCP open.
+
+Idle memory, 25 s after ready:
+  services (12 units)             101.2 MB
+  Caddy edge (excluded)            54.8 MB
+  Docker daemons (5 containers)   232.1 MB  <- anode runs these stores in containers by default
+  store containers: 3 anode Postgres ~20 MB each, catalog Postgres 20 MB (external), ClickHouse 435 MB (external)
+
+Redeploy under load (50 keep-alive clients, GET /v1/catalog/items through Caddy, 240 s run, whole project redeployed mid-run):
+  requests 1,876,238; connection errors 0; 502 responses 830
+  all 502s within a 156 ms window; 818 of them inside the 131 ms gap in successful responses
+  (catalog restarted at 14:17:33 UTC during the run). Timestamps: route-swap-502-timestamps.txt.
+  Redeploy wall time 207 s.
+
+Not run: a Docker arm for the 12 services of this example, and the marketplace example (35 stores, 15 kinds).
