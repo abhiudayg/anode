@@ -2074,7 +2074,51 @@ terraform -chdir=infra/terraform apply`}</code>
                   </table>
                 </div>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  The example needed two changes to deploy as shipped: a GET /healthz route on each HTTP service (anode requires it to activate a release), and an accept loop in ledger, which never calls Serve. Both are in the patch in the repository. The Docker arm for these services and the 32-service marketplace example were not run.
+                  The example needed two changes to deploy as shipped: a GET /healthz route on each HTTP service (anode requires it to activate a release), and an accept loop in ledger, which never calls Serve. Both are in the patch in the repository. The Docker arm for these services is in section 11, and the 32-service marketplace example is in section 12.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">11. retail-platform: anode arm against the Docker arm</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Same release binaries and the same environment in both arms. In the Docker arm, each service runs as a container with the environment its unit would have received. Stores stay as anode runs them in both arms, so the difference is the service runtime alone. Cold start is the median of 5 runs, with stores running.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Host</th><th className="p-3 text-right">Cold start, anode</th><th className="p-3 text-right">Cold start, Docker</th><th className="p-3 text-right">Idle services, anode / Docker</th><th className="p-3 text-right">Extra daemon RSS under Docker</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">GCE e2-standard-4</td><td className="p-3 text-right text-white">733 ms</td><td className="p-3 text-right">2.00 s</td><td className="p-3 text-right">90 / 96 MB</td><td className="p-3 text-right">about 193 MB</td></tr>
+                      <tr><td className="p-3">OrbStack, local</td><td className="p-3 text-right text-white">175 ms</td><td className="p-3 text-right">5.65 s</td><td className="p-3 text-right">70 / 73 MB</td><td className="p-3 text-right">about 132 MB</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  The OrbStack anode cold start includes one cold-cache first trial (481 ms); the other four ran at 145 to 180 ms. The Docker cold start is much slower on OrbStack than on GCE. We did not investigate why. Caddy is excluded from the anode figures in both hosts.
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white">12. Marketplace: 32 services and 35 stores on GCE</h3>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  The repository&apos;s marketplace example on an e2-standard-8 (8 vCPU, 32 GB, Spot). Seven stores are marked runtime = &quot;external&quot; in the example, so we started them by hand: TimescaleDB, CockroachDB, ClickHouse, and Scylla. External API values are placeholders. Ready, cold start, and idle figures are for the anode arm only.
+                </p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
+                    <thead className="bg-[#07080a] text-neutral-400">
+                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">Result</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
+                      <tr><td className="p-3">Cold start, 32 service units (3 trials)</td><td className="p-3 text-right text-white">3.2 to 3.4 s</td></tr>
+                      <tr><td className="p-3">Idle service memory, 32 units</td><td className="p-3 text-right text-white">390 MB</td></tr>
+                      <tr><td className="p-3">Idle Docker daemons (32 containers)</td><td className="p-3 text-right text-white">908 MB</td></tr>
+                      <tr><td className="p-3">Redeploy under 50 clients, 15 minutes, whole project redeployed</td><td className="p-3 text-right text-white">10,969,942 requests, 0 connection errors, 3,127 failed (0.028%), all inside a 299 ms window</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  The first marketplace deploy failed twice because of our own placeholder values, and once because anode created MinIO buckets before MinIO was ready. We haven&apos;t run the marketplace example under Docker.
                 </p>
               </div>
 
@@ -2085,7 +2129,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   <li>One service in the single-service tests, with no database. The multi-service test uses a fixture whose handlers never query the database; readiness checks the database separately with pg_isready and a manual SELECT 1.</li>
                   <li>The Docker arm uses default docker run settings. The anode unit has its memory and CPU limits and hardening.</li>
                   <li>anode deploy did not install PostgreSQL. The databases on the anode arm were installed by hand, so the anode arm has one manual step the deploy does not cover.</li>
-                  <li>Not measured: a 32-service marketplace-scale deployment (it needs more memory and more store kinds than the e2-small used here), and service counts beyond 12. The public round-trip time was measured incorrectly once and has been removed.</li>
+                  <li>Not measured: the marketplace example under Docker, service counts beyond 32, and the Caddy route swap for single services on the fixed build. The public round-trip time was measured incorrectly once and has been removed.</li>
                 </ul>
               </div>
 
