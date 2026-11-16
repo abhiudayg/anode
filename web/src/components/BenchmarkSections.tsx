@@ -168,7 +168,8 @@ export function BenchmarkSections() {
             Measured on a local OrbStack VM and on a public Google Compute Engine VM (e2-small, us-central1, Debian 12).
             On GCE: a redeploy is a restart in place, with a window of about 150 ms and one failed request per deploy; the
             anode cold start was 489 ms against 1,670 ms for Docker; 12 services with their own databases were ready in
-            10.9 s against 8.9 s for Docker. Not measured yet: concurrent load during a redeploy.
+            10.9 s against 8.9 s for Docker. With 50 concurrent clients, one redeploy caused 330 failed requests out of 117,692,
+            all inside a 160 ms window. Not measured yet: a 32-service marketplace-scale deployment.
           </p>
           <Link
             href="/docs#benchmarks-analysis"

@@ -2005,7 +2005,10 @@ terraform -chdir=infra/terraform apply`}</code>
                   </table>
                 </div>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  No connection failures in any run. The systemd journal for run 1 shows the process was down for about 12 ms; the failed request came about 20 ms after the new process started, before Caddy routed to it. Accurate to about 50 ms, the probe interval. This is one service under a steady request stream, not concurrent load.
+                  No connection failures in any run. The systemd journal for run 1 shows the process was down for about 12 ms; the failed request came about 20 ms after the new process started, before Caddy routed to it. Accurate to about 50 ms, the probe interval.
+                </p>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Under concurrent load, the same redeploy with 10 clients gave a switch window of 247 ms (per-client median 243 ms) and 5 failed requests out of 6,100. With 50 keep-alive clients, using a Go load generator: 117,692 requests, no connection errors, 330 failed requests (0.28%), and a window of 160 ms. Every failure fell inside that window. Failures grow with the number of clients, because each client has a request in flight during the window. A first 50-client run that used one curl process per request was excluded: the load generator saturated the VM and the numbers described the generator, not the redeploy.
                 </p>
               </div>
 
@@ -2059,7 +2062,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   <li>One service in the single-service tests, with no database. The multi-service test uses a fixture whose handlers never query the database; readiness checks the database separately with pg_isready and a manual SELECT 1.</li>
                   <li>The Docker arm uses default docker run settings. The anode unit has its memory and CPU limits and hardening.</li>
                   <li>anode deploy did not install PostgreSQL. The databases on the anode arm were installed by hand, so the anode arm has one manual step the deploy does not cover.</li>
-                  <li>Not measured: concurrent load during a redeploy, service counts beyond 12, and the public round-trip time (the earlier figure was invalid and has been removed).</li>
+                  <li>Not measured: a 32-service marketplace-scale deployment (it needs more memory and more store kinds than the e2-small used here), and service counts beyond 12. The public round-trip time was measured incorrectly once and has been removed.</li>
                 </ul>
               </div>
 

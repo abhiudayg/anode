@@ -1,0 +1,18 @@
+Concurrent route-swap, one service on Caddy, GCE e2-small (us-central1-a), one redeploy per run.
+
+run1: 10 clients (bash + curl), 60 s, redeploy v1 -> v2 mid-run
+  requests 6100, connection errors 0, 502 responses 5
+  switch window (last v1 response -> first v2 response, global): 247 ms
+  per-client window: median 243 ms (min 196, max 347)
+  all 502s fall inside the switch window
+
+run2: 50 clients with bash + curl: EXCLUDED. The load generator forked one curl per request
+  and saturated the 2-vCPU VM, so the result measured the generator, not the redeploy.
+
+run3: 50 clients (Go keep-alive load generator, scripts/gcp/loadgen_main.go), 60 s, redeploy v3 -> v4 mid-run
+  requests 117692, connection errors 0, 502 responses 330 (0.28%)
+  switch window (global): 160 ms
+  all 330 502s fall inside the window: the first at the window start, the last 153 ms after it
+  timestamps: run3-50clients-502-timestamps.txt (epoch ms)
+
+Earlier single-client runs (route-swap/run5-7): window 143 to 152 ms, one 502 per deploy.
