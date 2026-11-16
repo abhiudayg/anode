@@ -1,0 +1,27 @@
+trial	arm	ready_us
+1	anode-unit	744336
+1	docker	2367983
+2	anode-unit	188247
+2	docker	1474473
+3	anode-unit	530494
+3	docker	1620656
+4	anode-unit	491891
+4	docker	1706540
+5	anode-unit	551807
+5	docker	1727659
+6	anode-unit	485194
+6	docker	1673913
+7	anode-unit	493951
+7	docker	1638868
+8	anode-unit	486777
+8	docker	1700459
+9	anode-unit	483047
+9	docker	1665433
+10	anode-unit	478695
+10	docker	1648601
+---
+anode-unit	service_rss_kb	5588
+anode-unit	cgroup_memory_bytes	8237056
+anode-unit	caddy_edge_rss_kb	48740
+docker	service_rss_kb	6492
+docker	daemons_rss_kb	147508

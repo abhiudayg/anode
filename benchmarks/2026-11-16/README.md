@@ -109,3 +109,27 @@ Results: `results/tekmor_results.tsv`, `results/llm_results.tsv`, `results/judge
 - Postgres on the anode arm was installed by hand on the VM. `anode deploy` did not install the stores: the stores are declared `runtime = "binary"` and the deploy expected the databases to exist.
 - Sample-shop's handlers do not query the database, so `/healthz` alone would not show a working database. The readiness check therefore includes `pg_isready` and a `SELECT 1` per database.
 - Not measured: a remote VPS, larger service counts with Postgres, and the Caddy route-swap time.
+
+## 8. Remote host: Google Compute Engine (e2-small, us-central1-a)
+
+Scripts: `scripts/gcp/gcp_bench.sh` (runs on the VM). Results: `results/gcp/results.tsv` (cold start and idle memory, both arms).
+
+Host: Debian 12 (bookworm), x86_64 e2-small (2 vCPU shared, 2 GB RAM), 10 GB pd-standard disk, Spot provisioning, default VPC. Docker 20.10.24. The same anode release binary runs in both arms. The VM was created for this run and deleted afterwards.
+
+Deploy: `anode deploy anode@<public-ip> . --plain-http`, after the host preparation described below.
+
+| Measure | anode unit | Docker container |
+|---|---:|---:|
+| Cold start to `/healthz` 200, median of 10 (page cache dropped) | 489 ms (range 188 to 744 ms) | 1,670 ms (range 1,474 to 2,368 ms) |
+| Idle service RSS, 20 s after ready | 5.6 MB | 6.5 MB |
+| Idle daemons RSS (dockerd, containerd, shims) | none | 147.5 MB |
+| Caddy edge RSS (anode arm only) | 48.7 MB | not applicable |
+
+Public round-trip from a Mac in India to the VM, `GET /healthz` through Caddy, 20 requests: median 507 ms (min 498 ms). ICMP ping to the same address: median RTT about 255 ms, so the HTTP figure is about two round-trips plus negligible server time.
+
+Compared with the laptop VM in section 2, the anode cold start is about 14 times slower on this host. This VM is a shared-core instance with a network-attached disk, and the page cache is dropped before every run, so each start reads the binary and runtime from disk. We did not profile the cause further.
+
+How the host was prepared:
+
+- `anode host-setup` requires a root login. GCE disables root SSH (`PermitRootLogin no`), and we did not change that setting. We reproduced the three steps `host-setup` performs as the sudo-capable user: create the `anode` user, install the deploy key, and add `anode ALL=(root) NOPASSWD: ALL` in `/etc/sudoers.d/anode-deploy`.
+- The public firewall rule was limited to the operator's address. Both the VM and the rule were removed after the run.
