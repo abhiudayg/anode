@@ -148,7 +148,15 @@ Setup: one service that returns its version string, deployed with `anode deploy`
 
 Connection failures to Caddy: none in any run. In run 1 the journal shows the service stopped at .2955 and started again at .3073 (about 12 ms with no process), and the 502 came about 20 ms after the new process started, before the new version was reachable through Caddy. The probe samples every 50 ms, so the window is accurate to about ±50 ms.
 
-What this means: a redeploy is a restart in place, as the architecture page says. A client sees a failed request and a window of roughly 150 ms during which the old and new versions are not served. This was measured with one service and one probe at 50 ms intervals, with a steady request stream. It does not cover concurrent load, long-running requests, or multi-service restarts.
+What this means: a redeploy is a restart in place, as the architecture page says. A client sees a failed request and a window of roughly 150 ms during which the old and new versions are not served. This was measured with one service and one probe at 50 ms intervals, with a steady request stream. Under concurrent load (10 and 50 clients), see the table below.
+
+| Clients | Requests | Connection errors | Failed (502) | Switch window |
+|---:|---:|---:|---:|---:|
+| 1 | 625 to 909 per run | 0 | 1 per run | 143 to 152 ms |
+| 10 (bash + curl) | 6,100 | 0 | 5 | 247 ms (per-client median 243 ms) |
+| 50 (Go keep-alive generator) | 117,692 | 0 | 330 (0.28%) | 160 ms |
+
+Every 502 falls inside the switch window. Failures grow with the number of clients, because each has a request in flight during the window. A 50-client run that used one curl process per request is excluded: the load generator saturated the VM and the result described the generator. Raw data and the load generator are in `results/gcp/route-swap-concurrent/` and `scripts/gcp/loadgen_main.go`.
 
 ## 10. Multi-service stack on GCE (sample-shop, two services and PostgreSQL 15)
 
