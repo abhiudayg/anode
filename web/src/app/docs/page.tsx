@@ -1790,354 +1790,150 @@ terraform -chdir=infra/terraform apply`}</code>
                 </pre>
               </div>
 
-            {/* 9. BENCHMARKS ANALYSIS */}
-            <div className={effectiveDoc === "benchmarks-analysis" ? "block space-y-8 leading-relaxed" : "hidden"}>
-              <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
-                Benchmarks
-              </span>
-              <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Measured results and method</h2>
-              <p className="text-sm text-neutral-300 leading-relaxed">
-                Every figure on this site comes from a recorded run. Scripts and raw output are in the repository under{" "}
-                <code className="text-neutral-200">benchmarks/2026-11-16</code>. Figures that were not measured are listed at the end of this chapter.
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-4">
-                  <div className="text-[11px] font-mono-code uppercase text-neutral-500">Single-service cold start</div>
-                  <div className="mt-2 text-2xl font-black text-white">35 ms</div>
-                  <div className="text-xs font-mono-code text-neutral-400">anode systemd unit, vs 607 ms for a Docker container</div>
-                </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-4">
-                  <div className="text-[11px] font-mono-code uppercase text-neutral-500">Single-service idle memory</div>
-                  <div className="mt-2 text-2xl font-black text-white">5.5 MB</div>
-                  <div className="text-xs font-mono-code text-neutral-400">no daemon, vs about 102 to 106 MB under Docker</div>
-                </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-4">
-                  <div className="text-[11px] font-mono-code uppercase text-neutral-500">Two services plus PostgreSQL 15</div>
-                  <div className="mt-2 text-2xl font-black text-white">88 MB idle</div>
-                  <div className="text-xs font-mono-code text-neutral-400">vs 202 MB under Docker. Ready in 2.4 s vs 1.6 s</div>
-                </div>
-                <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-4">
-                  <div className="text-[11px] font-mono-code uppercase text-neutral-500">Analysis, 32 services</div>
-                  <div className="mt-2 text-2xl font-black text-white">8.8 s</div>
-                  <div className="text-xs font-mono-code text-neutral-400">anode inspect on the marketplace example</div>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-white/[0.08] bg-[#050507] p-4 text-xs font-mono-code text-neutral-400 leading-relaxed">
-                <div className="text-neutral-200 mb-2">Environment</div>
-                <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-x-4 gap-y-1">
-                  <span>Host</span><span>Apple Silicon Mac (arm64), macOS 27.2</span>
-                  <span>Linux target</span><span>OrbStack machine, Debian 12, arm64, 7 vCPU, 8 GB RAM, systemd as PID 1</span>
-                  <span>Docker</span><span>20.10.24</span>
-                  <span>PostgreSQL</span><span>15 (apt on the VM for anode; postgres:15 container for Docker)</span>
-                  <span>anode</span><span>1.6.0, services built with CGO_ENABLED=0 and -trimpath, the same binary in both arms</span>
-                  <span>Clock and readiness</span><span>bash microsecond clock; ready = TCP connect and HTTP 200 on /healthz</span>
-                  <span>Caches</span><span>page cache dropped before every timed run</span>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">1. Cold start, one service</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Time from starting the process to its first 200 on /healthz. Median of 10 runs per row.
+            {/* 9. BENCHMARKS */}
+            <div className={effectiveDoc === "benchmarks-analysis" ? "block space-y-10 leading-relaxed" : "hidden"} id="benchmarks">
+              <div>
+                <span className="text-[11px] font-mono-code px-2 py-0.5 rounded bg-white/[0.06] text-neutral-300 border border-white/[0.1]">
+                  Benchmarks
+                </span>
+                <h2 className="mt-4 text-3xl sm:text-4xl font-extrabold text-white tracking-tight">Results at a glance</h2>
+                <p className="mt-3 text-sm text-neutral-400 leading-relaxed max-w-2xl">
+                  Every figure below comes from a recorded run. Raw data and scripts are in the repository, under benchmarks/2026-11-16.
                 </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">How the binary starts</th><th className="p-3 text-right">Median</th><th className="p-3 text-right">Range</th></tr>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-6">
+                  <div className="text-[11px] font-mono-code uppercase tracking-wider text-neutral-500">Cold start, 12 services</div>
+                  <div className="mt-2 text-4xl font-black text-white">733 ms</div>
+                  <div className="mt-1 text-xs font-mono-code text-neutral-400">anode, vs 2.00 s for Docker. GCE e2-standard-4.</div>
+                </div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-6">
+                  <div className="text-[11px] font-mono-code uppercase tracking-wider text-neutral-500">Idle memory, one service</div>
+                  <div className="mt-2 text-4xl font-black text-white">5.5 MB</div>
+                  <div className="mt-1 text-xs font-mono-code text-neutral-400">anode, vs about 102 MB for Docker with its daemons.</div>
+                </div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-6">
+                  <div className="text-[11px] font-mono-code uppercase tracking-wider text-neutral-500">Redeploy under load</div>
+                  <div className="mt-2 text-4xl font-black text-white">0.028%</div>
+                  <div className="mt-1 text-xs font-mono-code text-neutral-400">3,127 of 10.97 million requests failed, all within 299 ms.</div>
+                </div>
+                <div className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-6">
+                  <div className="text-[11px] font-mono-code uppercase tracking-wider text-neutral-500">Analysis, 32 services</div>
+                  <div className="mt-2 text-4xl font-black text-white">8.8 s</div>
+                  <div className="mt-1 text-xs font-mono-code text-neutral-400">Lockfile hashes matched in 20 of 20 runs.</div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <h3 className="text-xl font-bold text-white">anode against Docker</h3>
+                <div className="overflow-x-auto rounded-xl border border-white/[0.08]">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[#07080a] text-xs font-mono-code uppercase text-neutral-500">
+                      <tr>
+                        <th className="p-3 text-left font-normal">Host</th>
+                        <th className="p-3 text-right font-normal">anode</th>
+                        <th className="p-3 text-right font-normal">Docker</th>
+                      </tr>
                     </thead>
                     <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Run directly, no supervisor</td><td className="p-3 text-right text-white">4.7 ms</td><td className="p-3 text-right">3.7 to 6.9 ms</td></tr>
-                      <tr><td className="p-3">Bare systemd unit (ExecStart only)</td><td className="p-3 text-right text-white">11.1 ms</td><td className="p-3 text-right">9.9 to 17.2 ms</td></tr>
-                      <tr><td className="p-3">anode unit without DynamicUser</td><td className="p-3 text-right text-white">12.0 ms</td><td className="p-3 text-right">11.1 to 15.7 ms</td></tr>
-                      <tr><td className="p-3 font-semibold text-white">anode unit, as deployed</td><td className="p-3 text-right font-semibold text-white">34.9 ms</td><td className="p-3 text-right">31.9 to 36.8 ms</td></tr>
-                      <tr><td className="p-3">Docker container (docker run -d)</td><td className="p-3 text-right text-white">607 ms</td><td className="p-3 text-right">592 to 914 ms</td></tr>
+                      <tr><td className="p-3" colSpan={3}><span className="text-xs font-mono-code text-neutral-500">Cold start, retail-platform (12 services)</span></td></tr>
+                      <tr><td className="p-3">GCE e2-standard-4</td><td className="p-3 text-right text-white">733 ms</td><td className="p-3 text-right">2.00 s</td></tr>
+                      <tr><td className="p-3">OrbStack, local</td><td className="p-3 text-right text-white">175 ms</td><td className="p-3 text-right">5.65 s</td></tr>
+                      <tr><td className="p-3" colSpan={3}><span className="text-xs font-mono-code text-neutral-500">Idle memory, retail-platform services</span></td></tr>
+                      <tr><td className="p-3">GCE e2-standard-4</td><td className="p-3 text-right text-white">90 MB</td><td className="p-3 text-right">96 MB, plus 193 MB of daemons</td></tr>
+                      <tr><td className="p-3">OrbStack, local</td><td className="p-3 text-right text-white">70 MB</td><td className="p-3 text-right">73 MB, plus 132 MB of daemons</td></tr>
                     </tbody>
                   </table>
                 </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Where the anode time goes: the sandbox directives add about 1 ms (bare unit 11 ms vs anode unit without DynamicUser 12 ms). DynamicUser adds about 20 ms, because systemd allocates a dynamic user on each start. Anode keeps DynamicUser because its isolation model requires it.
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">2. Idle memory, one service</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Resident memory (RSS) 20 seconds after the health check passes. Each arm ran alone; host networking, so no docker-proxy.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Process</th><th className="p-3 text-right">anode</th><th className="p-3 text-right">Docker</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Service process</td><td className="p-3 text-right text-white">5.5 MB</td><td className="p-3 text-right">5.8 MB</td></tr>
-                      <tr><td className="p-3">dockerd</td><td className="p-3 text-right">none</td><td className="p-3 text-right">63.6 MB</td></tr>
-                      <tr><td className="p-3">containerd</td><td className="p-3 text-right">none</td><td className="p-3 text-right">25.7 MB</td></tr>
-                      <tr><td className="p-3">containerd-shim (one per container)</td><td className="p-3 text-right">none</td><td className="p-3 text-right">11.8 MB</td></tr>
-                      <tr className="font-semibold text-white"><td className="p-3">Total</td><td className="p-3 text-right">5.5 MB</td><td className="p-3 text-right">about 102 to 106 MB</td></tr>
-                    </tbody>
-                  </table>
+              <div className="space-y-3">
+                <h3 className="text-xl font-bold text-white">Details</h3>
+                <p className="text-sm text-neutral-400">Open a section for the full numbers and the conditions behind them.</p>
+                <div className="space-y-3">
+                  <details className="group rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-5 open:bg-[#0c0c0f]">
+                    <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-white">
+                      Cold start and idle memory on one service
+                      <span className="text-neutral-500 group-open:rotate-45 transition-transform">+</span>
+                    </summary>
+                    <div className="mt-4 space-y-3 text-sm text-neutral-300">
+                      <p>On a local OrbStack VM, median of 10 cold starts to a 200 on /healthz, page cache dropped before each.</p>
+                      <table className="w-full text-xs font-mono-code">
+                        <tbody className="divide-y divide-white/[0.05]">
+                          <tr><td className="py-2">Run directly, no supervisor</td><td className="py-2 text-right text-white">4.7 ms</td></tr>
+                          <tr><td className="py-2">anode systemd unit</td><td className="py-2 text-right text-white">35 ms</td></tr>
+                          <tr><td className="py-2">Docker container</td><td className="py-2 text-right text-white">607 ms</td></tr>
+                        </tbody>
+                      </table>
+                      <p>Most of the anode time is <code className="text-neutral-200">DynamicUser=yes</code>, about 20 ms. Anode keeps it because its isolation model requires it.</p>
+                    </div>
+                  </details>
+
+                  <details className="group rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-5 open:bg-[#0c0c0f]">
+                    <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-white">
+                      Two services with PostgreSQL 15
+                      <span className="text-neutral-500 group-open:rotate-45 transition-transform">+</span>
+                    </summary>
+                    <div className="mt-4 space-y-3 text-sm text-neutral-300">
+                      <p>sample-shop: two services and one PostgreSQL server with two databases. Ready means both health checks pass and pg_isready succeeds.</p>
+                      <table className="w-full text-xs font-mono-code">
+                        <tbody className="divide-y divide-white/[0.05]">
+                          <tr><td className="py-2">Ready, local VM (anode / Docker)</td><td className="py-2 text-right text-white">2.4 s / 1.6 s</td></tr>
+                          <tr><td className="py-2">Ready, GCE (anode / Docker)</td><td className="py-2 text-right text-white">4.46 s / 4.13 s</td></tr>
+                          <tr><td className="py-2">Idle, GCE (anode / Docker incl. daemons)</td><td className="py-2 text-right text-white">84 MB / 274 MB</td></tr>
+                        </tbody>
+                      </table>
+                      <p>Most of the time is PostgreSQL&apos;s own start-up, which is why the two arms are close on GCE.</p>
+                    </div>
+                  </details>
+
+                  <details className="group rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-5 open:bg-[#0c0c0f]">
+                    <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-white">
+                      Redeploy under load
+                      <span className="text-neutral-500 group-open:rotate-45 transition-transform">+</span>
+                    </summary>
+                    <div className="mt-4 space-y-3 text-sm text-neutral-300">
+                      <p>The whole project is redeployed while clients keep requesting. Each service restarts in place; traffic is not moved to the new version first.</p>
+                      <table className="w-full text-xs font-mono-code">
+                        <thead className="text-neutral-500"><tr><th className="py-2 text-left font-normal">Setup</th><th className="py-2 text-right font-normal">Requests</th><th className="py-2 text-right font-normal">Failed</th><th className="py-2 text-right font-normal">Window</th></tr></thead>
+                        <tbody className="divide-y divide-white/[0.05]">
+                          <tr><td className="py-2">1 service, 1 client</td><td className="py-2 text-right">625 to 909</td><td className="py-2 text-right">1 per redeploy</td><td className="py-2 text-right">143 to 152 ms</td></tr>
+                          <tr><td className="py-2">1 service, 10 clients</td><td className="py-2 text-right">6,100</td><td className="py-2 text-right">5</td><td className="py-2 text-right">247 ms</td></tr>
+                          <tr><td className="py-2">1 service, 50 clients</td><td className="py-2 text-right">117,692</td><td className="py-2 text-right">330</td><td className="py-2 text-right">160 ms</td></tr>
+                          <tr><td className="py-2">32 services, 50 clients, 15 min</td><td className="py-2 text-right">10,969,942</td><td className="py-2 text-right">3,127</td><td className="py-2 text-right">299 ms</td></tr>
+                        </tbody>
+                      </table>
+                      <p>No connection errors in any run. Every failure falls inside the restart window.</p>
+                    </div>
+                  </details>
+
+                  <details className="group rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-5 open:bg-[#0c0c0f]">
+                    <summary className="cursor-pointer list-none flex items-center justify-between text-sm font-semibold text-white">
+                      Marketplace: 32 services, 35 stores
+                      <span className="text-neutral-500 group-open:rotate-45 transition-transform">+</span>
+                    </summary>
+                    <div className="mt-4 space-y-3 text-sm text-neutral-300">
+                      <p>Run on an e2-standard-8 with 32 GB. Seven stores are marked external in the example; we started those by hand.</p>
+                      <table className="w-full text-xs font-mono-code">
+                        <tbody className="divide-y divide-white/[0.05]">
+                          <tr><td className="py-2">Cold start, all 32 services</td><td className="py-2 text-right text-white">3.2 to 3.4 s</td></tr>
+                          <tr><td className="py-2">Idle services / Docker daemons</td><td className="py-2 text-right text-white">390 MB / 908 MB</td></tr>
+                        </tbody>
+                      </table>
+                      <p>We have not run this example under Docker.</p>
+                    </div>
+                  </details>
                 </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The Docker total varied between 102 and 106 MB across two runs. With bridge networking and a published port, docker-proxy adds about 4.6 MB per port.
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">3. Multi-service stack: two services and PostgreSQL 15</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  sample-shop: orders and payments, with one PostgreSQL server holding two databases (orders and payments), the same credentials and environment in both arms. Ready means both health checks return 200 and pg_isready succeeds. Median of 10 interleaved runs. Idle memory 20 seconds after ready.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Arm</th><th className="p-3 text-right">Ready (median)</th><th className="p-3 text-right">Range</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">anode: apt PostgreSQL and two anode units</td><td className="p-3 text-right text-white">2,373 ms</td><td className="p-3 text-right">2,364 to 2,388 ms</td></tr>
-                      <tr><td className="p-3">Docker: postgres:15 container and two containers</td><td className="p-3 text-right text-white">1,616 ms</td><td className="p-3 text-right">1,498 to 1,734 ms</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Idle, after 20 s</th><th className="p-3 text-right">anode</th><th className="p-3 text-right">Docker</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">PostgreSQL (all processes)</td><td className="p-3 text-right">75.2 MB</td><td className="p-3 text-right">68.6 MB</td></tr>
-                      <tr><td className="p-3">orders service</td><td className="p-3 text-right">6.5 MB</td><td className="p-3 text-right">6.8 MB</td></tr>
-                      <tr><td className="p-3">payments service</td><td className="p-3 text-right">6.4 MB</td><td className="p-3 text-right">6.1 MB</td></tr>
-                      <tr><td className="p-3">Docker daemons (dockerd, containerd, shims)</td><td className="p-3 text-right">none</td><td className="p-3 text-right">120.0 MB</td></tr>
-                      <tr className="font-semibold text-white"><td className="p-3">Total</td><td className="p-3 text-right">88.1 MB</td><td className="p-3 text-right">201.5 MB</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Most of the anode time is PostgreSQL startup, not anode. Started alone, Debian&apos;s apt PostgreSQL took a median of 2,373 ms to accept connections (5 runs), and the postgres:15 container took 642 ms. The two anode service units start in about 35 ms each. Caddy, anode&apos;s edge proxy, uses 14 MB and is excluded from the anode total because the Docker arm has no edge.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">4. Analyzer time (anode inspect)</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Median of 5 runs per example on an Apple Silicon Mac. The lockfile hash was identical in all 20 runs.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Example</th><th className="p-3 text-right">Services</th><th className="p-3 text-right">Store resources</th><th className="p-3 text-right">Median time</th><th className="p-3 text-right">Peak RSS</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">sample-shop</td><td className="p-3 text-right">2</td><td className="p-3 text-right">2</td><td className="p-3 text-right text-white">1.10 s</td><td className="p-3 text-right">685 MB</td></tr>
-                      <tr><td className="p-3">storefront</td><td className="p-3 text-right">3</td><td className="p-3 text-right">2</td><td className="p-3 text-right text-white">1.19 s</td><td className="p-3 text-right">712 MB</td></tr>
-                      <tr><td className="p-3">retail-platform</td><td className="p-3 text-right">12</td><td className="p-3 text-right">6</td><td className="p-3 text-right text-white">2.21 s</td><td className="p-3 text-right">991 MB</td></tr>
-                      <tr><td className="p-3">marketplace</td><td className="p-3 text-right">32</td><td className="p-3 text-right">35</td><td className="p-3 text-right text-white">8.81 s</td><td className="p-3 text-right">2,792 MB</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Peak RSS is analyzer memory at build time, not service memory.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">5. Deploy and build time</h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Step</th><th className="p-3 text-right">Median</th><th className="p-3 text-left">What is included</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">anode deploy, 5 runs</td><td className="p-3 text-right text-white">5.1 s</td><td className="p-3">Cross-compiling both services, upload, starting the units, updating Caddy</td></tr>
-                      <tr><td className="p-3">docker build, no cache, both images, 5 runs</td><td className="p-3 text-right text-white">2.0 s</td><td className="p-3">Image build from the same prebuilt binaries; no compilation, no edge proxy</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The two rows are not like-for-like, and they should not be compared as a ranking. The first deploy, before the Go build cache was warm, took 6.2 s on the first run.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">6. Remote host: Google Compute Engine</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  A public VM, not a laptop: Debian 12 on an e2-small (2 shared vCPU, 2 GB RAM), 10 GB standard persistent disk, Spot provisioning, us-central1-a. The same anode release binary runs in both arms. Median of 10 runs; page cache dropped before each. The VM was created for the run and deleted afterwards.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">anode unit</th><th className="p-3 text-right">Docker container</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Cold start to /healthz 200 (median of 10)</td><td className="p-3 text-right text-white">489 ms (188 to 744 ms)</td><td className="p-3 text-right">1,670 ms (1,474 to 2,368 ms)</td></tr>
-                      <tr><td className="p-3">Idle service RSS, 20 s after ready</td><td className="p-3 text-right text-white">5.6 MB</td><td className="p-3 text-right">6.5 MB</td></tr>
-                      <tr><td className="p-3">Idle daemons RSS (dockerd, containerd, shims)</td><td className="p-3 text-right">none</td><td className="p-3 text-right">147.5 MB</td></tr>
-                      <tr><td className="p-3">Caddy edge RSS (anode only)</td><td className="p-3 text-right">48.7 MB</td><td className="p-3 text-right">not applicable</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The VM has about a third of the laptop VM&apos;s vCPUs and a quarter of its memory, and it reads the binary from a network disk on every cold start, which explains the slower cold start compared with section 1.
-                </p>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Host preparation: anode host-setup needs a root login, and GCE disables root SSH. We did not change that setting. The same three steps host-setup performs were run as the sudo-capable user: create the anode user, install the deploy key, and add a passwordless sudo rule for it. The firewall rule was limited to the operator&apos;s address.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">7. Caddy route-swap time</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  One service that returns its version. Each redeploy is a restart in place. A probe on the GCE VM requests /version through Caddy every 50 ms and records every response. Three redeploys, v4 to v5, v5 to v6, v6 to v7.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Run</th><th className="p-3 text-right">Requests sampled</th><th className="p-3 text-right">Last old to first new response</th><th className="p-3 text-right">Failed (502)</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">1, v4 to v5</td><td className="p-3 text-right">625</td><td className="p-3 text-right text-white">148 ms</td><td className="p-3 text-right">1</td></tr>
-                      <tr><td className="p-3">2, v5 to v6</td><td className="p-3 text-right">908</td><td className="p-3 text-right text-white">152 ms</td><td className="p-3 text-right">1</td></tr>
-                      <tr><td className="p-3">3, v6 to v7</td><td className="p-3 text-right">909</td><td className="p-3 text-right text-white">143 ms</td><td className="p-3 text-right">1</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  No connection failures in any run. The systemd journal for run 1 shows the process was down for about 12 ms; the failed request came about 20 ms after the new process started, before Caddy routed to it. Accurate to about 50 ms, the probe interval.
-                </p>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Under concurrent load, the same redeploy with 10 clients gave a switch window of 247 ms (per-client median 243 ms) and 5 failed requests out of 6,100. With 50 keep-alive clients, using a Go load generator: 117,692 requests, no connection errors, 330 failed requests (0.28%), and a window of 160 ms. Every failure fell inside that window. Failures grow with the number of clients, because each client has a request in flight during the window. A first 50-client run that used one curl process per request was excluded: the load generator saturated the VM and the numbers described the generator, not the redeploy.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">8. Two services and PostgreSQL 15, on GCE</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The sample-shop stack on the same VM: orders and payments, one PostgreSQL 15 server with two databases. Ready means both health checks return 200 and pg_isready succeeds. Median of 10 interleaved runs.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">anode</th><th className="p-3 text-right">Docker</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Ready (median)</td><td className="p-3 text-right text-white">4,463 ms</td><td className="p-3 text-right">4,132 ms</td></tr>
-                      <tr><td className="p-3">Idle, services plus PostgreSQL</td><td className="p-3 text-right text-white">83.7 MB</td><td className="p-3 text-right">79.4 MB plus 194.5 MB of daemons</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  On this VM the database start dominates both arms, so the gap is small. Caddy adds 45 MB on the anode side and is excluded.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">9. Twelve services with their own databases, on GCE</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The repository&apos;s retail-platform example has 12 services, but it also needs ClickHouse and Redis, which did not fit the e2-small VM. This run used 12 synthetic services that match its service count: each is a Go service with its own PostgreSQL database, and each health check pings that database. One PostgreSQL 15 server and the same binaries in both arms. Median of 5 runs.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">anode</th><th className="p-3 text-right">Docker</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Ready, all 12 (median)</td><td className="p-3 text-right text-white">10.9 s</td><td className="p-3 text-right">8.9 s</td></tr>
-                      <tr><td className="p-3">Idle, services plus PostgreSQL</td><td className="p-3 text-right text-white">337 MB</td><td className="p-3 text-right">315 MB plus 339 MB of daemons</td></tr>
-                      <tr><td className="p-3">Deploy wall time, 12 services</td><td className="p-3 text-right text-white">201 s</td><td className="p-3 text-right">not applicable</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Two things to know. Docker was faster to ready on this run. And with 12 services that all declare GET /healthz, the edge config in this run sent that path to one service only. Current builds give each conflicting path a service prefix (for example /payments/healthz) and generate routes in a stable order. The 12-service run predates that change. The readiness numbers hit each service&apos;s own port, so they are not affected. The deploy time includes compiling 12 binaries; the first build also downloaded lib/pq.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">10. Repository example: retail-platform on GCE</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The repository&apos;s own 12-service example, deployed with anode on an e2-standard-4 Spot VM (4 vCPU, 16 GB, Debian 12), with the fixed build. Stores: three anode-managed PostgreSQL containers, Redis, and an external catalog PostgreSQL and ClickHouse audit store started by hand.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">Result</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Cold start, 12 services restarted together (median of 5)</td><td className="p-3 text-right text-white">695 ms (631 to 769 ms)</td></tr>
-                      <tr><td className="p-3">Idle service memory, 12 units</td><td className="p-3 text-right text-white">101 MB</td></tr>
-                      <tr><td className="p-3">Idle Docker daemons (stores run in containers by default)</td><td className="p-3 text-right text-white">232 MB</td></tr>
-                      <tr><td className="p-3">Redeploy under 50 clients: requests / connection errors / failed (502)</td><td className="p-3 text-right text-white">1,876,238 / 0 / 830, all inside a 156 ms window</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The example needed two changes to deploy as shipped: a GET /healthz route on each HTTP service (anode requires it to activate a release), and an accept loop in ledger, which never calls Serve. Both are in the patch in the repository. The Docker arm for these services is in section 11, and the 32-service marketplace example is in section 12.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">11. retail-platform: anode arm against the Docker arm</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  Same release binaries and the same environment in both arms. In the Docker arm, each service runs as a container with the environment its unit would have received. Stores stay as anode runs them in both arms, so the difference is the service runtime alone. Cold start is the median of 5 runs, with stores running.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Host</th><th className="p-3 text-right">Cold start, anode</th><th className="p-3 text-right">Cold start, Docker</th><th className="p-3 text-right">Idle services, anode / Docker</th><th className="p-3 text-right">Extra daemon RSS under Docker</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">GCE e2-standard-4</td><td className="p-3 text-right text-white">733 ms</td><td className="p-3 text-right">2.00 s</td><td className="p-3 text-right">90 / 96 MB</td><td className="p-3 text-right">about 193 MB</td></tr>
-                      <tr><td className="p-3">OrbStack, local</td><td className="p-3 text-right text-white">175 ms</td><td className="p-3 text-right">5.65 s</td><td className="p-3 text-right">70 / 73 MB</td><td className="p-3 text-right">about 132 MB</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The OrbStack anode cold start includes one cold-cache first trial (481 ms); the other four ran at 145 to 180 ms. The Docker cold start is much slower on OrbStack than on GCE. We did not investigate why. Caddy is excluded from the anode figures in both hosts.
-                </p>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white">12. Marketplace: 32 services and 35 stores on GCE</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The repository&apos;s marketplace example on an e2-standard-8 (8 vCPU, 32 GB, Spot). Seven stores are marked runtime = &quot;external&quot; in the example, so we started them by hand: TimescaleDB, CockroachDB, ClickHouse, and Scylla. External API values are placeholders. Ready, cold start, and idle figures are for the anode arm only.
-                </p>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
-                    <thead className="bg-[#07080a] text-neutral-400">
-                      <tr><th className="p-3 text-left">Measure</th><th className="p-3 text-right">Result</th></tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/[0.05] text-neutral-300">
-                      <tr><td className="p-3">Cold start, 32 service units (3 trials)</td><td className="p-3 text-right text-white">3.2 to 3.4 s</td></tr>
-                      <tr><td className="p-3">Idle service memory, 32 units</td><td className="p-3 text-right text-white">390 MB</td></tr>
-                      <tr><td className="p-3">Idle Docker daemons (32 containers)</td><td className="p-3 text-right text-white">908 MB</td></tr>
-                      <tr><td className="p-3">Redeploy under 50 clients, 15 minutes, whole project redeployed</td><td className="p-3 text-right text-white">10,969,942 requests, 0 connection errors, 3,127 failed (0.028%), all inside a 299 ms window</td></tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The first marketplace deploy failed twice because of our own placeholder values, and once because anode created MinIO buckets before MinIO was ready. We haven&apos;t run the marketplace example under Docker.
-                </p>
-              </div>
-
-              <div className="rounded-xl border border-amber-800/40 bg-amber-950/20 p-5 space-y-3">
-                <h3 className="text-sm font-bold text-amber-300">What these numbers do not show</h3>
-                <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
-                  <li>Two hosts: a local OrbStack VM on the same Mac, and a public Google Compute Engine VM (e2-small, shared core, Spot). The GCE VM is much smaller than the laptop VM, so its numbers are not interchangeable with the local ones.</li>
-                  <li>One service in the single-service tests, with no database. The multi-service test uses a fixture whose handlers never query the database; readiness checks the database separately with pg_isready and a manual SELECT 1.</li>
-                  <li>The Docker arm uses default docker run settings. The anode unit has its memory and CPU limits and hardening.</li>
-                  <li>anode deploy did not install PostgreSQL. The databases on the anode arm were installed by hand, so the anode arm has one manual step the deploy does not cover.</li>
-                  <li>Not measured: the marketplace example under Docker, service counts beyond 32, and the Caddy route swap for single services on the fixed build. The public round-trip time was measured incorrectly once and has been removed.</li>
+              <div className="rounded-xl border border-white/[0.08] bg-[#0a0a0c] p-6">
+                <h3 className="text-sm font-bold text-white">What these numbers do not cover</h3>
+                <ul className="mt-3 list-disc list-inside space-y-2 text-sm text-neutral-400">
+                  <li>Two hosts: a local OrbStack VM, and small or medium Google Cloud VMs on Spot pricing. The sizes differ, so compare within a host.</li>
+                  <li>External API calls are placeholders in the marketplace run. The services start, but those paths are not exercised.</li>
+                  <li>Not measured: a public VPS, Caddy&apos;s route-swap time on the largest example, and service counts above 32.</li>
                 </ul>
-              </div>
-
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-white">Reproduce</h3>
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  The scripts are in <code className="text-neutral-200">benchmarks/2026-11-16/scripts/</code>, and each result file in <code className="text-neutral-200">benchmarks/2026-11-16/results/</code> is the output of the script with the same name. The stack script takes its database and Stripe credentials from environment variables; no credentials are stored in the repository.
-                </p>
               </div>
             </div>
 
