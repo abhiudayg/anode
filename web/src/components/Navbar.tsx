@@ -67,7 +67,7 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
             <Link
-              href="/#topology"
+              href="/architecture"
               className="text-sm font-medium text-neutral-400 hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               Architecture
@@ -405,7 +405,7 @@ export function Navbar() {
         {mobileMenuOpen && (
           <div className="lg:hidden mt-3 rounded-2xl border border-white/[0.08] bg-[#090a0d]/98 backdrop-blur-2xl p-4 shadow-2xl space-y-3">
             <Link
-              href="/#topology"
+              href="/architecture"
               onClick={() => setMobileMenuOpen(false)}
               className="block px-3 py-2 rounded-lg text-sm font-medium text-neutral-300 hover:text-white hover:bg-white/[0.05]"
             >

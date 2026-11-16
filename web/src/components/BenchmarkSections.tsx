@@ -165,10 +165,13 @@ export function BenchmarkSections() {
 
         <div className="text-center mt-12">
           <p className="text-sm text-neutral-400 max-w-2xl mx-auto">
-            Not measured yet: a remote VPS host, and the Caddy route-swap time. The method and the raw results for every
-            card are in the docs.
+            The deploy was a live SSH deploy to an OrbStack Debian 12 VM on the same Mac, which we treated as the remote
+            host. Not measured yet: a public VPS on the internet, and Caddy&apos;s route-swap time.
           </p>
-          <Link href="/docs" className="inline-block mt-4 text-sm font-mono-code text-white underline underline-offset-4">
+          <Link
+            href="/docs#benchmarks-analysis"
+            className="inline-block mt-4 text-sm font-mono-code text-white underline underline-offset-4"
+          >
             Read the benchmark method
           </Link>
         </div>
