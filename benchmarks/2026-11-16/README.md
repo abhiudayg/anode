@@ -161,7 +161,7 @@ Ready means both health checks return 200 and `pg_isready` succeeds. Median of 1
 | anode: apt PostgreSQL and two anode units | 4,463 ms | 4,166 to 4,646 ms |
 | Docker: postgres:15 container and two containers | 4,132 ms | 3,991 to 4,433 ms |
 
-Idle memory after 20 s: anode 83.6 MB (PostgreSQL 67.8 MB, orders 6.9 MB, payments 8.9 MB). Docker 274 MB (PostgreSQL 62.7 MB, services 16.7 MB, daemons 194.5 MB). Caddy adds 45.1 MB on the anode side and is excluded from the total.
+Idle memory after 20 s: anode 83.7 MB (PostgreSQL 67.8 MB, orders 6.9 MB, payments 8.9 MB). Docker 274 MB (PostgreSQL 62.7 MB, services 16.7 MB, daemons 194.5 MB). Caddy adds 45.1 MB on the anode side and is excluded from the total.
 
 On this VM the database start dominates both arms, and the gap is small. The laptop VM result in section 4 is much larger for the anode arm, because apt PostgreSQL starts more slowly here than on the laptop.
 
