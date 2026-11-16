@@ -1,0 +1,27 @@
+marketplace (repository example: 32 services, 35 stores in 15 kinds) on GCE e2-standard-8 (Spot, us-central1-a, Debian 12, 32 GB), anode 1.6.0 from master.
+
+Stores: 28 provisioned by anode (containers), 7 marked runtime = "external" in the example's anode.toml,
+which the operator provides: 1 TimescaleDB, 1 CockroachDB, 3 ClickHouse, 2 Scylla. These were started by hand
+as 4 containers (one ClickHouse and one Scylla node serve several resources).
+External API values (Stripe, SendGrid, carriers) are placeholders.
+The services already declare GET /healthz, so no code patch was needed.
+
+Deploy: succeeded on the third attempt. Two earlier failures were our .env values, not anode:
+a bucket created before MinIO was ready, and placeholder URI formats for Mongo, TimescaleDB and Scylla.
+Attempts also showed: anode's bootstrap does not wait for MinIO before creating buckets.
+
+Cold start, 32 service units restarted together, stores running, 3 trials: 3.2 to 3.4 s.
+Idle memory, 20+ s after ready:
+  services (32 units)            390 MB
+  Caddy edge (excluded)           59 MB
+  Docker daemons (32 containers) 908 MB
+  store containers              ~3.6 GB (from docker stats)
+
+Redeploy under load, 50 keep-alive clients on GET /healthz (first service's bare route), 15-minute run,
+whole project redeployed at the start:
+  requests 10,969,942; connection errors 0; 502 responses 3,127 (0.028%)
+  all 502s within a 299 ms window; 2,927 of them inside the 276 ms gap in successful responses
+  restart of accounting (the service behind /healthz) at 16:50:35 UTC, inside the load window.
+Earlier attempt, excluded: a 4-minute run that ended before the restart window (no overlap).
+
+Not run: the Docker arm for the marketplace services; the external stores are not run as a comparison.
