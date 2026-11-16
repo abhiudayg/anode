@@ -1840,7 +1840,10 @@ terraform -chdir=infra/terraform apply`}</code>
                   Analyzer timing (anode inspect, median of 5 runs, Apple Silicon Mac): sample-shop 1.10 s, storefront 1.19 s, retail-platform 2.21 s, marketplace 8.81 s. Each run produced an identical lockfile hash. Peak analyzer memory is 0.7 to 2.8 GB, which is build-time memory and is not comparable to service memory.
                 </p>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  Not measured yet: multi-service stacks with PostgreSQL, and a live deploy to a remote host. The Docker comparison ran on a local VM, not a production server.
+                  Multi-service stack, sample-shop with two services and PostgreSQL 15 on both sides (one server, two databases, same credentials). Ready in 2.4 s with apt PostgreSQL under anode, against 1.6 s with a postgres:15 container under Docker. Most of the anode time is Debian&apos;s PostgreSQL startup: alone, apt PostgreSQL takes 2.4 s to accept connections and the container takes 0.6 s. Idle memory for the whole stack is 88 MB under anode and 202 MB under Docker, including 120 MB of Docker daemons. Anode runs Caddy as its edge proxy (14 MB), which is excluded from the 88 MB.
+                </p>
+                <p className="text-sm text-neutral-300 leading-relaxed">
+                  Deploy time, 5 runs: anode deploy takes 5.1 s median, including cross-compiling both services and updating Caddy. A no-cache docker build of both images from the same binaries takes 2.0 s. Not measured yet: a remote VPS host, and the Caddy route-swap time. The Docker comparisons ran on a local VM, not a production server. The raw scripts and results are in the anode repository under benchmarks/2026-11-16.
                 </p>
               </div>
 
