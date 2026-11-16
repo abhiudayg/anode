@@ -1,0 +1,11 @@
+trial	arm	pg_ready_us
+1	apt-postgresql	2379350
+1	docker-postgres15	754369
+2	apt-postgresql	2372522
+2	docker-postgres15	630641
+3	apt-postgresql	2352629
+3	docker-postgres15	608649
+4	apt-postgresql	2364483
+4	docker-postgres15	641951
+5	apt-postgresql	2376148
+5	docker-postgres15	679998

@@ -1,0 +1,4 @@
+=== RUN   TestAdd
+--- PASS: TestAdd (0.00s)
+PASS
+ok  	fixture	0.403s

@@ -1,0 +1,10 @@
+arm	measure	value
+anode-stack	postgres_rss_kb	75196
+anode-stack	orders_rss_kb	6480
+anode-stack	payments_rss_kb	6352
+anode-stack	cgroup_memory_bytes	20557824
+anode-stack	edge_caddy_rss_kb	13752
+docker-stack	postgres_rss_kb	68604
+docker-stack	orders_rss_kb	6760
+docker-stack	payments_rss_kb	6128
+docker-stack	daemons_rss_kb	119976

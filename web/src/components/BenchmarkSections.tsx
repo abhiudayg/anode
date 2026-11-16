@@ -139,12 +139,34 @@ export function BenchmarkSections() {
               </div>
             </div>
           </Card>
+          <Card
+            kind="Multi-service"
+            title="Two services and PostgreSQL 15"
+            note="sample-shop: orders and payments with one PostgreSQL server holding two databases. Median of 10 interleaved runs to ready (both health checks and pg_isready). Idle memory 20 s after ready. The anode cold start is dominated by Debian's PostgreSQL startup (2.4 s alone, against 0.6 s for the container)."
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-xl border border-white/[0.08] p-4">
+                <div className="text-[11px] font-mono-code text-neutral-400">Cold start to ready</div>
+                <div className="text-2xl font-black text-white mt-1">2.4 s</div>
+                <div className="text-[11px] font-mono-code text-neutral-500">anode, apt PostgreSQL</div>
+                <div className="text-2xl font-black text-neutral-300 mt-3">1.6 s</div>
+                <div className="text-[11px] font-mono-code text-neutral-500">Docker, postgres:15 container</div>
+              </div>
+              <div className="rounded-xl border border-white/[0.08] p-4">
+                <div className="text-[11px] font-mono-code text-neutral-400">Idle memory, whole stack</div>
+                <div className="text-2xl font-black text-white mt-1">88 MB</div>
+                <div className="text-[11px] font-mono-code text-neutral-500">anode, no daemon</div>
+                <div className="text-2xl font-black text-neutral-300 mt-3">202 MB</div>
+                <div className="text-[11px] font-mono-code text-neutral-500">Docker, incl. 120 MB daemons</div>
+              </div>
+            </div>
+          </Card>
         </div>
 
         <div className="text-center mt-12">
           <p className="text-sm text-neutral-400 max-w-2xl mx-auto">
-            Not measured yet: multi-service stacks with PostgreSQL on both sides, and deploy timing. The full method and
-            raw results are in the docs.
+            Not measured yet: a remote VPS host, and the Caddy route-swap time. The method and the raw results for every
+            card are in the docs.
           </p>
           <Link href="/docs" className="inline-block mt-4 text-sm font-mono-code text-white underline underline-offset-4">
             Read the benchmark method

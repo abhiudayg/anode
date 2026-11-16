@@ -1,0 +1,5 @@
+anode-systemd	service_rss_kb	5528
+anode-systemd	cgroup_memory_current_bytes	5832704
+docker	service_rss_kb	5756
+docker	cgroup_memory_current_bytes	9977856
+docker	runtime_daemons_rss_kb	96596
