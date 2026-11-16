@@ -1467,7 +1467,7 @@ req, _ := http.NewRequestWithContext(ctx, "POST",
 
               <h3 className="text-lg font-bold text-white mt-8">Known gaps</h3>
               <ul className="list-disc list-inside space-y-2 text-sm text-neutral-300 leading-relaxed">
-                <li>Route detection works for <code className="text-neutral-200">ServeMux</code> methods and chi. A package-level <code className="text-neutral-200">http.HandleFunc</code> call is not detected, so its routes are missing from the lockfile. We hit this while measuring: the service ran, but the edge had no route to it.</li>
+                <li>Route detection works for <code className="text-neutral-200">ServeMux</code> methods, package-level <code className="text-neutral-200">http.HandleFunc</code>, and chi. A package-level route was missing from the lockfile until a fix in this release; the service ran but the edge had no route to it.</li>
                 <li>gin, echo and fiber routes are not recognised, so their routes will not appear in the ingress table.</li>
               </ul>
               <p className="text-xs font-mono-code text-neutral-500">Source: docs/architecture.md, section 2 (phase 3); internal/analyzer/sinks.go, client_sinks.go, taint.go; examples/sample-shop/orders/main.go</p>
@@ -2036,7 +2036,7 @@ terraform -chdir=infra/terraform apply`}</code>
               <div className="space-y-4">
                 <h3 className="text-lg font-bold text-white">9. Twelve services with their own databases, on GCE</h3>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  Synthetic services, not a real application: 12 Go services, each with its own PostgreSQL database, each health check pings that database. One PostgreSQL 15 server and the same binaries in both arms. Median of 5 runs.
+                  The repository&apos;s retail-platform example has 12 services, but it also needs ClickHouse and Redis, which did not fit the e2-small VM. This run used 12 synthetic services that match its service count: each is a Go service with its own PostgreSQL database, and each health check pings that database. One PostgreSQL 15 server and the same binaries in both arms. Median of 5 runs.
                 </p>
                 <div className="overflow-x-auto">
                   <table className="w-full text-xs font-mono-code border border-white/[0.08] rounded-xl overflow-hidden">
@@ -2051,7 +2051,7 @@ terraform -chdir=infra/terraform apply`}</code>
                   </table>
                 </div>
                 <p className="text-sm text-neutral-300 leading-relaxed">
-                  Two things to know. Docker was faster to ready on this run. And with 12 services that all declare GET /healthz, Caddy&apos;s generated config sends that path to one service only, so the other 11 are not reachable through the public route. That is a gap in the edge configuration; it did not affect these readiness numbers, which hit each service&apos;s own port. The deploy time includes compiling 12 binaries; the first build also downloaded lib/pq.
+                  Two things to know. Docker was faster to ready on this run. And with 12 services that all declare GET /healthz, the edge config in this run sent that path to one service only. Current builds give each conflicting path a service prefix (for example /payments/healthz) and generate routes in a stable order. The 12-service run predates that change. The readiness numbers hit each service&apos;s own port, so they are not affected. The deploy time includes compiling 12 binaries; the first build also downloaded lib/pq.
                 </p>
               </div>
 
