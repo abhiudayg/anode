@@ -1,0 +1,12 @@
+target_rate	10
+sent	1447
+achieved_rate	9.6
+dropped_at_client	0
+status_err	484
+status_200	963
+ok_200	963
+p50_ms	28.77
+p90_ms	380.57
+p99_ms	1421.23
+p999_ms	4019.31
+max_ms	4275.89
