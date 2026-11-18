@@ -38,9 +38,11 @@ func Rollback(client Remote) (string, error) {
 
 	for _, unit := range units {
 		recorded := fmt.Sprintf("%s/%s/%s", releasesRoot, previous, unit)
+		// Clear the service's fingerprint: the next deploy must restart it, not reuse the binary rolled back from.
+		service := strings.TrimSuffix(strings.TrimPrefix(unit, "anode-"), ".service")
 		cmd := fmt.Sprintf(
-			"cp '%s' '%s/%s' && systemctl daemon-reload && systemctl restart '%s' && sleep 2 && systemctl is-active --quiet '%s'",
-			recorded, unitRoot, unit, unit, unit,
+			"rm -f '%s' && cp '%s' '%s/%s' && systemctl daemon-reload && systemctl restart '%s' && sleep 2 && systemctl is-active --quiet '%s'",
+			fingerprintPath(service), recorded, unitRoot, unit, unit, unit,
 		)
 		if _, err := client.Run(cmd); err != nil {
 			return "", fmt.Errorf("rollback of %s to release %s failed: %w", unit, previous, err)

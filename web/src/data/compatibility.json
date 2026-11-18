@@ -76,7 +76,7 @@
     {
       "feature": "Rolling or partial deploy",
       "docker": "Varies by orchestrator; Compose recreates containers",
-      "anode": "Restarts every unit of the project. Lockfile-diff deploys that restart only changed units are not built.",
+      "anode": "Deploy restarts only the services whose binary, unit, env file, or config changed. Unchanged services keep running. Every service is still cross-compiled on each deploy, and restarts run one after another.",
       "gap": true
     },
     {
