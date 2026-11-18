@@ -1,0 +1,5 @@
+services_cgroup_bytes	533352448
+services_rss_kb	404304
+service_count	32
+daemon_rss_kb	896968
+running_store_containers	32

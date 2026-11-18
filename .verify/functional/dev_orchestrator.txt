@@ -1,1 +1,2 @@
 CMD anode dev ./testdata/sample-shop --dry-run
+CMD go test -count=1 -run 'Watch|RestartService' ./internal/devengine/

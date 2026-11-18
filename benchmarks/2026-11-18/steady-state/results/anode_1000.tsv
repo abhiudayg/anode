@@ -1,0 +1,13 @@
+target_rate	1000
+sent	55335
+achieved_rate	922.2
+dropped_at_client	0
+status_200	55335
+ok_200	55335
+p50_ms	1.80
+p90_ms	2.08
+p99_ms	2.45
+p999_ms	2.94
+max_ms	4.66
+service_cpu_pct	25.5
+service_rss_kb	16996

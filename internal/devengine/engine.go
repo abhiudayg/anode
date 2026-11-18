@@ -176,6 +176,23 @@ func (e *Engine) StartAll(ctx context.Context, envPlan map[string]map[string]str
 	return nil
 }
 
+// Watch restarts a service whenever a .go file in its source directory changes. Each service has its own watcher and
+// restarts run on that watcher's goroutine, so one service's rebuild does not hold up the others.
+func (e *Engine) Watch(ctx context.Context, envPlan map[string]map[string]string) {
+	for name, svc := range e.lockfile.Services {
+		dir, err := iag.SafeResolvePath(e.rootDir, svc.Entrypoint)
+		if err != nil {
+			continue
+		}
+		go WatchDirectory(ctx, dir, func(changed string) {
+			fmt.Printf("[dev] %s changed, rebuilding %s\n", filepath.Base(changed), name)
+			if err := e.supervisor.RestartService(ctx, name, envPlan[name]); err != nil {
+				fmt.Printf("[dev] %s not restarted: %v\n", name, err)
+			}
+		})
+	}
+}
+
 // StopAll stops the services and removes the database containers this run started. They have no volumes, so
 // nothing is lost, and the next run starts from a clean database.
 func (e *Engine) StopAll() {

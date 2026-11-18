@@ -11,12 +11,12 @@ const stats: Stat[] = [
   {
     label: "Idle memory",
     value: "5.5 MB",
-    detail: "One service with no runtime daemon. Docker needs about 102 MB, including its daemons.",
+    detail: "One service with no runtime daemon. Docker needs about 102 MB, including its daemons: about 95% less.",
   },
   {
     label: "Redeploy under load",
-    value: "0.028%",
-    detail: "Failed requests while 32 services were redeployed under 50 clients. All failures fell in a 299 ms window.",
+    value: "0.026%",
+    detail: "Failed requests while 32 services were redeployed under 50 clients, anode, 2026-11-18. All failures fell in a 300 ms window.",
   },
   {
     label: "Analysis time",

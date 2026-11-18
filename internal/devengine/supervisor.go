@@ -43,32 +43,46 @@ func NewSupervisor(rootDir string, lockfile *iag.LockFile) *Supervisor {
 	}
 }
 
-// StartService builds and boots a single microservice with styled streaming logs
-func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[string]string) error {
-	s.mu.Lock()
-	color := serviceColors[s.colorIdx%len(serviceColors)]
-	s.colorIdx++
-	s.mu.Unlock()
-
-	entryDir, err := iag.SafeResolvePath(s.rootDir, svc.Entrypoint)
+// buildService compiles one service into .verify/output and returns the binary path and its source directory.
+func (s *Supervisor) buildService(ctx context.Context, svc iag.Service) (binPath string, entryDir string, err error) {
+	entryDir, err = iag.SafeResolvePath(s.rootDir, svc.Entrypoint)
 	if err != nil {
-		return fmt.Errorf("invalid service entrypoint for %s: %w", svc.Name, err)
+		return "", "", fmt.Errorf("invalid service entrypoint for %s: %w", svc.Name, err)
 	}
 	if err := iag.ValidateIdentifier("service", svc.Name); err != nil {
-		return err
+		return "", "", err
 	}
 	absRoot, _ := filepath.Abs(s.rootDir)
 	binDir := filepath.Join(absRoot, ".verify", "output")
 	_ = os.MkdirAll(binDir, 0755)
-	binPath := filepath.Join(binDir, svc.Name)
+	binPath = filepath.Join(binDir, svc.Name)
 
 	// Incremental Go Build
 	buildCmd := exec.CommandContext(ctx, "go", "build", "-o", binPath, ".")
 	buildCmd.Dir = entryDir
 	if out, err := buildCmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("build failed for %s: %s (%w)", svc.Name, string(out), err)
+		return "", "", fmt.Errorf("build failed for %s: %s (%w)", svc.Name, string(out), err)
 	}
+	return binPath, entryDir, nil
+}
 
+// StartService builds and boots a single microservice with styled streaming logs
+func (s *Supervisor) StartService(ctx context.Context, svc iag.Service, env map[string]string) error {
+	binPath, entryDir, err := s.buildService(ctx, svc)
+	if err != nil {
+		return err
+	}
+	return s.launch(ctx, svc, binPath, entryDir, env)
+}
+
+// launch starts an already-built binary as a supervised process.
+func (s *Supervisor) launch(ctx context.Context, svc iag.Service, binPath, entryDir string, env map[string]string) error {
+	s.mu.Lock()
+	color := serviceColors[s.colorIdx%len(serviceColors)]
+	s.colorIdx++
+	s.mu.Unlock()
+
+	absRoot, _ := filepath.Abs(s.rootDir)
 	svcCtx, cancel := context.WithCancel(ctx)
 	cmd := exec.CommandContext(svcCtx, binPath)
 	cmd.Dir = entryDir
@@ -164,16 +178,21 @@ func (s *Supervisor) StopAll() {
 	}
 }
 
+// RestartService rebuilds a service and replaces its process. The new build is made first, so a compile error leaves
+// the running process up and returns the error to the caller.
 func (s *Supervisor) RestartService(ctx context.Context, name string, env map[string]string) error {
 	s.mu.Lock()
 	inst, exists := s.instances[name]
 	svc := s.lockfile.Services[name]
 	s.mu.Unlock()
 
+	binPath, entryDir, err := s.buildService(ctx, svc)
+	if err != nil {
+		return err
+	}
 	if exists && inst.CancelFunc != nil {
 		inst.CancelFunc()
 		_ = inst.Cmd.Wait()
 	}
-
-	return s.StartService(ctx, svc, env)
+	return s.launch(ctx, svc, binPath, entryDir, env)
 }

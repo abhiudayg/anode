@@ -21,6 +21,11 @@ The Dev Orchestrator starts and supervises local microservice meshes, dynamicall
   - Behaviour: Spawns binaries, pipes stdout/stderr through ANSI color filters, and restarts services on file modification.
   - Outcome: Delivers unified developer console output with instant live reloads.
 
+- `file-change-reload`: Rebuilds and restarts a service when one of its Go files changes.
+  - Intent: Make an edit live without restarting `anode dev` by hand.
+  - Behaviour: Polls Go file modification times per service directory, debounces 300 ms, rebuilds that service, then replaces its process. A failed build leaves the running process up.
+  - Outcome: An edited handler serves the new code shortly after the save.
+
 ## How to get to it (user POV)
 
 - CLI: `anode dev ./testdata/sample-shop`
@@ -37,9 +42,15 @@ The Dev Orchestrator starts and supervises local microservice meshes, dynamicall
    - Why: Proves environment variable synthesis, dependency wiring, and supervisor startup readiness.
    - Expected: Output displays allocated ports, stateful infrastructure status, and exits cleanly.
    - Impact: Confirms developer environment orchestrator prepares and wires services correctly.
+2. **file-change-reload** (entries 2–2) — verifies that an edited service is rebuilt and restarted, and that a failed build leaves the running process up.
+   - Request: `CMD go test -count=1 -run 'Watch|RestartService' ./internal/devengine/`
+   - Why: Proves the watcher reports one change per edit, ignores hidden directories and non-Go files, and that a restart does not stop the running process when its build fails.
+   - Expected: `ok  github.com/abhiudayg/anode/internal/devengine` with exit code 0.
+   - Impact: No process state changes; the test only builds a temporary module.
 
 ## Gotchas
 
+- The watcher polls modification times every 300 ms and waits 300 ms of quiet before a restart, so a save is live about one `go build` later.
 - If the Docker daemon is unreachable or unauthorized in restricted sandboxes, container provisioning logs a notice and falls back gracefully.
 - Incremental builds must specify absolute output binary directories to prevent relative path nesting in sub-packages.
 
@@ -49,3 +60,5 @@ The Dev Orchestrator starts and supervises local microservice meshes, dynamicall
 - `internal/devengine/container.go`
 - `internal/devengine/migrations.go`
 - `internal/devengine/supervisor.go`
+- `internal/devengine/watcher.go`
+- `internal/devengine/engine.go`

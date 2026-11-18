@@ -120,6 +120,8 @@ const measured = [
   ["DynamicUser cost inside the anode unit", "about 20 ms"],
   ["Idle memory, one service: anode / Docker with daemons", "5.5 MB / about 102 to 106 MB"],
   ["Two services plus PostgreSQL 15 to ready: anode / Docker", "2.4 s / 1.6 s"],
+  ["Marketplace, 32 services, cold start on GCE e2-standard-8: anode / Docker", "3.3 s / 5.6 s"],
+  ["Orders route, 500 RPS through Caddy, p99: anode unit / bare unit / Docker", "2.5 ms / 2.6 ms / 2.5 ms"],
 ];
 
 export const metadata = {
