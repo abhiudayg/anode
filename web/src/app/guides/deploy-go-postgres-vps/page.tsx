@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { LimitationsCallout } from "@/components/LimitationsCallout";
 import { 
   Database, 
   ArrowRight
@@ -135,6 +136,10 @@ export default function DeployGoPostgresPage() {
             </p>
           </header>
 
+          <div className="max-w-3xl mx-auto mt-8">
+            <LimitationsCallout framework="net/http" routesDetected={true} />
+          </div>
+
           {/* Step 1: Standard Go Code */}
           <section id="step-1" className="mb-12">
             <div className="flex items-center gap-3 mb-4">
@@ -222,7 +227,7 @@ export default function DeployGoPostgresPage() {
                 brew install abhiudayg/tap/anode
               </div>
               <Link
-                href="/docs#quickstart"
+                href="/docs/quickstart"
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Read Quickstart</span>

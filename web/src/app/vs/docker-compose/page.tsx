@@ -236,7 +236,7 @@ export default function DockerComposeVsAnodePage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-red-400 mt-1 font-bold">✕</span>
-                  <span><strong>Resource Tax:</strong> large consumed by Docker desktop or containerd shims before serving a single HTTP request.</span>
+                  <span><strong>Resource Tax:</strong> Docker Desktop and containerd shims use memory before serving a single HTTP request. On a Debian VM, one idle service costs about 102 MB under Docker and 5.5 MB under anode (<a href="/benchmarks" className="underline">method and caveats</a>).</span>
                 </li>
               </ul>
             </div>

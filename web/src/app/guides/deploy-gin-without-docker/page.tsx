@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { LimitationsCallout } from "@/components/LimitationsCallout";
 import { 
   ArrowRight, 
   Server, 
@@ -135,6 +136,10 @@ export default function DeployGinGuide() {
               Wrapping Gin in Docker adds a container daemon to the runtime. Here is how to run Gin natively on Linux bare metal with automated systemd and HTTPS.
             </p>
           </header>
+
+          <div className="max-w-3xl mx-auto mt-8">
+            <LimitationsCallout framework="gin" routesDetected={false} />
+          </div>
 
           {/* Efficiency Metric Callout */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
@@ -272,7 +277,7 @@ export default function DeployGinGuide() {
                 brew install abhiudayg/tap/anode
               </div>
               <Link
-                href="/docs#quickstart"
+                href="/docs/quickstart"
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Read Quickstart</span>

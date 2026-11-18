@@ -1,0 +1,331 @@
+{
+  "method_version": "bench-v1",
+  "headlines": [
+    {
+      "label": "Cold start, 32 services",
+      "value": "3.4 s",
+      "compare": "Docker 5.6 s",
+      "method": "GCE e2-standard-8, 32 services plus 32 store containers in both arms. Median of 5 trials, page cache dropped before each. Both run orders.",
+      "link": "/benchmarks#marketplace-2026-11-18"
+    },
+    {
+      "label": "Idle memory, one service",
+      "value": "5.5 MB",
+      "compare": "Docker 102 MB",
+      "method": "OrbStack Debian 12 VM on Apple Silicon, 20 s after ready. Docker total includes dockerd, containerd and shims.",
+      "link": "/benchmarks#analysis-2026-11-16"
+    },
+    {
+      "label": "Failed requests during redeploy",
+      "value": "0.026%",
+      "compare": "Docker 0.19 to 0.20%",
+      "method": "32 services, 50 clients, 15 min, both run orders. Each arm used its own redeploy method, so this is not a like-for-like swap comparison.",
+      "link": "/benchmarks#marketplace-2026-11-18"
+    },
+    {
+      "label": "Static analysis, 32 services",
+      "value": "8.8 s",
+      "compare": null,
+      "method": "anode inspect on the marketplace example, median of 5 runs on a Mac. Lockfile hash identical in all 20 analysis runs.",
+      "link": "/benchmarks#analysis-2026-11-16"
+    }
+  ],
+  "runs": [
+    {
+      "id": "marketplace-2026-11-18",
+      "date": "2026-11-18",
+      "title": "Marketplace: anode vs Docker, 32 services",
+      "machine": "GCE e2-standard-8, 32 GB, Debian 12, us-central1-a, on-demand",
+      "n": "2 run orders per arm; 5 cold-start trials per run; one 15-minute load run per order",
+      "readme": "benchmarks/2026-11-18/README.md",
+      "columns": [
+        "Measure",
+        "anode run 1",
+        "anode run 2",
+        "Docker run 1",
+        "Docker run 2"
+      ],
+      "rows": [
+        [
+          "Cold start median (5 trials)",
+          "3.36 s",
+          "3.33 s",
+          "5.58 s",
+          "5.65 s"
+        ],
+        [
+          "Services memory, cgroup",
+          "526 MB",
+          "533 MB",
+          "504 MB",
+          "511 MB"
+        ],
+        [
+          "Daemon RSS (store containers in both arms)",
+          "696 MB",
+          "897 MB",
+          "1,173 MB",
+          "1,294 MB"
+        ],
+        [
+          "Requests / errors",
+          "10.58 M / 0",
+          "10.82 M / 0",
+          "10.91 M / 0",
+          "10.73 M / 0"
+        ],
+        [
+          "Load p50 / p99",
+          "3.67 / 12.0 ms",
+          "3.59 / 11.8 ms",
+          "3.55 / 11.7 ms",
+          "3.62 / 11.8 ms"
+        ],
+        [
+          "502s during redeploy",
+          "2,743",
+          "2,850",
+          "20,487",
+          "21,457"
+        ],
+        [
+          "502 window",
+          "300 ms",
+          "283 ms",
+          "2.33 s",
+          "2.37 s"
+        ]
+      ],
+      "loses": [
+        "Services memory (cgroup): anode 526 to 533 MB vs Docker 504 to 511 MB, about 4% higher.",
+        "Redeploy comparison uses different procedures: anode deploy from the Mac vs our own batched stop, remove, rename, start script for Docker. It is not Docker's best method.",
+        "Smoke test: the same 3 PUT routes return 500 in both arms. Not investigated.",
+        "Steady-state load at 100 and 500 RPS is a tie (see the steady-state run)."
+      ]
+    },
+    {
+      "id": "steady-state-2026-11-18",
+      "date": "2026-11-18",
+      "title": "Steady state: bare unit vs anode unit vs Docker",
+      "machine": "GCE target VM with Caddy on port 80 (machine type not recorded in the README); load VM anode-loadgen, e2-standard-4, same zone",
+      "n": "1 run per cell, 60 s measured after 10 s warm-up",
+      "readme": "benchmarks/2026-11-18/steady-state/README.md",
+      "columns": [
+        "Arm",
+        "Target RPS",
+        "Achieved",
+        "p50 ms",
+        "p99 ms",
+        "p999 ms",
+        "Service CPU %"
+      ],
+      "rows": [
+        [
+          "anode unit",
+          "100",
+          "100.0",
+          "2.40",
+          "2.98",
+          "3.55",
+          "7.4"
+        ],
+        [
+          "bare unit",
+          "100",
+          "100.0",
+          "2.49",
+          "3.14",
+          "3.89",
+          "4.2"
+        ],
+        [
+          "Docker",
+          "100",
+          "100.0",
+          "2.27",
+          "2.96",
+          "3.52",
+          "4.5"
+        ],
+        [
+          "anode unit",
+          "500",
+          "500.0",
+          "1.97",
+          "2.54",
+          "3.04",
+          "14.6"
+        ],
+        [
+          "bare unit",
+          "500",
+          "500.0",
+          "2.02",
+          "2.62",
+          "3.25",
+          "15.4"
+        ],
+        [
+          "Docker",
+          "500",
+          "500.0",
+          "1.83",
+          "2.46",
+          "2.97",
+          "14.8"
+        ],
+        [
+          "anode unit",
+          "1,000",
+          "922.2",
+          "1.80",
+          "2.45",
+          "2.94",
+          "25.5"
+        ],
+        [
+          "bare unit",
+          "1,000",
+          "914.6",
+          "1.86",
+          "2.60",
+          "3.13",
+          "25.0"
+        ],
+        [
+          "Docker",
+          "1,000",
+          "919.5",
+          "1.77",
+          "2.47",
+          "3.00",
+          "not reported (invalid sample)"
+        ]
+      ],
+      "loses": [
+        "Service CPU at 100 RPS: anode 7.4% vs bare 4.2% and Docker 4.5%. One run each, so the gap is not established.",
+        "At 1,000 RPS all arms top out near 915 to 922 RPS. That is the load path, so this row does not separate the arms.",
+        "No direct-port arm: every arm goes through Caddy, so Caddy's own cost is not isolated.",
+        "Docker's 1,000 RPS CPU sample was discarded after the PID read failed."
+      ]
+    },
+    {
+      "id": "failure-matrix-2026-11-18",
+      "date": "2026-11-18",
+      "title": "Failure matrix: SIGTERM, database outage, port taken",
+      "machine": "Same GCE VM as the marketplace run, 32 anode units and 32 store containers",
+      "n": "One run per scenario",
+      "readme": "benchmarks/2026-11-18/failure-matrix/README.md",
+      "columns": [
+        "Scenario",
+        "Observed",
+        "Error window",
+        "Recovery"
+      ],
+      "rows": [
+        [
+          "SIGTERM, 50 clients on /healthz",
+          "198,766 connection errors of 931,772 (21%); 0 non-200 responses",
+          "one window, 3.37 s",
+          "automatic after Restart=always, 3 s delay plus boot"
+        ],
+        [
+          "Postgres down 10 s, GET /v1/orders/{id}, 10 clients",
+          "96,013 responses 500",
+          "500s for 10.6 s",
+          "immediate once Postgres returns; no restart"
+        ],
+        [
+          "Port taken (:21059 held by another process)",
+          "bind: address already in use; restart loop about every 4 s",
+          "service down until the port is freed",
+          "automatic once the port is freed"
+        ]
+      ],
+      "loses": [
+        "No graceful shutdown: the service exits on SIGTERM, so in-flight requests fail. This is the biggest known gap.",
+        "Not run: OOM under the 1G memory limit, crash-loop, bad migration, non-compiling deploy, full disk.",
+        "The matrix does not record the installed unit file, so the memory limit the VM ran with is unverified."
+      ]
+    },
+    {
+      "id": "port-collisions-2026-11-18",
+      "date": "2026-11-18",
+      "title": "Port collisions under anode dev",
+      "machine": "Local machine (not recorded in the README); 10 copies of examples/sample-shop",
+      "n": "One run",
+      "readme": "benchmarks/2026-11-18/README.md",
+      "columns": [
+        "Arm",
+        "Result",
+        "Memory"
+      ],
+      "rows": [
+        [
+          "anode dev, 10 copies",
+          "10 of 10 healthy, 20 distinct ports, all ready within 1.4 s",
+          "475 MB for the 10 dev environments"
+        ],
+        [
+          "Fixed host ports (Compose-style stand-in)",
+          "1 of 10 started; 9 failed with \"port is already allocated\"",
+          "not measured"
+        ]
+      ],
+      "loses": [
+        "All copies shared one Postgres container started by hand, because anode dev asked for external DB URLs. Per-copy store isolation is not tested.",
+        "The Compose side used nginx with the same port mapping, not the sample-shop images."
+      ]
+    },
+    {
+      "id": "analysis-2026-11-16",
+      "date": "2026-11-16",
+      "title": "Analyzer time and single-service memory",
+      "machine": "Apple Silicon Mac (analysis); OrbStack Debian 12 arm64 VM (services)",
+      "n": "5 runs per fixture for analysis; 20 s idle samples for memory",
+      "readme": "benchmarks/2026-11-16/README.md",
+      "columns": [
+        "Fixture",
+        "Services",
+        "Store resources",
+        "Median time",
+        "Peak RSS"
+      ],
+      "rows": [
+        [
+          "sample-shop",
+          "2",
+          "2",
+          "1.10 s",
+          "685 MB"
+        ],
+        [
+          "storefront",
+          "3",
+          "2",
+          "1.19 s",
+          "712 MB"
+        ],
+        [
+          "retail-platform",
+          "12",
+          "6",
+          "2.21 s",
+          "991 MB"
+        ],
+        [
+          "marketplace",
+          "32",
+          "35",
+          "8.81 s",
+          "2,792 MB"
+        ]
+      ],
+      "loses": [
+        "Idle memory, one service: anode 5.5 MB vs Docker 102 to 106 MB including daemons. Docker's service process alone is 5.8 MB, so the gap is the daemon, not the service.",
+        "12 services on GCE: Docker ready in 8.9 s vs anode 10.9 s. The anode arm's extra time is mostly PostgreSQL startup and unit ordering; not profiled.",
+        "In that 12-service run, Caddy routed /healthz to a single service, so other services were not publicly reachable. It did not affect readiness numbers."
+      ]
+    }
+  ]
+}

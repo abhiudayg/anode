@@ -46,10 +46,9 @@ export function Footer() {
             <p className="text-neutral-400 text-xs leading-relaxed">
               Proof-of-Topology bare-metal orchestrator for unmodified Go backends. Zero Docker, zero Kubernetes.
             </p>
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-mono-code text-emerald-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>4-Pillar Topology Verified</span>
-            </div>
+            <Link href="/benchmarks" className="text-[11px] font-mono-code text-neutral-400 hover:text-white">
+              Benchmark method and raw summaries →
+            </Link>
           </div>
 
           {/* Col 2: Guides & Tutorials */}
@@ -113,12 +112,12 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/docs#overview" className="hover:text-white transition-colors">
+                <Link href="/docs" className="hover:text-white transition-colors">
                   Architecture Deep Dive
                 </Link>
               </li>
               <li>
-                <Link href="/docs#tradeoffs" className="hover:text-white transition-colors">
+                <Link href="/docs/tradeoffs" className="hover:text-white transition-colors">
                   Honest Tradeoffs &amp; Limits
                 </Link>
               </li>
@@ -152,7 +151,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/docs#quickstart" className="hover:text-white transition-colors flex items-center gap-1.5">
+                <Link href="/docs/quickstart" className="hover:text-white transition-colors flex items-center gap-1.5">
                   <Terminal className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Quickstart Tutorial</span>
                 </Link>
@@ -230,10 +229,9 @@ export function Footer() {
         {/* Sub-Footer */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-400 font-mono-code">
           <div>
-            © 2026 Anode. Open source under Apache 2.0 license.
+            © 2026 Anode. Open source under the MIT license.
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.1] text-neutral-300 text-xs">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
             <span>Compiled with Go 1.27+ SSA • Bare-Metal Linux Native</span>
           </div>
         </div>

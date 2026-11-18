@@ -126,7 +126,7 @@ export function QuickstartSection() {
           </a>
 
           <Link
-            href="/docs#overview"
+            href="/docs"
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-xs font-mono-code text-cyan-300 transition-all"
           >
             <BookOpen className="w-4 h-4" />

@@ -188,7 +188,7 @@ export default function ArchitecturePage() {
             <p className="mt-4 text-neutral-300 leading-relaxed">
               These are from recorded runs on an Apple Silicon Mac and an OrbStack Debian 12 VM. The scripts and raw results are
               in <code className="text-neutral-200">benchmarks/2026-11-16</code>, and the method is in the{" "}
-              <Link href="/docs#benchmarks-analysis" className="underline underline-offset-4 hover:text-white">
+              <Link href="/docs/benchmarks-analysis" className="underline underline-offset-4 hover:text-white">
                 docs
               </Link>
               .

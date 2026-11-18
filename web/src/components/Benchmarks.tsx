@@ -1,29 +1,5 @@
 import Link from "next/link";
-
-type Stat = { label: string; value: string; detail: string };
-
-const stats: Stat[] = [
-  {
-    label: "Cold start",
-    value: "733 ms",
-    detail: "12 services on a GCE VM. Docker takes 2.0 s for the same binaries.",
-  },
-  {
-    label: "Idle memory",
-    value: "5.5 MB",
-    detail: "One service with no runtime daemon. Docker needs about 102 MB, including its daemons: about 95% less.",
-  },
-  {
-    label: "Redeploy under load",
-    value: "0.026%",
-    detail: "Failed requests while 32 services were redeployed under 50 clients, anode, 2026-11-18. All failures fell in a 300 ms window.",
-  },
-  {
-    label: "Analysis time",
-    value: "8.8 s",
-    detail: "Static analysis of the 32-service marketplace example. Lockfile hashes matched in 20 of 20 runs.",
-  },
-];
+import benchmarks from "@/data/benchmarks.json";
 
 export function Benchmarks() {
   return (
@@ -33,26 +9,36 @@ export function Benchmarks() {
           <span className="text-xs font-mono-code uppercase tracking-wider text-neutral-400">Benchmarks</span>
           <h2 className="mt-3 text-3xl sm:text-5xl font-bold tracking-tight text-white">Measured, not estimated.</h2>
           <p className="mt-4 text-base text-neutral-400 leading-relaxed">
-            Recorded runs on a local OrbStack VM and on Google Cloud. Every figure has its raw data in the repository.
+            Each number states its method and links to the run. Summaries and scripts are in the repository; raw per-request logs are not.
           </p>
         </div>
 
         <div className="mt-14 grid grid-cols-1 sm:grid-cols-2 gap-5">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-7">
-              <div className="text-xs font-mono-code uppercase tracking-wider text-neutral-500">{s.label}</div>
-              <div className="mt-3 text-5xl font-black tracking-tight text-white">{s.value}</div>
-              <p className="mt-4 text-sm text-neutral-400 leading-relaxed">{s.detail}</p>
-            </div>
+          {benchmarks.headlines.map((h) => (
+            <Link
+              key={h.label}
+              href={h.link}
+              className="group rounded-2xl border border-white/[0.08] bg-[#0a0a0c] p-7 hover:border-white/20 transition-colors"
+            >
+              <div className="text-xs font-mono-code uppercase tracking-wider text-neutral-500">{h.label}</div>
+              <div className="mt-3 flex flex-wrap items-baseline gap-3">
+                <span className="text-5xl font-black tracking-tight text-white">{h.value}</span>
+                {h.compare && <span className="text-sm font-mono-code text-neutral-400">vs {h.compare}</span>}
+              </div>
+              <p className="mt-4 text-sm text-neutral-400 leading-relaxed">{h.method}</p>
+              <span className="mt-4 inline-block text-xs font-mono-code text-neutral-500 group-hover:text-white">
+                See the run →
+              </span>
+            </Link>
           ))}
         </div>
 
         <div className="mt-12 text-center">
           <Link
-            href="/docs#benchmarks"
+            href="/benchmarks"
             className="inline-flex items-center gap-2 rounded-full border border-white/20 px-6 py-3 text-sm font-medium text-white hover:bg-white hover:text-black transition-colors"
           >
-            See the full results and method
+            All runs, methods, and where anode loses
           </Link>
         </div>
       </div>

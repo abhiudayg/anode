@@ -6,6 +6,9 @@ import { Copy, ArrowRight } from "lucide-react";
 import confetti from "canvas-confetti";
 import { motion } from "motion/react";
 import { InteractiveTerminal } from "./InteractiveTerminal";
+import releases from "@/data/changelog.json";
+
+const latestRelease = releases.find((r) => r.isLatest);
 
 export function Hero() {
   const [copied, setCopied] = useState(false);
@@ -43,12 +46,13 @@ export function Hero() {
           transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-wrap items-center gap-2 mb-8 text-xs font-mono-code text-neutral-400"
         >
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <Link href="/changelog" className="text-emerald-400 hover:underline">{latestRelease?.tag} latest release</Link>
+          <span className="text-neutral-600">•</span>
           <span className="text-white font-medium">Proof-of-Topology</span>
           <span className="text-neutral-600">•</span>
           <span>Bare-Metal Go Orchestrator</span>
           <span className="text-neutral-600">•</span>
-          <span className="text-neutral-500">Apache 2.0 Open Source</span>
+          <span className="text-neutral-500">MIT Open Source</span>
         </motion.div>
 
         {/* Two-Column Balanced Hero Grid */}
@@ -69,6 +73,13 @@ export function Hero() {
 
             <p className="text-base sm:text-lg text-neutral-300 leading-relaxed font-normal max-w-xl">
               Unmodified Go code, smaller bills. Compiles directly to static Linux ELF binaries supervised by systemd with cgroups v2 quotas and automated TLS. Zero Docker daemon.
+            </p>
+
+            <p className="text-sm text-neutral-400 leading-relaxed max-w-xl">
+              Built for one VPS running 1 to 10 Go services. No daemon, no rolling deploys, no multi-host scheduler. Larger fleets are better served by Docker or Kubernetes.{" "}
+              <Link href="/compatibility" className="underline underline-offset-4 hover:text-white">Docker gap list</Link>
+              {" · "}
+              <Link href="/limitations" className="underline underline-offset-4 hover:text-white">What the analyzer supports</Link>
             </p>
 
             <div className="flex flex-wrap items-center gap-5 text-xs font-mono-code text-neutral-400 pt-2">
@@ -173,7 +184,7 @@ export function Hero() {
             </div>
 
             <p className="text-xs text-neutral-500 font-mono-code pt-1">
-              Free and open source under Apache 2.0. Zero Docker daemon required.
+              Free and open source under the MIT license. Zero Docker daemon required.
             </p>
           </motion.div>
         </div>

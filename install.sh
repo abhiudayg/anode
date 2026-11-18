@@ -2,13 +2,14 @@
 #
 # Anode One-Line Installer
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/abhiudayg/anode/master/install.sh | bash
 #
 
 set -e
 
 REPO="abhiudayg/anode"
-LATEST_VERSION="${ANODE_VERSION:-v1.1.1}"
+# Empty means the newest GitHub release. Set ANODE_VERSION=vX.Y.Z to pin.
+ANODE_VERSION="${ANODE_VERSION:-}"
 
 echo ""
 echo "  █████╗ ███╗   ██╗ ██████╗ ██████╗ ███████╗"
@@ -63,43 +64,56 @@ TARGET_BIN="${INSTALL_DIR}/anode"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "${TMP_DIR}"' EXIT
 
-BINARY_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/anode_${OS_NAME}_${ARCH_NAME}.tar.gz"
-CHECKSUM_URL="https://github.com/${REPO}/releases/download/${LATEST_VERSION}/checksums.txt"
+if [ -n "${ANODE_VERSION}" ]; then
+    RELEASE_BASE="https://github.com/${REPO}/releases/download/${ANODE_VERSION}"
+    echo "⏳ Downloading Anode binary (${ANODE_VERSION})..."
+else
+    RELEASE_BASE="https://github.com/${REPO}/releases/latest/download"
+    echo "⏳ Downloading Anode binary (latest release)..."
+fi
+BINARY_URL="${RELEASE_BASE}/anode_${OS_NAME}_${ARCH_NAME}.tar.gz"
+CHECKSUM_URL="${RELEASE_BASE}/checksums.txt"
 
-echo "⏳ Downloading Anode binary (${LATEST_VERSION})..."
+fetch() {
+    # fetch URL DEST: download with curl or wget, failing hard on HTTP errors.
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$1" -o "$2"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q "$1" -O "$2"
+    else
+        return 1
+    fi
+}
 
 DOWNLOADED=0
-if command -v curl >/dev/null 2>&1; then
-    if curl -fsSL "${BINARY_URL}" -o "${TMP_DIR}/anode.tar.gz" 2>/dev/null; then
-        DOWNLOADED=1
-        curl -fsSL "${CHECKSUM_URL}" -o "${TMP_DIR}/checksums.txt" 2>/dev/null || true
-    fi
-elif command -v wget >/dev/null 2>&1; then
-    if wget -q "${BINARY_URL}" -O "${TMP_DIR}/anode.tar.gz" 2>/dev/null; then
-        DOWNLOADED=1
-        wget -q "${CHECKSUM_URL}" -O "${TMP_DIR}/checksums.txt" 2>/dev/null || true
-    fi
+if fetch "${BINARY_URL}" "${TMP_DIR}/anode.tar.gz" 2>/dev/null; then
+    DOWNLOADED=1
 fi
 
 if [ "${DOWNLOADED}" -eq 1 ]; then
-    # Verify SHA-256 checksum if checksums.txt is present
-    if [ -f "${TMP_DIR}/checksums.txt" ]; then
-        EXPECTED_SHA=$(grep "anode_${OS_NAME}_${ARCH_NAME}.tar.gz" "${TMP_DIR}/checksums.txt" | awk '{print $1}')
-        if [ -n "${EXPECTED_SHA}" ]; then
-            if command -v sha256sum >/dev/null 2>&1; then
-                ACTUAL_SHA=$(sha256sum "${TMP_DIR}/anode.tar.gz" | awk '{print $1}')
-            elif command -v shasum >/dev/null 2>&1; then
-                ACTUAL_SHA=$(shasum -a 256 "${TMP_DIR}/anode.tar.gz" | awk '{print $1}')
-            fi
-            if [ -n "${ACTUAL_SHA}" ]; then
-                if [ "${ACTUAL_SHA}" = "${EXPECTED_SHA}" ]; then
-                    echo "✓ Verified SHA-256 checksum integrity"
-                else
-                    echo "⚠️ Checksum mismatch (expected: ${EXPECTED_SHA}, got: ${ACTUAL_SHA})"
-                fi
-            fi
-        fi
+    # Checksum is mandatory: a release binary we cannot verify is not installed.
+    if ! fetch "${CHECKSUM_URL}" "${TMP_DIR}/checksums.txt" 2>/dev/null; then
+        echo "❌ Could not download checksums.txt from ${CHECKSUM_URL}; refusing to install an unverified binary."
+        exit 1
     fi
+    EXPECTED_SHA=$(grep "  anode_${OS_NAME}_${ARCH_NAME}.tar.gz\$" "${TMP_DIR}/checksums.txt" | awk '{print $1}')
+    if [ -z "${EXPECTED_SHA}" ]; then
+        echo "❌ No checksum listed for anode_${OS_NAME}_${ARCH_NAME}.tar.gz; refusing to install."
+        exit 1
+    fi
+    if command -v sha256sum >/dev/null 2>&1; then
+        ACTUAL_SHA=$(sha256sum "${TMP_DIR}/anode.tar.gz" | awk '{print $1}')
+    elif command -v shasum >/dev/null 2>&1; then
+        ACTUAL_SHA=$(shasum -a 256 "${TMP_DIR}/anode.tar.gz" | awk '{print $1}')
+    else
+        echo "❌ Need sha256sum or shasum to verify the download; refusing to install."
+        exit 1
+    fi
+    if [ "${ACTUAL_SHA}" != "${EXPECTED_SHA}" ]; then
+        echo "❌ Checksum mismatch (expected: ${EXPECTED_SHA}, got: ${ACTUAL_SHA}); refusing to install."
+        exit 1
+    fi
+    echo "✓ Verified SHA-256 checksum integrity"
 
     tar -xzf "${TMP_DIR}/anode.tar.gz" -C "${TMP_DIR}"
     if [ "${USE_SUDO}" -eq 1 ]; then
