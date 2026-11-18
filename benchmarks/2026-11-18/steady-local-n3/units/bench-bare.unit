@@ -1,0 +1,14 @@
+[Unit]
+Description=bench orders (bare unit)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/var/lib/bench/orders
+Environment=PORT=9021
+Environment=ORDERS_POSTGRES_DSN=postgres://x@127.0.0.1:1/x
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
