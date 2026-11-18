@@ -3,12 +3,13 @@ import Link from "next/link";
 type Props = {
   framework: string;
   routesDetected: boolean;
+  className?: string;
 };
 
 // Shown on guides so a reader sees what the analyzer covers before following the steps.
-export function LimitationsCallout({ framework, routesDetected }: Props) {
+export function LimitationsCallout({ framework, routesDetected, className = "" }: Props) {
   return (
-    <aside className="rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm text-neutral-300 leading-relaxed space-y-2">
+    <aside className={`rounded-xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm text-neutral-300 leading-relaxed space-y-2 ${className}`}>
       <p className="font-bold text-amber-300">
         {routesDetected ? `Check the ${framework} routes in your lockfile.` : `The analyzer does not read ${framework} routes.`}
       </p>
