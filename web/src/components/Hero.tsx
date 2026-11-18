@@ -319,7 +319,7 @@ export function Hero() {
                 <span className="text-[10px] font-mono-code text-neutral-400 uppercase">Local Ports</span>
               </div>
               <p className="text-xs text-neutral-400 leading-relaxed">
-                Sub-second reload with dynamic loopback ports. Zero port collisions across 10 microservices on one machine.
+                Sub-second reload with dynamic loopback ports. Zero port collisions across 10 copies of a sample app on one machine.
               </p>
             </div>
             <div className="mt-3 pt-2.5 border-t border-white/[0.04] text-[11px] font-mono-code text-emerald-400 flex items-center gap-1.5">

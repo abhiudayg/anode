@@ -795,7 +795,7 @@ export default function ChapterCli() {
                         <span className="text-[11px] font-mono-code text-neutral-500">Local Orchestrator</span>
                       </div>
                       <p className="text-xs text-neutral-300 leading-relaxed">
-                        Starts the local development engine. Operates strictly against <code className="text-neutral-200">anode.lock.json</code> (or auto-compiles if missing), binds ephemeral loopback sockets (<code className="text-neutral-200">127.0.0.1:0</code>), provisions isolated database containers, applies pending Goose migrations, and supervises sub-second live recompilation.
+                        Starts the local development engine. Operates strictly against <code className="text-neutral-200">anode.lock.json</code> (or auto-compiles if missing), binds ephemeral loopback sockets (<code className="text-neutral-200">127.0.0.1:0</code>), starts one database container per store (shared by copies of the same project), applies pending Goose migrations, and supervises sub-second live recompilation.
                       </p>
                       <div className="text-xs font-mono-code text-neutral-400 space-y-1 bg-black/40 p-3 rounded-lg border border-white/[0.04]">
                         <div className="text-neutral-300 font-semibold mb-1">Options:</div>

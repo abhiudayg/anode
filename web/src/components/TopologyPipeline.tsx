@@ -90,7 +90,7 @@ http.ListenAndServe(":" + cfg.Port, mux)`
       icon: Server,
       badge: "Runtime",
       details: {
-        description: "Local dev runs isolated ephemeral databases on dynamic loopback ports without host collisions. Production compiles static Linux ELF binaries running under systemd with cgroups v2 resource limits and automated Caddy TLS.",
+        description: "Local dev runs services on dynamic loopback ports without host collisions. Dev databases are one Docker or Podman container per store. Production compiles static Linux ELF binaries running under systemd with cgroups v2 resource limits and automated Caddy TLS.",
         points: [
           "Zero port collisions (Postgres on 54329, Redis on 63792)",
           "systemd supervisor with automatic crash restarts",
