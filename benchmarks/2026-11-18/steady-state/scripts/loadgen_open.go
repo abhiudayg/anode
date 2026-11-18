@@ -22,10 +22,11 @@ func main() {
 	dur := flag.Duration("d", 60*time.Second, "measured duration")
 	warm := flag.Duration("warm", 10*time.Second, "warm-up before measuring")
 	conns := flag.Int("conns", 256, "max concurrent in-flight requests")
+	timeout := flag.Duration("timeout", 5*time.Second, "client timeout per request")
 	flag.Parse()
 
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout: *timeout,
 		Transport: &http.Transport{
 			MaxIdleConns:        *conns,
 			MaxIdleConnsPerHost: *conns,

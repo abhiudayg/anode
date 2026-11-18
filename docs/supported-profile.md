@@ -82,7 +82,8 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 ## Shutdown (restart and deploy)
 
 - The unit sends `SIGTERM` and waits up to 10 seconds (`TimeoutStopSec`) before it kills the process.
-- Caddy holds requests for up to 5 seconds while a unit restarts, so a single-service restart does not return errors to clients.
+- Caddy holds requests for up to 15 seconds while a unit restarts. That covers a drain of up to 8 seconds, the 3 second restart delay, and boot. A single-service restart does not return errors to clients unless a request outlasts the hold.
+- A unit that crashes 5 times within 60 seconds stops and stays failed (start limit). Fix the cause, then `systemctl reset-failed` and redeploy.
 - A service must stop accepting connections on `SIGTERM` and finish in-flight requests itself, for example with `http.Server.Shutdown`. The unit gives it time; it does not drain for it. See `examples/marketplace/services/orders/main.go`.
 
 ## Health check (deploy)
