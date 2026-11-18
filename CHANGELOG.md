@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Denial probes for the unit template are recorded in `benchmarks/2026-11-18/security-denial/`. (#80)
 - The dev-store description says one container per store, shared by copies of a project. (#81)
 
+### Changed
+- Caddy holds requests for up to 15 s during a unit restart (was 5 s, shorter than a drain plus restart).
+- Units stop after 5 failed starts in 60 s (`StartLimitBurst`/`StartLimitIntervalSec`), so a crash loop no longer retries forever.
+
 ### Fixed
 - Reference orders service drains in-flight requests before exit. Previously the process could exit while a request was still running. (#85)
 - Installer resolves the latest release and refuses to install without a verified checksum.

@@ -26,6 +26,9 @@ func TestGenerateSystemdUnit(t *testing.T) {
 	if !strings.Contains(unit, "ExecStart=/var/lib/anode/bin/orders") {
 		t.Errorf("expected ExecStart in unit, got:\n%s", unit)
 	}
+	if !strings.Contains(unit, "StartLimitBurst=5") || !strings.Contains(unit, "StartLimitIntervalSec=60") {
+		t.Errorf("expected a start limit so a crash loop stops")
+	}
 	if !strings.Contains(unit, "MemoryMax=1G") {
 		t.Errorf("expected MemoryMax cgroups v2 directive")
 	}
@@ -91,7 +94,7 @@ func TestGenerateCaddyfile(t *testing.T) {
 	if !strings.Contains(caddyfile, "reverse_proxy 127.0.0.1:8080") {
 		t.Errorf("expected proxy routing in Caddyfile")
 	}
-	if !strings.Contains(caddyfile, "lb_try_duration 5s") {
+	if !strings.Contains(caddyfile, "lb_try_duration 15s") {
 		t.Errorf("expected Caddy to hold requests during a service restart")
 	}
 }

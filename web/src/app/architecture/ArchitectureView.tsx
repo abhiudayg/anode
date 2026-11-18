@@ -573,7 +573,7 @@ export function ArchitectureView() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-neutral-300 leading-relaxed font-mono-code">
           <div className="p-3 rounded-lg bg-black/40 border border-amber-500/10 flex items-start gap-2">
             <span className="text-amber-400 font-bold">•</span>
-            <span><strong>No Zero-Downtime Rollouts:</strong> A changed service restarts in place. Caddy holds requests for up to 5 s while it restarts; a running request finishes only if the app drains on SIGTERM.</span>
+            <span><strong>No Zero-Downtime Rollouts:</strong> A changed service restarts in place. Caddy holds requests for up to 15 s while it restarts; a running request finishes only if the app drains on SIGTERM.</span>
           </div>
           <div className="p-3 rounded-lg bg-black/40 border border-amber-500/10 flex items-start gap-2">
             <span className="text-amber-400 font-bold">•</span>

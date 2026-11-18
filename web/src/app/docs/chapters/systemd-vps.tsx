@@ -51,7 +51,7 @@ export default function ChapterSystemdVps() {
                     <p>1. Anode uploads the new static Linux executable and writes its systemd unit.</p>
                     <p>2. Restarts a service only if its fingerprint changed: binary, unit, env file, or config. Then it checks GET /healthz until it returns a status from 200 to 399. Unchanged services keep running. The fingerprint is recorded only after the health check passes.</p>
                     <p>3. Writes the Caddy configuration for the service and reloads Caddy.</p>
-                    <p>4. The restart is in place. Caddy holds requests for up to 5 s while the unit restarts. A request that is already running is finished only if the app drains on SIGTERM: stop accepting, wait for in-flight requests, then exit. The reference service does this. Restart time and the drain path are not measured on a remote host.</p>
+                    <p>4. The restart is in place. Caddy holds requests for up to 15 s while the unit restarts, which covers a drain of up to 8 s plus the 3 s restart delay. A request that is already running is finished only if the app drains on SIGTERM: stop accepting, wait for in-flight requests, then exit. The reference service does this. Restart time and the drain path are not measured on a remote host.</p>
                   </div>
                 </div>
   );

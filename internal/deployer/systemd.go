@@ -32,6 +32,9 @@ func envName(serviceName string) string {
 const systemdTemplate = `[Unit]
 Description={{.Description}}
 After=network.target
+# A crash loop stops after 5 failed starts in 60 s instead of retrying forever.
+StartLimitIntervalSec=60
+StartLimitBurst=5
 
 [Service]
 Type=simple
@@ -195,6 +198,7 @@ func writeCaddyRoute(sb *strings.Builder, public, strip string, port int) {
 		sb.WriteString(fmt.Sprintf("    uri strip_prefix %s\n", strip))
 	}
 	// Hold requests while the upstream restarts (RestartSec plus boot), instead of failing them.
-	sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d {\n      lb_try_duration 5s\n      lb_try_interval 100ms\n    }\n", port))
+	// The hold must outlast a restart: drain (up to 8 s, see examples/marketplace/services/orders) plus RestartSec (3 s) plus boot.
+	sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d {\n      lb_try_duration 15s\n      lb_try_interval 100ms\n    }\n", port))
 	sb.WriteString("  }\n")
 }
