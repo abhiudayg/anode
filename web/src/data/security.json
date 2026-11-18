@@ -31,7 +31,7 @@
     },
     {
       "name": "ProtectProc=invisible, ProcSubset=pid",
-      "effect": "The service cannot see other processes in /proc."
+      "effect": "The service should not see other processes in /proc. Not verified on the test VM: an environment drop-in overrides ProtectProc and ProcSubset there."
     },
     {
       "name": "MemoryDenyWriteExecute=true, LockPersonality=true",
@@ -39,7 +39,7 @@
     },
     {
       "name": "MemoryMax=1G, CPUQuota=200%",
-      "effect": "Cgroup limits. Not yet tested under OOM."
+      "effect": "Cgroup limits. OOM at 1 GiB tested: the unit is killed and restarted by Restart=always (see the denial matrix)."
     },
     {
       "name": "UMask=0077",

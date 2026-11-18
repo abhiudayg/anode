@@ -1,0 +1,6 @@
+rate=100 arm=anode   n=3 p50 1.35-1.65 (median 1.48) | p99 5.28-22.13 (median 9.16) | p999 15.79-100.87 (median 68.61) | errors [0, 0, 0]
+rate=100 arm=bare    n=3 p50 1.27-1.45 (median 1.27) | p99 5.28-53.58 (median 33.89) | p999 15.21-470.96 (median 243.94) | errors [0, 0, 0]
+rate=100 arm=direct  n=3 p50 0.66-0.70 (median 0.68) | p99 9.75-18.89 (median 11.10) | p999 46.11-68.33 (median 58.09) | errors [0, 0, 0]
+rate=500 arm=anode   n=3 p50 0.77-1.07 (median 0.80) | p99 10.65-38.84 (median 25.71) | p999 34.33-204.89 (median 162.37) | errors [0, 0, 0]
+rate=500 arm=bare    n=3 p50 0.65-1.05 (median 0.72) | p99 11.42-18.12 (median 14.99) | p999 32.47-97.39 (median 65.96) | errors [0, 0, 0]
+rate=500 arm=direct  n=3 p50 0.33-0.48 (median 0.43) | p99 3.25-9.34 (median 7.14) | p999 15.26-67.00 (median 60.99) | errors [0, 0, 0]

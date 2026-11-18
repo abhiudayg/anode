@@ -121,6 +121,21 @@ export function Footer() {
                   Honest Tradeoffs &amp; Limits
                 </Link>
               </li>
+              <li>
+                <Link href="/limitations" className="hover:text-white transition-colors">
+                  Analyzer Support Matrix
+                </Link>
+              </li>
+              <li>
+                <Link href="/compatibility" className="hover:text-white transition-colors">
+                  Docker Gap List
+                </Link>
+              </li>
+              <li>
+                <Link href="/security" className="hover:text-white transition-colors">
+                  Security &amp; Denial Matrix
+                </Link>
+              </li>
             </ul>
           </div>
 

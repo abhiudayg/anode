@@ -1,0 +1,137 @@
+🛡️ Anode Zero-Trust Linux nftables Packet Filter Rules
+────────────────────────────────────────────────────────────────────────────────
+
+=== [Node: edge-01] ===
+#!/usr/sbin/nft -f
+# Anode Proof-of-Topology Zero-Trust Packet Filter for Node: edge-01 (10.100.0.10)
+# Generated from lockfile contract across 32 services
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    # Fundamental loopback & stateful packet tracking
+    iif "lo" accept comment "Allow loopback"
+    ct state established,related accept comment "Allow established/related connections"
+    ct state invalid drop comment "Drop invalid TCP states"
+
+    # Administrative management & DNS
+    tcp dport 22 accept comment "Allow SSH administration"
+    udp dport 53 accept comment "Allow DNS resolution"
+
+    # Public Edge Ingress (Let's Encrypt TLS & HTTP)
+    tcp dport { 80, 443 } accept comment "Allow public HTTP/HTTPS edge reverse-proxy"
+
+    # Microservice Zero-Trust Ports (Inter-Node Routing)
+    tcp dport 8080 accept comment "Ingress route for accounting"
+    tcp dport 8081 accept comment "Ingress route for analytics"
+    tcp dport 8082 accept comment "Ingress route for apigateway"
+    tcp dport 8083 accept comment "Ingress route for auditlog"
+    tcp dport 8084 accept comment "Ingress route for auth"
+    tcp dport 8085 accept comment "Ingress route for catalog"
+    tcp dport 8086 accept comment "Ingress route for cms"
+    tcp dport 8087 accept comment "Ingress route for coupons"
+    tcp dport 8088 accept comment "Ingress route for crm"
+    tcp dport 8089 accept comment "Ingress route for disputes"
+    tcp dport 8090 accept comment "Ingress route for documents"
+    tcp dport 8091 accept comment "Ingress route for email"
+    tcp dport 8092 accept comment "Ingress route for fraud"
+
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+  }
+}
+
+=== [Node: worker-01] ===
+#!/usr/sbin/nft -f
+# Anode Proof-of-Topology Zero-Trust Packet Filter for Node: worker-01 (10.100.0.11)
+# Generated from lockfile contract across 32 services
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    # Fundamental loopback & stateful packet tracking
+    iif "lo" accept comment "Allow loopback"
+    ct state established,related accept comment "Allow established/related connections"
+    ct state invalid drop comment "Drop invalid TCP states"
+
+    # Administrative management & DNS
+    tcp dport 22 accept comment "Allow SSH administration"
+    udp dport 53 accept comment "Allow DNS resolution"
+
+    # Microservice Zero-Trust Ports (Inter-Node Routing)
+    ip saddr 10.100.0.0/16 tcp dport 8080 accept comment "Allow cluster traffic to inventory"
+    ip saddr 10.100.0.0/16 tcp dport 8081 accept comment "Allow cluster traffic to loyalty"
+    ip saddr 10.100.0.0/16 tcp dport 8082 accept comment "Allow cluster traffic to metrics"
+    ip saddr 10.100.0.0/16 tcp dport 8083 accept comment "Allow cluster traffic to orders"
+    ip saddr 10.100.0.0/16 tcp dport 8084 accept comment "Allow cluster traffic to pricing"
+    ip saddr 10.100.0.0/16 tcp dport 8085 accept comment "Allow cluster traffic to reviews"
+    ip saddr 10.100.0.0/16 tcp dport 8086 accept comment "Allow cluster traffic to shipping"
+    ip saddr 10.100.0.0/16 tcp dport 8087 accept comment "Allow cluster traffic to tax"
+    ip saddr 10.100.0.0/16 tcp dport 8088 accept comment "Allow cluster traffic to warehouse"
+    ip saddr 10.100.0.0/16 tcp dport 8089 accept comment "Allow cluster traffic to workflows"
+
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+  }
+}
+
+=== [Node: worker-02] ===
+#!/usr/sbin/nft -f
+# Anode Proof-of-Topology Zero-Trust Packet Filter for Node: worker-02 (10.100.0.12)
+# Generated from lockfile contract across 32 services
+
+flush ruleset
+
+table inet filter {
+  chain input {
+    type filter hook input priority filter; policy drop;
+
+    # Fundamental loopback & stateful packet tracking
+    iif "lo" accept comment "Allow loopback"
+    ct state established,related accept comment "Allow established/related connections"
+    ct state invalid drop comment "Drop invalid TCP states"
+
+    # Administrative management & DNS
+    tcp dport 22 accept comment "Allow SSH administration"
+    udp dport 53 accept comment "Allow DNS resolution"
+
+    # Microservice Zero-Trust Ports (Inter-Node Routing)
+    ip saddr 10.100.0.0/16 tcp dport 8080 accept comment "Allow cluster traffic to livechat"
+    ip saddr 10.100.0.0/16 tcp dport 8081 accept comment "Allow cluster traffic to media"
+    ip saddr 10.100.0.0/16 tcp dport 8082 accept comment "Allow cluster traffic to notifications"
+    ip saddr 10.100.0.0/16 tcp dport 8083 accept comment "Allow cluster traffic to payments"
+    ip saddr 10.100.0.0/16 tcp dport 8084 accept comment "Allow cluster traffic to recommendations"
+    ip saddr 10.100.0.0/16 tcp dport 8085 accept comment "Allow cluster traffic to search"
+    ip saddr 10.100.0.0/16 tcp dport 8086 accept comment "Allow cluster traffic to subscriptions"
+    ip saddr 10.100.0.0/16 tcp dport 8087 accept comment "Allow cluster traffic to users"
+    ip saddr 10.100.0.0/16 tcp dport 8088 accept comment "Allow cluster traffic to webhooks"
+
+  }
+
+  chain forward {
+    type filter hook forward priority filter; policy drop;
+  }
+
+  chain output {
+    type filter hook output priority filter; policy accept;
+  }
+}
+

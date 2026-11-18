@@ -1,0 +1,39 @@
+# Anode Cluster Multi-Host Fleet Inventory (anode.cluster.yaml)
+# Declares bare-metal/VPS nodes, private wireguard or VPC IPs, and resource capacities.
+
+version: "1"
+cluster:
+  name: "production-pool"
+  network:
+    subnet: "10.100.0.0/16"         # Cluster private CIDR
+    interface: "wg0"                # Inter-node WireGuard or private interface
+  cgroups:
+    overcommit_ratio: 0.85          # Allocate up to 85% of physical node RAM
+
+nodes:
+  - id: "edge-01"
+    host: "root@192.168.1.10"       # SSH target for deployment & diagnosis
+    private_ip: "10.100.0.10"       # Node private IP for zero-trust traffic
+    role: "edge"                    # edge: receives public HTTP/HTTPS traffic
+    memory_mb: 4096
+    cpus: 4
+    labels:
+      zone: "us-east-1a"
+
+  - id: "worker-01"
+    host: "root@192.168.1.11"
+    private_ip: "10.100.0.11"
+    role: "worker"                  # worker: executes internal backend microservices
+    memory_mb: 16384
+    cpus: 8
+    labels:
+      zone: "us-east-1b"
+
+  - id: "worker-02"
+    host: "root@192.168.1.12"
+    private_ip: "10.100.0.12"
+    role: "worker"                  # worker: additional compute node
+    memory_mb: 16384
+    cpus: 8
+    labels:
+      zone: "us-east-1c"

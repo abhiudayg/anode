@@ -1,5 +1,7 @@
 # Failure matrix, anode units on GCE e2-standard-8 (2026-11-18)
 
+**Pre-fix.** These runs predate the unit's SIGTERM settings, Caddy's 5 s hold (`lb_try_duration`), and the reference service's drain fix (PR #85). The SIGTERM row is not the current behavior. Rerun before quoting the 21% figure.
+
 Host and state: the same VM as the marketplace comparison, 32 anode units and 32 store containers running. Load: `loadgen` from the VM at 127.0.0.1 with the Caddy Host header, 50 or 10 closed-loop clients. Unit: `anode-orders`, `Restart=always`, `RestartSec=3`.
 
 | Scenario | Command | Observed | Downtime / error window | Recovery |

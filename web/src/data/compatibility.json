@@ -46,7 +46,7 @@
     {
       "feature": "Signals and graceful shutdown",
       "docker": "SIGTERM, then SIGKILL after the stop timeout",
-      "anode": "The unit sends SIGTERM and waits 10 s (TimeoutStopSec). Caddy holds requests up to 5 s while the unit restarts. The service must drain on SIGTERM itself; the orders example does. Local test: 0 failed requests with the change vs 118,047 without it (benchmarks/2026-11-18/sigterm-drain). Not yet tested on a remote host.",
+      "anode": "The unit sends SIGTERM and waits 10 s (TimeoutStopSec). Caddy holds requests up to 15 s while the unit restarts, and a crash loop stops after 5 failed starts in 60 s. The service must drain on SIGTERM itself; the orders example does. Local test: 0 failed requests with the change vs 118,047 without it (benchmarks/2026-11-18/sigterm-drain). Not yet tested on a remote host.",
       "gap": true
     },
     {
@@ -94,7 +94,7 @@
     {
       "feature": "Multi-host",
       "docker": "Swarm, Kubernetes, or Compose over SSH",
-      "anode": "anode cluster exists. No benchmark or failure test in the repository.",
+      "anode": "anode cluster plans placement across a node inventory and prints nftables rules. It does not deploy to nodes or reschedule after a node fails; there is no failure test. Planning output for the 32-service example: benchmarks/2026-11-18/cluster-plan.",
       "gap": true
     },
     {

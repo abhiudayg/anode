@@ -128,7 +128,7 @@ const RUNTIME_MODES = [
     cards: [
       {
         title: "Dynamic Loopback Allocation (127.0.0.0/8)",
-        desc: "Instead of hardcoding :5432 or :8080, services and ephemeral backing stores negotiate free kernel ports (e.g., 127.0.0.1:54329). Multiple developers or branch checkouts never clash."
+        desc: "Instead of hardcoding :5432 or :8080, services and dev stores get free kernel ports (e.g., 127.0.0.1:54329). Dev stores are one container per resource name, so two checkouts with the same resource share it."
       },
       {
         title: "Ephemeral Backing Stores",
@@ -573,7 +573,7 @@ export function ArchitectureView() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs text-neutral-300 leading-relaxed font-mono-code">
           <div className="p-3 rounded-lg bg-black/40 border border-amber-500/10 flex items-start gap-2">
             <span className="text-amber-400 font-bold">•</span>
-            <span><strong>No Zero-Downtime Rollouts:</strong> Services restart in place via systemd RestartSec. Requests in flight during restart may drop.</span>
+            <span><strong>No Zero-Downtime Rollouts:</strong> A changed service restarts in place. Caddy holds requests for up to 15 s while it restarts; a running request finishes only if the app drains on SIGTERM.</span>
           </div>
           <div className="p-3 rounded-lg bg-black/40 border border-amber-500/10 flex items-start gap-2">
             <span className="text-amber-400 font-bold">•</span>
