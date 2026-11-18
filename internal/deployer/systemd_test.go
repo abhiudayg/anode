@@ -29,6 +29,9 @@ func TestGenerateSystemdUnit(t *testing.T) {
 	if !strings.Contains(unit, "MemoryMax=1G") {
 		t.Errorf("expected MemoryMax cgroups v2 directive")
 	}
+	if !strings.Contains(unit, "KillSignal=SIGTERM") || !strings.Contains(unit, "TimeoutStopSec=10") {
+		t.Errorf("expected explicit stop signal and drain timeout in unit, got:\n%s", unit)
+	}
 }
 
 func TestSystemdUnitUsesDynamicUserWithoutStaticUser(t *testing.T) {
@@ -87,5 +90,8 @@ func TestGenerateCaddyfile(t *testing.T) {
 	}
 	if !strings.Contains(caddyfile, "reverse_proxy 127.0.0.1:8080") {
 		t.Errorf("expected proxy routing in Caddyfile")
+	}
+	if !strings.Contains(caddyfile, "lb_try_duration 5s") {
+		t.Errorf("expected Caddy to hold requests during a service restart")
 	}
 }
