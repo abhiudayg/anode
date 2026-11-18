@@ -9,7 +9,7 @@ Host: GCE `e2-standard-8`, 32 GB, Debian 12, us-central1-a, on-demand. Same host
 Stores: 28 anode-managed containers plus 4 hand-started (TimescaleDB, CockroachDB, ClickHouse, Scylla) = 32 store containers, running in both arms.
 Migrations applied with `anode migrate` before the runs.
 
-Protocol (`scripts/mp_compare.sh`, `scripts/mp_arm.sh`):
+Protocol (`marketplace-comparison/scripts/mp_compare.sh`, `marketplace-comparison/scripts/mp_arm.sh`):
 1. Functional parity: every registered route (85) requested in both arms, status codes compared.
 2. Cold start: 32 services started together, page cache dropped before each trial, 5 trials. A trial whose drop or readiness fails is retried, not recorded.
 3. Idle memory 20 s after ready: cgroup `memory.current` for services, RSS for services, and daemon RSS (dockerd, containerd, shims) reported separately.
@@ -24,7 +24,9 @@ Run 1 = anode first, Docker second. Run 2 = Docker first, anode second.
 | Services memory, cgroup | 526 MB | 533 MB | 504 MB | 511 MB |
 | Services RSS | 398 MB | 404 MB | 376 MB | 380 MB |
 | Daemon RSS (store containers included in both) | 696 MB | 897 MB | 1,173 MB | 1,294 MB |
-| Requests / errors | 10.58 M / 0 | 10.82 M / 0 | 10.91 M / 0 | 10.73 M / 0 |
+| Requests / transport errors | 10.58 M / 0 | 10.82 M / 0 | 10.91 M / 0 | 10.73 M / 0 |
+
+Transport errors are requests that got no HTTP response. Non-200 responses, including the 502s counted in the redeploy row, are reported separately.
 | Load p50 / p99 | 3.67 / 12.0 ms | 3.59 / 11.8 ms | 3.55 / 11.7 ms | 3.62 / 11.8 ms |
 | 502s during redeploy | 2,743 | 2,850 | 20,487 | 21,457 |
 | 502 window | 300 ms | 283 ms | 2.33 s | 2.37 s |
@@ -33,7 +35,7 @@ Route-by-route smoke parity holds in both runs. The same 3 `PUT` routes return 5
 
 Redeploy method:
 - Anode: `anode deploy` from the Mac (builds and uploads a new release, then restarts units).
-- Docker: `scripts/mp_docker_redeploy.sh`. Builds and creates the new containers first, then batched stop, remove, rename, start. Switch measured at about 7.3 s from `prepared` to `switched`; the 502 window is the measured client-side gap.
+- Docker: `marketplace-comparison/scripts/mp_docker_redeploy.sh`. Builds and creates the new containers first, then batched stop, remove, rename, start. Switch measured at about 7.3 s from `prepared` to `switched`; the 502 window is the measured client-side gap.
 - These are different procedures. The 502 comparison measures each arm's own redeploy method, not Docker's best method.
 
 ## Port collisions (`anode dev`)

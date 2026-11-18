@@ -355,7 +355,7 @@
         "title": "Bare-Metal VPS Deployer (anode deploy / anode run)",
         "category": "Runtime",
         "badge": "Production",
-        "description": "Builds pure static Go ELF binaries locally (CGO_ENABLED=0) with automatic target architecture detection (uname -m -> arm64/amd64). Deploys to Linux VPS hosts with hardened systemd units (NoNewPrivileges=true, ProtectSystem=strict, ProtectHome=true, PrivateTmp=true, PrivateDevices=true, ProtectKernelTunables=true, RestrictSUIDSGID=true), Linux cgroups v2 quotas (CPUQuota=200%, MemoryMax=1G), zero-downtime blue/green port swaps, and automated Caddy reverse proxy synthesis with Let's Encrypt TLS."
+        "description": "Builds pure static Go ELF binaries locally (CGO_ENABLED=0) with automatic target architecture detection (uname -m -> arm64/amd64). Deploys to Linux VPS hosts with hardened systemd units (NoNewPrivileges=true, ProtectSystem=strict, ProtectHome=true, PrivateTmp=true, PrivateDevices=true, ProtectKernelTunables=true, RestrictSUIDSGID=true), Linux cgroups v2 quotas (CPUQuota=200%, MemoryMax=1G), restart-in-place deploys (blue/green port swaps were not implemented), and automated Caddy reverse proxy synthesis with Let's Encrypt TLS."
       },
       {
         "title": "Local Dev Orchestrator (anode dev)",

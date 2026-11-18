@@ -49,9 +49,9 @@ export default function ChapterSystemdVps() {
                   <h3 className="text-base font-bold text-white pt-2">Restart on Deploy</h3>
                   <div className="space-y-2 text-xs text-neutral-300 pl-4 border-l-2 border-white/[0.15]">
                     <p>1. Anode uploads the new static Linux executable and writes its systemd unit.</p>
-                    <p>2. Restarts the service with <code className="text-neutral-200">systemctl restart</code> and checks GET /healthz until it returns a status from 200 to 399.</p>
+                    <p>2. Restarts a service only if its fingerprint changed: binary, unit, env file, or config. Then it checks GET /healthz until it returns a status from 200 to 399. Unchanged services keep running. The fingerprint is recorded only after the health check passes.</p>
                     <p>3. Writes the Caddy configuration for the service and reloads Caddy.</p>
-                    <p>4. The restart is in place. Connections open when the service restarts are dropped, so each deploy has a short outage for that service.</p>
+                    <p>4. The restart is in place. Caddy holds requests for up to 5 s while the unit restarts. A request that is already running is finished only if the app drains on SIGTERM: stop accepting, wait for in-flight requests, then exit. The reference service does this. Restart time and the drain path are not measured on a remote host.</p>
                   </div>
                 </div>
   );

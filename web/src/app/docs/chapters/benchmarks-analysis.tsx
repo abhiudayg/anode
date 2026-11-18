@@ -106,9 +106,9 @@ export default function ChapterBenchmarksAnalysis() {
                         <span className="text-neutral-500 group-open:rotate-45 transition-transform">+</span>
                       </summary>
                       <div className="mt-4 space-y-3 text-sm text-neutral-300">
-                        <p>The whole project is redeployed while clients keep requesting. Each service restarts in place; traffic is not moved to the new version first.</p>
+                        <p>The whole project is redeployed while clients keep requesting. A service restarts only if its inputs changed. Restarts are in place: traffic is not moved to a new process first, and Caddy holds requests for up to 5 s while a unit restarts.</p>
                         <table className="w-full text-xs font-mono-code">
-                          <thead className="text-neutral-500"><tr><th className="py-2 text-left font-normal">Setup</th><th className="py-2 text-right font-normal">Requests</th><th className="py-2 text-right font-normal">Failed</th><th className="py-2 text-right font-normal">Window</th></tr></thead>
+                          <thead className="text-neutral-500"><tr><th className="py-2 text-left font-normal">Setup</th><th className="py-2 text-right font-normal">Requests (all statuses)</th><th className="py-2 text-right font-normal">Failed</th><th className="py-2 text-right font-normal">Window</th></tr></thead>
                           <tbody className="divide-y divide-white/[0.05]">
                             <tr><td className="py-2">1 service, 1 client</td><td className="py-2 text-right">625 to 909</td><td className="py-2 text-right">1 per redeploy</td><td className="py-2 text-right">143 to 152 ms</td></tr>
                             <tr><td className="py-2">1 service, 10 clients</td><td className="py-2 text-right">6,100</td><td className="py-2 text-right">5</td><td className="py-2 text-right">247 ms</td></tr>

@@ -38,7 +38,7 @@ $ anode inspect ./testdata/sample-shop
 $ anode dev
 
 [anode:dev] 🚀 Starting Local Orchestrator (Free local ports)
-[anode:dev] 📦 Allocating isolated ephemeral resources:
+[anode:dev] 📦 Allocating dev stores (one container per resource):
             • postgres:16-alpine ──> ephemeral local port 127.0.0.1:54329 (host: free)
             • redis:7-alpine     ──> ephemeral local port 127.0.0.1:63792 (host: free)
 [anode:dev] 💉 Injected runtime configuration:
@@ -63,7 +63,7 @@ $ anode deploy root@my-vps.com --domain api.example.com
 [anode:deploy] 🔒 Automated Reverse Proxy:
                • Caddy v2 reverse proxy mapped to localhost:8080
                • Automatic Let's Encrypt TLS certificate provisioned
-[anode:deploy] 🔄 Zero-downtime atomic symlink switch: /opt/anode/current ──> releases/v14
+[anode:deploy] 🔄 Restarting changed services only: releases/v14
 [anode:deploy] ✓ Health check PASSED on https://api.example.com/healthz (200 OK in 42ms)
 `.trim();
 
@@ -261,7 +261,7 @@ $ anode deploy root@my-vps.com --domain api.example.com
                       <span>Starting Local Orchestrator (Free local ports)</span>
                     </p>
 
-                    <p className="pl-6 text-neutral-300 font-medium">📦 Allocating isolated ephemeral resources:</p>
+                    <p className="pl-6 text-neutral-300 font-medium">📦 Allocating dev stores (one container per resource):</p>
                     <p className="pl-10 text-neutral-300">
                       • postgres:16-alpine ──&gt; <span className="text-emerald-400 font-mono-code font-bold">127.0.0.1:54329</span> <span className="text-neutral-500">(host:5432 free)</span>
                     </p>
@@ -371,7 +371,7 @@ $ anode deploy root@my-vps.com --domain api.example.com
                     <p className="pl-10 text-emerald-400">✓ Caddy reverse proxy configured for api.example.com</p>
                     <p className="pl-10 text-neutral-400">✓ Let&apos;s Encrypt automated TLS certificate provisioned</p>
 
-                    <p className="pl-6 text-neutral-300 font-medium pt-2">🔄 Zero-downtime atomic symlink switch:</p>
+                    <p className="pl-6 text-neutral-300 font-medium pt-2">🔄 Restarting changed services only:</p>
                     <p className="pl-10 text-white font-bold">↳ /opt/anode/current ──&gt; releases/v14</p>
                     <p className="pl-10 text-emerald-400 font-semibold">✓ Health check PASSED on https://api.example.com/healthz (200 OK in 42ms)</p>
                   </div>
