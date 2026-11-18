@@ -30,7 +30,7 @@ export function QuickstartSection() {
       num: "03",
       badge: "Step 03",
       title: "Dev",
-      desc: "Spin up isolated DBs on dynamic ephemeral loopback ports with sub-second reload.",
+      desc: "Services on dynamic ephemeral loopback ports, with sub-second reload. Dev databases run in one Docker or Podman container per store.",
       cmd: "anode dev",
       icon: Play,
     },
