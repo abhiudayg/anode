@@ -71,6 +71,14 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 - Native Redis uses `version = "auto"` by default. It takes the version the host's package provides, and the deploy prints it. A pinned version (for example `"8.0"`) is checked against the host after install, and the deploy stops on a mismatch. `auto` is only valid for a binary store. A Docker store needs an explicit version.
 - To upgrade, change `version` in `anode.toml` and deploy. Anode does not run migrations, so a breaking data change is your job.
 
+## Which services a deploy restarts
+
+- A service restarts only when its fingerprint changes. The fingerprint covers the binary bytes, the unit, the env file, and the config document. Release IDs and paths are ignored.
+- An unchanged service keeps running. The deploy copies its current binary into the new release, so rollback still has it.
+- The lockfile hash is not used for this. A code change inside a service can leave the topology, and so the lockfile, unchanged.
+- The fingerprint is written after the service passes its health check, so a failed deploy is retried on the next run.
+- `anode rollback` clears the fingerprints of the units it restores, so the next deploy restarts them.
+
 ## Shutdown (restart and deploy)
 
 - The unit sends `SIGTERM` and waits up to 10 seconds (`TimeoutStopSec`) before it kills the process.

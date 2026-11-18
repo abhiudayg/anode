@@ -114,19 +114,11 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 		fmt.Printf("  ✓ Cross-compiled %s -> %s\n", name, filepath.Base(localBin))
 	}
 
-	// 3. Stream Binaries over SSH
-	fmt.Println("📦 Step 3: Streaming release binaries to VPS...")
+	// 3. Prepare the release directory. Binaries are uploaded in step 4, only for services that changed.
+	fmt.Println("📦 Step 3: Preparing release directory on VPS...")
 	remoteReleaseDir := fmt.Sprintf("/var/lib/anode/releases/%s", releaseID)
-	if _, err := d.ssh.Run(fmt.Sprintf("mkdir -p %s", remoteReleaseDir)); err != nil {
+	if _, err := d.ssh.Run(fmt.Sprintf("mkdir -p %s %s", remoteReleaseDir, serviceStateDir)); err != nil {
 		return fmt.Errorf("failed to create remote release dir: %w", err)
-	}
-
-	for name, localBin := range binMap {
-		remoteBin := fmt.Sprintf("%s/%s", remoteReleaseDir, name)
-		if err := d.ssh.StreamFile(localBin, remoteBin, 0755); err != nil {
-			return fmt.Errorf("failed to upload binary for %s: %w", name, err)
-		}
-		fmt.Printf("  ✓ Uploaded %s -> %s\n", name, remoteBin)
 	}
 
 	// 4. Blue/Green Port Allocation & Systemd Unit Activation
@@ -193,6 +185,7 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 		}
 
 		var preStart []string
+		configDoc := ""
 		if len(configValues) > 0 {
 			if svc.ConfigFile == "" || strings.Contains(svc.ConfigFile, "/") {
 				return fmt.Errorf("service %s has an invalid config file path %q", svc.Name, svc.ConfigFile)
@@ -201,6 +194,7 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 			if err != nil {
 				return err
 			}
+			configDoc = string(doc)
 			if _, err := d.ssh.Run("mkdir -p -m 700 /etc/anode/env"); err != nil {
 				return fmt.Errorf("failed to create env directory: %w", err)
 			}
@@ -242,6 +236,7 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 		}
 
 		envFilePath := ""
+		envText := ""
 		if len(secretEnv) > 0 {
 			keys := make([]string, 0, len(secretEnv))
 			for k := range secretEnv {
@@ -255,8 +250,9 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 			if _, err := d.ssh.Run("mkdir -p -m 700 /etc/anode/env"); err != nil {
 				return fmt.Errorf("failed to create env directory: %w", err)
 			}
+			envText = envFileContent.String()
 			remoteEnvPath := fmt.Sprintf("/etc/anode/env/%s.%s", releaseID, svc.Name)
-			if err := d.ssh.StreamBytes([]byte(envFileContent.String()), remoteEnvPath, 0o600); err != nil {
+			if err := d.ssh.StreamBytes([]byte(envText), remoteEnvPath, 0o600); err != nil {
 				return fmt.Errorf("failed to write env file for %s: %w", svc.Name, err)
 			}
 			envFilePath = remoteEnvPath
@@ -275,13 +271,44 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 			return err
 		}
 
+		unitPath := fmt.Sprintf("/etc/systemd/system/anode-%s.service", svc.Name)
+		localBin := binMap[name]
+		binarySHA, err := sha256File(localBin)
+		if err != nil {
+			return fmt.Errorf("failed to hash binary for %s: %w", name, err)
+		}
+		fingerprint, err := serviceFingerprint(binarySHA, unitContent, envText, configDoc, releaseID)
+		if err != nil {
+			return fmt.Errorf("failed to fingerprint %s: %w", name, err)
+		}
+
+		// Unchanged services keep their running binary: copy it into the release, do not upload or restart.
+		prevBin, unchanged := d.unchangedBinary(name, fingerprint)
+		if unchanged {
+			if _, err := d.ssh.Run(fmt.Sprintf("cp '%s' '%s' && chmod 0755 '%s'", prevBin, remoteBin, remoteBin)); err != nil {
+				return fmt.Errorf("failed to reuse binary for %s: %w", name, err)
+			}
+		} else {
+			if err := d.ssh.StreamFile(localBin, remoteBin, 0755); err != nil {
+				return fmt.Errorf("failed to upload binary for %s: %w", name, err)
+			}
+			fmt.Printf("  ✓ Uploaded %s -> %s\n", name, remoteBin)
+		}
+
 		if err := bootstrapper.WriteRemoteFile(unitContent, remoteReleaseDir+"/anode-"+svc.Name+".service"); err != nil {
 			return fmt.Errorf("failed to record unit for %s: %w", svc.Name, err)
 		}
-		unitPath := fmt.Sprintf("/etc/systemd/system/anode-%s.service", svc.Name)
 		d.activated = true
 		if err := bootstrapper.WriteRemoteFile(unitContent, unitPath); err != nil {
 			return fmt.Errorf("failed to write systemd unit for %s: %w", svc.Name, err)
+		}
+
+		if unchanged {
+			if _, err := d.ssh.Run("systemctl daemon-reload"); err != nil {
+				return fmt.Errorf("failed to reload systemd for %s: %w", svc.Name, err)
+			}
+			fmt.Printf("  ✓ Service %s unchanged: not restarted\n", name)
+			continue
 		}
 
 		// Reload and restart systemd unit
@@ -298,6 +325,10 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 			if _, err := d.ssh.Run(httpHealthCommand(port)); err != nil {
 				return fmt.Errorf("service %s does not pass GET %s on port %d: add the route, or check journalctl -u anode-%s.service: %w", svc.Name, healthPath, port, svc.Name, err)
 			}
+		}
+		// Record the fingerprint only after the service is healthy, so a failed deploy is retried.
+		if err := d.ssh.StreamBytes([]byte(fingerprint+"\n"), fingerprintPath(name), 0o600); err != nil {
+			return fmt.Errorf("failed to record fingerprint for %s: %w", name, err)
 		}
 		fmt.Printf("  ✓ Service %s running on 127.0.0.1:%d\n", name, port)
 	}
