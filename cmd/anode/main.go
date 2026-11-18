@@ -316,6 +316,7 @@ func main() {
 			engine.StopAll()
 			log.Fatalf("Dev environment failed: %v", err)
 		}
+		engine.Watch(ctx, plan)
 		<-ctx.Done()
 		engine.StopAll()
 
