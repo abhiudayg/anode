@@ -1,0 +1,48 @@
+[Unit]
+Description=oom probe
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=probe-oom
+WorkingDirectory=/var/lib/probe-oom
+ExecStart=/opt/probe/oom.py
+Restart=always
+RestartSec=3
+# Stop: SIGTERM, then up to 10 s for the service to drain in-flight requests
+KillSignal=SIGTERM
+TimeoutStopSec=10
+
+# Cgroups v2 Resource Limits
+CPUQuota=200%
+MemoryMax=1G
+
+# Least-Privilege Security Hardening & Anti-Jailbreak Confinement
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+ProtectProc=invisible
+ProcSubset=pid
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @module @reboot @swap @raw-io
+
+[Install]
+WantedBy=multi-user.target
