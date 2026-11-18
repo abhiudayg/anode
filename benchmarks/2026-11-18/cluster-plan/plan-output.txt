@@ -1,0 +1,46 @@
+🌐 Anode Cluster Multi-Host Pool: production-pool (3 nodes registered)
+Private Subnet: 10.100.0.0/16 (interface: wg0)
+Cgroups v2 Safety Margin: 15% RAM headroom
+
+[NODE FLEET & CAPACITY]
+NODE ID      | ROLE     | PRIVATE IP       | HOST (SSH)           | RAM CAPACITY | SERVICES | UTILIZATION
+──────────────────────────────────────────────────────────────────────────────────────────────────
+edge-01      | edge     | 10.100.0.10      | root@192.168.1.10    | 4096 MB      | 13       | 95.6%
+worker-01    | worker   | 10.100.0.11      | root@192.168.1.11    | 16384 MB     | 10       | 18.4%
+worker-02    | worker   | 10.100.0.12      | root@192.168.1.12    | 16384 MB     | 9        | 16.5%
+
+[SERVICE PLACEMENT MATRIX]
+SERVICE            | ASSIGNED NODE | ROLE     | PRIVATE IP       | PORT / INGRESS           | MEMORY LIMIT
+──────────────────────────────────────────────────────────────────────────────────────────────────
+accounting         | edge-01      | edge     | 10.100.0.10      | :8080 (GET /healthz +2)  | 256 MB
+analytics          | edge-01      | edge     | 10.100.0.10      | :8081 (GET /healthz +2)  | 256 MB
+apigateway         | edge-01      | edge     | 10.100.0.10      | :8082 (GET /healthz)     | 256 MB
+auditlog           | edge-01      | edge     | 10.100.0.10      | :8083 (GET /healthz +2)  | 256 MB
+auth               | edge-01      | edge     | 10.100.0.10      | :8084 (GET /healthz +2)  | 256 MB
+catalog            | edge-01      | edge     | 10.100.0.10      | :8085 (GET /healthz +2)  | 256 MB
+cms                | edge-01      | edge     | 10.100.0.10      | :8086 (GET /healthz +3)  | 256 MB
+coupons            | edge-01      | edge     | 10.100.0.10      | :8087 (GET /healthz +2)  | 256 MB
+crm                | edge-01      | edge     | 10.100.0.10      | :8088 (GET /healthz +1)  | 256 MB
+disputes           | edge-01      | edge     | 10.100.0.10      | :8089 (GET /healthz +1)  | 256 MB
+documents          | edge-01      | edge     | 10.100.0.10      | :8090 (GET /healthz +2)  | 256 MB
+email              | edge-01      | edge     | 10.100.0.10      | :8091 (GET /healthz +1)  | 256 MB
+fraud              | edge-01      | edge     | 10.100.0.10      | :8092 (GET /healthz +1)  | 256 MB
+inventory          | worker-01    | worker   | 10.100.0.11      | :8080 (GET /healthz +2)  | 256 MB
+livechat           | worker-02    | worker   | 10.100.0.12      | :8080 (GET /healthz +2)  | 256 MB
+loyalty            | worker-01    | worker   | 10.100.0.11      | :8081 (GET /healthz +2)  | 256 MB
+media              | worker-02    | worker   | 10.100.0.12      | :8081 (GET /healthz +2)  | 256 MB
+metrics            | worker-01    | worker   | 10.100.0.11      | :8082 (GET /healthz +2)  | 256 MB
+notifications      | worker-02    | worker   | 10.100.0.12      | :8082 (GET /healthz +1)  | 256 MB
+orders             | worker-01    | worker   | 10.100.0.11      | :8083 (GET /healthz +2)  | 256 MB
+payments           | worker-02    | worker   | 10.100.0.12      | :8083 (GET /healthz +2)  | 256 MB
+pricing            | worker-01    | worker   | 10.100.0.11      | :8084 (GET /healthz +2)  | 256 MB
+recommendations    | worker-02    | worker   | 10.100.0.12      | :8084 (GET /healthz +1)  | 256 MB
+reviews            | worker-01    | worker   | 10.100.0.11      | :8085 (GET /healthz +2)  | 256 MB
+search             | worker-02    | worker   | 10.100.0.12      | :8085 (GET /healthz +2)  | 256 MB
+shipping           | worker-01    | worker   | 10.100.0.11      | :8086 (GET /healthz +1)  | 256 MB
+subscriptions      | worker-02    | worker   | 10.100.0.12      | :8086 (GET /healthz +2)  | 256 MB
+tax                | worker-01    | worker   | 10.100.0.11      | :8087 (GET /healthz +1)  | 256 MB
+users              | worker-02    | worker   | 10.100.0.12      | :8087 (GET /healthz +3)  | 256 MB
+warehouse          | worker-01    | worker   | 10.100.0.11      | :8088 (GET /healthz +1)  | 256 MB
+webhooks           | worker-02    | worker   | 10.100.0.12      | :8088 (GET /healthz +1)  | 256 MB
+workflows          | worker-01    | worker   | 10.100.0.11      | :8089 (GET /healthz +1)  | 256 MB

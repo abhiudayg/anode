@@ -94,7 +94,7 @@
     {
       "feature": "Multi-host",
       "docker": "Swarm, Kubernetes, or Compose over SSH",
-      "anode": "anode cluster exists. No benchmark or failure test in the repository.",
+      "anode": "anode cluster plans placement across a node inventory and prints nftables rules. It does not deploy to nodes or reschedule after a node fails; there is no failure test. Planning output for the 32-service example: benchmarks/2026-11-18/cluster-plan.",
       "gap": true
     },
     {

@@ -1,0 +1,47 @@
+[Unit]
+Description=bench orders (anode unit)
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=orders
+WorkingDirectory=/var/lib/orders
+ExecStart=/var/lib/bench/orders
+Restart=always
+RestartSec=3
+Environment="ORDERS_POSTGRES_DSN=postgres://x@127.0.0.1:1/x"
+Environment="PORT=9020"
+
+# Cgroups v2 Resource Limits
+CPUQuota=200%
+MemoryMax=1G
+
+# Least-Privilege Security Hardening & Anti-Jailbreak Confinement
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectClock=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+AmbientCapabilities=
+UMask=0077
+ProtectProc=invisible
+ProcSubset=pid
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged @resources @obsolete @module @reboot @swap @raw-io
+
+[Install]
+WantedBy=multi-user.target
