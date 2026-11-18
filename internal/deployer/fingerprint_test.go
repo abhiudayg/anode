@@ -8,12 +8,21 @@ import (
 	"testing"
 )
 
+func mustFingerprint(t *testing.T, binarySHA256, unit, env, config, releaseID string) string {
+	t.Helper()
+	fp, err := serviceFingerprint(binarySHA256, unit, env, config, releaseID)
+	if err != nil {
+		t.Fatalf("fingerprint: %v", err)
+	}
+	return fp
+}
+
 func TestServiceFingerprintIgnoresReleaseIdentity(t *testing.T) {
 	unitRelease1 := "Description=Anode orders (release 1000)\nExecStart=/var/lib/anode/releases/1000/orders\nEnvironmentFile=/etc/anode/env/1000.orders\n"
 	unitRelease2 := "Description=Anode orders (release 2000)\nExecStart=/var/lib/anode/releases/2000/orders\nEnvironmentFile=/etc/anode/env/2000.orders\n"
 
-	a := serviceFingerprint("bin", unitRelease1, "DB=x\n", "", "1000")
-	b := serviceFingerprint("bin", unitRelease2, "DB=x\n", "", "2000")
+	a := mustFingerprint(t, "bin", unitRelease1, "DB=x\n", "", "1000")
+	b := mustFingerprint(t, "bin", unitRelease2, "DB=x\n", "", "2000")
 	if a != b {
 		t.Fatalf("same inputs in a new release must match")
 	}
@@ -21,13 +30,13 @@ func TestServiceFingerprintIgnoresReleaseIdentity(t *testing.T) {
 
 func TestServiceFingerprintChangesWhenAnyInputChanges(t *testing.T) {
 	unit := "ExecStart=/var/lib/anode/releases/1000/orders\n"
-	base := serviceFingerprint("bin", unit, "DB=x\n", "", "1000")
+	base := mustFingerprint(t, "bin", unit, "DB=x\n", "", "1000")
 
 	cases := map[string]string{
-		"binary": serviceFingerprint("bin2", unit, "DB=x\n", "", "1000"),
-		"env":    serviceFingerprint("bin", unit, "DB=y\n", "", "1000"),
-		"config": serviceFingerprint("bin", unit, "DB=x\n", `{"dsn":"a"}`, "1000"),
-		"unit":   serviceFingerprint("bin", unit+"MemoryMax=512M\n", "DB=x\n", "", "1000"),
+		"binary": mustFingerprint(t, "bin2", unit, "DB=x\n", "", "1000"),
+		"env":    mustFingerprint(t, "bin", unit, "DB=y\n", "", "1000"),
+		"config": mustFingerprint(t, "bin", unit, "DB=x\n", `{"dsn":"a"}`, "1000"),
+		"unit":   mustFingerprint(t, "bin", unit+"MemoryMax=512M\n", "DB=x\n", "", "1000"),
 	}
 	for name, got := range cases {
 		if got == base {

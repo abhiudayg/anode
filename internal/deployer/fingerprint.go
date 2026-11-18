@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"strings"
+
+	"golang.org/x/crypto/scrypt"
 )
 
 // serviceStateDir holds one fingerprint per service, written after the service
@@ -18,16 +20,23 @@ func fingerprintPath(service string) string {
 	return serviceStateDir + "/" + service + ".fingerprint"
 }
 
-// serviceFingerprint hashes everything a restart would apply: the binary bytes,
+// fingerprintSalt is fixed so the same inputs give the same fingerprint on every
+// deploy. The fingerprint is a change detector, not a secret, so a fixed salt is fine.
+const fingerprintSalt = "anode-service-fingerprint-v1"
+
+// serviceFingerprint covers everything a restart would apply: the binary bytes,
 // the unit, the env file, and the config document. Release IDs are replaced in
 // the unit text, so the same inputs in a new release give the same fingerprint.
-func serviceFingerprint(binarySHA256, unit, env, config, releaseID string) string {
-	h := sha256.New()
-	for _, part := range []string{binarySHA256, strings.ReplaceAll(unit, releaseID, "R"), env, config} {
-		_, _ = io.WriteString(h, part)
-		_, _ = h.Write([]byte{0})
+//
+// The env file and config document hold secrets, so the input goes through
+// scrypt, a memory-hard KDF, rather than a fast hash.
+func serviceFingerprint(binarySHA256, unit, env, config, releaseID string) (string, error) {
+	input := strings.Join([]string{binarySHA256, strings.ReplaceAll(unit, releaseID, "R"), env, config}, "\x00")
+	key, err := scrypt.Key([]byte(input), []byte(fingerprintSalt), 1<<17, 8, 1, 32)
+	if err != nil {
+		return "", fmt.Errorf("fingerprint: %w", err)
 	}
-	return hex.EncodeToString(h.Sum(nil))
+	return hex.EncodeToString(key), nil
 }
 
 func sha256File(path string) (string, error) {

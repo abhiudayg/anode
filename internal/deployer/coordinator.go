@@ -277,7 +277,10 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 		if err != nil {
 			return fmt.Errorf("failed to hash binary for %s: %w", name, err)
 		}
-		fingerprint := serviceFingerprint(binarySHA, unitContent, envText, configDoc, releaseID)
+		fingerprint, err := serviceFingerprint(binarySHA, unitContent, envText, configDoc, releaseID)
+		if err != nil {
+			return fmt.Errorf("failed to fingerprint %s: %w", name, err)
+		}
 
 		// Unchanged services keep their running binary: copy it into the release, do not upload or restart.
 		prevBin, unchanged := d.unchangedBinary(name, fingerprint)
@@ -324,7 +327,7 @@ func (d *DeployCoordinator) deploy(ctx context.Context, domain string) error {
 			}
 		}
 		// Record the fingerprint only after the service is healthy, so a failed deploy is retried.
-		if err := bootstrapper.WriteRemoteFile(fingerprint, fingerprintPath(name)); err != nil {
+		if err := d.ssh.StreamBytes([]byte(fingerprint+"\n"), fingerprintPath(name), 0o600); err != nil {
 			return fmt.Errorf("failed to record fingerprint for %s: %w", name, err)
 		}
 		fmt.Printf("  ✓ Service %s running on 127.0.0.1:%d\n", name, port)
