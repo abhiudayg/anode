@@ -1,0 +1,26 @@
+repo	pinned_sha	outcome	services	ingress_routes	resources	diagnostics
+go-gitea/gitea	e7629a62b496d7c5794c9f76c9652b546a842d56	OK	3	5	2	3
+traefik/traefik	36b2bd1bd4538dec67b2e7ca6eb395eae47396ee	OK	6	0	0	6
+minio/minio	7aac2a2c5b7c882e68c1ce017d8256be2feea27f	OK	6	0	5	1
+usememos/memos	4e85c2025097d2c2e7f6223d013705d5ab984027	OK	2	1	1	1
+etcd-io/etcd	dd2c518ff5e2e37b5a66b6017b82d0bbfe9f304b	OK	9	4	0	20
+fatedier/frp	a2c975efb5e55102068065d61cfc17ffe34e939d	OK	2	0	0	0
+syncthing/syncthing	b0df1033fe2a788cd4f4e606dbb27199eefaf340	rc=1 26s	-	-	-	-
+AlistGo/alist	92e745360766cce32564f94a468cb576f577d27e	rc=1 73s	-	-	-	-
+MHSanaei/3x-ui	5297fd3c8495d80fab97ae511553fa545c69e913	OK	2	0	1	14
+gogs/gogs	c04b297b118edeaa4a62dc1370d15053ffe0c995	OK	2	0	0	7
+photoprism/photoprism	285a4874ef2a3d464916346523a1703db432c1e7	rc=1 26s	-	-	-	-
+XTLS/Xray-core	82b5b76bc510d0f2d5afd04485d71f9e125de19d	OK	3	6	0	6
+glanceapp/glance	53aec7f392ca72143870dcb45526ec7c80a68f32	OK	1	11	0	0
+IceWhaleTech/CasaOS	e099dd6b4982a264663df2536a55bfea2ae5448a	rc=1 41s	-	-	-	-
+seaweedfs/seaweedfs	8c6d09f49858c8e3bf5794d56cd5034fb70bfac0	rc=2 115s	-	-	-	-
+authelia/authelia	22a06dbb355e58477b64e1e322a23ee791df46ce	OK	4	0	2	9
+henrygd/beszel	3f93a621d6bc6a92f9c2df12b16c4344dc991ac5	OK	3	0	0	2
+QuantumNous/new-api	a1d1fb0cca76d3a1a7f3a1995d09abd1e9804c73	OK	1	33	1	7
+Wei-Shaw/sub2api	2af3f1e15c98c893a89255a037f551046883b8c0	rc=1 0s	-	-	-	-
+router-for-me/CLIProxyAPI	a5e8f69e56309e1ef6d6872e667da81fdfbce2ce	rc=2 14s	-	-	-	-
+grafana/loki	778b040bf68bae7e5f771209ccea9f5ff9ae29aa	OK	23	7	0	145
+prometheus/prometheus	cb4e01dd1cb1673d4bcde6f3a16fb767b7f8eb88	OK	4	0	0	11
+hashicorp/vault	7fd1fb52ece7b70cd663f2c0eaff6fccde296f0d	rc=124 0s (rerun)	-	-	-	-
+netbirdio/netbird	6d007c109c7f910a8f09b2ec57a10fac67a3b828	OK	14	12	5	25
+1Panel-dev/1Panel	0380c7c1ebdd0ee44ed032c2ad3551c13deb5b0d	rc=1 0s	-	-	-	-
