@@ -1,0 +1,5 @@
+[NEW2] ready
+[NEW2] SIGTERM at t=8s
+[NEW2] total=581822 transport_errors=0 non200=0
+error_window=none
+active

@@ -42,6 +42,9 @@ WorkingDirectory=/var/lib/{{.StateDir}}
 {{end}}ExecStart={{.ExecStart}}
 Restart=always
 RestartSec={{.RestartSec}}
+# Stop: SIGTERM, then up to 10 s for the service to drain in-flight requests
+KillSignal=SIGTERM
+TimeoutStopSec=10
 {{if .EnvFile}}EnvironmentFile={{.EnvFile}}
 {{end}}{{range $k, $v := .EnvVars}}Environment="{{$k}}={{$v}}"
 {{end}}
@@ -191,6 +194,7 @@ func writeCaddyRoute(sb *strings.Builder, public, strip string, port int) {
 	if strip != "" {
 		sb.WriteString(fmt.Sprintf("    uri strip_prefix %s\n", strip))
 	}
-	sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d\n", port))
+	// Hold requests while the upstream restarts (RestartSec plus boot), instead of failing them.
+	sb.WriteString(fmt.Sprintf("    reverse_proxy 127.0.0.1:%d {\n      lb_try_duration 5s\n      lb_try_interval 100ms\n    }\n", port))
 	sb.WriteString("  }\n")
 }

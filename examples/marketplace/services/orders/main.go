@@ -8,6 +8,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -81,7 +83,21 @@ func main() {
 		_ = json.NewEncoder(w).Encode(o)
 	})
 
-	log.Fatal(http.ListenAndServe(":"+envOr("PORT", "9020"), mux))
+	// Drain on SIGTERM: stop accepting, let in-flight requests finish, then exit.
+	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
+	defer stop()
+	srv := &http.Server{Addr: ":" + envOr("PORT", "9020"), Handler: mux}
+	go func() {
+		<-sigCtx.Done()
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("shutdown: %v", err)
+		}
+	}()
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Fatal(err)
+	}
 }
 
 func saveOrder(ctx context.Context, pool *pgxpool.Pool, o order) error {

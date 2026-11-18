@@ -71,6 +71,12 @@ A supported app passes `inspect`, `deploy`, a health check, and an authenticated
 - Native Redis uses `version = "auto"` by default. It takes the version the host's package provides, and the deploy prints it. A pinned version (for example `"8.0"`) is checked against the host after install, and the deploy stops on a mismatch. `auto` is only valid for a binary store. A Docker store needs an explicit version.
 - To upgrade, change `version` in `anode.toml` and deploy. Anode does not run migrations, so a breaking data change is your job.
 
+## Shutdown (restart and deploy)
+
+- The unit sends `SIGTERM` and waits up to 10 seconds (`TimeoutStopSec`) before it kills the process.
+- Caddy holds requests for up to 5 seconds while a unit restarts, so a single-service restart does not return errors to clients.
+- A service must stop accepting connections on `SIGTERM` and finish in-flight requests itself, for example with `http.Server.Shutdown`. The unit gives it time; it does not drain for it. See `examples/marketplace/services/orders/main.go`.
+
 ## Health check (deploy)
 
 - Every service that serves HTTP must serve `GET /healthz`. Deploy checks it after the service starts and stops the deploy unless it returns a status from 200 to 399.
