@@ -241,6 +241,40 @@ export function Footer() {
           </div>
         </div>
 
+        {/* Featured Badges */}
+        <div className="py-8 border-b border-white/[0.06] flex flex-wrap items-center justify-center sm:justify-start gap-4">
+          <a
+            href="https://capylaunch.com/tools/anode"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-90 transition-opacity inline-flex items-center"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://capylaunch.com/badge.svg?site=c92957fc-b074-4dda-afd1-0e20a2eede36"
+              alt="anode.abhiudayg.dev - Featured on CapyLaunch"
+              width={200}
+              height={48}
+              className="h-[44px] w-auto"
+            />
+          </a>
+          <a
+            href="https://www.producthunt.com/products/anode-2?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-anode-2"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:opacity-90 transition-opacity inline-flex items-center"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1312775&theme=dark&t=1795030251036"
+              alt="Anode - Proof-of-Topology bare-metal orchestrator for Go backends | Product Hunt"
+              width={250}
+              height={54}
+              className="h-[44px] w-auto"
+            />
+          </a>
+        </div>
+
         {/* Sub-Footer */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-neutral-400 font-mono-code">
           <div>
