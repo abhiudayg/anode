@@ -1,0 +1,25 @@
+{
+  "note": "Each control below is set in the unit template today. The denial column is the test that would prove it works on a host. None of these tests has a recorded result in the repository yet, so each one is marked not run. Run the command on a deployed host and record the output under benchmarks or .verify before you claim it.",
+  "directives": [
+    {"name": "DynamicUser=yes", "effect": "Service runs as a throwaway user, not root."},
+    {"name": "ProtectSystem=strict, ProtectHome=true", "effect": "Root filesystem and home directories are read-only to the service."},
+    {"name": "StateDirectory={{.StateDir}}", "effect": "The only writable place is the service's state directory."},
+    {"name": "CapabilityBoundingSet= (empty), AmbientCapabilities= (empty)", "effect": "No Linux capabilities, even for root inside the unit."},
+    {"name": "NoNewPrivileges=true, RestrictSUIDSGID=true", "effect": "No setuid or setgid escalation."},
+    {"name": "SystemCallFilter=@system-service, ~@privileged @resources @module @reboot @swap @raw-io", "effect": "Seccomp filter that blocks privileged, module, reboot, and raw I/O calls."},
+    {"name": "RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6", "effect": "No raw, packet, or netlink sockets."},
+    {"name": "ProtectProc=invisible, ProcSubset=pid", "effect": "The service cannot see other processes in /proc."},
+    {"name": "MemoryDenyWriteExecute=true, LockPersonality=true", "effect": "No writable-and-executable memory; no personality changes."},
+    {"name": "MemoryMax=1G, CPUQuota=200%", "effect": "Cgroup limits. Not yet tested under OOM."},
+    {"name": "UMask=0077", "effect": "New files are private by default."}
+  ],
+  "denials": [
+    {"test": "Write to /usr from the service", "command": "from a shell inside the unit: touch /usr/anode-probe", "expect": "Permission denied (read-only filesystem)", "status": "not run"},
+    {"test": "Bind a port below 1024", "command": "probe that listens on :80 under the unit", "expect": "Permission denied", "status": "not run"},
+    {"test": "Escalate with a setuid binary", "command": "run a setuid helper from the service", "expect": "No privilege gain", "status": "not run"},
+    {"test": "Open a raw socket", "command": "socket(AF_PACKET, SOCK_RAW) from the service", "expect": "Operation not permitted", "status": "not run"},
+    {"test": "Capability check", "command": "grep CapEff /proc/self/status from inside the unit", "expect": "0000000000000000", "status": "not run"},
+    {"test": "systemd exposure score", "command": "systemd-analyze security anode-<service>", "expect": "Score reported; recorded per unit template version", "status": "not run"},
+    {"test": "OOM at MemoryMax", "command": "allocate past 1G inside the unit", "expect": "Killed by the cgroup; restarted by Restart=always", "status": "not run"}
+  ]
+}

@@ -309,7 +309,7 @@ export function Navbar() {
                     </Link>
 
                     <Link
-                      href="/docs#quickstart"
+                      href="/docs/quickstart"
                       onClick={() => setToolsOpen(false)}
                       className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-white/[0.06] transition-colors group"
                     >

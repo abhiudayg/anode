@@ -104,7 +104,6 @@ export default function ChangelogPage() {
         {/* Header */}
         <div className="space-y-4 pb-12 border-b border-white/[0.08]">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.04] border border-white/[0.1] text-xs font-mono-code text-neutral-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Architecture &amp; Release Timeline</span>
           </div>
 
@@ -140,7 +139,7 @@ export default function ChangelogPage() {
             <div className="p-3.5 rounded-xl bg-[#0a0a0c] border border-white/[0.08]">
               <div className="text-xs font-mono-code text-neutral-500">License</div>
               <div className="text-base sm:text-lg font-bold text-white font-mono-code mt-0.5">
-                Apache 2.0
+                MIT
               </div>
             </div>
           </div>

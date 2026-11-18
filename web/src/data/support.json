@@ -1,0 +1,77 @@
+{
+  "source_commit_note": "Hand-maintained from the analyzer and deployer source named in each row. Re-check the row when the source changes.",
+  "statuses": {
+    "supported": "Recognized by the analyzer and covered by a test in the repository.",
+    "partial": "Recognized in some forms only, or tested for some kinds only.",
+    "not_supported": "Not recognized. The analyzer reports it or skips it. Treat it as a manual step.",
+    "not_verified": "No test in the repository. Do not rely on it until one exists."
+  },
+  "areas": [
+    {
+      "name": "HTTP routers",
+      "rows": [
+        {"item": "net/http ServeMux (HandleFunc with method and path pattern)", "status": "supported", "evidence": "Route patterns such as POST /v1/orders are read into the lockfile.", "source": "internal/analyzer/sinks.go; route_detection_test.go"},
+        {"item": "net/http package-level http.HandleFunc", "status": "supported", "evidence": "Fixed in the release that added route tests; before that the route was missing from the lockfile.", "source": "route_detection_test.go"},
+        {"item": "chi (Get, Post, Put, Delete)", "status": "supported", "evidence": "Matched by method name when the package path contains chi.", "source": "internal/analyzer/sinks.go:307"},
+        {"item": "gin (r.GET, r.POST)", "status": "not_supported", "evidence": "Gin uses uppercase method names, which the matcher does not handle. Its routes do not appear in the ingress table.", "source": "docs/supported-profile.md; internal/analyzer/sinks.go:307"},
+        {"item": "echo", "status": "not_supported", "evidence": "Routes are not recognized.", "source": "docs/architecture.md, section 2"},
+        {"item": "fiber", "status": "not_supported", "evidence": "Routes are not recognized.", "source": "docs/architecture.md, section 2"},
+        {"item": "gorilla/mux", "status": "not_verified", "evidence": "Methods are set by chaining .Methods(); no test covers it.", "source": "internal/analyzer/sinks.go"}
+      ]
+    },
+    {
+      "name": "Stores and clients",
+      "rows": [
+        {"item": "PostgreSQL via database/sql (postgres driver) or pgxpool", "status": "supported", "evidence": "Tested end to end for deploy. The DSN source is recorded in the lockfile.", "source": "internal/analyzer/sinks.go:131-149; docs/supported-profile.md"},
+        {"item": "MySQL, MariaDB, ClickHouse via database/sql", "status": "partial", "evidence": "Recognized by driver name. Only PostgreSQL is tested for deploy.", "source": "internal/analyzer/sinks.go:144-149"},
+        {"item": "Redis (go-redis NewClient)", "status": "supported", "evidence": "Native systemd Redis with a password. Tested end to end.", "source": "internal/analyzer/sinks.go:82; docs/supported-profile.md"},
+        {"item": "RabbitMQ, MinIO, memcached, ScyllaDB, Temporal, ClickHouse client, MongoDB, Kafka writer", "status": "partial", "evidence": "Recognized by client constructor. Container runtime is not yet tested for these kinds.", "source": "internal/analyzer/client_sinks.go:28-34; docs/supported-profile.md"},
+        {"item": "Typed RPC (Register<X>Server, New<X>Client)", "status": "partial", "evidence": "Creates a service-to-service binding in the lockfile. No deploy test.", "source": "docs/architecture.md, section 2"},
+        {"item": "Outbound HTTP (URL from config plus route path)", "status": "partial", "evidence": "Binds to the serving service or an egress rule. No end-to-end test.", "source": "internal/analyzer/client_sinks.go:199"}
+      ]
+    },
+    {
+      "name": "Configuration",
+      "rows": [
+        {"item": "Environment variable via os.Getenv or os.LookupEnv", "status": "supported", "evidence": "Traced back to the variable name, including through a project function that takes it as its first argument.", "source": "internal/analyzer/taint.go:204-234"},
+        {"item": "Config struct loaded from a literal .json path (os.ReadFile, os.Open)", "status": "supported", "evidence": "config_file and config_key are recorded. Deploy tests the handoff.", "source": "internal/analyzer/sinks.go:122"},
+        {"item": "os.Environ() read in project code", "status": "not_supported", "evidence": "Not traced. A connection string read this way falls back to a default, such as SERVICE_DB_URL.", "source": "internal/analyzer/taint.go (no os.Environ handling)"},
+        {"item": "Viper, koanf, or other config libraries", "status": "not_supported", "evidence": "Not traced. Connection settings loaded this way are not bound.", "source": "docs/supported-profile.md"},
+        {"item": "YAML or INI config files", "status": "not_supported", "evidence": "Out of scope. Keys are recorded, but deploy writes JSON only.", "source": "docs/supported-profile.md"},
+        {"item": "Config loaded by reflection or built-up names", "status": "not_supported", "evidence": "Not resolved.", "source": "docs/supported-profile.md"}
+      ]
+    },
+    {
+      "name": "ORMs and hidden connections",
+      "rows": [
+        {"item": "GORM, XORM, Pop, ent (connections opened inside a dependency)", "status": "not_supported", "evidence": "The analyzer reports the connection as a diagnostic. It is not bound to a store.", "source": "docs/supported-profile.md"},
+        {"item": "Commands registered indirectly through a command framework", "status": "not_supported", "evidence": "Connections in those functions are not reported. A missing binding means not verified, not absent.", "source": "docs/supported-profile.md"}
+      ]
+    },
+    {
+      "name": "Migrations",
+      "rows": [
+        {"item": ".sql files in migrations/<service>/ or a root migrations/", "status": "supported", "evidence": "Database is marked auto_provision when migration files exist.", "source": "internal/analyzer/sinks.go:53"},
+        {"item": "Running migrations", "status": "partial", "evidence": "anode migrate runs them. docs/supported-profile.md says deploy does not run migrations; check the command before deploy.", "source": "cmd/anode/main.go:181; docs/supported-profile.md"}
+      ]
+    },
+    {
+      "name": "Project shape and build",
+      "rows": [
+        {"item": "One main package, Go HTTP service owned by the developer", "status": "supported", "evidence": "In scope.", "source": "docs/supported-profile.md"},
+        {"item": "Non-Go services", "status": "not_supported", "evidence": "Out of scope.", "source": "docs/supported-profile.md"},
+        {"item": "CGO", "status": "partial", "evidence": "Deploy builds with CGO_ENABLED=0. Code that needs cgo does not build for the target.", "source": "internal/deployer/coordinator.go:379"},
+        {"item": "Multi-module repositories and go.work", "status": "not_verified", "evidence": "No test in the repository covers it.", "source": "—"},
+        {"item": "Large third-party projects with their own configuration loaders", "status": "not_supported", "evidence": "Out of scope.", "source": "docs/supported-profile.md"}
+      ]
+    },
+    {
+      "name": "Deploy target",
+      "rows": [
+        {"item": "One Linux host (VPS or VM) with systemd and Caddy", "status": "supported", "evidence": "Tested on GCE and OrbStack.", "source": "benchmarks/2026-11-16, benchmarks/2026-11-18"},
+        {"item": "Multi-host (anode cluster)", "status": "not_verified", "evidence": "The command exists. No benchmark or failure test.", "source": "internal/cluster"},
+        {"item": "Docker runtime for services", "status": "not_supported", "evidence": "Refused for services. Only stores can run in containers.", "source": "docs/supported-profile.md"}
+      ]
+    }
+  ]
+}

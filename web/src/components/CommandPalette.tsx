@@ -184,7 +184,7 @@ export function CommandPalette() {
       title: "Documentation Overview & Architecture",
       description: "Whole-program SSA analysis, Variable Type Analysis (VTA), and the 4 pillars",
       category: "Documentation",
-      href: "/docs#overview",
+      href: "/docs",
       icon: BookOpen,
     },
     {
@@ -201,7 +201,7 @@ export function CommandPalette() {
       title: "Documentation: Quickstart Tutorial",
       description: "From git clone to production deployment in under 60 seconds",
       category: "Documentation",
-      href: "/docs#quickstart",
+      href: "/docs/quickstart",
       icon: Terminal,
     },
     {
@@ -209,7 +209,7 @@ export function CommandPalette() {
       title: "Documentation: CLI Reference & Flags",
       description: "Full reference for inspect, dev, deploy, cluster, catalog, and --verbose",
       category: "Documentation",
-      href: "/docs#cli",
+      href: "/docs/cli",
       icon: FileCode2,
     },
     {
@@ -217,7 +217,7 @@ export function CommandPalette() {
       title: "Documentation: Hardened Systemd Directives",
       description: "DynamicUser=yes, ProtectSystem=strict, and NoNewPrivileges execution",
       category: "Documentation",
-      href: "/docs#systemd-directives",
+      href: "/docs/systemd-vps",
       icon: ShieldCheck,
     },
     {
@@ -225,7 +225,7 @@ export function CommandPalette() {
       title: "Documentation: Cgroups v2 Resource Isolation",
       description: "MemoryHigh, MemoryMax, CPUQuota, and TasksMax quotas without root",
       category: "Documentation",
-      href: "/docs#systemd-cgroups",
+      href: "/docs/systemd-vps",
       icon: Cpu,
     },
     {
@@ -233,7 +233,7 @@ export function CommandPalette() {
       title: "Documentation: Troubleshooting & Error Codes",
       description: "Diagnosing dynamic handlers, missing migration paths, and loopback binds",
       category: "Documentation",
-      href: "/docs#troubleshooting",
+      href: "/docs/troubleshooting",
       icon: FileCode2,
     },
 

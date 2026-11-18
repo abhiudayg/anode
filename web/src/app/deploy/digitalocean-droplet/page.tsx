@@ -217,7 +217,7 @@ export default function DigitalOceanDeployPage() {
                 brew install abhiudayg/tap/anode
               </div>
               <Link
-                href="/docs#quickstart"
+                href="/docs/quickstart"
                 className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Read Quickstart</span>

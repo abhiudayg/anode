@@ -9,11 +9,11 @@ Host and state: the same VM as the marketplace comparison, 32 anode units and 32
 | Port taken (`:21059` held by another process) | stop unit, bind port, start unit | journal: `listen tcp :21059: bind: address already in use`, `status=1/FAILURE`, restart every about 4 s | service down until the port was freed | automatic after the port was freed |
 
 Not run, with reasons:
-- **OOM under `MemoryMax`:** the unit sets no `MemoryMax`, `MemoryHigh`, or `TasksMax`. There is no limit to test. This is a gap in the unit template, not a result.
+- **OOM under `MemoryMax`:** not run. The unit template sets `MemoryMax=1G` and `CPUQuota=200%` (`internal/deployer/systemd.go`), but this run did not capture the installed unit file, so the limit this VM ran with is unverified. Verify with `systemctl show anode-orders -p MemoryMax` before testing.
 - **Crash-loop 100x:** the port-taken run already shows the restart loop; `Restart=always` has no start limit, so it retries indefinitely at 3 s intervals.
 - **Bad migration, non-compiling deploy, full disk, deploy while the old release is unhealthy:** not run. A non-compiling deploy would need a copy of the project and a build step that could touch the shared host; not worth the risk here.
 
 Findings:
 - Services have no graceful shutdown: SIGTERM exits immediately, so every request in flight at that moment fails. The 3.4 s window is the restart delay and boot time.
 - A DB outage shows up as 500s for exactly the outage length, with no restart needed when the database returns.
-- The unit template has no memory or task limits.
+- The matrix does not exercise memory limits; the template sets `MemoryMax=1G`, and an OOM test is still missing.

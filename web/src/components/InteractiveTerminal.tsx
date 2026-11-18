@@ -251,7 +251,6 @@ $ anode deploy root@my-vps.com --domain api.example.com
                     <span className="text-emerald-400 font-bold select-none">~</span>
                     <span className="text-white">anode dev</span>
                     <span className="ml-auto flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       Live Reload Active
                     </span>
                   </div>
@@ -348,7 +347,6 @@ $ anode deploy root@my-vps.com --domain api.example.com
                     <span className="text-white font-bold select-none">~</span>
                     <span className="text-white">anode deploy root@my-vps.com --domain api.example.com</span>
                     <span className="ml-auto flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                       Atomic Symlink Rollout
                     </span>
                   </div>

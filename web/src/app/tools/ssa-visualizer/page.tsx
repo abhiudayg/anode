@@ -1085,7 +1085,6 @@ export default function SsaVisualizerPage() {
               {validation.isValid ? (
                 <>
                   <div className="flex items-center gap-2 text-white">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                     <span>Proof of Topology: 4/4 Pillars Satisfied</span>
                   </div>
                   <div className="text-[11px] text-neutral-400">

@@ -285,7 +285,7 @@ What the numbers mean:
 * The two-service cold start is dominated by PostgreSQL startup. Debian's `postgresql` takes 2.4 s to accept connections in this setup; the container takes 0.6 s.
 * Lockfile hashes were identical across all 20 analysis runs (4 fixtures, 5 runs each).
 * Caddy's edge proxy is included in the anode deploy but not in the memory totals.
-* Not measured: a remote VPS host, Caddy route-swap time, and larger service counts with a database.
+* Not measured in this run: a remote VPS host, Caddy route-swap time, and larger service counts with a database. The [2026-11-18 run](benchmarks/2026-11-18/README.md) covers those on a GCE VM.
 
 To rerun, see [`benchmarks/2026-11-16/scripts`](benchmarks/2026-11-16/scripts/). The stack benchmark needs `BENCH_ORDERS_PW`, `BENCH_PAYMENTS_PW`, `BENCH_PG_SUPER_PW`, and `BENCH_STRIPE_KEY` set in the environment. None of the credentials are stored in the repository.
 

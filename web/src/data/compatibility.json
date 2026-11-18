@@ -1,0 +1,22 @@
+{
+  "note": "Docker parity for one Linux host. Each row says what anode does today, not what it plans. Sources are the unit template (internal/deployer/systemd.go) and docs/supported-profile.md.",
+  "rows": [
+    {"feature": "Health check", "docker": "HEALTHCHECK, checked on a schedule; unhealthy containers are visible to the engine", "anode": "GET /healthz must return 200 to 399 at deploy, or the deploy stops. No ongoing health check: a process that is up but unhealthy stays up.", "gap": true},
+    {"feature": "Restart policy", "docker": "--restart always, with backoff", "anode": "Restart=always, RestartSec=3, no start limit. Retries forever at 3 s.", "gap": false},
+    {"feature": "CPU and memory limits", "docker": "--cpus, --memory set per container", "anode": "CPUQuota=200% and MemoryMax=1G in the template. Not configurable per service today.", "gap": true},
+    {"feature": "Secrets", "docker": "env files, Docker secrets, or a secret store", "anode": ".env on the developer machine, written to a 0600 env file or a root-only config file on the host. No secret store.", "gap": false},
+    {"feature": "Volumes and state", "docker": "named volumes and bind mounts", "anode": "One StateDirectory per service, owned by its dynamic user. No arbitrary bind mounts.", "gap": true},
+    {"feature": "Logs", "docker": "docker logs, json-file or other drivers", "anode": "journald through systemd. anode logs reads them.", "gap": false},
+    {"feature": "Exec into a running service", "docker": "docker exec", "anode": "No equivalent command. Use ssh and systemctl or journalctl.", "gap": true},
+    {"feature": "Signals and graceful shutdown", "docker": "SIGTERM, then SIGKILL after the stop timeout", "anode": "SIGTERM exits the process at once. The failure matrix measured 21% connection errors during a SIGTERM with 50 clients. No TimeoutStopSec or KillSignal in the template.", "gap": true},
+    {"feature": "TLS", "docker": "Varies: a reverse proxy you add yourself", "anode": "Caddy in front, automatic certificates for a domain. --plain-http for testing.", "gap": false},
+    {"feature": "Networking between services", "docker": "user-defined networks with DNS names", "anode": "Services bind to per-service ports (21040 and up). Ports are dropped on external interfaces by iptables. No service DNS; connections are set in the lockfile.", "gap": true},
+    {"feature": "Dev environment port collisions", "docker": "Fixed host ports collide when two copies run", "anode": "anode dev assigns dynamic loopback ports. Measured: 10 of 10 copies started. Per-copy stores are not isolated yet.", "gap": false},
+    {"feature": "Build and image", "docker": "Dockerfile builds an image; registry push and pull", "anode": "No image. Cross-compiles a static Linux binary with CGO_ENABLED=0 and uploads it.", "gap": false},
+    {"feature": "Rolling or partial deploy", "docker": "Varies by orchestrator; Compose recreates containers", "anode": "Restarts every unit of the project. Lockfile-diff deploys that restart only changed units are not built.", "gap": true},
+    {"feature": "Rollback", "docker": "Re-run the previous image tag", "anode": "anode rollback switches each unit back to the previous release, verified by release hash.", "gap": false},
+    {"feature": "Stores (databases, caches)", "docker": "Containers for any image", "anode": "Native Redis, PostgreSQL in containers or external. Other kinds run in containers, and only PostgreSQL is tested for deploy.", "gap": true},
+    {"feature": "Multi-host", "docker": "Swarm, Kubernetes, or Compose over SSH", "anode": "anode cluster exists. No benchmark or failure test in the repository.", "gap": true},
+    {"feature": "Resource accounting", "docker": "docker stats per container", "anode": "anode ps and status read cgroup v2 memory per unit.", "gap": false}
+  ]
+}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { LimitationsCallout } from "@/components/LimitationsCallout";
 import { 
   Check, 
   ArrowRight, 
@@ -143,6 +144,10 @@ export default function DeployGoWithoutDockerGuide() {
             </div>
           </header>
 
+          <div className="max-w-3xl mx-auto mt-8">
+            <LimitationsCallout framework="net/http" routesDetected={true} />
+          </div>
+
           {/* Quick Metrics Callout */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-14">
             <div className="p-4 rounded-xl border border-white/[0.08] bg-[#0a0a0c]">
@@ -259,7 +264,7 @@ export default function DeployGoWithoutDockerGuide() {
                 <ArrowRight className="w-3.5 h-3.5 text-white" />
               </Link>
               <Link
-                href="/docs#overview"
+                href="/docs"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-xs font-mono-code font-bold transition-all"
               >
                 <span>Architecture Deep Dive</span>
