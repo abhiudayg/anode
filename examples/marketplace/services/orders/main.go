@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -86,18 +87,38 @@ func main() {
 	// Drain on SIGTERM: stop accepting, let in-flight requests finish, then exit.
 	sigCtx, stop := signal.NotifyContext(context.Background(), syscall.SIGTERM, os.Interrupt)
 	defer stop()
-	srv := &http.Server{Addr: ":" + envOr("PORT", "9020"), Handler: mux}
-	go func() {
-		<-sigCtx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
-		defer cancel()
-		if err := srv.Shutdown(shutdownCtx); err != nil {
-			log.Printf("shutdown: %v", err)
-		}
-	}()
-	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	ln, err := net.Listen("tcp", ":"+envOr("PORT", "9020"))
+	if err != nil {
 		log.Fatal(err)
 	}
+	srv := &http.Server{Handler: mux}
+	if err := serve(sigCtx, srv, ln, 8*time.Second); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// serve runs srv until ctx is done, then shuts it down and waits for in-flight
+// requests to finish. Serve must keep running until Shutdown has returned: if
+// the caller exits as soon as Serve returns, in-flight requests are cut off.
+func serve(ctx context.Context, srv *http.Server, ln net.Listener, drain time.Duration) error {
+	errCh := make(chan error, 1)
+	go func() { errCh <- srv.Serve(ln) }()
+
+	select {
+	case err := <-errCh:
+		return err // the listener failed before any signal
+	case <-ctx.Done():
+	}
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), drain)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return err
+	}
+	if err := <-errCh; err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
 }
 
 func saveOrder(ctx context.Context, pool *pgxpool.Pool, o order) error {
