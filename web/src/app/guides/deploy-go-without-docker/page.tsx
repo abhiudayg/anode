@@ -124,7 +124,7 @@ export default function DeployGoWithoutDockerGuide() {
           </nav>
 
           {/* Guide Header */}
-          <header className="mb-14">
+          <header className="mb-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/[0.12] bg-white/[0.04] text-neutral-200 text-xs font-mono-code mb-4">
               <BookOpen className="w-3.5 h-3.5 text-white" />
               <span>Production Deployment Guide</span>
@@ -144,7 +144,7 @@ export default function DeployGoWithoutDockerGuide() {
             </div>
           </header>
 
-          <div className="max-w-3xl mx-auto mt-8">
+          <div className="mb-12">
             <LimitationsCallout framework="net/http" routesDetected={true} />
           </div>
 
