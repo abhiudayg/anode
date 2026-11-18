@@ -48,7 +48,7 @@ export default function ChapterQuickstart() {
                         <code>{`anode dev`}</code>
                       </pre>
                       <p className="text-xs text-neutral-400 mt-2">
-                        Anode automatically allocates free local ports (e.g. 127.0.0.1:54329 for Postgres), executes schema migrations, injects environment variables, and starts the sub-second reload loop.
+                        Anode allocates free local ports for services (e.g. 127.0.0.1:54329), runs the migrations it finds, injects environment variables, and starts the sub-second reload loop. Dev stores run as one container per resource name; copies of the same project share it.
                       </p>
                     </div>
 

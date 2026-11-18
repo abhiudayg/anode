@@ -68,7 +68,7 @@
           "1,294 MB"
         ],
         [
-          "Requests / errors",
+          "Requests / transport errors",
           "10.58 M / 0",
           "10.82 M / 0",
           "10.91 M / 0",
@@ -212,7 +212,7 @@
     {
       "id": "failure-matrix-2026-11-18",
       "date": "2026-11-18",
-      "title": "Failure matrix: SIGTERM, database outage, port taken",
+      "title": "Failure matrix, pre-fix (2026-11-18): SIGTERM, database outage, port taken",
       "machine": "Same GCE VM as the marketplace run, 32 anode units and 32 store containers",
       "n": "One run per scenario",
       "readme": "benchmarks/2026-11-18/failure-matrix/README.md",
@@ -243,7 +243,7 @@
         ]
       ],
       "loses": [
-        "No graceful shutdown: the service exits on SIGTERM, so in-flight requests fail. This is the biggest known gap.",
+        "Pre-fix run. It predates the unit's SIGTERM settings, Caddy's 5 s hold, and the reference service's drain fix (PR #85). The 21% figure is not the current behavior; rerun before quoting it.",
         "Not run: OOM under the 1G memory limit, crash-loop, bad migration, non-compiling deploy, full disk.",
         "The matrix does not record the installed unit file, so the memory limit the VM ran with is unverified."
       ]
