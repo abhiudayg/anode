@@ -1,0 +1,3 @@
+Fixed host port test (Compose-style stand-in): 10 copies, each binds 127.0.0.1:18080 with nginx:alpine.
+Result: started=1 failed=9 (Bind for 127.0.0.1:18080 failed: port is already allocated).
+Not the sample-shop images; the mechanism tested is host-port binding.

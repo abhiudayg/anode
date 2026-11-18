@@ -1,0 +1,4 @@
+anode p99=6.25 errors=0 ok200=29999
+bare p99=3.84 errors=0 ok200=29999
+docker p99=3.74 errors=0 ok200=29999
+DONE
